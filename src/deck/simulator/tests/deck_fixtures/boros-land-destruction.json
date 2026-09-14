@@ -1,0 +1,229 @@
+{
+ "name": "boros-land-destruction",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Solitude",
+   "cost": "{3}{W}{W}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Lifelink\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nLifelink\nWhen this creature enters, exile up to one other target creature. That creature's controller gains life equal to its power.\nEvoke—Exile a white card from your hand."
+  },
+  {
+   "name": "Beza, the Bounding Spring",
+   "cost": "{2}{W}{W}",
+   "type_line": "Legendary Creature — Elemental Elk",
+   "keywords": "[\"Treasure\"]",
+   "text": "When Beza enters, create a Treasure token if an opponent controls more lands than you. You gain 4 life if an opponent has more life than you. Create two 1/1 blue Fish creature tokens if an opponent controls more creatures than you. Draw a card if an opponent has more cards in hand than you."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Cleansing Wildfire",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.\nDraw a card."
+  },
+  {
+   "name": "Wrath of the Skies",
+   "cost": "{X}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You get X {E} (energy counters), then you may pay any amount of {E}. Destroy each artifact, creature, and enchantment with mana value less than or equal to the amount of {E} paid this way."
+  },
+  {
+   "name": "Reprieve",
+   "cost": "{1}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Return target spell to its owner's hand.\nDraw a card."
+  },
+  {
+   "name": "Price of Freedom",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery — Lesson",
+   "keywords": "[]",
+   "text": "Destroy target artifact or land an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.\nDraw a card."
+  },
+  {
+   "name": "Galvanic Discharge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "The Legend of Roku // Avatar Roku",
+   "cost": "{2}{R}{R} // ",
+   "type_line": "Enchantment — Saga // Legendary Creature — Avatar",
+   "keywords": "[\"Transform\",\"Firebending\"]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter.)\nI — Exile the top three cards of your library. Until the end of your next turn, you may play those cards.\nII — Add one mana of any color.\nIII — Exile this Saga, then return it to the battlefield transformed under your control.\n// Firebending 4 (Whenever this creature attacks, add {R}{R}{R}{R}. This mana lasts until end of combat.)\n{8}: Create a 4/4 red Dragon creature token with flying and firebending 4."
+  },
+  {
+   "name": "Wrath of God",
+   "cost": "{2}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all creatures. They can't be regenerated."
+  },
+  {
+   "name": "Flashback",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Field of Ruin",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. Each player searches their library for a basic land card, puts it onto the battlefield, then shuffles."
+  },
+  {
+   "name": "Demolition Field",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. You may search your library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Sunken Citadel",
+   "cost": "",
+   "type_line": "Land — Cave",
+   "keywords": "[]",
+   "text": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.\n{T}: Add two mana of the chosen color. Spend this mana only to activate abilities of land sources."
+  },
+  {
+   "name": "Cori Mountain Monastery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {R}.\n{3}{R}, {T}: Exile the top card of your library. Until the end of your next turn, you may play that card."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Solitude",
+   4
+  ],
+  [
+   "Beza, the Bounding Spring",
+   1
+  ],
+  [
+   "Erode",
+   4
+  ],
+  [
+   "Cleansing Wildfire",
+   4
+  ],
+  [
+   "Wrath of the Skies",
+   4
+  ],
+  [
+   "Reprieve",
+   4
+  ],
+  [
+   "Price of Freedom",
+   4
+  ],
+  [
+   "Galvanic Discharge",
+   4
+  ],
+  [
+   "Path to Exile",
+   3
+  ],
+  [
+   "The Legend of Roku // Avatar Roku",
+   2
+  ],
+  [
+   "Wrath of God",
+   1
+  ],
+  [
+   "Flashback",
+   1
+  ],
+  [
+   "Field of Ruin",
+   4
+  ],
+  [
+   "Demolition Field",
+   4
+  ],
+  [
+   "Sacred Foundry",
+   4
+  ],
+  [
+   "Plains",
+   4
+  ],
+  [
+   "Sunken Citadel",
+   3
+  ],
+  [
+   "Cori Mountain Monastery",
+   2
+  ],
+  [
+   "Mountain",
+   2
+  ],
+  [
+   "Arid Mesa",
+   1
+  ]
+ ]
+}

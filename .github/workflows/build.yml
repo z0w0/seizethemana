@@ -1,0 +1,94 @@
+# Build release binaries for Linux, macOS, and Windows.
+#
+# Runs on manual dispatch or on vX.Y.Z tags (e.g. `v0.1.0`). Tag builds
+# create a GitHub release with the archives, which cargo-binstall consumes
+# (see Cargo.toml); dispatch runs attach the archives as workflow artifacts.
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-pc-windows-msvc
+            os: windows-2025
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="seizethemana-${version}-${{ matrix.target }}.tar.xz"
+          staging="seizethemana-${version}-${{ matrix.target }}"
+          mkdir "$staging"
+          cp "target/${{ matrix.target }}/release/seizethemana" "$staging/"
+          cp README.md LICENSE "$staging/"
+          tar -cJf "$archive" "$staging"
+          echo "archive=$archive" >> "$GITHUB_ENV"
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
+          $archive = "seizethemana-${version}-${{ matrix.target }}.zip"
+          $staging = "seizethemana-${version}-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/seizethemana.exe" $staging
+          Copy-Item README.md, LICENSE $staging
+          Compress-Archive -Path $staging -DestinationPath $archive
+          "archive=$archive" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.archive }}
+          path: ${{ env.archive }}
+          if-no-files-found: error
+
+      - name: Attach archive to GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "seizethemana v${version}" \
+            --generate-notes \
+            || true
+          gh release upload "$GITHUB_REF_NAME" "$ARCHIVE" --clobber \
+            --repo "$GITHUB_REPOSITORY"

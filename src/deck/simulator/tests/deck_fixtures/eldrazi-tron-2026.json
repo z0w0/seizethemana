@@ -1,0 +1,229 @@
+{
+ "name": "eldrazi-tron-2026",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Karn, the Great Creator",
+   "cost": "{4}",
+   "type_line": "Legendary Planeswalker — Karn",
+   "keywords": "[]",
+   "text": "Activated abilities of artifacts your opponents control can't be activated.\n+1: Until your next turn, up to one target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value.\n−2: You may reveal an artifact card you own from outside the game or choose a face-up artifact card you own in exile. Put that card into your hand."
+  },
+  {
+   "name": "Ugin, Eye of the Storms",
+   "cost": "{7}",
+   "type_line": "Legendary Planeswalker — Ugin",
+   "keywords": "[]",
+   "text": "When you cast this spell, exile up to one target permanent that's one or more colors.\nWhenever you cast a colorless spell, exile up to one target permanent that's one or more colors.\n+2: You gain 3 life and draw a card.\n0: Add {C}{C}{C}.\n−11: Search your library for any number of colorless nonland cards, exile them, then shuffle. Until end of turn, you may cast those cards without paying their mana costs."
+  },
+  {
+   "name": "Devourer of Destiny",
+   "cost": "{5}{C}{C}",
+   "type_line": "Creature — Eldrazi",
+   "keywords": "[]",
+   "text": "You may reveal this card from your opening hand. If you do, at the beginning of your first upkeep, look at the top four cards of your library. You may put one of those cards back on top of your library. Exile the rest.\nWhen you cast this spell, exile target permanent that's one or more colors."
+  },
+  {
+   "name": "Thought-Knot Seer",
+   "cost": "{3}{C}",
+   "type_line": "Creature — Eldrazi",
+   "keywords": "[]",
+   "text": "({C} represents colorless mana.)\nWhen this creature enters, target opponent reveals their hand. You choose a nonland card from it and exile that card.\nWhen this creature leaves the battlefield, target opponent draws a card."
+  },
+  {
+   "name": "Glaring Fleshraker",
+   "cost": "{2}{C}",
+   "type_line": "Creature — Eldrazi Drone",
+   "keywords": "[]",
+   "text": "Whenever you cast a colorless spell, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"\nWhenever another colorless creature you control enters, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Emrakul, the Promised End",
+   "cost": "{13}",
+   "type_line": "Legendary Creature — Eldrazi",
+   "keywords": "[\"Flying\",\"Protection\",\"Trample\"]",
+   "text": "This spell costs {1} less to cast for each card type among cards in your graveyard.\nWhen you cast this spell, you gain control of target opponent during that player's next turn. After that turn, that player takes an extra turn.\nFlying, trample, protection from instants"
+  },
+  {
+   "name": "Sire of Seven Deaths",
+   "cost": "{7}",
+   "type_line": "Creature — Eldrazi",
+   "keywords": "[\"Lifelink\",\"Reach\",\"Vigilance\",\"First strike\",\"Trample\",\"Menace\",\"Ward\"]",
+   "text": "Reach, first strike\nVigilance, menace\nTrample, lifelink\nWard—Pay 7 life."
+  },
+  {
+   "name": "Kozilek's Command",
+   "cost": "{X}{C}{C}",
+   "type_line": "Kindred Instant — Eldrazi",
+   "keywords": "[\"Scry\"]",
+   "text": "Choose two —\n• Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n• Target player scries X, then draws a card.\n• Exile target creature with mana value X or less.\n• Exile up to X target cards from graveyards."
+  },
+  {
+   "name": "Expedition Map",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{2}, {T}, Sacrifice this artifact: Search your library for a land card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Chalice of the Void",
+   "cost": "{X}{X}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact enters with X charge counters on it.\nWhenever a player casts a spell with mana value equal to the number of charge counters on this artifact, counter that spell."
+  },
+  {
+   "name": "Dismember",
+   "cost": "{1}{B/P}{B/P}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nTarget creature gets -5/-5 until end of turn."
+  },
+  {
+   "name": "Trinisphere",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As long as this artifact is untapped, each spell that would cost less than three mana to cast costs three mana to cast. (Additional mana in the cost may be paid with any color of mana or colorless mana. For example, a spell that would cost {1}{B} to cast costs {2}{B} to cast instead.)"
+  },
+  {
+   "name": "Abstergo Entertainment",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{3}, {T}, Exile Abstergo Entertainment: Return up to one target historic card from your graveyard to your hand, then exile all graveyards. (Artifacts, legendaries, and Sagas are historic.)"
+  },
+  {
+   "name": "Mind Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Urza's Mine",
+   "cost": "",
+   "type_line": "Land — Urza's Mine",
+   "keywords": "[]",
+   "text": "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead."
+  },
+  {
+   "name": "Urza's Power Plant",
+   "cost": "",
+   "type_line": "Land — Urza's Power-Plant",
+   "keywords": "[]",
+   "text": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead."
+  },
+  {
+   "name": "Urza's Tower",
+   "cost": "",
+   "type_line": "Land — Urza's Tower",
+   "keywords": "[]",
+   "text": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead."
+  },
+  {
+   "name": "Ugin's Labyrinth",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this land enters, you may exile a colorless card with mana value 7 or greater from your hand.\n{T}: Add {C}. If a card is exiled with this land, add {C}{C} instead.\n{T}: Return the exiled card to its owner's hand."
+  },
+  {
+   "name": "Eldrazi Temple",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless Eldrazi spells or activate abilities of colorless Eldrazi."
+  },
+  {
+   "name": "Wastes",
+   "cost": "",
+   "type_line": "Basic Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}."
+  }
+ ],
+ "list": [
+  [
+   "Karn, the Great Creator",
+   4
+  ],
+  [
+   "Ugin, Eye of the Storms",
+   4
+  ],
+  [
+   "Devourer of Destiny",
+   4
+  ],
+  [
+   "Thought-Knot Seer",
+   3
+  ],
+  [
+   "Glaring Fleshraker",
+   3
+  ],
+  [
+   "Emrakul, the Promised End",
+   2
+  ],
+  [
+   "Sire of Seven Deaths",
+   1
+  ],
+  [
+   "Kozilek's Command",
+   4
+  ],
+  [
+   "Expedition Map",
+   4
+  ],
+  [
+   "Chalice of the Void",
+   2
+  ],
+  [
+   "Dismember",
+   2
+  ],
+  [
+   "Trinisphere",
+   2
+  ],
+  [
+   "Abstergo Entertainment",
+   1
+  ],
+  [
+   "Mind Stone",
+   3
+  ],
+  [
+   "Urza's Mine",
+   4
+  ],
+  [
+   "Urza's Power Plant",
+   4
+  ],
+  [
+   "Urza's Tower",
+   4
+  ],
+  [
+   "Ugin's Labyrinth",
+   4
+  ],
+  [
+   "Eldrazi Temple",
+   4
+  ],
+  [
+   "Wastes",
+   1
+  ]
+ ]
+}

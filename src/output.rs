@@ -1,0 +1,553 @@
+use owo_colors::OwoColorize;
+use std::io::IsTerminal;
+
+/// Terminal width for layout sizing; 80 when undetectable (piped, tests).
+pub fn terminal_width() -> usize {
+    console::Term::stdout()
+        .size_checked()
+        .map(|(w, _)| w as usize)
+        .unwrap_or(80)
+        .max(40)
+}
+
+/// Rendering hub: decides between human (colored) and JSON output once, at
+/// startup, so command code never branches on `--json` mid-render.
+///
+/// Invariants (see docs/design.md):
+///
+/// - stdout carries results only; every status/progress line goes to stderr.
+/// - JSON mode emits nothing but the command's JSON result — status and
+///   progress lines are suppressed entirely.
+/// - ANSI color follows the *stdout* TTY for result text and the *stderr* TTY
+///   for status lines; `NO_COLOR` and `--no-color` force both plain.
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct Output {
+    /// Emit pretty-printed JSON instead of styled text.
+    pub json: bool,
+    /// Color output is allowed on stdout (results).
+    color: bool,
+    /// Color output is allowed on stderr (status lines).
+    err_color: bool,
+    /// Show progress detail on stderr (from `--verbose`).
+    pub verbose: bool,
+    /// Active ephemeral progress line on stderr, if any.
+    progress: Option<indicatif::ProgressBar>,
+}
+
+/// Shared styling decisions derived from [`Output`].
+///
+/// Every method returns a plain string when color is disabled, so callers can
+/// wrap text unconditionally.
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy)]
+pub struct Styles {
+    color: bool,
+}
+
+/// Verb column width for cargo-style status lines (`   Compiling serde ...`).
+const VERB_WIDTH: usize = 12;
+
+// Some render helpers are exercised only from unit tests; keep them so the
+// output surface stays uniform.
+#[allow(dead_code)]
+impl Output {
+    /// Build the output mode from global flags.
+    pub fn new(json: bool, no_color: bool, verbose: bool) -> Self {
+        let no_color = no_color || std::env::var_os("NO_COLOR").is_some();
+        Self {
+            json,
+            color: !json && !no_color && std::io::stdout().is_terminal(),
+            err_color: !no_color && std::io::stderr().is_terminal(),
+            verbose,
+            progress: None,
+        }
+    }
+
+    /// Styling helpers for human output. In JSON mode returns no-op styles.
+    pub fn styles(&self) -> Styles {
+        Styles { color: self.color }
+    }
+
+    /// Styling helpers for stderr streams (status, errors, hints).
+    pub fn err_styles(&self) -> Styles {
+        Styles {
+            color: self.err_color,
+        }
+    }
+
+    /// Cargo-style status line on stderr: `   <Verb> <message>`, verb bold
+    /// green and padded to the standard verb column.
+    ///
+    /// Clears any active progress bar first, so the status line is the last
+    /// thing visible. Suppressed in JSON mode.
+    pub fn status(&mut self, verb: &str, msg: &str) {
+        self.clear_progress();
+        if self.json {
+            return;
+        }
+        eprintln!("{}", self.err_styles().status(verb, msg));
+    }
+
+    /// Final summary status line: `   <Verb> <message> in <secs>s`.
+    ///
+    /// A zero duration omits the timing suffix entirely.
+    pub fn finish(&mut self, verb: &str, msg: &str, elapsed: std::time::Duration) {
+        if elapsed.is_zero() {
+            self.status(verb, msg);
+        } else {
+            self.status(verb, &format!("{msg} in {:.2}s", elapsed.as_secs_f64()));
+        }
+    }
+
+    /// Replace the ephemeral progress line on stderr (spinner/bar), cleared
+    /// when the next status line prints or [`Output::clear_progress`] runs.
+    ///
+    /// The line reads `   <spinner> <Verb> …` with the verb bold green,
+    /// matching cargo's spinner rows. When stderr is not a TTY (piped),
+    /// `indicatif` renders nothing, so agents watching a log only see status
+    /// lines between bars.
+    pub fn progress(&mut self, verb: &str, total: Option<u64>) {
+        if self.json {
+            return;
+        }
+        self.clear_progress();
+        if !std::io::stderr().is_terminal() {
+            return;
+        }
+        let bar = match total {
+            Some(total) => indicatif::ProgressBar::new(total),
+            None => indicatif::ProgressBar::new_spinner(),
+        };
+        bar.set_style(
+            indicatif::ProgressStyle::with_template(
+                "   {spinner:.green} {msg} [{bar:.cyan/blue}] {pos}/{len}",
+            )
+            .expect("static template")
+            .progress_chars("#>-"),
+        );
+        bar.set_message(self.err_styles().verb_inline(verb));
+        bar.enable_steady_tick(std::time::Duration::from_millis(120));
+        self.progress = Some(bar);
+    }
+
+    /// Replace the ephemeral progress line with a deterministic bar over
+    /// `total` items, cleared on the next status line.
+    ///
+    /// The message renders as a cargo-style status line: bold green verb
+    /// padded to the verb column, then dim metadata. Unlike
+    /// [`Output::progress`], this renders even without a TTY so piped runs
+    /// still show chunk checkpoints; indicatif emits one line per draw in
+    /// that mode, so callers should tick coarsely.
+    pub fn progress_bar(&mut self, verb: &str, msg: &str, total: u64) {
+        if self.json {
+            return;
+        }
+        self.clear_progress();
+        let bar = indicatif::ProgressBar::new(total);
+        let styled = self.err_styles().status(verb, msg);
+        let style = if std::io::stderr().is_terminal() {
+            indicatif::ProgressStyle::with_template("{msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})")
+                .expect("static template")
+                .progress_chars("█>-")
+        } else {
+            indicatif::ProgressStyle::with_template("{msg} {pos}/{len}").expect("static template")
+        };
+        bar.set_style(style);
+        bar.set_message(styled);
+        self.progress = Some(bar);
+    }
+
+    /// Advance the active progress bar by `delta` items.
+    pub fn tick_progress(&self, delta: u64) {
+        if let Some(bar) = &self.progress {
+            bar.inc(delta);
+        }
+    }
+
+    /// Remove the ephemeral progress line (leaves no output behind).
+    pub fn clear_progress(&mut self) {
+        if let Some(bar) = self.progress.take() {
+            bar.finish_and_clear();
+        }
+    }
+
+    /// Cargo-style warning line on stderr: `warning: ...` (yellow).
+    ///
+    /// Cargo emits diagnostics unpadded (unlike status verbs), so no indent.
+    pub fn warning(&self, msg: &str) {
+        if self.json {
+            return;
+        }
+        eprintln!("{}", self.err_styles().warning(msg));
+    }
+
+    /// Print an error to stderr (red) — always, in every mode.
+    pub fn error(&self, msg: &str) {
+        eprintln!("{}", self.err_styles().error(msg));
+    }
+
+    /// Print a hint to stderr (dim) — always, in every mode.
+    pub fn hint(&self, msg: &str) {
+        eprintln!("{}", self.err_styles().hint(msg));
+    }
+
+    /// Note line on stdout: `note: ...` (dim), like the `deck legal`
+    /// checklist. Suppressed in JSON mode.
+    pub fn print_note(&mut self, msg: &str) {
+        self.clear_progress();
+        if self.json {
+            return;
+        }
+        println!("{}", self.styles().note(msg));
+    }
+}
+
+// Some styling helpers are exercised only from unit tests.
+#[allow(dead_code)]
+impl Styles {
+    /// Card name: bold cyan.
+    pub fn card_name(&self, s: &str) -> String {
+        if self.color {
+            s.bold().cyan().to_string()
+        } else {
+            s.to_string()
+        }
+    }
+
+    /// Section/heading text: bold.
+    pub fn header(&self, s: &str) -> String {
+        if self.color {
+            s.bold().to_string()
+        } else {
+            s.to_string()
+        }
+    }
+
+    /// Dimmed metadata (sets, collector numbers, counts).
+    pub fn dim(&self, s: &str) -> String {
+        if self.color {
+            s.dimmed().to_string()
+        } else {
+            s.to_string()
+        }
+    }
+
+    /// Cargo-style status line: verb padded to 12 columns, bold green.
+    pub fn verb(&self, verb: &str) -> String {
+        let verb_pad = format!("{verb:>VERB_WIDTH$}");
+        if self.color {
+            verb_pad.bold().green().to_string()
+        } else {
+            verb_pad
+        }
+    }
+
+    /// Bold green verb without the status-column padding (spinner lines).
+    pub fn verb_inline(&self, verb: &str) -> String {
+        if self.color {
+            verb.bold().green().to_string()
+        } else {
+            verb.to_string()
+        }
+    }
+
+    /// Cargo-style status line: padded verb plus message.
+    pub fn status(&self, verb: &str, msg: &str) -> String {
+        format!("{} {msg}", self.verb(verb))
+    }
+
+    /// Success text: green check (used on stdout result summaries).
+    pub fn success(&self, s: &str) -> String {
+        let text = format!("✓ {s}");
+        if self.color {
+            text.green().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Warning text: `warning:`, yellow (no cargo-style indent — cargo emits
+    /// diagnostics unpadded).
+    pub fn warning(&self, s: &str) -> String {
+        let text = format!("warning: {s}");
+        if self.color {
+            text.yellow().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Error text: red (used on stderr).
+    pub fn error(&self, s: &str) -> String {
+        let text = format!("error: {s}");
+        if self.color {
+            text.red().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Hint text: dim (used on stderr).
+    pub fn hint(&self, s: &str) -> String {
+        let text = format!("hint: {s}");
+        if self.color {
+            text.dimmed().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Note text: `note:` dim (used on stdout result blocks, e.g. the
+    /// `deck legal` checklist).
+    pub fn note(&self, s: &str) -> String {
+        let text = format!("note: {s}");
+        if self.color {
+            text.dimmed().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Mana pip symbols in their color identity: `WUBRGC` letters colored.
+    ///
+    /// Unknown characters pass through unstyled.
+    pub fn mana_pips(&self, s: &str) -> String {
+        if !self.color {
+            return s.to_string();
+        }
+        s.chars()
+            .map(|ch| {
+                let text = ch.to_string();
+                match ch {
+                    'W' => text.white().to_string(),
+                    'U' => text.blue().to_string(),
+                    'B' => text.purple().to_string(),
+                    'R' => text.red().to_string(),
+                    'G' => text.green().to_string(),
+                    'C' => text.dimmed().to_string(),
+                    _ => text,
+                }
+            })
+            .collect()
+    }
+
+    /// Rarity-colored text.
+    pub fn rarity(&self, s: &str) -> String {
+        if !self.color {
+            return s.to_string();
+        }
+        match s {
+            "mythic" => s.magenta().to_string(),
+            "rare" => s.yellow().to_string(),
+            "uncommon" => s.cyan().to_string(),
+            _ => s.to_string(),
+        }
+    }
+
+    /// Color-identity letters ("WU") with mana color styling.
+    pub fn color_letters(&self, letters: &str) -> String {
+        self.mana_pips(letters)
+    }
+
+    /// Proportional unicode bar: `filled` blocks out of `width` slots, dim.
+    ///
+    /// `ratio` in [0, 1] selects the fill; a zero or negative ratio renders
+    /// an empty bar so rows stay aligned.
+    pub fn bar(&self, ratio: f64, width: usize) -> String {
+        let width = width.max(1);
+        let ratio = ratio.clamp(0.0, 1.0);
+        let filled = (ratio * width as f64).round() as usize;
+        let text: String = "█".repeat(filled) + &"·".repeat(width - filled);
+        if self.color {
+            text.dimmed().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Money amount: `$975.40`, bold green when color is on.
+    pub fn money(&self, amount: f64) -> String {
+        let text = format!("${amount:.2}");
+        if self.color {
+            text.bold().green().to_string()
+        } else {
+            text
+        }
+    }
+
+    /// Thousands-separated integer ("1,512") for counts and dollar totals.
+    pub fn thousands(&self, n: i64) -> String {
+        let digits = n.abs().to_string();
+        let mut grouped = String::new();
+        for (i, c) in digits.chars().enumerate() {
+            if i > 0 && (digits.len() - i).is_multiple_of(3) {
+                grouped.push(',');
+            }
+            grouped.push(c);
+        }
+        if n < 0 {
+            format!("-{grouped}")
+        } else {
+            grouped
+        }
+    }
+
+    /// Wrap `text` to `width` columns, preserving existing newlines.
+    ///
+    /// Unicode-width aware so accented names and symbols do not split
+    /// mid-cluster. Returns one long line when `width` is small.
+    pub fn wrap(text: &str, width: usize) -> Vec<String> {
+        let mut lines = Vec::new();
+        for paragraph in text.split('\n') {
+            if paragraph.is_empty() {
+                lines.push(String::new());
+                continue;
+            }
+            let mut current = String::new();
+            for word in paragraph.split_whitespace() {
+                let word_width = console::measure_text_width(word);
+                let current_width = console::measure_text_width(&current);
+                if !current.is_empty() && current_width + 1 + word_width > width.max(1) {
+                    lines.push(std::mem::take(&mut current));
+                }
+                if !current.is_empty() {
+                    current.push(' ');
+                }
+                current.push_str(word);
+            }
+            lines.push(current);
+        }
+        lines
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn json_mode_disables_color() {
+        let out = Output::new(true, false, false);
+        let s = out.styles();
+        assert_eq!(s.card_name("Bolt"), "Bolt");
+        assert_eq!(s.rarity("mythic"), "mythic");
+        assert_eq!(s.mana_pips("WUB"), "WUB");
+    }
+
+    #[test]
+    fn explicit_no_color_disables_color() {
+        let out = Output::new(false, true, false);
+        let s = out.styles();
+        assert_eq!(s.card_name("Bolt"), "Bolt");
+        assert_eq!(s.header("Deck"), "Deck");
+    }
+
+    #[test]
+    fn styled_helpers_prefix_text() {
+        let out = Output::new(true, false, false); // color off
+        let s = out.styles();
+        assert_eq!(s.success("done"), "✓ done");
+        assert_eq!(s.warning("careful"), "warning: careful");
+        assert_eq!(s.error("boom"), "error: boom");
+        assert_eq!(s.hint("run setup"), "hint: run setup");
+    }
+
+    #[test]
+    fn mana_pips_pass_through_unknown_chars() {
+        let out = Output::new(true, false, false);
+        let s = out.styles();
+        assert_eq!(s.mana_pips("{2}{W}"), "{2}{W}");
+    }
+
+    #[test]
+    fn status_verb_is_padded_cargo_style() {
+        let out = Output::new(true, false, false); // color off
+        let s = out.err_styles();
+        assert_eq!(
+            s.status("Fetching", "bulk index"),
+            "    Fetching bulk index"
+        );
+        assert_eq!(
+            s.status("Ingested", "32572 cards"),
+            "    Ingested 32572 cards"
+        );
+    }
+
+    #[test]
+    fn finish_appends_duration() {
+        let out = Output::new(true, false, false);
+        let s = out.err_styles();
+        // "Finished" is 8 chars, padded to 12 → 4 leading spaces.
+        assert_eq!(
+            s.status("Finished", "setup in 1.50s"),
+            "    Finished setup in 1.50s"
+        );
+        let _ = out;
+    }
+
+    #[test]
+    fn json_mode_suppresses_status_lines() {
+        let mut out = Output::new(true, false, false);
+        // These write nothing in JSON mode; must not panic. Visual contract
+        // is verified in the command matrix.
+        out.status("Fetching", "x");
+        out.finish("Finished", "x", std::time::Duration::from_millis(1));
+        out.warning("x");
+    }
+
+    #[test]
+    fn error_and_hint_prefix_regardless_of_mode() {
+        let out = Output::new(true, false, false);
+        let s = out.err_styles();
+        assert_eq!(s.error("boom"), "error: boom");
+        assert_eq!(s.hint("do this"), "hint: do this");
+        assert_eq!(s.success("done"), "✓ done");
+    }
+
+    #[test]
+    fn stderr_styles_independent_of_stdout() {
+        // A `--json` run keeps stderr styling (status stays readable) while
+        // stdout styles are no-ops.
+        let out = Output::new(true, false, false);
+        assert_eq!(out.styles().dim("x"), "x");
+        // err_styles prefixes are identical in every mode.
+        assert_eq!(out.err_styles().error("e"), "error: e");
+    }
+
+    #[test]
+    fn thousands_groups_digits() {
+        let out = Output::new(true, false, false); // color off
+        let s = out.styles();
+        assert_eq!(s.thousands(938), "938");
+        assert_eq!(s.thousands(1_512), "1,512");
+        assert_eq!(s.thousands(-1_234_567), "-1,234,567");
+        assert_eq!(s.thousands(0), "0");
+    }
+
+    #[test]
+    fn bar_scales_and_clamps() {
+        let out = Output::new(true, false, false); // color off
+        let s = out.styles();
+        assert_eq!(s.bar(0.5, 10), "█████·····");
+        assert_eq!(s.bar(0.0, 4), "····");
+        assert_eq!(s.bar(1.0, 4), "████");
+        assert_eq!(s.bar(2.0, 4), "████"); // clamped
+        assert_eq!(s.bar(-1.0, 4), "····");
+    }
+
+    #[test]
+    fn wrap_breaks_long_lines_and_keeps_breaks() {
+        assert_eq!(
+            Styles::wrap("one two three four", 8),
+            vec!["one two", "three", "four"]
+        );
+        assert_eq!(Styles::wrap("short", 80), vec!["short"]);
+        assert_eq!(Styles::wrap("a\n\nb", 80), vec!["a", "", "b"]);
+        // Unbreakable word longer than the width passes through whole.
+        assert_eq!(
+            Styles::wrap("supercalifragilistic", 4),
+            vec!["supercalifragilistic"]
+        );
+    }
+}

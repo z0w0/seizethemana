@@ -1,0 +1,262 @@
+{
+ "name": "azorius-artifacts",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Floodfarm Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {W}.\n{T}: Add {U}. Activate only if you control a Plains or an Island."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Castle Doom",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast an artifact spell.\n{3}, {T}, Sacrifice an artifact: Create a 3/3 colorless Robot Villain artifact creature token named Doombot. Activate only as a sorcery."
+  },
+  {
+   "name": "Meticulous Archive",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Petrified Hamlet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "When this land enters, choose a land card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities.\nLands with the chosen name have \"{T}: Add {C}.\"\n{T}: Add {C}."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "United Battlefront",
+   "cost": "{3}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top seven cards of your library. Put up to two noncreature, nonland permanent cards with mana value 3 or less from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Cryogen Relic",
+   "cost": "{1}{U}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters or leaves the battlefield, draw a card.\n{1}{U}, Sacrifice this artifact: Put a stun counter on up to one target tapped creature. (If a permanent with a stun counter would become untapped, remove one from it instead.)"
+  },
+  {
+   "name": "Perilous Snare",
+   "cost": "{2}{W}",
+   "type_line": "Artifact",
+   "keywords": "[\"Max speed\",\"Start your engines!\"]",
+   "text": "Start your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\nWhen this artifact enters, exile target nonland permanent an opponent controls until this artifact leaves the battlefield.\nMax speed — {T}: Put a +1/+1 counter on target creature or Vehicle you control. Activate only as a sorcery."
+  },
+  {
+   "name": "Simulacrum Synthesizer",
+   "cost": "{2}{U}",
+   "type_line": "Artifact",
+   "keywords": "[\"Scry\"]",
+   "text": "When this artifact enters, scry 2.\nWhenever another artifact you control with mana value 3 or greater enters, create a 0/0 colorless Construct artifact creature token with \"This token gets +1/+1 for each artifact you control.\""
+  },
+  {
+   "name": "The Mind Stone",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Artifact — Infinity Stone",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\n{T}: Add {W}.\n{5}{W}, {T}: Harness The Mind Stone. (Once harnessed, its ∞ ability is active.)\n∞ — At the beginning of your end step, exile up to one other target nonland permanent you control, then return that card to the battlefield under its owner's control."
+  },
+  {
+   "name": "Repurposing Bay",
+   "cost": "{2}{U}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{2}, {T}, Sacrifice another artifact: Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put that card onto the battlefield, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Candy Trail",
+   "cost": "{1}",
+   "type_line": "Artifact — Food Clue",
+   "keywords": "[\"Scry\"]",
+   "text": "When this artifact enters, scry 2.\n{2}, {T}, Sacrifice this artifact: You gain 3 life and draw a card."
+  },
+  {
+   "name": "Braided Net // Braided Quipu",
+   "cost": "{2}{U} // ",
+   "type_line": "Artifact // Artifact",
+   "keywords": "[\"Craft\",\"Transform\"]",
+   "text": "This artifact enters with three net counters on it.\n{T}, Remove a net counter from this artifact: Tap another target nonland permanent. Its activated abilities can't be activated for as long as it remains tapped.\nCraft with artifact {1}{U}\n// {3}{U}, {T}: Draw a card for each artifact you control, then put this artifact into its owner's library third from the top."
+  },
+  {
+   "name": "Pinnacle Starcage",
+   "cost": "{1}{W}{W}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters, exile all artifacts and creatures with mana value 2 or less until this artifact leaves the battlefield.\n{6}{W}{W}: Put each card exiled with this artifact into its owner's graveyard, then create a 2/2 colorless Robot artifact creature token for each card put into a graveyard this way. Sacrifice this artifact."
+  },
+  {
+   "name": "Dusk Rose Reliquary",
+   "cost": "{W}",
+   "type_line": "Artifact",
+   "keywords": "[\"Ward\"]",
+   "text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nWard {2}\nWhen this artifact enters, exile target artifact or creature an opponent controls until this artifact leaves the battlefield."
+  },
+  {
+   "name": "The Fire Crystal",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "Red spells you cast cost {1} less to cast.\nCreatures you control have haste.\n{4}{R}{R}, {T}: Create a token that's a copy of target creature you control. Sacrifice it at the beginning of the next end step."
+  },
+  {
+   "name": "Torpor Orb",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Creatures entering don't cause abilities to trigger."
+  },
+  {
+   "name": "Spring-Loaded Sawblades // Bladewheel Chariot",
+   "cost": "{1}{W} // ",
+   "type_line": "Artifact // Artifact — Vehicle",
+   "keywords": "[\"Craft\",\"Transform\",\"Crew\",\"Flash\"]",
+   "text": "Flash\nWhen this artifact enters, it deals 5 damage to target tapped creature an opponent controls.\nCraft with artifact {3}{W} ({3}{W}, Exile this artifact, Exile another artifact you control or an artifact card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)\n// Tap two other untapped artifacts you control: This Vehicle becomes an artifact creature until end of turn.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Unidentified Hovership",
+   "cost": "{1}{W}{W}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Flying\",\"Crew\"]",
+   "text": "Flying\nWhen this Vehicle enters, exile up to one target creature with toughness 5 or less.\nWhen this Vehicle leaves the battlefield, the exiled card's owner manifests dread.\nCrew 1"
+  }
+ ],
+ "list": [
+  [
+   "Floodfarm Verge",
+   4
+  ],
+  [
+   "Hallowed Fountain",
+   4
+  ],
+  [
+   "Castle Doom",
+   4
+  ],
+  [
+   "Meticulous Archive",
+   4
+  ],
+  [
+   "Plains",
+   3
+  ],
+  [
+   "Petrified Hamlet",
+   2
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Starting Town",
+   1
+  ],
+  [
+   "United Battlefront",
+   4
+  ],
+  [
+   "Cryogen Relic",
+   4
+  ],
+  [
+   "Perilous Snare",
+   4
+  ],
+  [
+   "Simulacrum Synthesizer",
+   4
+  ],
+  [
+   "The Mind Stone",
+   4
+  ],
+  [
+   "Repurposing Bay",
+   3
+  ],
+  [
+   "Candy Trail",
+   3
+  ],
+  [
+   "Braided Net // Braided Quipu",
+   2
+  ],
+  [
+   "Pinnacle Starcage",
+   2
+  ],
+  [
+   "Dusk Rose Reliquary",
+   2
+  ],
+  [
+   "The Fire Crystal",
+   1
+  ],
+  [
+   "Torpor Orb",
+   1
+  ],
+  [
+   "Spring-Loaded Sawblades // Bladewheel Chariot",
+   1
+  ],
+  [
+   "Unidentified Hovership",
+   1
+  ]
+ ]
+}

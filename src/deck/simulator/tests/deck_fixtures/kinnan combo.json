@@ -1,0 +1,1018 @@
+{
+ "name": "kinnan combo",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Kinnan, Bonder Prodigy",
+   "cost": "{G}{U}",
+   "type_line": "Legendary Creature — Human Druid",
+   "keywords": "[]",
+   "text": "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced.\n{5}{G}{U}: Look at the top five cards of your library. You may put a non-Human creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Badgermole Cub",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Badger Mole",
+   "keywords": "[\"Earthbend\"]",
+   "text": "When this creature enters, earthbend 1. (Target land you control becomes a 0/0 creature with haste that's still a land. Put a +1/+1 counter on it. When it dies or is exiled, return it to the battlefield tapped.)\nWhenever you tap a creature for mana, add an additional {G}."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Bloom Tender",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[\"Vivid\"]",
+   "text": "Vivid — {T}: For each color among permanents you control, add one mana of that color."
+  },
+  {
+   "name": "Clever Impersonator",
+   "cost": "{2}{U}{U}",
+   "type_line": "Creature — Shapeshifter",
+   "keywords": "[]",
+   "text": "You may have this creature enter as a copy of any nonland permanent on the battlefield."
+  },
+  {
+   "name": "Colossal Skyturtle",
+   "cost": "{4}{G}{G}{U}",
+   "type_line": "Enchantment Creature — Turtle",
+   "keywords": "[\"Flying\",\"Ward\",\"Channel\"]",
+   "text": "Flying, ward {2}\nChannel — {2}{G}, Discard this card: Return target card from your graveyard to your hand.\nChannel — {1}{U}, Discard this card: Return target creature to its owner's hand."
+  },
+  {
+   "name": "Consecrated Sphinx",
+   "cost": "{4}{U}{U}",
+   "type_line": "Creature — Sphinx",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever an opponent draws a card, you may draw two cards."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Drift of Phantasms",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Spirit",
+   "keywords": "[\"Flying\",\"Defender\",\"Transmute\"]",
+   "text": "Defender (This creature can't attack.)\nFlying\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)"
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Elvish Spirit Guide",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {G}."
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Reach\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke—Exile a green card from your hand."
+  },
+  {
+   "name": "Enduring Vitality",
+   "cost": "{1}{G}{G}",
+   "type_line": "Enchantment Creature — Elk Glimmer",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nCreatures you control have \"{T}: Add one mana of any color.\"\nWhen Enduring Vitality dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Faerie Mastermind",
+   "cost": "{1}{U}",
+   "type_line": "Creature — Faerie Rogue",
+   "keywords": "[\"Flying\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhenever an opponent draws their second card each turn, you draw a card.\n{3}{U}: Each player draws a card."
+  },
+  {
+   "name": "Fyndhorn Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "High Fae Trickster",
+   "cost": "{3}{U}",
+   "type_line": "Creature — Faerie Wizard",
+   "keywords": "[\"Flying\",\"Flash\"]",
+   "text": "Flash (You may cast this spell any time you could cast an instant.)\nFlying\nYou may cast spells as though they had flash."
+  },
+  {
+   "name": "Hullbreaker Horror",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature — Kraken Horror",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Nezahal, Primal Tide",
+   "cost": "{5}{U}{U}",
+   "type_line": "Legendary Creature — Elder Dinosaur",
+   "keywords": "[]",
+   "text": "This spell can't be countered.\nYou have no maximum hand size.\nWhenever an opponent casts a noncreature spell, draw a card.\nDiscard three cards: Exile Nezahal. Return it to the battlefield tapped under its owner's control at the beginning of the next end step."
+  },
+  {
+   "name": "Nyxbloom Ancient",
+   "cost": "{4}{G}{G}{G}",
+   "type_line": "Enchantment Creature — Elemental",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nIf you tap a permanent for mana, it produces three times as much of that mana instead."
+  },
+  {
+   "name": "Phyrexian Metamorph",
+   "cost": "{3}{U/P}",
+   "type_line": "Artifact Creature — Phyrexian Shapeshifter",
+   "keywords": "[]",
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nYou may have this creature enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types."
+  },
+  {
+   "name": "Seedborn Muse",
+   "cost": "{3}{G}{G}",
+   "type_line": "Creature — Spirit",
+   "keywords": "[]",
+   "text": "Untap all permanents you control during each other player's untap step."
+  },
+  {
+   "name": "Spellskite",
+   "cost": "{2}",
+   "type_line": "Artifact Creature — Phyrexian Horror",
+   "keywords": "[]",
+   "text": "{U/P}: Change a target of target spell or ability to this creature. ({U/P} can be paid with either {U} or 2 life.)"
+  },
+  {
+   "name": "Thrasios, Triton Hero",
+   "cost": "{G}{U}",
+   "type_line": "Legendary Creature — Merfolk Wizard",
+   "keywords": "[\"Partner\",\"Scry\"]",
+   "text": "{4}: Scry 1, then reveal the top card of your library. If it's a land card, put it onto the battlefield tapped. Otherwise, draw a card.\nPartner (You can have two commanders if both have partner.)"
+  },
+  {
+   "name": "Tidespout Tyrant",
+   "cost": "{5}{U}{U}{U}",
+   "type_line": "Creature — Djinn",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever you cast a spell, return target permanent to its owner's hand."
+  },
+  {
+   "name": "Trophy Mage",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for an artifact card with mana value 3, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Valley Floodcaller",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Otter Wizard",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nYou may cast noncreature spells as though they had flash.\nWhenever you cast a noncreature spell, Birds, Frogs, Otters, and Rats you control get +1/+1 until end of turn. Untap them."
+  },
+  {
+   "name": "Void Winnower",
+   "cost": "{9}",
+   "type_line": "Creature — Eldrazi",
+   "keywords": "[]",
+   "text": "Your opponents can't cast spells with even mana values. (Zero is even.)\nYour opponents can't block with creatures with even mana values."
+  },
+  {
+   "name": "Wan Shi Tong, Librarian",
+   "cost": "{X}{U}{U}",
+   "type_line": "Legendary Creature — Bird Spirit",
+   "keywords": "[\"Flying\",\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nFlying, vigilance\nWhen Wan Shi Tong enters, put X +1/+1 counters on him. Then draw half X cards, rounded down.\nWhenever an opponent searches their library, put a +1/+1 counter on Wan Shi Tong and draw a card."
+  },
+  {
+   "name": "Wandering Archaic // Explore the Vastlands",
+   "cost": "{5} // {3}",
+   "type_line": "Creature — Avatar // Sorcery",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts an instant or sorcery spell, they may pay {2}. If they don't, you may copy that spell. You may choose new targets for the copy.\n// Each player looks at the top five cards of their library and may reveal a land card and/or an instant or sorcery card from among them. Each player puts the cards they revealed this way into their hand and the rest on the bottom of their library in a random order. Each player gains 3 life."
+  },
+  {
+   "name": "An Offer You Can't Refuse",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Chord of Calling",
+   "cost": "{X}{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[\"Convoke\"]",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Dramatic Reversal",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Untap all nonland permanents you control."
+  },
+  {
+   "name": "Fierce Guardianship",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell."
+  },
+  {
+   "name": "Flusterstorm",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Storm\"]",
+   "text": "Counter target instant or sorcery spell unless its controller pays {1}.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Force of Will",
+   "cost": "{3}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell."
+  },
+  {
+   "name": "Mana Drain",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value."
+  },
+  {
+   "name": "Mental Misstep",
+   "cost": "{U/P}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nCounter target spell with mana value 1."
+  },
+  {
+   "name": "Mindbreak Trap",
+   "cost": "{2}{U}{U}",
+   "type_line": "Instant — Trap",
+   "keywords": "[]",
+   "text": "If an opponent cast three or more spells this turn, you may pay {0} rather than pay this spell's mana cost.\nExile any number of target spells."
+  },
+  {
+   "name": "Pact of Negation",
+   "cost": "{0}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell.\nAt the beginning of your next upkeep, pay {3}{U}{U}. If you don't, you lose the game."
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Veil of Summer",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw a card if an opponent has cast a blue or black spell this turn. Spells you control can't be countered this turn. You and permanents you control gain hexproof from blue and from black until end of turn. (You and they can't be the targets of blue or black spells or abilities your opponents control.)"
+  },
+  {
+   "name": "Worldly Tutor",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a creature card, reveal it, then shuffle and put the card on top."
+  },
+  {
+   "name": "Fabricate",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for an artifact card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Finale of Devastation",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield. If you search your library this way, shuffle. If X is 10 or more, creatures you control get +X/+X and gain haste until end of turn."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Nature's Rhythm",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Harmonize\"]",
+   "text": "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.\nHarmonize {X}{G}{G}{G}{G} (You may cast this card from your graveyard for its harmonize cost. You may tap a creature you control to reduce that cost by an amount of generic mana equal to its power. Then exile this spell.)"
+  },
+  {
+   "name": "Transmute Artifact",
+   "cost": "{U}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Sacrifice an artifact. If you do, search your library for an artifact card. If that card's mana value is less than or equal to the sacrificed artifact's mana value, put it onto the battlefield. If it's greater, you may pay {X}, where X is the difference. If you do, put it onto the battlefield. If you don't, put it into its owner's graveyard. Then shuffle."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Basalt Monolith",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Mirage Mirror",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{2}: This artifact becomes a copy of target artifact, creature, enchantment, or land until end of turn."
+  },
+  {
+   "name": "Mox Amber",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color among legendary creatures and planeswalkers you control."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Simic Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {G}{U}."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Springleaf Drum",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Talisman of Curiosity",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {G} or {U}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Freed from the Real",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\n{U}: Tap enchanted creature.\n{U}: Untap enchanted creature."
+  },
+  {
+   "name": "Mirrormade",
+   "cost": "{1}{U}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may have this enchantment enter as a copy of any artifact or enchantment on the battlefield."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cumulative upkeep\"]",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Sylvan Library",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your draw step, you may draw two additional cards. If you do, choose two cards in your hand drawn this turn. For each of those cards, pay 4 life or put the card on top of your library."
+  },
+  {
+   "name": "Tezzeret the Seeker",
+   "cost": "{3}{U}{U}",
+   "type_line": "Legendary Planeswalker — Tezzeret",
+   "keywords": "[]",
+   "text": "+1: Untap up to two target artifacts.\n−X: Search your library for an artifact card with mana value X or less, put it onto the battlefield, then shuffle.\n−5: Artifacts you control become artifact creatures with base power and toughness 5/5 until end of turn."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "City of Brass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Gaea's Cradle",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Mana Confluence",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Rejuvenating Springs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Treasure Vault",
+   "cost": "",
+   "type_line": "Artifact Land",
+   "keywords": "[\"Treasure\"]",
+   "text": "{T}: Add {C}.\n{X}{X}, {T}, Sacrifice this land: Create X Treasure tokens."
+  },
+  {
+   "name": "Tropical Island",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)"
+  },
+  {
+   "name": "Waterlogged Grove",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {G} or {U}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Yavimaya Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {G} or {U}. This land deals 1 damage to you."
+  }
+ ],
+ "list": [
+  [
+   "Badgermole Cub",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Bloom Tender",
+   1
+  ],
+  [
+   "Clever Impersonator",
+   1
+  ],
+  [
+   "Colossal Skyturtle",
+   1
+  ],
+  [
+   "Consecrated Sphinx",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Drift of Phantasms",
+   1
+  ],
+  [
+   "Elvish Mystic",
+   1
+  ],
+  [
+   "Elvish Spirit Guide",
+   1
+  ],
+  [
+   "Endurance",
+   1
+  ],
+  [
+   "Enduring Vitality",
+   1
+  ],
+  [
+   "Faerie Mastermind",
+   1
+  ],
+  [
+   "Fyndhorn Elves",
+   1
+  ],
+  [
+   "High Fae Trickster",
+   1
+  ],
+  [
+   "Hullbreaker Horror",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Nezahal, Primal Tide",
+   1
+  ],
+  [
+   "Nyxbloom Ancient",
+   1
+  ],
+  [
+   "Phyrexian Metamorph",
+   1
+  ],
+  [
+   "Seedborn Muse",
+   1
+  ],
+  [
+   "Spellskite",
+   1
+  ],
+  [
+   "Thrasios, Triton Hero",
+   1
+  ],
+  [
+   "Tidespout Tyrant",
+   1
+  ],
+  [
+   "Trophy Mage",
+   1
+  ],
+  [
+   "Valley Floodcaller",
+   1
+  ],
+  [
+   "Void Winnower",
+   1
+  ],
+  [
+   "Wan Shi Tong, Librarian",
+   1
+  ],
+  [
+   "Wandering Archaic // Explore the Vastlands",
+   1
+  ],
+  [
+   "An Offer You Can't Refuse",
+   1
+  ],
+  [
+   "Chord of Calling",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Dramatic Reversal",
+   1
+  ],
+  [
+   "Fierce Guardianship",
+   1
+  ],
+  [
+   "Flusterstorm",
+   1
+  ],
+  [
+   "Force of Negation",
+   1
+  ],
+  [
+   "Force of Will",
+   1
+  ],
+  [
+   "Mana Drain",
+   1
+  ],
+  [
+   "Mental Misstep",
+   1
+  ],
+  [
+   "Mindbreak Trap",
+   1
+  ],
+  [
+   "Pact of Negation",
+   1
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Veil of Summer",
+   1
+  ],
+  [
+   "Worldly Tutor",
+   1
+  ],
+  [
+   "Fabricate",
+   1
+  ],
+  [
+   "Finale of Devastation",
+   1
+  ],
+  [
+   "Green Sun's Zenith",
+   1
+  ],
+  [
+   "Nature's Rhythm",
+   1
+  ],
+  [
+   "Transmute Artifact",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Basalt Monolith",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Mirage Mirror",
+   1
+  ],
+  [
+   "Mox Amber",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Mox Opal",
+   1
+  ],
+  [
+   "Simic Signet",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Springleaf Drum",
+   1
+  ],
+  [
+   "Talisman of Curiosity",
+   1
+  ],
+  [
+   "Freed from the Real",
+   1
+  ],
+  [
+   "Mirrormade",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Sylvan Library",
+   1
+  ],
+  [
+   "Tezzeret the Seeker",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "City of Brass",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Forest",
+   5
+  ],
+  [
+   "Gaea's Cradle",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ],
+  [
+   "Island",
+   5
+  ],
+  [
+   "Mana Confluence",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ],
+  [
+   "Polluted Delta",
+   1
+  ],
+  [
+   "Rejuvenating Springs",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Treasure Vault",
+   1
+  ],
+  [
+   "Tropical Island",
+   1
+  ],
+  [
+   "Waterlogged Grove",
+   1
+  ],
+  [
+   "Yavimaya Coast",
+   1
+  ]
+ ]
+}

@@ -1,0 +1,196 @@
+{
+ "name": "mono-green-landfall",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Escape Tunnel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\n{T}, Sacrifice this land: Target creature with power 2 or less can't be blocked this turn."
+  },
+  {
+   "name": "Fabled Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Sazh's Chocobo",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Earthbender Ascension",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Earthbend\",\"Landfall\"]",
+   "text": "When this enchantment enters, earthbend 2. Then search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nLandfall — Whenever a land you control enters, put a quest counter on this enchantment. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target creature you control. It gains trample until end of turn."
+  },
+  {
+   "name": "Icetill Explorer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Scout",
+   "keywords": "[\"Mill\",\"Landfall\"]",
+   "text": "You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card."
+  },
+  {
+   "name": "Mightform Harmonizer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Druid",
+   "keywords": "[\"Warp\",\"Double\",\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, double the power of target creature you control until end of turn.\nWarp {2}{G} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Esper Origins // Summon: Esper Maduin",
+   "cost": "{1}{G} // ",
+   "type_line": "Sorcery // Enchantment Creature — Saga Elemental",
+   "keywords": "[\"Surveil\",\"Transform\",\"Flashback\"]",
+   "text": "Surveil 2. You gain 2 life. If this spell was cast from a graveyard, exile it, then put it onto the battlefield transformed under its owner's control with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)\nFlashback {3}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)\n// (As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Reveal the top card of your library. If it's a permanent card, put it into your hand.\nII — Add {G}{G}.\nIII — Other creatures you control get +2/+2 and gain trample until end of turn."
+  },
+  {
+   "name": "Ba Sing Se",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Earthbend\"]",
+   "text": "This land enters tapped unless you control a basic land.\n{T}: Add {G}.\n{2}{G}, {T}: Earthbend 2. Activate only as a sorcery. (Target land you control becomes a 0/0 creature with haste that's still a land. Put two +1/+1 counters on it. When it dies or is exiled, return it to the battlefield tapped.)"
+  },
+  {
+   "name": "Sapling Nursery",
+   "cost": "{6}{G}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Affinity\",\"Landfall\"]",
+   "text": "Affinity for Forests (This spell costs {1} less to cast for each Forest you control.)\nLandfall — Whenever a land you control enters, create a 3/4 green Treefolk creature token with reach.\n{1}{G}, Exile this enchantment: Treefolk and Forests you control gain indestructible until end of turn."
+  },
+  {
+   "name": "Meltstrider's Resolve",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Fight\",\"Enchant\"]",
+   "text": "Enchant creature you control\nWhen this Aura enters, enchanted creature fights up to one target creature an opponent controls. (Each deals damage equal to its power to the other.)\nEnchanted creature gets +0/+2 and can't be blocked by more than one creature."
+  },
+  {
+   "name": "Shared Roots",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery — Lesson",
+   "keywords": "[]",
+   "text": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Demolition Field",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. You may search your library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Keen-Eyed Curator",
+   "cost": "{G}{G}",
+   "type_line": "Creature — Raccoon Scout",
+   "keywords": "[]",
+   "text": "As long as there are four or more card types among cards exiled with this creature, it gets +4/+4 and has trample.\n{1}: Exile target card from a graveyard."
+  },
+  {
+   "name": "Surrak, Elusive Hunter",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature — Human Warrior",
+   "keywords": "[\"Trample\"]",
+   "text": "This spell can't be countered.\nTrample\nWhenever a creature you control or a creature spell you control becomes the target of a spell or ability an opponent controls, draw a card."
+  },
+  {
+   "name": "Lumbering Worldwagon",
+   "cost": "{2}{G}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "This Vehicle's power is equal to the number of lands you control.\nWhenever this Vehicle enters or attacks, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nCrew 4"
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   14
+  ],
+  [
+   "Escape Tunnel",
+   4
+  ],
+  [
+   "Fabled Passage",
+   4
+  ],
+  [
+   "Llanowar Elves",
+   4
+  ],
+  [
+   "Sazh's Chocobo",
+   4
+  ],
+  [
+   "Earthbender Ascension",
+   4
+  ],
+  [
+   "Icetill Explorer",
+   4
+  ],
+  [
+   "Mightform Harmonizer",
+   4
+  ],
+  [
+   "Esper Origins // Summon: Esper Maduin",
+   4
+  ],
+  [
+   "Ba Sing Se",
+   3
+  ],
+  [
+   "Sapling Nursery",
+   3
+  ],
+  [
+   "Meltstrider's Resolve",
+   2
+  ],
+  [
+   "Shared Roots",
+   2
+  ],
+  [
+   "Demolition Field",
+   1
+  ],
+  [
+   "Keen-Eyed Curator",
+   1
+  ],
+  [
+   "Surrak, Elusive Hunter",
+   1
+  ],
+  [
+   "Lumbering Worldwagon",
+   1
+  ]
+ ]
+}

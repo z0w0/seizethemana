@@ -1,0 +1,251 @@
+{
+ "name": "mardu-discard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Moonshadow",
+   "cost": "{B}",
+   "type_line": "Creature — Elemental",
+   "keywords": "Menace",
+   "text": "Menace\nThis creature enters with six -1/-1 counters on it.\nWhenever one or more permanent cards are put into your graveyard from anywhere while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature."
+  },
+  {
+   "name": "Marauding Mako",
+   "cost": "{R}",
+   "type_line": "Creature — Shark Pirate",
+   "keywords": "Cycling",
+   "text": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Bloodghast",
+   "cost": "{B}{B}",
+   "type_line": "Creature — Vampire Spirit",
+   "keywords": "Landfall",
+   "text": "This creature can't block.\nThis creature has haste as long as an opponent has 10 or less life.\nLandfall — Whenever a land you control enters, you may return this card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker — Kaito",
+   "keywords": "Surveil, Ninjutsu",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n−2: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Blight",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Cut In",
+   "cost": "{3}{R}",
+   "type_line": "Sorcery",
+   "keywords": "Role token",
+   "text": "Cut In deals 4 damage to target creature.\nCreate a Young Hero Role token attached to up to one target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature has \"Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.\")"
+  },
+  {
+   "name": "Sheoldred's Edict",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Choose one —\n• Each opponent sacrifices a nontoken creature of their choice.\n• Each opponent sacrifices a creature token of their choice.\n• Each opponent sacrifices a planeswalker of their choice."
+  },
+  {
+   "name": "Final Vengeance",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "As an additional cost to cast this spell, sacrifice a creature or enchantment.\nExile target creature."
+  },
+  {
+   "name": "Hopeless Nightmare",
+   "cost": "{B}",
+   "type_line": "Enchantment",
+   "keywords": "Scry",
+   "text": "When this enchantment enters, each opponent discards a card and loses 2 life.\nWhen this enchantment is put into a graveyard from the battlefield, scry 2.\n{2}{B}: Sacrifice this enchantment."
+  },
+  {
+   "name": "The Aetherspark",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact Planeswalker — Equipment",
+   "keywords": "",
+   "text": "As long as The Aetherspark is attached to a creature, The Aetherspark can't be attacked and has \"Whenever equipped creature deals combat damage during your turn, put that many loyalty counters on The Aetherspark.\"\n+1: Attach The Aetherspark to up to one target creature you control. Put a +1/+1 counter on that creature.\n−5: Draw two cards.\n−10: Add ten mana of any one color."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Fetid Pools",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "Cycling",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Raucous Theater",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "Surveil",
+   "text": "({T}: Add {B} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Shattered Sanctum",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Sundown Pass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Bloodfell Caves",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Scoured Barrens",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Stock Up",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Go for the Throat",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Destroy target nonartifact creature."
+  }
+ ],
+ "list": [
+  [
+   "Moonshadow",
+   2
+  ],
+  [
+   "Marauding Mako",
+   2
+  ],
+  [
+   "Bloodghast",
+   2
+  ],
+  [
+   "Kaito, Bane of Nightmares",
+   2
+  ],
+  [
+   "Requiting Hex",
+   4
+  ],
+  [
+   "Cut In",
+   4
+  ],
+  [
+   "Sheoldred's Edict",
+   2
+  ],
+  [
+   "Final Vengeance",
+   4
+  ],
+  [
+   "Hopeless Nightmare",
+   4
+  ],
+  [
+   "The Aetherspark",
+   2
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Fetid Pools",
+   1
+  ],
+  [
+   "Raucous Theater",
+   2
+  ],
+  [
+   "Shattered Sanctum",
+   2
+  ],
+  [
+   "Sundown Pass",
+   2
+  ],
+  [
+   "Bloodfell Caves",
+   6
+  ],
+  [
+   "Scoured Barrens",
+   2
+  ],
+  [
+   "Swamp",
+   6
+  ],
+  [
+   "Mountain",
+   3
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Stock Up",
+   3
+  ],
+  [
+   "Go for the Throat",
+   3
+  ]
+ ]
+}

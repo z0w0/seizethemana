@@ -1,0 +1,963 @@
+{
+ "name": "alesha aristocrats",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Alesha, Who Smiles at Death",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Human Warrior",
+   "keywords": "[\"First strike\"]",
+   "text": "First strike\nWhenever Alesha attacks, you may pay {W/B}{W/B}. If you do, return target creature card with power 2 or less from your graveyard to the battlefield tapped and attacking."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Accursed Marauder",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Zombie Warrior",
+   "keywords": "[]",
+   "text": "When this creature enters, each player sacrifices a nontoken creature of their choice."
+  },
+  {
+   "name": "Alesha, Who Laughs at Fate",
+   "cost": "{1}{B}{R}",
+   "type_line": "Legendary Creature — Human Warrior",
+   "keywords": "[\"First strike\",\"Raid\"]",
+   "text": "First strike\nWhenever Alesha attacks, put a +1/+1 counter on it.\nRaid — At the beginning of your end step, if you attacked this turn, return target creature card with mana value less than or equal to Alesha's power from your graveyard to the battlefield."
+  },
+  {
+   "name": "Anafenza, Kin-Tree Spirit",
+   "cost": "{W}{W}",
+   "type_line": "Legendary Creature — Spirit Soldier",
+   "keywords": "[\"Bolster\"]",
+   "text": "Whenever another nontoken creature you control enters, bolster 1. (Choose a creature with the least toughness among creatures you control and put a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Anger",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Incarnation",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\nAs long as this card is in your graveyard and you control a Mountain, creatures you control have haste."
+  },
+  {
+   "name": "Arabella, Abandoned Doll",
+   "cost": "{R}{W}",
+   "type_line": "Legendary Artifact Creature — Toy",
+   "keywords": "[]",
+   "text": "Whenever Arabella attacks, it deals X damage to each opponent and you gain X life, where X is the number of creatures you control with power 2 or less."
+  },
+  {
+   "name": "Blood Artist",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Carrion Feeder",
+   "cost": "{B}",
+   "type_line": "Creature — Zombie",
+   "keywords": "[]",
+   "text": "This creature can't block.\nSacrifice a creature: Put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Cruel Celebrant",
+   "cost": "{W}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature or planeswalker you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Delney, Streetwise Lookout",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Human Scout",
+   "keywords": "[]",
+   "text": "Creatures you control with power 2 or less can't be blocked by creatures with power 3 or greater.\nIf a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time."
+  },
+  {
+   "name": "Elas il-Kor, Sadistic Pilgrim",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature — Phyrexian Kor Cleric",
+   "keywords": "[\"Deathtouch\"]",
+   "text": "Deathtouch\nWhenever another creature you control enters, you gain 1 life.\nWhenever another creature you control dies, each opponent loses 1 life."
+  },
+  {
+   "name": "Enduring Innocence",
+   "cost": "{1}{W}{W}",
+   "type_line": "Enchantment Creature — Sheep Glimmer",
+   "keywords": "[\"Lifelink\"]",
+   "text": "Lifelink\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.\nWhen Enduring Innocence dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Fiend Hunter",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "When this creature enters, you may exile another target creature.\nWhen this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control."
+  },
+  {
+   "name": "Gray Merchant of Asphodel",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Zombie",
+   "keywords": "[]",
+   "text": "When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way. (Each {B} in the mana costs of permanents you control counts toward your devotion to black.)"
+  },
+  {
+   "name": "Imperial Recruiter",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Advisor",
+   "keywords": "[]",
+   "text": "When this creature enters, search your library for a creature card with power 2 or less, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Judith, the Scourge Diva",
+   "cost": "{1}{B}{R}",
+   "type_line": "Legendary Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "Other creatures you control get +1/+0.\nWhenever a nontoken creature you control dies, Judith deals 1 damage to any target."
+  },
+  {
+   "name": "Karmic Guide",
+   "cost": "{3}{W}{W}",
+   "type_line": "Creature — Angel Spirit",
+   "keywords": "[\"Echo\",\"Flying\",\"Protection\"]",
+   "text": "Flying, protection from black\nEcho {3}{W}{W} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, return target creature card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Loran of the Third Path",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Human Artificer",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nWhen Loran enters, destroy up to one target artifact or enchantment.\n{T}: You and target opponent each draw a card."
+  },
+  {
+   "name": "Master of Cruelties",
+   "cost": "{3}{B}{R}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"First strike\",\"Deathtouch\"]",
+   "text": "First strike, deathtouch\nThis creature can only attack alone.\nWhenever this creature attacks a player and isn't blocked, that player's life total becomes 1. This creature assigns no combat damage this combat."
+  },
+  {
+   "name": "Mentor of the Meek",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Human Soldier",
+   "keywords": "[]",
+   "text": "Whenever another creature you control with power 2 or less enters, you may pay {1}. If you do, draw a card."
+  },
+  {
+   "name": "Murderous Redcap",
+   "cost": "{2}{B/R}{B/R}",
+   "type_line": "Creature — Goblin Assassin",
+   "keywords": "[\"Persist\"]",
+   "text": "When this creature enters, it deals damage equal to its power to any target.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)"
+  },
+  {
+   "name": "Professional Face-Breaker",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Warrior",
+   "keywords": "[\"Treasure\",\"Menace\"]",
+   "text": "Menace\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nSacrifice a Treasure: Exile the top card of your library. You may play that card this turn."
+  },
+  {
+   "name": "Ravenous Chupacabra",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Beast Horror",
+   "keywords": "[]",
+   "text": "When this creature enters, destroy target creature an opponent controls."
+  },
+  {
+   "name": "Reveillark",
+   "cost": "{4}{W}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Flying\",\"Evoke\"]",
+   "text": "Flying\nWhen this creature leaves the battlefield, return up to two target creature cards with power 2 or less from your graveyard to the battlefield.\nEvoke {5}{W} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"
+  },
+  {
+   "name": "Selfless Spirit",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Spirit Cleric",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nSacrifice this creature: Creatures you control gain indestructible until end of turn."
+  },
+  {
+   "name": "Siege-Gang Commander",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "When this creature enters, create three 1/1 red Goblin creature tokens.\n{1}{R}, Sacrifice a Goblin: This creature deals 2 damage to any target."
+  },
+  {
+   "name": "Snarling Gorehound",
+   "cost": "{B}",
+   "type_line": "Creature — Dog",
+   "keywords": "[\"Surveil\",\"Menace\"]",
+   "text": "Menace\nWhenever another creature you control with power 2 or less enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Solemn Simulacrum",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.\nWhen this creature dies, you may draw a card."
+  },
+  {
+   "name": "Vile Entomber",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Zombie Warlock",
+   "keywords": "[\"Deathtouch\"]",
+   "text": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nWhen this creature enters, search your library for a card, put that card into your graveyard, then shuffle."
+  },
+  {
+   "name": "Viscera Seer",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Wizard",
+   "keywords": "[\"Scry\"]",
+   "text": "Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Welcoming Vampire",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Witch Enchanter // Witch-Blessed Meadow",
+   "cost": "{3}{W} // ",
+   "type_line": "Creature — Human Warlock // Land",
+   "keywords": "[]",
+   "text": "When this creature enters, destroy target artifact or enchantment an opponent controls.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {W}."
+  },
+  {
+   "name": "Yahenni, Undying Partisan",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Creature — Aetherborn Vampire",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\nWhenever a creature an opponent controls dies, put a +1/+1 counter on Yahenni.\nSacrifice another creature: Yahenni gains indestructible until end of turn."
+  },
+  {
+   "name": "Zulaport Cutthroat",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Human Rogue Ally",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Anguished Unmaking",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target nonland permanent. You lose 3 life."
+  },
+  {
+   "name": "Boros Charm",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn."
+  },
+  {
+   "name": "Deadly Dispute",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Entomb",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your graveyard, then shuffle."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Thrill of Possibility",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, discard a card.\nDraw two cards."
+  },
+  {
+   "name": "Village Rites",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards."
+  },
+  {
+   "name": "Buried Alive",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to three creature cards, put them into your graveyard, then shuffle."
+  },
+  {
+   "name": "Cathartic Reunion",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, discard two cards.\nDraw three cards."
+  },
+  {
+   "name": "Dusk // Dawn",
+   "cost": "{2}{W}{W} // {3}{W}{W}",
+   "type_line": "Sorcery // Sorcery",
+   "keywords": "[\"Aftermath\"]",
+   "text": "Destroy all creatures with power 3 or greater.\n// Aftermath (Cast this spell only from your graveyard. Then exile it.)\nReturn all creature cards with power 2 or less from your graveyard to your hand."
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Reanimate",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Ruinous Ultimatum",
+   "cost": "{R}{R}{W}{W}{W}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all nonland permanents your opponents control."
+  },
+  {
+   "name": "Thrilling Discovery",
+   "cost": "{R}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You gain 2 life. Then you may discard two cards. If you do, draw three cards."
+  },
+  {
+   "name": "Victimize",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Key to the City",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Discard a card: Up to one target creature can't be blocked this turn.\nWhenever this artifact becomes untapped, you may pay {2}. If you do, draw a card."
+  },
+  {
+   "name": "Lightning Greaves",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}"
+  },
+  {
+   "name": "Orzhov Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {W}{B}."
+  },
+  {
+   "name": "Rakdos Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {B}{R}."
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Talisman of Conviction",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {W}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Talisman of Hierarchy",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Assemble the Players",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may look at the top card of your library any time.\nOnce each turn, you may cast a creature spell with power 2 or less from the top of your library."
+  },
+  {
+   "name": "Bastion of Remembrance",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, create a 1/1 white Human Soldier creature token.\nWhenever a creature you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Goblin Bombardment",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+  },
+  {
+   "name": "Impact Tremors",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent."
+  },
+  {
+   "name": "Reconnaissance",
+   "cost": "{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "{0}: Remove target attacking creature you control from combat and untap it. (If you activate during end of combat, the creature will untap after it deals combat damage.)"
+  },
+  {
+   "name": "Smile at Death",
+   "cost": "{3}{W}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, return up to two target creature cards with power 2 or less from your graveyard to the battlefield. Put a +1/+1 counter on each of those creatures."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Battlefield Forge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {W}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Caves of Koilos",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Clifftop Retreat",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Mountain or a Plains.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Dragonskull Summit",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Evolving Wilds",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Isolated Chapel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nomad Outpost",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {R}, {W}, or {B}."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Rogue's Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{4}, {T}: Target creature can't be blocked this turn."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Savai Triome",
+   "cost": "",
+   "type_line": "Land — Mountain Plains Swamp",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {R}, {W}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Smoldering Marsh",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Vault of Champions",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {B}."
+  }
+ ],
+ "list": [
+  [
+   "Accursed Marauder",
+   1
+  ],
+  [
+   "Alesha, Who Laughs at Fate",
+   1
+  ],
+  [
+   "Anafenza, Kin-Tree Spirit",
+   1
+  ],
+  [
+   "Anger",
+   1
+  ],
+  [
+   "Arabella, Abandoned Doll",
+   1
+  ],
+  [
+   "Blood Artist",
+   1
+  ],
+  [
+   "Carrion Feeder",
+   1
+  ],
+  [
+   "Cruel Celebrant",
+   1
+  ],
+  [
+   "Delney, Streetwise Lookout",
+   1
+  ],
+  [
+   "Elas il-Kor, Sadistic Pilgrim",
+   1
+  ],
+  [
+   "Enduring Innocence",
+   1
+  ],
+  [
+   "Fiend Hunter",
+   1
+  ],
+  [
+   "Gray Merchant of Asphodel",
+   1
+  ],
+  [
+   "Imperial Recruiter",
+   1
+  ],
+  [
+   "Judith, the Scourge Diva",
+   1
+  ],
+  [
+   "Karmic Guide",
+   1
+  ],
+  [
+   "Loran of the Third Path",
+   1
+  ],
+  [
+   "Master of Cruelties",
+   1
+  ],
+  [
+   "Mentor of the Meek",
+   1
+  ],
+  [
+   "Murderous Redcap",
+   1
+  ],
+  [
+   "Professional Face-Breaker",
+   1
+  ],
+  [
+   "Ravenous Chupacabra",
+   1
+  ],
+  [
+   "Reveillark",
+   1
+  ],
+  [
+   "Selfless Spirit",
+   1
+  ],
+  [
+   "Siege-Gang Commander",
+   1
+  ],
+  [
+   "Snarling Gorehound",
+   1
+  ],
+  [
+   "Solemn Simulacrum",
+   1
+  ],
+  [
+   "Vile Entomber",
+   1
+  ],
+  [
+   "Viscera Seer",
+   1
+  ],
+  [
+   "Welcoming Vampire",
+   1
+  ],
+  [
+   "Witch Enchanter // Witch-Blessed Meadow",
+   1
+  ],
+  [
+   "Yahenni, Undying Partisan",
+   1
+  ],
+  [
+   "Zulaport Cutthroat",
+   1
+  ],
+  [
+   "Anguished Unmaking",
+   1
+  ],
+  [
+   "Boros Charm",
+   1
+  ],
+  [
+   "Deadly Dispute",
+   1
+  ],
+  [
+   "Entomb",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Thrill of Possibility",
+   1
+  ],
+  [
+   "Village Rites",
+   1
+  ],
+  [
+   "Buried Alive",
+   1
+  ],
+  [
+   "Cathartic Reunion",
+   1
+  ],
+  [
+   "Dusk // Dawn",
+   1
+  ],
+  [
+   "Faithless Looting",
+   1
+  ],
+  [
+   "Reanimate",
+   1
+  ],
+  [
+   "Ruinous Ultimatum",
+   1
+  ],
+  [
+   "Thrilling Discovery",
+   1
+  ],
+  [
+   "Victimize",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Key to the City",
+   1
+  ],
+  [
+   "Lightning Greaves",
+   1
+  ],
+  [
+   "Orzhov Signet",
+   1
+  ],
+  [
+   "Rakdos Signet",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Talisman of Conviction",
+   1
+  ],
+  [
+   "Talisman of Hierarchy",
+   1
+  ],
+  [
+   "Assemble the Players",
+   1
+  ],
+  [
+   "Bastion of Remembrance",
+   1
+  ],
+  [
+   "Goblin Bombardment",
+   1
+  ],
+  [
+   "Impact Tremors",
+   1
+  ],
+  [
+   "Reconnaissance",
+   1
+  ],
+  [
+   "Smile at Death",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Battlefield Forge",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Caves of Koilos",
+   1
+  ],
+  [
+   "Clifftop Retreat",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Dragonskull Summit",
+   1
+  ],
+  [
+   "Evolving Wilds",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Isolated Chapel",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Mountain",
+   4
+  ],
+  [
+   "Nomad Outpost",
+   1
+  ],
+  [
+   "Plains",
+   6
+  ],
+  [
+   "Rogue's Passage",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Savai Triome",
+   1
+  ],
+  [
+   "Smoldering Marsh",
+   1
+  ],
+  [
+   "Swamp",
+   6
+  ],
+  [
+   "Vault of Champions",
+   1
+  ]
+ ]
+}

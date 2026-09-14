@@ -1,0 +1,229 @@
+{
+ "name": "hammer-time",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Puresteel Paladin",
+   "cost": "{W}{W}",
+   "type_line": "Creature — Human Knight",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Whenever an Equipment you control enters, you may draw a card.\nMetalcraft — Equipment you control have equip {0} as long as you control three or more artifacts."
+  },
+  {
+   "name": "Stoneforge Mystic",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Kor Artificer",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for an Equipment card, reveal it, put it into your hand, then shuffle.\n{1}{W}, {T}: You may put an Equipment card from your hand onto the battlefield."
+  },
+  {
+   "name": "Kíli the Resourceful",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature — Dwarf Scout",
+   "keywords": "[\"Storied\"]",
+   "text": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.\nWhenever another Dwarf or Equipment you control enters, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Ornithopter",
+   "cost": "{0}",
+   "type_line": "Artifact Creature — Thopter",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying"
+  },
+  {
+   "name": "Memnite",
+   "cost": "{0}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": ""
+  },
+  {
+   "name": "Colossus Hammer",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +10/+10 and loses flying.\nEquip {8} ({8}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Leyline Axe",
+   "cost": "{4}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEquipped creature gets +1/+1 and has double strike and trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Metallic Rebuke",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nCounter target spell unless its controller pays {3}."
+  },
+  {
+   "name": "Super-Soldier Serum",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +2/+2, has first strike and vigilance, and is a legendary Soldier in addition to its other types.\nWhenever enchanted creature attacks or blocks, attach any number of target Equipment you control to it."
+  },
+  {
+   "name": "Shadowspear",
+   "cost": "{1}",
+   "type_line": "Legendary Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/+1 and has trample and lifelink.\n{1}: Permanents your opponents control lose hexproof and indestructible until end of turn.\nEquip {2}"
+  },
+  {
+   "name": "Lavaspur Boots",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/+0 and has haste and ward {1}. (Whenever it becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}.)\nEquip {1}"
+  },
+  {
+   "name": "Cryptic Coat",
+   "cost": "{2}{U}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Cloak\"]",
+   "text": "When this Equipment enters, cloak the top card of your library, then attach this Equipment to it. (To cloak a card, put it onto the battlefield face down as a 2/2 creature with ward {2}. Turn it face up any time for its mana cost if it's a creature card.)\nEquipped creature gets +1/+0 and can't be blocked.\n{1}{U}: Return this Equipment to its owner's hand."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Meticulous Archive",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Inkmoth Nexus",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}: This land becomes a 1/1 Phyrexian Blinkmoth artifact creature with flying and infect until end of turn. It's still a land. (It deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)"
+  }
+ ],
+ "list": [
+  [
+   "Puresteel Paladin",
+   4
+  ],
+  [
+   "Stoneforge Mystic",
+   4
+  ],
+  [
+   "Kíli the Resourceful",
+   4
+  ],
+  [
+   "Ornithopter",
+   4
+  ],
+  [
+   "Memnite",
+   3
+  ],
+  [
+   "Colossus Hammer",
+   4
+  ],
+  [
+   "Leyline Axe",
+   4
+  ],
+  [
+   "Metallic Rebuke",
+   4
+  ],
+  [
+   "Super-Soldier Serum",
+   2
+  ],
+  [
+   "Shadowspear",
+   1
+  ],
+  [
+   "Lavaspur Boots",
+   1
+  ],
+  [
+   "Cryptic Coat",
+   1
+  ],
+  [
+   "Urza's Saga",
+   4
+  ],
+  [
+   "Mox Opal",
+   4
+  ],
+  [
+   "Arid Mesa",
+   4
+  ],
+  [
+   "Windswept Heath",
+   4
+  ],
+  [
+   "Hallowed Fountain",
+   2
+  ],
+  [
+   "Meticulous Archive",
+   2
+  ],
+  [
+   "Plains",
+   2
+  ],
+  [
+   "Inkmoth Nexus",
+   2
+  ]
+ ]
+}

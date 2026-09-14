@@ -1,0 +1,174 @@
+{
+ "name": "ruby-storm",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Ruby Medallion",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "Red spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Desperate Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant — Arcane",
+   "keywords": "Splice",
+   "text": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)"
+  },
+  {
+   "name": "Manamorphose",
+   "cost": "{1}{R/G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Add two mana in any combination of colors.\nDraw a card."
+  },
+  {
+   "name": "Ral, Monsoon Mage // Ral, Leyline Prodigy",
+   "cost": "{1}{R} // ",
+   "type_line": "Legendary Creature — Human Wizard // Legendary Planeswalker — Ral",
+   "keywords": "Transform",
+   "text": "Instant and sorcery spells you cast cost {1} less to cast.\nWhenever you cast an instant or sorcery spell during your turn, flip a coin. If you lose the flip, Ral deals 1 damage to you. If you win the flip, you may exile Ral. If you do, return him to the battlefield transformed under his owner's control.\n// Ral enters with an additional loyalty counter on him for each instant and sorcery spell you've cast this turn.\n+1: Until your next turn, instant and sorcery spells you cast cost {1} less to cast.\n−2: Ral deals 2 damage divided as you choose among one or two targets. Draw a card if you cont…"
+  },
+  {
+   "name": "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   "cost": "{2}{R} // {4}{R}",
+   "type_line": "Legendary Creature — God // Legendary Artifact",
+   "keywords": "",
+   "text": "Whenever you cast a spell, add {R}. Until end of turn, you don't lose this mana as steps and phases end.\nCreatures you control can boast twice during each of your turns rather than once.\n// Discard a card: Exile the top two cards of your library. You may play those cards this turn."
+  },
+  {
+   "name": "Goblin Dark-Dwellers",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "Menace",
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead."
+  },
+  {
+   "name": "Burning Inquiry",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Each player draws three cards, then discards three cards at random."
+  },
+  {
+   "name": "Crimson Wisps",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Target creature becomes red and gains haste until end of turn. (It can attack and {T} this turn.)\nDraw a card."
+  },
+  {
+   "name": "Galvanic Discharge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Fiery Islet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Sunbaked Canyon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life: Add {R} or {W}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Inspiring Vantage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Pyretic Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Add {R}{R}{R}."
+  },
+  {
+   "name": "Rite of Flame",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Add {R}{R}, then add {R} for each card named Rite of Flame in each graveyard."
+  }
+ ],
+ "list": [
+  [
+   "Ruby Medallion",
+   4
+  ],
+  [
+   "Desperate Ritual",
+   4
+  ],
+  [
+   "Manamorphose",
+   4
+  ],
+  [
+   "Ral, Monsoon Mage // Ral, Leyline Prodigy",
+   4
+  ],
+  [
+   "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   2
+  ],
+  [
+   "Goblin Dark-Dwellers",
+   2
+  ],
+  [
+   "Burning Inquiry",
+   4
+  ],
+  [
+   "Crimson Wisps",
+   4
+  ],
+  [
+   "Galvanic Discharge",
+   4
+  ],
+  [
+   "Mountain",
+   14
+  ],
+  [
+   "Fiery Islet",
+   2
+  ],
+  [
+   "Sunbaked Canyon",
+   2
+  ],
+  [
+   "Inspiring Vantage",
+   2
+  ],
+  [
+   "Pyretic Ritual",
+   4
+  ],
+  [
+   "Rite of Flame",
+   4
+  ]
+ ]
+}

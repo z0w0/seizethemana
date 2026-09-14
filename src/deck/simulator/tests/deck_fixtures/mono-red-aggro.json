@@ -1,0 +1,196 @@
+{
+ "name": "mono-red-aggro",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Heartfire Hero",
+   "cost": "{R}",
+   "type_line": "Creature — Mouse Soldier",
+   "keywords": "Valiant",
+   "text": "Valiant — Whenever this creature becomes the target of a spell or ability you control for the first time each turn, put a +1/+1 counter on it.\nWhen this creature dies, it deals damage equal to its power to each opponent."
+  },
+  {
+   "name": "Emberheart Challenger",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Mouse Warrior",
+   "keywords": "Prowess, Valiant, Haste",
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nValiant — Whenever this creature becomes the target of a spell or ability you control for the first time each turn, exile the top card of your library. Until end of turn, you may play that card."
+  },
+  {
+   "name": "Manifold Mouse",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Mouse Soldier",
+   "keywords": "Offspring",
+   "text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nAt the beginning of combat on your turn, target Mouse you control gains your choice of double strike or trample until end of turn."
+  },
+  {
+   "name": "Razorkin Needlehead",
+   "cost": "{R}{R}",
+   "type_line": "Creature — Human Assassin",
+   "keywords": "",
+   "text": "This creature has first strike during your turn.\nWhenever an opponent draws a card, this creature deals 1 damage to them."
+  },
+  {
+   "name": "Marauding Mako",
+   "cost": "{R}",
+   "type_line": "Creature — Shark Pirate",
+   "keywords": "Cycling",
+   "text": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Embereth Veteran",
+   "cost": "{R}",
+   "type_line": "Creature — Human Knight",
+   "keywords": "Role token",
+   "text": "{1}, Sacrifice this creature: Create a Young Hero Role token attached to another target creature. (If you control another Role on it, put that one into the graveyard. Enchanted creature has \"Whenever this creature attacks, if its toughness is 3 or less, put a +1/+1 counter on it.\")"
+  },
+  {
+   "name": "Screaming Nemesis",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Spirit",
+   "keywords": "Haste",
+   "text": "Haste\nWhenever this creature is dealt damage, it deals that much damage to any other target. If a player is dealt damage this way, they can't gain life for the rest of the game."
+  },
+  {
+   "name": "Stormsplitter",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Otter Wizard",
+   "keywords": "Haste",
+   "text": "Haste\nWhenever you cast an instant or sorcery spell, create a token that's a copy of this creature. Exile that token at the beginning of the next end step."
+  },
+  {
+   "name": "Nova Hellkite",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "Flying, Haste, Warp",
+   "text": "Flying, haste\nWhen this creature enters, it deals 1 damage to target creature an opponent controls.\nWarp {2}{R} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Hired Claw",
+   "cost": "{R}",
+   "type_line": "Creature — Lizard Mercenary",
+   "keywords": "",
+   "text": "Whenever you attack with one or more Lizards, this creature deals 1 damage to target opponent.\n{1}{R}: Put a +1/+1 counter on this creature. Activate only if an opponent lost life this turn and only once each turn."
+  },
+  {
+   "name": "Fleeting Effigy",
+   "cost": "{R}",
+   "type_line": "Creature — Elemental",
+   "keywords": "Haste",
+   "text": "Haste\nAt the beginning of your end step, return this creature to its owner's hand. (Return it only if it's on the battlefield.)\n{2}{R}: This creature gets +2/+0 until end of turn."
+  },
+  {
+   "name": "Burnout Bashtronaut",
+   "cost": "{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "Max speed, Menace, Start your engines!",
+   "text": "Menace\nStart your engines! (If you have no speed, it starts at 1. It increases once on each of your turns when an opponent loses life. Max speed is 4.)\n{2}: This creature gets +1/+0 until end of turn.\nMax speed — This creature has double strike."
+  },
+  {
+   "name": "Sunspine Lynx",
+   "cost": "{2}{R}{R}",
+   "type_line": "Creature — Elemental Cat",
+   "keywords": "",
+   "text": "Players can't gain life.\nDamage can't be prevented.\nWhen this creature enters, it deals damage to each player equal to the number of nonbasic lands that player controls."
+  },
+  {
+   "name": "Cori Mountain Monastery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {R}.\n{3}{R}, {T}: Exile the top card of your library. Until the end of your next turn, you may play that card."
+  },
+  {
+   "name": "Gnottvold Slumbermound",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped.\n{T}: Add {R}.\n{3}{R}{G}{G}, {T}, Sacrifice this land: Destroy target land. Create a 4/4 green Troll Warrior creature token with trample."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Monastery Swiftspear",
+   "cost": "{R}",
+   "type_line": "Creature — Human Monk",
+   "keywords": "Prowess, Haste",
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)"
+  }
+ ],
+ "list": [
+  [
+   "Heartfire Hero",
+   4
+  ],
+  [
+   "Emberheart Challenger",
+   4
+  ],
+  [
+   "Manifold Mouse",
+   4
+  ],
+  [
+   "Razorkin Needlehead",
+   4
+  ],
+  [
+   "Marauding Mako",
+   3
+  ],
+  [
+   "Embereth Veteran",
+   4
+  ],
+  [
+   "Screaming Nemesis",
+   2
+  ],
+  [
+   "Stormsplitter",
+   2
+  ],
+  [
+   "Nova Hellkite",
+   2
+  ],
+  [
+   "Hired Claw",
+   1
+  ],
+  [
+   "Fleeting Effigy",
+   3
+  ],
+  [
+   "Burnout Bashtronaut",
+   4
+  ],
+  [
+   "Sunspine Lynx",
+   1
+  ],
+  [
+   "Cori Mountain Monastery",
+   1
+  ],
+  [
+   "Gnottvold Slumbermound",
+   1
+  ],
+  [
+   "Mountain",
+   16
+  ],
+  [
+   "Monastery Swiftspear",
+   4
+  ]
+ ]
+}

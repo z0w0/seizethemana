@@ -1,0 +1,974 @@
+{
+ "name": "edgar markov vampires",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Edgar Markov",
+   "cost": "{3}{R}{W}{B}",
+   "type_line": "Legendary Creature — Vampire Knight",
+   "keywords": "[\"First strike\",\"Haste\",\"Eminence\"]",
+   "text": "Eminence — Whenever you cast another Vampire spell, if Edgar is in the command zone or on the battlefield, create a 1/1 black Vampire creature token.\nFirst strike, haste\nWhenever Edgar attacks, put a +1/+1 counter on each Vampire you control."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Blood Artist",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Bloodletter of Aclazotz",
+   "cost": "{1}{B}{B}{B}",
+   "type_line": "Creature — Vampire Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nIf an opponent would lose life during your turn, they lose twice that much life instead. (Damage causes loss of life.)"
+  },
+  {
+   "name": "Bloodline Keeper // Lord of Lineage",
+   "cost": "{2}{B}{B} // ",
+   "type_line": "Creature — Vampire // Creature — Vampire",
+   "keywords": "[\"Flying\",\"Transform\"]",
+   "text": "Flying\n{T}: Create a 2/2 black Vampire creature token with flying.\n{B}: Transform this creature. Activate only if you control five or more Vampires.\n// Flying\nOther Vampire creatures you control get +2/+2.\n{T}: Create a 2/2 black Vampire creature token with flying."
+  },
+  {
+   "name": "Bloodthirsty Conqueror",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[\"Deathtouch\",\"Flying\"]",
+   "text": "Flying, deathtouch\nWhenever an opponent loses life, you gain that much life. (Damage causes loss of life.)"
+  },
+  {
+   "name": "Captivating Vampire",
+   "cost": "{1}{B}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Other Vampire creatures you control get +1/+1.\nTap five untapped Vampires you control: Gain control of target creature. It becomes a Vampire in addition to its other types."
+  },
+  {
+   "name": "Champion of Dusk",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[]",
+   "text": "When this creature enters, you draw X cards and you lose X life, where X is the number of Vampires you control."
+  },
+  {
+   "name": "Charismatic Conqueror",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Vampire Soldier",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nWhenever an artifact or creature an opponent controls enters untapped, they may tap that permanent. If they don't, you create a 1/1 white Vampire creature token with lifelink."
+  },
+  {
+   "name": "Clavileño, First of the Blessed",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature — Vampire Cleric",
+   "keywords": "[]",
+   "text": "Whenever you attack, target attacking Vampire that isn't a Demon becomes a Demon in addition to its other types. It gains \"When this creature dies, draw a card and create a tapped 4/3 white and black Vampire Demon creature token with flying.\""
+  },
+  {
+   "name": "Cordial Vampire",
+   "cost": "{B}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature dies, put a +1/+1 counter on each Vampire you control."
+  },
+  {
+   "name": "Cruel Celebrant",
+   "cost": "{W}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature or planeswalker you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Drana, Liberator of Malakir",
+   "cost": "{1}{B}{B}",
+   "type_line": "Legendary Creature — Vampire Ally",
+   "keywords": "[\"Flying\",\"First strike\"]",
+   "text": "Flying, first strike\nWhenever Drana deals combat damage to a player, put a +1/+1 counter on each attacking creature you control."
+  },
+  {
+   "name": "Edgar, Charmed Groom // Edgar Markov's Coffin",
+   "cost": "{2}{W}{B} // ",
+   "type_line": "Legendary Creature — Vampire Noble // Legendary Artifact",
+   "keywords": "[\"Transform\"]",
+   "text": "Other Vampires you control get +1/+1.\nWhen Edgar dies, return it to the battlefield transformed under its owner's control.\n// At the beginning of your upkeep, create a 1/1 white and black Vampire creature token with lifelink and put a bloodline counter on Edgar Markov's Coffin. Then if there are three or more bloodline counters on it, remove those counters and transform it."
+  },
+  {
+   "name": "Elenda, the Dusk Rose",
+   "cost": "{2}{W}{B}",
+   "type_line": "Legendary Creature — Vampire Knight",
+   "keywords": "[\"Lifelink\"]",
+   "text": "Lifelink\nWhenever another creature dies, put a +1/+1 counter on Elenda.\nWhen Elenda dies, create X 1/1 white Vampire creature tokens with lifelink, where X is Elenda's power."
+  },
+  {
+   "name": "Forerunner of the Legion",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a Vampire card, reveal it, then shuffle and put that card on top.\nWhenever another Vampire you control enters, target creature gets +1/+1 until end of turn."
+  },
+  {
+   "name": "Indulgent Aristocrat",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Noble",
+   "keywords": "[\"Lifelink\"]",
+   "text": "Lifelink\n{2}, Sacrifice a creature: Put a +1/+1 counter on each Vampire you control."
+  },
+  {
+   "name": "Knight of the Ebon Legion",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[]",
+   "text": "{2}{B}: This creature gets +3/+3 and gains deathtouch until end of turn.\nAt the beginning of your end step, if a player lost 4 or more life this turn, put a +1/+1 counter on this creature. (Damage causes loss of life.)"
+  },
+  {
+   "name": "Legion Lieutenant",
+   "cost": "{W}{B}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[]",
+   "text": "Other Vampires you control get +1/+1."
+  },
+  {
+   "name": "Malakir Bloodwitch",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Vampire Shaman",
+   "keywords": "[\"Flying\",\"Protection\"]",
+   "text": "Flying, protection from white\nWhen this creature enters, each opponent loses life equal to the number of Vampires you control. You gain life equal to the life lost this way."
+  },
+  {
+   "name": "Markov Baron",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Vampire Noble",
+   "keywords": "[\"Lifelink\",\"Madness\",\"Convoke\"]",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nLifelink\nOther Vampires you control get +1/+1.\nMadness {2}{B} (If you discard this card, discard it into exile. When you do, cast it for its madness cost or put it into your graveyard.)"
+  },
+  {
+   "name": "Master of Dark Rites",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Cleric",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice another creature: Add {B}{B}{B}. Spend this mana only to cast Vampire, Cleric, and/or Demon spells."
+  },
+  {
+   "name": "Mavren Fein, Dusk Apostle",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Vampire Cleric",
+   "keywords": "[]",
+   "text": "Whenever one or more nontoken Vampires you control attack, create a 1/1 white Vampire creature token with lifelink."
+  },
+  {
+   "name": "Patron of the Vein",
+   "cost": "{4}{B}{B}",
+   "type_line": "Creature — Vampire Shaman",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, destroy target creature an opponent controls.\nWhenever a creature an opponent controls dies, exile it and put a +1/+1 counter on each Vampire you control."
+  },
+  {
+   "name": "Sanctum Seeker",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Vampire Knight",
+   "keywords": "[]",
+   "text": "Whenever a Vampire you control attacks, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Stromkirk Captain",
+   "cost": "{1}{B}{R}",
+   "type_line": "Creature — Vampire Soldier",
+   "keywords": "[\"First strike\"]",
+   "text": "First strike\nOther Vampire creatures you control get +1/+1 and have first strike."
+  },
+  {
+   "name": "Twilight Prophet",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Vampire Cleric",
+   "keywords": "[\"Flying\",\"Ascend\"]",
+   "text": "Flying\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your upkeep, if you have the city's blessing, reveal the top card of your library and put it into your hand. Each opponent loses X life and you gain X life, where X is that card's mana value."
+  },
+  {
+   "name": "Vampire Nighthawk",
+   "cost": "{1}{B}{B}",
+   "type_line": "Creature — Vampire Shaman",
+   "keywords": "[\"Deathtouch\",\"Flying\",\"Lifelink\"]",
+   "text": "Flying\nDeathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)"
+  },
+  {
+   "name": "Vampire Socialite",
+   "cost": "{B}{R}",
+   "type_line": "Creature — Vampire Noble",
+   "keywords": "[\"Menace\"]",
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, if an opponent lost life this turn, put a +1/+1 counter on each other Vampire you control.\nAs long as an opponent lost life this turn, each other Vampire you control enters with an additional +1/+1 counter on it."
+  },
+  {
+   "name": "Vampire of the Dire Moon",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[\"Lifelink\",\"Deathtouch\"]",
+   "text": "Deathtouch (Any amount of damage this deals to a creature is enough to destroy it.)\nLifelink (Damage dealt by this creature also causes you to gain that much life.)"
+  },
+  {
+   "name": "Vengeful Bloodwitch",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Vampire Warlock",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature you control dies, target opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Viscera Seer",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Wizard",
+   "keywords": "[\"Scry\"]",
+   "text": "Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Vito, Thorn of the Dusk Rose",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Creature — Vampire Cleric",
+   "keywords": "[]",
+   "text": "Whenever you gain life, target opponent loses that much life.\n{3}{B}{B}: Creatures you control gain lifelink until end of turn."
+  },
+  {
+   "name": "Welcoming Vampire",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Yahenni, Undying Partisan",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Creature — Aetherborn Vampire",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\nWhenever a creature an opponent controls dies, put a +1/+1 counter on Yahenni.\nSacrifice another creature: Yahenni gains indestructible until end of turn."
+  },
+  {
+   "name": "Anguished Unmaking",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target nonland permanent. You lose 3 life."
+  },
+  {
+   "name": "Boros Charm",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn."
+  },
+  {
+   "name": "Dark Ritual",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {B}{B}{B}."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Teferi's Protection",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection."
+  },
+  {
+   "name": "Vampiric Tutor",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life."
+  },
+  {
+   "name": "Village Rites",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards."
+  },
+  {
+   "name": "Damn",
+   "cost": "{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Overload\"]",
+   "text": "Destroy target creature. A creature destroyed this way can't be regenerated.\nOverload {2}{W}{W} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Demonic Tutor",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "New Blood",
+   "cost": "{2}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, tap an untapped Vampire you control.\nGain control of target creature. Change the text of that creature by replacing all instances of one creature type with Vampire."
+  },
+  {
+   "name": "Olivia's Wrath",
+   "cost": "{4}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each non-Vampire creature gets -X/-X until end of turn, where X is the number of Vampires you control."
+  },
+  {
+   "name": "Pact of the Serpent",
+   "cost": "{1}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose a creature type. Target player draws X cards and loses X life, where X is the number of creatures they control of the chosen type."
+  },
+  {
+   "name": "Ruinous Ultimatum",
+   "cost": "{R}{R}{W}{W}{W}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all nonland permanents your opponents control."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Blade of the Bloodchief",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Whenever a creature dies, put a +1/+1 counter on equipped creature. If equipped creature is a Vampire, put two +1/+1 counters on it instead.\nEquip {1}"
+  },
+  {
+   "name": "Herald's Horn",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
+  },
+  {
+   "name": "Orzhov Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {W}{B}."
+  },
+  {
+   "name": "Rakdos Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {B}{R}."
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Talisman of Hierarchy",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Vanquisher's Banner",
+   "cost": "{5}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a creature type.\nCreatures you control of the chosen type get +1/+1.\nWhenever you cast a creature spell of the chosen type, draw a card."
+  },
+  {
+   "name": "Anointed Procession",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead."
+  },
+  {
+   "name": "Black Market Connections",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Hire a Mercenary\",\"Treasure\",\"Sell Contraband\",\"Buy Information\"]",
+   "text": "At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life. (It is every creature type.)"
+  },
+  {
+   "name": "Exquisite Blood",
+   "cost": "{4}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent loses life, you gain that much life."
+  },
+  {
+   "name": "Phyrexian Arena",
+   "cost": "{1}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, you draw a card and you lose 1 life."
+  },
+  {
+   "name": "Sanguine Bond",
+   "cost": "{3}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever you gain life, target opponent loses that much life."
+  },
+  {
+   "name": "Shared Animosity",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control attacks, it gets +1/+0 until end of turn for each other attacking creature that shares a creature type with it."
+  },
+  {
+   "name": "Sorin, Imperious Bloodlord",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Planeswalker — Sorin",
+   "keywords": "[]",
+   "text": "+1: Target creature you control gains deathtouch and lifelink until end of turn. If it's a Vampire, put a +1/+1 counter on it.\n+1: You may sacrifice a Vampire. When you do, Sorin deals 3 damage to any target and you gain 3 life.\n−3: You may put a Vampire creature card from your hand onto the battlefield."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bojuka Bog",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, exile target player's graveyard.\n{T}: Add {B}."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Caves of Koilos",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Dragonskull Summit",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Isolated Chapel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Luxury Suite",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nomad Outpost",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {R}, {W}, or {B}."
+  },
+  {
+   "name": "Path of Ancestry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Savai Triome",
+   "cost": "",
+   "type_line": "Land — Mountain Plains Swamp",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {R}, {W}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Secluded Courtyard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Unclaimed Territory",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type."
+  },
+  {
+   "name": "Vault of Champions",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Vault of the Archangel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}{W}{B}, {T}: Creatures you control gain deathtouch and lifelink until end of turn."
+  },
+  {
+   "name": "Voldaren Estate",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Spend this mana only to cast a Vampire spell.\n{5}, {T}: Create a Blood token. This ability costs {1} less to activate for each Vampire you control. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")"
+  }
+ ],
+ "list": [
+  [
+   "Blood Artist",
+   1
+  ],
+  [
+   "Bloodletter of Aclazotz",
+   1
+  ],
+  [
+   "Bloodline Keeper // Lord of Lineage",
+   1
+  ],
+  [
+   "Bloodthirsty Conqueror",
+   1
+  ],
+  [
+   "Captivating Vampire",
+   1
+  ],
+  [
+   "Champion of Dusk",
+   1
+  ],
+  [
+   "Charismatic Conqueror",
+   1
+  ],
+  [
+   "Clavileño, First of the Blessed",
+   1
+  ],
+  [
+   "Cordial Vampire",
+   1
+  ],
+  [
+   "Cruel Celebrant",
+   1
+  ],
+  [
+   "Drana, Liberator of Malakir",
+   1
+  ],
+  [
+   "Edgar, Charmed Groom // Edgar Markov's Coffin",
+   1
+  ],
+  [
+   "Elenda, the Dusk Rose",
+   1
+  ],
+  [
+   "Forerunner of the Legion",
+   1
+  ],
+  [
+   "Indulgent Aristocrat",
+   1
+  ],
+  [
+   "Knight of the Ebon Legion",
+   1
+  ],
+  [
+   "Legion Lieutenant",
+   1
+  ],
+  [
+   "Malakir Bloodwitch",
+   1
+  ],
+  [
+   "Markov Baron",
+   1
+  ],
+  [
+   "Master of Dark Rites",
+   1
+  ],
+  [
+   "Mavren Fein, Dusk Apostle",
+   1
+  ],
+  [
+   "Patron of the Vein",
+   1
+  ],
+  [
+   "Sanctum Seeker",
+   1
+  ],
+  [
+   "Stromkirk Captain",
+   1
+  ],
+  [
+   "Twilight Prophet",
+   1
+  ],
+  [
+   "Vampire Nighthawk",
+   1
+  ],
+  [
+   "Vampire Socialite",
+   1
+  ],
+  [
+   "Vampire of the Dire Moon",
+   1
+  ],
+  [
+   "Vengeful Bloodwitch",
+   1
+  ],
+  [
+   "Viscera Seer",
+   1
+  ],
+  [
+   "Vito, Thorn of the Dusk Rose",
+   1
+  ],
+  [
+   "Welcoming Vampire",
+   1
+  ],
+  [
+   "Yahenni, Undying Partisan",
+   1
+  ],
+  [
+   "Anguished Unmaking",
+   1
+  ],
+  [
+   "Boros Charm",
+   1
+  ],
+  [
+   "Dark Ritual",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Teferi's Protection",
+   1
+  ],
+  [
+   "Vampiric Tutor",
+   1
+  ],
+  [
+   "Village Rites",
+   1
+  ],
+  [
+   "Damn",
+   1
+  ],
+  [
+   "Demonic Tutor",
+   1
+  ],
+  [
+   "New Blood",
+   1
+  ],
+  [
+   "Olivia's Wrath",
+   1
+  ],
+  [
+   "Pact of the Serpent",
+   1
+  ],
+  [
+   "Ruinous Ultimatum",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Blade of the Bloodchief",
+   1
+  ],
+  [
+   "Herald's Horn",
+   1
+  ],
+  [
+   "Orzhov Signet",
+   1
+  ],
+  [
+   "Rakdos Signet",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Talisman of Hierarchy",
+   1
+  ],
+  [
+   "Vanquisher's Banner",
+   1
+  ],
+  [
+   "Anointed Procession",
+   1
+  ],
+  [
+   "Black Market Connections",
+   1
+  ],
+  [
+   "Exquisite Blood",
+   1
+  ],
+  [
+   "Phyrexian Arena",
+   1
+  ],
+  [
+   "Sanguine Bond",
+   1
+  ],
+  [
+   "Shared Animosity",
+   1
+  ],
+  [
+   "Sorin, Imperious Bloodlord",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Bojuka Bog",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Caves of Koilos",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Dragonskull Summit",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Isolated Chapel",
+   1
+  ],
+  [
+   "Luxury Suite",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Mountain",
+   3
+  ],
+  [
+   "Nomad Outpost",
+   1
+  ],
+  [
+   "Path of Ancestry",
+   1
+  ],
+  [
+   "Plains",
+   4
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Savai Triome",
+   1
+  ],
+  [
+   "Secluded Courtyard",
+   1
+  ],
+  [
+   "Swamp",
+   8
+  ],
+  [
+   "Unclaimed Territory",
+   1
+  ],
+  [
+   "Vault of Champions",
+   1
+  ],
+  [
+   "Vault of the Archangel",
+   1
+  ],
+  [
+   "Voldaren Estate",
+   1
+  ]
+ ]
+}

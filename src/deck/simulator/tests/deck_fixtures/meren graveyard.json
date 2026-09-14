@@ -1,0 +1,919 @@
+{
+ "name": "meren graveyard",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Meren of Clan Nel Toth",
+   "cost": "{2}{B}{G}",
+   "type_line": "Legendary Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "Whenever another creature you control dies, you get an experience counter.\nAt the beginning of your end step, choose target creature card in your graveyard. If that card's mana value is less than or equal to the number of experience counters you have, return it to the battlefield. Otherwise, put it into your hand."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Accursed Marauder",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Zombie Warrior",
+   "keywords": "[]",
+   "text": "When this creature enters, each player sacrifices a nontoken creature of their choice."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Blood Artist",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Vampire",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Braids, Arisen Nightmare",
+   "cost": "{1}{B}{B}",
+   "type_line": "Legendary Creature — Nightmare",
+   "keywords": "[]",
+   "text": "At the beginning of your end step, you may sacrifice an artifact, creature, enchantment, land, or planeswalker. If you do, each opponent may sacrifice a permanent of their choice that shares a card type with it. For each opponent who doesn't, that player loses 2 life and you draw a card."
+  },
+  {
+   "name": "Butcher of Malakir",
+   "cost": "{5}{B}{B}",
+   "type_line": "Creature — Vampire Warrior",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature or another creature you control dies, each opponent sacrifices a creature of their choice."
+  },
+  {
+   "name": "Cankerbloom",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Phyrexian Fungus",
+   "keywords": "[\"Proliferate\"]",
+   "text": "{1}, Sacrifice this creature: Choose one —\n• Destroy target artifact.\n• Destroy target enchantment.\n• Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Carrion Feeder",
+   "cost": "{B}",
+   "type_line": "Creature — Zombie",
+   "keywords": "[]",
+   "text": "This creature can't block.\nSacrifice a creature: Put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Caustic Caterpillar",
+   "cost": "{G}",
+   "type_line": "Creature — Insect",
+   "keywords": "[]",
+   "text": "{1}{G}, Sacrifice this creature: Destroy target artifact or enchantment."
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Fleshbag Marauder",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Zombie Warrior",
+   "keywords": "[]",
+   "text": "When this creature enters, each player sacrifices a creature of their choice."
+  },
+  {
+   "name": "Gray Merchant of Asphodel",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Zombie",
+   "keywords": "[]",
+   "text": "When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way. (Each {B} in the mana costs of permanents you control counts toward your devotion to black.)"
+  },
+  {
+   "name": "Grim Haruspex",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[\"Morph\"]",
+   "text": "Morph {B} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its morph cost.)\nWhenever another nontoken creature you control dies, draw a card."
+  },
+  {
+   "name": "Haywire Mite",
+   "cost": "{1}",
+   "type_line": "Artifact Creature — Insect",
+   "keywords": "[]",
+   "text": "When this creature dies, you gain 2 life.\n{G}, Sacrifice this creature: Exile target noncreature artifact or noncreature enchantment."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Massacre Wurm",
+   "cost": "{3}{B}{B}{B}",
+   "type_line": "Creature — Phyrexian Wurm",
+   "keywords": "[]",
+   "text": "When this creature enters, creatures your opponents control get -2/-2 until end of turn.\nWhenever a creature an opponent controls dies, that player loses 2 life."
+  },
+  {
+   "name": "Mikaeus, the Unhallowed",
+   "cost": "{3}{B}{B}{B}",
+   "type_line": "Legendary Creature — Zombie Cleric",
+   "keywords": "[\"Intimidate\"]",
+   "text": "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)\nWhenever a Human deals damage to you, destroy it.\nOther non-Human creatures you control get +1/+1 and have undying. (When a creature with undying dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Morbid Opportunist",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Human Rogue",
+   "keywords": "[]",
+   "text": "Whenever one or more other creatures die, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Plaguecrafter",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card."
+  },
+  {
+   "name": "Protean Hulk",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Beast",
+   "keywords": "[]",
+   "text": "When this creature dies, search your library for any number of creature cards with total mana value 6 or less, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Ravenous Chupacabra",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Beast Horror",
+   "keywords": "[]",
+   "text": "When this creature enters, destroy target creature an opponent controls."
+  },
+  {
+   "name": "Reclamation Sage",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, you may destroy target artifact or enchantment."
+  },
+  {
+   "name": "Sakura-Tribe Elder",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake Shaman",
+   "keywords": "[]",
+   "text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Satyr Wayfinder",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Satyr",
+   "keywords": "[]",
+   "text": "When this creature enters, reveal the top four cards of your library. You may put a land card from among them into your hand. Put the rest into your graveyard."
+  },
+  {
+   "name": "Sheoldred, Whispering One",
+   "cost": "{5}{B}{B}",
+   "type_line": "Legendary Creature — Phyrexian Praetor",
+   "keywords": "[\"Landwalk\",\"Swampwalk\"]",
+   "text": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\nAt the beginning of your upkeep, return target creature card from your graveyard to the battlefield.\nAt the beginning of each opponent's upkeep, that player sacrifices a creature of their choice."
+  },
+  {
+   "name": "Shriekmaw",
+   "cost": "{4}{B}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Evoke\",\"Fear\"]",
+   "text": "Fear (This creature can't be blocked except by artifact creatures and/or black creatures.)\nWhen this creature enters, destroy target nonartifact, nonblack creature.\nEvoke {1}{B} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"
+  },
+  {
+   "name": "Solemn Simulacrum",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.\nWhen this creature dies, you may draw a card."
+  },
+  {
+   "name": "Spore Frog",
+   "cost": "{G}",
+   "type_line": "Creature — Frog",
+   "keywords": "[]",
+   "text": "Sacrifice this creature: Prevent all combat damage that would be dealt this turn."
+  },
+  {
+   "name": "Syr Konrad, the Grim",
+   "cost": "{3}{B}{B}",
+   "type_line": "Legendary Creature — Human Knight",
+   "keywords": "[\"Mill\"]",
+   "text": "Whenever another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard, Syr Konrad deals 1 damage to each opponent.\n{1}{B}: Each player mills a card. (They each put the top card of their library into their graveyard.)"
+  },
+  {
+   "name": "Twilight Diviner",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Elf Cleric",
+   "keywords": "[\"Surveil\"]",
+   "text": "When this creature enters, surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nWhenever one or more other creatures you control enter, if they entered or were cast from a graveyard, create a token that's a copy of one of them. This ability triggers only once each turn."
+  },
+  {
+   "name": "Viscera Seer",
+   "cost": "{B}",
+   "type_line": "Creature — Vampire Wizard",
+   "keywords": "[\"Scry\"]",
+   "text": "Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Warren Soultrader",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Zombie Goblin Wizard",
+   "keywords": "[\"Treasure\"]",
+   "text": "Pay 1 life, Sacrifice another creature: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Wight of the Reliquary",
+   "cost": "{B}{G}",
+   "type_line": "Creature — Zombie Knight",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nThis creature gets +1/+1 for each creature card in your graveyard.\n{T}, Sacrifice another creature: Search your library for a land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Wood Elves",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "[]",
+   "text": "When this creature enters, search your library for a Forest card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Yawgmoth, Thran Physician",
+   "cost": "{2}{B}{B}",
+   "type_line": "Legendary Creature — Human Cleric",
+   "keywords": "[\"Protection\",\"Proliferate\"]",
+   "text": "Protection from Humans\nPay 1 life, Sacrifice another creature: Put a -1/-1 counter on up to one target creature and draw a card.\n{B}{B}, Discard a card: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Zulaport Cutthroat",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Human Rogue Ally",
+   "keywords": "[]",
+   "text": "Whenever this creature or another creature you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Assassin's Trophy",
+   "cost": "{B}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Beast Within",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token."
+  },
+  {
+   "name": "Dark Ritual",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {B}{B}{B}."
+  },
+  {
+   "name": "Entomb",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your graveyard, then shuffle."
+  },
+  {
+   "name": "Grisly Salvage",
+   "cost": "{B}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Reveal the top five cards of your library. You may put a creature or land card from among them into your hand. Put the rest into your graveyard."
+  },
+  {
+   "name": "Putrefy",
+   "cost": "{1}{B}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target artifact or creature. It can't be regenerated."
+  },
+  {
+   "name": "Village Rites",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards."
+  },
+  {
+   "name": "Buried Alive",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to three creature cards, put them into your graveyard, then shuffle."
+  },
+  {
+   "name": "Culling Ritual",
+   "cost": "{2}{B}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy each nonland permanent with mana value 2 or less. Add {B} or {G} for each permanent destroyed this way."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Diabolic Intent",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "Living Death",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield."
+  },
+  {
+   "name": "Reanimate",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Rise of the Witch-king",
+   "cost": "{2}{B}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player sacrifices a creature of their choice. If you sacrificed a creature this way, you may return another permanent card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Toxic Deluge",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn."
+  },
+  {
+   "name": "Victimize",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Ashnod's Altar",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: Add {C}{C}."
+  },
+  {
+   "name": "Cauldron of Essence",
+   "cost": "{1}{B}{G}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a creature you control dies, each opponent loses 1 life and you gain 1 life.\n{1}{B}{G}, {T}, Sacrifice a creature: Return target creature card from your graveyard to the battlefield. Activate only as a sorcery."
+  },
+  {
+   "name": "Lightning Greaves",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}"
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Animate Dead",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0."
+  },
+  {
+   "name": "Dictate of Erebos",
+   "cost": "{3}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhenever a creature you control dies, each opponent sacrifices a creature of their choice."
+  },
+  {
+   "name": "Grave Pact",
+   "cost": "{1}{B}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control dies, each other player sacrifices a creature of their choice."
+  },
+  {
+   "name": "Insidious Roots",
+   "cost": "{B}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creature tokens you control have \"{T}: Add one mana of any color.\"\nWhenever one or more creature cards leave your graveyard, create a 0/1 green Plant creature token, then put a +1/+1 counter on each Plant you control."
+  },
+  {
+   "name": "Journey to Eternity // Atzal, Cave of Eternity",
+   "cost": "{1}{B}{G} // ",
+   "type_line": "Legendary Enchantment — Aura // Legendary Land",
+   "keywords": "[\"Transform\",\"Enchant\"]",
+   "text": "Enchant creature you control\nWhen enchanted creature dies, return it to the battlefield under your control, then return this card to the battlefield transformed under your control.\n// (Transforms from Journey to Eternity.)\n{T}: Add one mana of any color.\n{3}{B}{G}, {T}: Return target creature card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Moldervine Reclamation",
+   "cost": "{3}{B}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control dies, you gain 1 life and draw a card."
+  },
+  {
+   "name": "Liliana, Dreadhorde General",
+   "cost": "{4}{B}{B}",
+   "type_line": "Legendary Planeswalker — Liliana",
+   "keywords": "[]",
+   "text": "Whenever a creature you control dies, draw a card.\n+1: Create a 2/2 black Zombie creature token.\n−4: Each player sacrifices two creatures of their choice.\n−9: Each opponent chooses a permanent they control of each permanent type and sacrifices the rest."
+  },
+  {
+   "name": "Bojuka Bog",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, exile target player's graveyard.\n{T}: Add {B}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Deathcap Glade",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Golgari Rot Farm",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {B}{G}."
+  },
+  {
+   "name": "High Market",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice a creature: You gain 1 life."
+  },
+  {
+   "name": "Llanowar Wastes",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {B} or {G}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Necroblossom Snarl",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal a Swamp or Forest card from your hand. If you don't, this land enters tapped.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land — Swamp Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Phyrexian Tower",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice a creature: Add {B}{B}."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Tainted Wood",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {B} or {G}. Activate only if you control a Swamp."
+  },
+  {
+   "name": "Temple of Malady",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Twilight Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{B/G}, {T}: Add {B}{B}, {B}{G}, or {G}{G}."
+  },
+  {
+   "name": "Undergrowth Stadium",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Woodland Cemetery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Forest.\n{T}: Add {B} or {G}."
+  }
+ ],
+ "list": [
+  [
+   "Accursed Marauder",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Blood Artist",
+   1
+  ],
+  [
+   "Braids, Arisen Nightmare",
+   1
+  ],
+  [
+   "Butcher of Malakir",
+   1
+  ],
+  [
+   "Cankerbloom",
+   1
+  ],
+  [
+   "Carrion Feeder",
+   1
+  ],
+  [
+   "Caustic Caterpillar",
+   1
+  ],
+  [
+   "Elvish Mystic",
+   1
+  ],
+  [
+   "Eternal Witness",
+   1
+  ],
+  [
+   "Fleshbag Marauder",
+   1
+  ],
+  [
+   "Gray Merchant of Asphodel",
+   1
+  ],
+  [
+   "Grim Haruspex",
+   1
+  ],
+  [
+   "Haywire Mite",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Massacre Wurm",
+   1
+  ],
+  [
+   "Mikaeus, the Unhallowed",
+   1
+  ],
+  [
+   "Morbid Opportunist",
+   1
+  ],
+  [
+   "Plaguecrafter",
+   1
+  ],
+  [
+   "Protean Hulk",
+   1
+  ],
+  [
+   "Ravenous Chupacabra",
+   1
+  ],
+  [
+   "Reclamation Sage",
+   1
+  ],
+  [
+   "Sakura-Tribe Elder",
+   1
+  ],
+  [
+   "Satyr Wayfinder",
+   1
+  ],
+  [
+   "Sheoldred, Whispering One",
+   1
+  ],
+  [
+   "Shriekmaw",
+   1
+  ],
+  [
+   "Solemn Simulacrum",
+   1
+  ],
+  [
+   "Spore Frog",
+   1
+  ],
+  [
+   "Syr Konrad, the Grim",
+   1
+  ],
+  [
+   "Twilight Diviner",
+   1
+  ],
+  [
+   "Viscera Seer",
+   1
+  ],
+  [
+   "Warren Soultrader",
+   1
+  ],
+  [
+   "Wight of the Reliquary",
+   1
+  ],
+  [
+   "Wood Elves",
+   1
+  ],
+  [
+   "Yawgmoth, Thran Physician",
+   1
+  ],
+  [
+   "Zulaport Cutthroat",
+   1
+  ],
+  [
+   "Assassin's Trophy",
+   1
+  ],
+  [
+   "Beast Within",
+   1
+  ],
+  [
+   "Dark Ritual",
+   1
+  ],
+  [
+   "Entomb",
+   1
+  ],
+  [
+   "Grisly Salvage",
+   1
+  ],
+  [
+   "Putrefy",
+   1
+  ],
+  [
+   "Village Rites",
+   1
+  ],
+  [
+   "Buried Alive",
+   1
+  ],
+  [
+   "Culling Ritual",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Diabolic Intent",
+   1
+  ],
+  [
+   "Living Death",
+   1
+  ],
+  [
+   "Reanimate",
+   1
+  ],
+  [
+   "Rise of the Witch-king",
+   1
+  ],
+  [
+   "Toxic Deluge",
+   1
+  ],
+  [
+   "Victimize",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Ashnod's Altar",
+   1
+  ],
+  [
+   "Cauldron of Essence",
+   1
+  ],
+  [
+   "Lightning Greaves",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Animate Dead",
+   1
+  ],
+  [
+   "Dictate of Erebos",
+   1
+  ],
+  [
+   "Grave Pact",
+   1
+  ],
+  [
+   "Insidious Roots",
+   1
+  ],
+  [
+   "Journey to Eternity // Atzal, Cave of Eternity",
+   1
+  ],
+  [
+   "Moldervine Reclamation",
+   1
+  ],
+  [
+   "Liliana, Dreadhorde General",
+   1
+  ],
+  [
+   "Bojuka Bog",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Deathcap Glade",
+   1
+  ],
+  [
+   "Forest",
+   8
+  ],
+  [
+   "Golgari Rot Farm",
+   1
+  ],
+  [
+   "High Market",
+   1
+  ],
+  [
+   "Llanowar Wastes",
+   1
+  ],
+  [
+   "Necroblossom Snarl",
+   1
+  ],
+  [
+   "Overgrown Tomb",
+   1
+  ],
+  [
+   "Phyrexian Tower",
+   1
+  ],
+  [
+   "Swamp",
+   11
+  ],
+  [
+   "Tainted Wood",
+   1
+  ],
+  [
+   "Temple of Malady",
+   1
+  ],
+  [
+   "Twilight Mire",
+   1
+  ],
+  [
+   "Undergrowth Stadium",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Woodland Cemetery",
+   1
+  ]
+ ]
+}

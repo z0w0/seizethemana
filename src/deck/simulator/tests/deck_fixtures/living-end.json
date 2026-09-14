@@ -1,0 +1,284 @@
+{
+ "name": "living-end",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Shardless Agent",
+   "cost": "{1}{G}{U}",
+   "type_line": "Artifact Creature — Human Rogue",
+   "keywords": "[\"Cascade\"]",
+   "text": "Cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)"
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Reach\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke—Exile a green card from your hand."
+  },
+  {
+   "name": "Subtlety",
+   "cost": "{2}{U}{U}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Flying\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhen this creature enters, choose up to one target creature spell or planeswalker spell. Its owner puts it on their choice of the top or bottom of their library.\nEvoke—Exile a blue card from your hand."
+  },
+  {
+   "name": "Street Wraith",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Wraith",
+   "keywords": "[\"Landwalk\",\"Swampwalk\",\"Cycling\"]",
+   "text": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\nCycling—Pay 2 life. (Pay 2 life, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Wistfulness",
+   "cost": "{3}{G/U}{G/U}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Evoke\"]",
+   "text": "When this creature enters, if {G}{G} was spent to cast it, exile target artifact or enchantment an opponent controls.\nWhen this creature enters, if {U}{U} was spent to cast it, draw two cards, then discard a card.\nEvoke {G/U}{G/U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"
+  },
+  {
+   "name": "Generous Ent",
+   "cost": "{5}{G}",
+   "type_line": "Creature — Treefolk",
+   "keywords": "[\"Reach\",\"Landcycling\",\"Food\",\"Forestcycling\",\"Typecycling\",\"Cycling\"]",
+   "text": "Reach\nWhen this creature enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nForestcycling {1} ({1}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)"
+  },
+  {
+   "name": "Striped Riverwinder",
+   "cost": "{6}{U}",
+   "type_line": "Creature — Serpent",
+   "keywords": "[\"Hexproof\",\"Cycling\"]",
+   "text": "Hexproof (This creature can't be the target of spells or abilities your opponents control.)\nCycling {U} ({U}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Oliphaunt",
+   "cost": "{5}{R}",
+   "type_line": "Creature — Elephant",
+   "keywords": "[\"Mountaincycling\",\"Landcycling\",\"Trample\",\"Typecycling\",\"Cycling\"]",
+   "text": "Trample\nWhenever this creature attacks, another target creature you control gets +2/+0 and gains trample until end of turn.\nMountaincycling {1} ({1}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)"
+  },
+  {
+   "name": "Colossal Skyturtle",
+   "cost": "{4}{G}{G}{U}",
+   "type_line": "Enchantment Creature — Turtle",
+   "keywords": "[\"Flying\",\"Ward\",\"Channel\"]",
+   "text": "Flying, ward {2}\nChannel — {2}{G}, Discard this card: Return target card from your graveyard to your hand.\nChannel — {1}{U}, Discard this card: Return target creature to its owner's hand."
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Violent Outburst",
+   "cost": "{1}{R}{G}",
+   "type_line": "Instant",
+   "keywords": "[\"Cascade\"]",
+   "text": "Cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)\nCreatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Living End",
+   "cost": "",
+   "type_line": "Sorcery",
+   "keywords": "[\"Suspend\"]",
+   "text": "Suspend 3—{2}{B}{B}\nEach player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Stomping Ground",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Commercial District",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {R} or {G}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Hedge Maze",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {G} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Thundering Falls",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Disciple of Freyalise // Garden of Freyalise",
+   "cost": "{3}{G}{G}{G} // ",
+   "type_line": "Creature — Elf Druid // Land",
+   "keywords": "[]",
+   "text": "When this creature enters, you may sacrifice another creature. If you do, you gain X life and draw X cards, where X is that creature's power.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {G}."
+  }
+ ],
+ "list": [
+  [
+   "Shardless Agent",
+   4
+  ],
+  [
+   "Endurance",
+   4
+  ],
+  [
+   "Subtlety",
+   4
+  ],
+  [
+   "Street Wraith",
+   4
+  ],
+  [
+   "Wistfulness",
+   4
+  ],
+  [
+   "Generous Ent",
+   4
+  ],
+  [
+   "Striped Riverwinder",
+   4
+  ],
+  [
+   "Oliphaunt",
+   3
+  ],
+  [
+   "Colossal Skyturtle",
+   2
+  ],
+  [
+   "Force of Negation",
+   4
+  ],
+  [
+   "Violent Outburst",
+   4
+  ],
+  [
+   "Living End",
+   3
+  ],
+  [
+   "Misty Rainforest",
+   4
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "Stomping Ground",
+   1
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Steam Vents",
+   1
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Forest",
+   1
+  ],
+  [
+   "Commercial District",
+   1
+  ],
+  [
+   "Hedge Maze",
+   1
+  ],
+  [
+   "Thundering Falls",
+   1
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   1
+  ],
+  [
+   "Disciple of Freyalise // Garden of Freyalise",
+   1
+  ]
+ ]
+}

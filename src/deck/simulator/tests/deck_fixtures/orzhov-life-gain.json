@@ -1,0 +1,262 @@
+{
+ "name": "orzhov-life-gain",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Concealed Courtyard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Shattered Sanctum",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Bleachbone Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {B}.\n{T}: Add {W}. Activate only if you control a Plains or a Swamp."
+  },
+  {
+   "name": "Dalkovan Encampment",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {W}.\n{2}{W}, {T}: Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and attacking. Sacrifice them at the beginning of the next end step."
+  },
+  {
+   "name": "Amalia Benavides Aguirre",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature — Vampire Scout",
+   "keywords": "[\"Explore\",\"Ward\"]",
+   "text": "Ward—Pay 3 life.\nWhenever you gain life, Amalia Benavides Aguirre explores. Then destroy all other creatures if its power is exactly 20. (To have this creature explore, reveal the top card of your library. Put that card into your hand if it's a land. Otherwise, put a +1/+1 counter on this creature, then put the card back or put it into your graveyard.)"
+  },
+  {
+   "name": "Hinterland Sanctifier",
+   "cost": "{W}",
+   "type_line": "Creature — Rabbit Cleric",
+   "keywords": "[]",
+   "text": "Whenever another creature you control enters, you gain 1 life."
+  },
+  {
+   "name": "Case of the Uneaten Feast",
+   "cost": "{W}",
+   "type_line": "Enchantment — Case",
+   "keywords": "[\"Solved\"]",
+   "text": "Whenever a creature you control enters, you gain 1 life.\nTo solve — You've gained 5 or more life this turn. (If unsolved, solve at the beginning of your end step.)\nSolved — Sacrifice this Case: Creature cards in your graveyard gain \"You may cast this card from your graveyard\" until end of turn."
+  },
+  {
+   "name": "Lunar Convocation",
+   "cost": "{W}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your end step, if you gained life this turn, each opponent loses 1 life.\nAt the beginning of your end step, if you gained and lost life this turn, create a 1/1 black Bat creature token with flying.\n{1}{B}, Pay 2 life: Draw a card."
+  },
+  {
+   "name": "Haliya, Guided by Light",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Human Soldier",
+   "keywords": "[\"Warp\"]",
+   "text": "Whenever Haliya or another creature or artifact you control enters, you gain 1 life.\nAt the beginning of your end step, draw a card if you've gained 3 or more life this turn.\nWarp {W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Bard",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Moseo, Vein's New Dean",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Creature — Bird Skeleton Warlock",
+   "keywords": "[\"Infusion\",\"Flying\"]",
+   "text": "Flying\nWhen Moseo enters, create a 1/1 black and green Pest creature token with \"Whenever this token attacks, you gain 1 life.\"\nInfusion — At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your graveyard to the battlefield, where X is the amount of life you gained this turn."
+  },
+  {
+   "name": "Leonardo, Cutting Edge",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature — Mutant Ninja Turtle",
+   "keywords": "[\"Lifelink\",\"Sneak\"]",
+   "text": "Sneak {W} (You may cast this spell for {W} if you also return an unblocked attacker you control to hand during the declare blockers step. He enters tapped and attacking.)\nLifelink\nWhenever you gain life, put a +1/+1 counter on Leonardo."
+  },
+  {
+   "name": "Starscape Cleric",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Bat Cleric",
+   "keywords": "[\"Flying\",\"Offspring\"]",
+   "text": "Offspring {2}{B} (You may pay an additional {2}{B} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nFlying\nThis creature can't block.\nWhenever you gain life, each opponent loses 1 life."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Essence Channeler",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Bat Cleric",
+   "keywords": "[]",
+   "text": "As long as you've lost life this turn, this creature has flying and vigilance.\nWhenever you gain life, put a +1/+1 counter on this creature.\nWhen this creature dies, put its counters on target creature you control."
+  },
+  {
+   "name": "Emptiness",
+   "cost": "{4}{W/B}{W/B}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Evoke\"]",
+   "text": "When this creature enters, if {W}{W} was spent to cast it, return target creature card with mana value 3 or less from your graveyard to the battlefield.\nWhen this creature enters, if {B}{B} was spent to cast it, put three -1/-1 counters on up to one target creature.\nEvoke {W/B}{W/B}"
+  },
+  {
+   "name": "Aunt May",
+   "cost": "{W}",
+   "type_line": "Legendary Creature — Human Citizen",
+   "keywords": "[]",
+   "text": "Whenever another creature you control enters, you gain 1 life. If it's a Spider, put a +1/+1 counter on it."
+  },
+  {
+   "name": "Strategic Betrayal",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Target opponent exiles a creature they control and their graveyard."
+  },
+  {
+   "name": "Zoraline, Cosmos Caller",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature — Bat Cleric",
+   "keywords": "[\"Flying\",\"Vigilance\"]",
+   "text": "Flying, vigilance\nWhenever a Bat you control attacks, you gain 1 life.\nWhenever Zoraline enters or attacks, you may pay {W}{B} and 2 life. When you do, return target nonland permanent card with mana value 3 or less from your graveyard to the battlefield with a finality counter on it."
+  }
+ ],
+ "list": [
+  [
+   "Godless Shrine",
+   4
+  ],
+  [
+   "Starting Town",
+   4
+  ],
+  [
+   "Concealed Courtyard",
+   3
+  ],
+  [
+   "Plains",
+   3
+  ],
+  [
+   "Shattered Sanctum",
+   3
+  ],
+  [
+   "Swamp",
+   2
+  ],
+  [
+   "Bleachbone Verge",
+   1
+  ],
+  [
+   "Dalkovan Encampment",
+   1
+  ],
+  [
+   "Amalia Benavides Aguirre",
+   4
+  ],
+  [
+   "Hinterland Sanctifier",
+   4
+  ],
+  [
+   "Case of the Uneaten Feast",
+   4
+  ],
+  [
+   "Lunar Convocation",
+   4
+  ],
+  [
+   "Haliya, Guided by Light",
+   3
+  ],
+  [
+   "Voice of Victory",
+   3
+  ],
+  [
+   "Moseo, Vein's New Dean",
+   3
+  ],
+  [
+   "Leonardo, Cutting Edge",
+   3
+  ],
+  [
+   "Starscape Cleric",
+   2
+  ],
+  [
+   "Erode",
+   2
+  ],
+  [
+   "Essence Channeler",
+   2
+  ],
+  [
+   "Emptiness",
+   2
+  ],
+  [
+   "Aunt May",
+   1
+  ],
+  [
+   "Strategic Betrayal",
+   1
+  ],
+  [
+   "Zoraline, Cosmos Caller",
+   1
+  ]
+ ]
+}

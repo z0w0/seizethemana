@@ -1,0 +1,262 @@
+{
+ "name": "broodscale-combo",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Basking Broodscale",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Eldrazi Lizard",
+   "keywords": "[\"Devoid\",\"Adapt\"]",
+   "text": "Devoid (This card has no color.)\n{1}{G}: Adapt 1. (If this creature has no +1/+1 counters on it, put a +1/+1 counter on it.)\nWhenever one or more +1/+1 counters are put on this creature, you may create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Blade of the Bloodchief",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Whenever a creature dies, put a +1/+1 counter on equipped creature. If equipped creature is a Vampire, put two +1/+1 counters on it instead.\nEquip {1}"
+  },
+  {
+   "name": "Emrakul, the Promised End",
+   "cost": "{13}",
+   "type_line": "Legendary Creature — Eldrazi",
+   "keywords": "[\"Flying\",\"Protection\",\"Trample\"]",
+   "text": "This spell costs {1} less to cast for each card type among cards in your graveyard.\nWhen you cast this spell, you gain control of target opponent during that player's next turn. After that turn, that player takes an extra turn.\nFlying, trample, protection from instants"
+  },
+  {
+   "name": "Sowing Mycospawn",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Eldrazi Fungus",
+   "keywords": "[\"Devoid\",\"Kicker\"]",
+   "text": "Devoid (This card has no color.)\nKicker {1}{C} (You may pay an additional {1}{C} as you cast this spell.)\nWhen you cast this spell, search your library for a land card, put it onto the battlefield, then shuffle.\nWhen you cast this spell, if it was kicked, exile target land."
+  },
+  {
+   "name": "Glaring Fleshraker",
+   "cost": "{2}{C}",
+   "type_line": "Creature — Eldrazi Drone",
+   "keywords": "[]",
+   "text": "Whenever you cast a colorless spell, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"\nWhenever another colorless creature you control enters, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Thought-Knot Seer",
+   "cost": "{3}{C}",
+   "type_line": "Creature — Eldrazi",
+   "keywords": "[]",
+   "text": "({C} represents colorless mana.)\nWhen this creature enters, target opponent reveals their hand. You choose a nonland card from it and exile that card.\nWhen this creature leaves the battlefield, target opponent draws a card."
+  },
+  {
+   "name": "Kozilek's Command",
+   "cost": "{X}{C}{C}",
+   "type_line": "Kindred Instant — Eldrazi",
+   "keywords": "[\"Scry\"]",
+   "text": "Choose two —\n• Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n• Target player scries X, then draws a card.\n• Exile target creature with mana value X or less.\n• Exile up to X target cards from graveyards."
+  },
+  {
+   "name": "Malevolent Rumble",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Ancient Stirrings",
+   "cost": "{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top five cards of your library. You may reveal a colorless card from among them and put it into your hand. Then put the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Vexing Bauble",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a player casts a spell, if no mana was spent to cast it, counter that spell.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Dismember",
+   "cost": "{1}{B/P}{B/P}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nTarget creature gets -5/-5 until end of turn."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Walking Ballista",
+   "cost": "{X}{X}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": "This creature enters with X +1/+1 counters on it.\n{4}: Put a +1/+1 counter on this creature.\nRemove a +1/+1 counter from this creature: It deals 1 damage to any target."
+  },
+  {
+   "name": "Haywire Mite",
+   "cost": "{1}",
+   "type_line": "Artifact Creature — Insect",
+   "keywords": "[]",
+   "text": "When this creature dies, you gain 2 life.\n{G}, Sacrifice this creature: Exile target noncreature artifact or noncreature enchantment."
+  },
+  {
+   "name": "Soul-Guide Lantern",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters, exile target card from a graveyard.\n{T}, Sacrifice this artifact: Exile each opponent's graveyard.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Eldrazi Temple",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless Eldrazi spells or activate abilities of colorless Eldrazi."
+  },
+  {
+   "name": "Grove of the Burnwillows",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {G}. Each opponent gains 1 life."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "The Mycosynth Gardens",
+   "cost": "",
+   "type_line": "Land — Sphere",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{X}, {T}: This land becomes a copy of target nontoken artifact you control with mana value X."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  }
+ ],
+ "list": [
+  [
+   "Basking Broodscale",
+   4
+  ],
+  [
+   "Blade of the Bloodchief",
+   3
+  ],
+  [
+   "Emrakul, the Promised End",
+   3
+  ],
+  [
+   "Sowing Mycospawn",
+   3
+  ],
+  [
+   "Glaring Fleshraker",
+   1
+  ],
+  [
+   "Thought-Knot Seer",
+   1
+  ],
+  [
+   "Kozilek's Command",
+   4
+  ],
+  [
+   "Malevolent Rumble",
+   4
+  ],
+  [
+   "Ancient Stirrings",
+   4
+  ],
+  [
+   "Vexing Bauble",
+   2
+  ],
+  [
+   "Dismember",
+   2
+  ],
+  [
+   "Delighted Halfling",
+   2
+  ],
+  [
+   "Walking Ballista",
+   1
+  ],
+  [
+   "Haywire Mite",
+   1
+  ],
+  [
+   "Soul-Guide Lantern",
+   1
+  ],
+  [
+   "Urza's Saga",
+   4
+  ],
+  [
+   "Eldrazi Temple",
+   4
+  ],
+  [
+   "Grove of the Burnwillows",
+   4
+  ],
+  [
+   "Cavern of Souls",
+   2
+  ],
+  [
+   "The Mycosynth Gardens",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   2
+  ],
+  [
+   "Forest",
+   6
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ]
+ ]
+}

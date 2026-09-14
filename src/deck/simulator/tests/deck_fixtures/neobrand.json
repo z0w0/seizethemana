@@ -1,0 +1,328 @@
+{
+ "name": "neobrand",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Allosaurus Rider",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Elf Warrior",
+   "keywords": "[]",
+   "text": "You may exile two green cards from your hand rather than pay this spell's mana cost.\nAllosaurus Rider's power and toughness are each equal to 1 plus the number of lands you control."
+  },
+  {
+   "name": "Ghalta, Stampede Tyrant",
+   "cost": "{5}{G}{G}{G}",
+   "type_line": "Legendary Creature — Elder Dinosaur",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nWhen Ghalta enters, put any number of creature cards from your hand onto the battlefield."
+  },
+  {
+   "name": "Atraxa, Grand Unifier",
+   "cost": "{3}{G}{W}{U}{B}",
+   "type_line": "Legendary Creature — Phyrexian Angel",
+   "keywords": "[\"Deathtouch\",\"Flying\",\"Lifelink\",\"Vigilance\"]",
+   "text": "Flying, vigilance, deathtouch, lifelink\nWhen Atraxa enters, reveal the top ten cards of your library. For each card type, you may put a card of that type from among the revealed cards into your hand. Put the rest on the bottom of your library in a random order. (Artifact, battle, creature, enchantment, instant, land, planeswalker, and sorcery are card types.)"
+  },
+  {
+   "name": "Griselbrand",
+   "cost": "{4}{B}{B}{B}{B}",
+   "type_line": "Legendary Creature — Demon",
+   "keywords": "[\"Flying\",\"Lifelink\"]",
+   "text": "Flying, lifelink\nPay 7 life: Draw seven cards."
+  },
+  {
+   "name": "Xenagos, God of Revels",
+   "cost": "{3}{R}{G}",
+   "type_line": "Legendary Enchantment Creature — God",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nAs long as your devotion to red and green is less than seven, Xenagos isn't a creature.\nAt the beginning of combat on your turn, another target creature you control gains haste and gets +X/+X until end of turn, where X is that creature's power."
+  },
+  {
+   "name": "Ureni, the Song Unending",
+   "cost": "{5}{G}{U}{R}",
+   "type_line": "Legendary Creature — Spirit Dragon",
+   "keywords": "[\"Flying\",\"Protection\"]",
+   "text": "Flying, protection from white and from black\nWhen Ureni enters, it deals X damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control, where X is the number of lands you control."
+  },
+  {
+   "name": "Generous Ent",
+   "cost": "{5}{G}",
+   "type_line": "Creature — Treefolk",
+   "keywords": "[\"Reach\",\"Landcycling\",\"Food\",\"Forestcycling\",\"Typecycling\",\"Cycling\"]",
+   "text": "Reach\nWhen this creature enters, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nForestcycling {1} ({1}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)"
+  },
+  {
+   "name": "Hooting Mandrills",
+   "cost": "{5}{G}",
+   "type_line": "Creature — Ape",
+   "keywords": "[\"Delve\",\"Trample\"]",
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTrample"
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Reach\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke—Exile a green card from your hand."
+  },
+  {
+   "name": "Wistfulness",
+   "cost": "{3}{G/U}{G/U}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Evoke\"]",
+   "text": "When this creature enters, if {G}{G} was spent to cast it, exile target artifact or enchantment an opponent controls.\nWhen this creature enters, if {U}{U} was spent to cast it, draw two cards, then discard a card.\nEvoke {G/U}{G/U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"
+  },
+  {
+   "name": "Neoform",
+   "cost": "{G}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card onto the battlefield with an additional +1/+1 counter on it, then shuffle."
+  },
+  {
+   "name": "Eldritch Evolution",
+   "cost": "{1}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value X or less, where X is 2 plus the sacrificed creature's mana value. Put that card onto the battlefield, then shuffle. Exile Eldritch Evolution."
+  },
+  {
+   "name": "Summoner's Pact",
+   "cost": "{0}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a green creature card, reveal it, put it into your hand, then shuffle.\nAt the beginning of your next upkeep, pay {2}{G}{G}. If you don't, you lose the game."
+  },
+  {
+   "name": "Consign to Memory",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Replicate\"]",
+   "text": "Replicate {1} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nCounter target triggered ability or colorless spell."
+  },
+  {
+   "name": "Planar Genesis",
+   "cost": "{G}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Look at the top four cards of your library. You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Nourishing Shoal",
+   "cost": "{X}{G}{G}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[]",
+   "text": "You may exile a green card with mana value X from your hand rather than pay this spell's mana cost.\nYou gain X life."
+  },
+  {
+   "name": "Veil of Summer",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw a card if an opponent has cast a blue or black spell this turn. Spells you control can't be countered this turn. You and permanents you control gain hexproof from blue and from black until end of turn. (You and they can't be the targets of blue or black spells or abilities your opponents control.)"
+  },
+  {
+   "name": "Pact of Negation",
+   "cost": "{0}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell.\nAt the beginning of your next upkeep, pay {3}{U}{U}. If you don't, you lose the game."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Hedge Maze",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {G} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Disciple of Freyalise // Garden of Freyalise",
+   "cost": "{3}{G}{G}{G} // ",
+   "type_line": "Creature — Elf Druid // Land",
+   "keywords": "[]",
+   "text": "When this creature enters, you may sacrifice another creature. If you do, you gain X life and draw X cards, where X is that creature's power.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {G}."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Bridgeworks Battle // Tanglespan Bridgeworks",
+   "cost": "{2}{G} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "[\"Fight\"]",
+   "text": "Target creature you control gets +2/+2 until end of turn. It fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {G}."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  }
+ ],
+ "list": [
+  [
+   "Allosaurus Rider",
+   4
+  ],
+  [
+   "Ghalta, Stampede Tyrant",
+   3
+  ],
+  [
+   "Atraxa, Grand Unifier",
+   1
+  ],
+  [
+   "Griselbrand",
+   1
+  ],
+  [
+   "Xenagos, God of Revels",
+   1
+  ],
+  [
+   "Ureni, the Song Unending",
+   1
+  ],
+  [
+   "Generous Ent",
+   1
+  ],
+  [
+   "Hooting Mandrills",
+   1
+  ],
+  [
+   "Endurance",
+   1
+  ],
+  [
+   "Wistfulness",
+   1
+  ],
+  [
+   "Neoform",
+   4
+  ],
+  [
+   "Eldritch Evolution",
+   4
+  ],
+  [
+   "Summoner's Pact",
+   4
+  ],
+  [
+   "Consign to Memory",
+   4
+  ],
+  [
+   "Planar Genesis",
+   4
+  ],
+  [
+   "Nourishing Shoal",
+   1
+  ],
+  [
+   "Veil of Summer",
+   1
+  ],
+  [
+   "Pact of Negation",
+   3
+  ],
+  [
+   "Misty Rainforest",
+   4
+  ],
+  [
+   "Hedge Maze",
+   3
+  ],
+  [
+   "Disciple of Freyalise // Garden of Freyalise",
+   4
+  ],
+  [
+   "Forest",
+   2
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Polluted Delta",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Bridgeworks Battle // Tanglespan Bridgeworks",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ]
+ ]
+}

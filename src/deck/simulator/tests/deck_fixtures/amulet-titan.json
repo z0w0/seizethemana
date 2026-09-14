@@ -1,0 +1,284 @@
+{
+ "name": "amulet-titan",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Primeval Titan",
+   "cost": "{4}{G}{G}",
+   "type_line": "Creature — Giant",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nWhenever this creature enters or attacks, you may search your library for up to two land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Arboreal Grazer",
+   "cost": "{G}",
+   "type_line": "Creature — Sloth Beast",
+   "keywords": "[\"Reach\"]",
+   "text": "Reach\nWhen this creature enters, you may put a land card from your hand onto the battlefield tapped."
+  },
+  {
+   "name": "Cultivator Colossus",
+   "cost": "{4}{G}{G}{G}",
+   "type_line": "Creature — Plant Beast",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nCultivator Colossus's power and toughness are each equal to the number of lands you control.\nWhen this creature enters, you may put a land card from your hand onto the battlefield tapped. If you do, draw a card and repeat this process."
+  },
+  {
+   "name": "Aftermath Analyst",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Elf Detective",
+   "keywords": "[\"Mill\"]",
+   "text": "When this creature enters, mill three cards. (Put the top three cards of your library into your graveyard.)\n{3}{G}, Sacrifice this creature: Return all land cards from your graveyard to the battlefield tapped."
+  },
+  {
+   "name": "Amulet of Vigor",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a permanent you control enters tapped, untap it."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Scapeshift",
+   "cost": "{2}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Sacrifice any number of lands. Search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Spelunking",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, draw a card, then you may put a land card from your hand onto the battlefield. If you put a Cave onto the battlefield this way, you gain 4 life.\nLands you control enter untapped."
+  },
+  {
+   "name": "Summoner's Pact",
+   "cost": "{0}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a green creature card, reveal it, put it into your hand, then shuffle.\nAt the beginning of your next upkeep, pay {2}{G}{G}. If you don't, you lose the game."
+  },
+  {
+   "name": "Malevolent Rumble",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Simic Growth Chamber",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {G}{U}."
+  },
+  {
+   "name": "Crumbling Vestige",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)"
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Gruul Turf",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {R}{G}."
+  },
+  {
+   "name": "The Mycosynth Gardens",
+   "cost": "",
+   "type_line": "Land — Sphere",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{X}, {T}: This land becomes a copy of target nontoken artifact you control with mana value X."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Dryad Arbor",
+   "cost": "",
+   "type_line": "Land Creature — Forest Dryad",
+   "keywords": "[]",
+   "text": "(This land isn't a spell, it's affected by summoning sickness, and it has \"{T}: Add {G}.\")"
+  },
+  {
+   "name": "Vesuva",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You may have this land enter tapped as a copy of any land on the battlefield."
+  },
+  {
+   "name": "Tolaria West",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Transmute\"]",
+   "text": "This land enters tapped.\n{T}: Add {U}.\nTransmute {1}{U}{U} ({1}{U}{U}, Discard this card: Search your library for a card with mana value 0, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)"
+  },
+  {
+   "name": "Echoing Deeps",
+   "cost": "",
+   "type_line": "Land — Cave",
+   "keywords": "[]",
+   "text": "You may have this land enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other types.\n{T}: Add {C}."
+  },
+  {
+   "name": "Mirrorpool",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {C}.\n{2}{C}, {T}, Sacrifice this land: Copy target instant or sorcery spell you control. You may choose new targets for the copy.\n{4}{C}, {T}, Sacrifice this land: Create a token that's a copy of target creature you control."
+  },
+  {
+   "name": "Hanweir Battlements",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Meld\"]",
+   "text": "{T}: Add {C}.\n{R}, {T}: Target creature gains haste until end of turn.\n{3}{R}{R}, {T}: If you both own and control this land and a creature named Hanweir Garrison, exile them, then meld them into Hanweir, the Writhing Township."
+  },
+  {
+   "name": "Shifting Woodland",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Delirium\"]",
+   "text": "This land enters tapped unless you control a Forest.\n{T}: Add {G}.\nDelirium — {2}{G}{G}: This land becomes a copy of target permanent card in your graveyard until end of turn. Activate only if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  }
+ ],
+ "list": [
+  [
+   "Primeval Titan",
+   3
+  ],
+  [
+   "Arboreal Grazer",
+   4
+  ],
+  [
+   "Cultivator Colossus",
+   1
+  ],
+  [
+   "Aftermath Analyst",
+   1
+  ],
+  [
+   "Amulet of Vigor",
+   4
+  ],
+  [
+   "Green Sun's Zenith",
+   4
+  ],
+  [
+   "Scapeshift",
+   4
+  ],
+  [
+   "Spelunking",
+   4
+  ],
+  [
+   "Summoner's Pact",
+   2
+  ],
+  [
+   "Malevolent Rumble",
+   2
+  ],
+  [
+   "Urza's Saga",
+   4
+  ],
+  [
+   "Simic Growth Chamber",
+   4
+  ],
+  [
+   "Crumbling Vestige",
+   4
+  ],
+  [
+   "Forest",
+   4
+  ],
+  [
+   "Gruul Turf",
+   2
+  ],
+  [
+   "The Mycosynth Gardens",
+   2
+  ],
+  [
+   "Boseiju, Who Endures",
+   3
+  ],
+  [
+   "Dryad Arbor",
+   1
+  ],
+  [
+   "Vesuva",
+   1
+  ],
+  [
+   "Tolaria West",
+   1
+  ],
+  [
+   "Echoing Deeps",
+   1
+  ],
+  [
+   "Mirrorpool",
+   1
+  ],
+  [
+   "Hanweir Battlements",
+   1
+  ],
+  [
+   "Shifting Woodland",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ]
+ ]
+}

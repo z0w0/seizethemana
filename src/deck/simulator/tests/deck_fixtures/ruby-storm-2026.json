@@ -1,0 +1,251 @@
+{
+ "name": "ruby-storm-2026",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Ral, Monsoon Mage // Ral, Leyline Prodigy",
+   "cost": "{1}{R} // ",
+   "type_line": "Legendary Creature — Human Wizard // Legendary Planeswalker — Ral",
+   "keywords": "[\"Transform\"]",
+   "text": "Instant and sorcery spells you cast cost {1} less to cast.\nWhenever you cast an instant or sorcery spell during your turn, flip a coin. If you lose the flip, Ral deals 1 damage to you. If you win the flip, you may exile Ral. If you do, return him to the battlefield transformed under his owner's control.\n// Ral enters with an additional loyalty counter on him for each instant and sorcery spell you've cast this turn.\n+1: Until your next turn, instant and sorcery spells you cast cost {1} less to cast.\n−2: Ral deals 2 damage divided as you choose among one or two targets. Draw a card if you control a blue permanent other than Ral.\n−8: Exile the top eight cards of your library. You may cast instant and sorcery spells from among them this turn without paying their mana costs."
+  },
+  {
+   "name": "Ruby Medallion",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Red spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Wrenn's Resolve",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Exile the top two cards of your library. Until the end of your next turn, you may play those cards."
+  },
+  {
+   "name": "Reckless Impulse",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Exile the top two cards of your library. Until the end of your next turn, you may play those cards."
+  },
+  {
+   "name": "Pyretic Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R}{R}{R}."
+  },
+  {
+   "name": "Desperate Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[\"Splice\"]",
+   "text": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)"
+  },
+  {
+   "name": "Manamorphose",
+   "cost": "{1}{R/G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add two mana in any combination of colors.\nDraw a card."
+  },
+  {
+   "name": "Past in Flames",
+   "cost": "{3}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost.\nFlashback {4}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Glimpse the Impossible",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Wish",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You may play a card you own from outside the game this turn."
+  },
+  {
+   "name": "Valakut Awakening // Valakut Stoneforge",
+   "cost": "{2}{R} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.\n// This land enters tapped.\n{T}: Add {R}."
+  },
+  {
+   "name": "Artist's Talent",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment — Class",
+   "keywords": "[]",
+   "text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you cast a noncreature spell, you may discard a card. If you do, draw a card.\n{2}{R}: Level 2\nNoncreature spells you cast cost {1} less to cast.\n{2}{R}: Level 3\nIf a source you control would deal noncombat damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+  },
+  {
+   "name": "Flashback",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Grapeshot",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Storm\"]",
+   "text": "Grapeshot deals 1 damage to any target.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Elegant Parlor",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {R} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sunbaked Canyon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {R} or {W}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Thundering Falls",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  }
+ ],
+ "list": [
+  [
+   "Ral, Monsoon Mage // Ral, Leyline Prodigy",
+   4
+  ],
+  [
+   "Ruby Medallion",
+   4
+  ],
+  [
+   "Wrenn's Resolve",
+   4
+  ],
+  [
+   "Reckless Impulse",
+   4
+  ],
+  [
+   "Pyretic Ritual",
+   4
+  ],
+  [
+   "Desperate Ritual",
+   4
+  ],
+  [
+   "Manamorphose",
+   4
+  ],
+  [
+   "Past in Flames",
+   3
+  ],
+  [
+   "Glimpse the Impossible",
+   2
+  ],
+  [
+   "Wish",
+   2
+  ],
+  [
+   "Valakut Awakening // Valakut Stoneforge",
+   2
+  ],
+  [
+   "Artist's Talent",
+   2
+  ],
+  [
+   "Flashback",
+   2
+  ],
+  [
+   "Grapeshot",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   4
+  ],
+  [
+   "Wooded Foothills",
+   4
+  ],
+  [
+   "Mountain",
+   4
+  ],
+  [
+   "Elegant Parlor",
+   2
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Sunbaked Canyon",
+   1
+  ],
+  [
+   "Thundering Falls",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ]
+ ]
+}

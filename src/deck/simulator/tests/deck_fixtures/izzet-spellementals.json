@@ -1,0 +1,218 @@
+{
+ "name": "izzet-spellementals",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Riverpyre Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {R}.\n{T}: Add {U}. Activate only if you control an Island or a Mountain."
+  },
+  {
+   "name": "Spirebluff Canal",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Stormcarved Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Multiversal Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a basic land type. Then you may pay 2 life. If you don't, it enters tapped.\nThis land is the chosen type."
+  },
+  {
+   "name": "Eddymurk Crab",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature — Elemental Crab",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nThis spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nThis creature enters tapped if it's not your turn.\nWhen this creature enters, tap up to two target creatures."
+  },
+  {
+   "name": "Hearth Elemental // Stoke Genius",
+   "cost": "{5}{R} // {1}{R}",
+   "type_line": "Creature — Elemental // Sorcery — Adventure",
+   "keywords": "[]",
+   "text": "This spell costs {X} less to cast, where X is the number of cards in your graveyard that are instant cards, sorcery cards, and/or have an Adventure.\n// Discard your hand, then draw two cards. (Then exile this card. You may cast the creature later from exile.)"
+  },
+  {
+   "name": "Sunderflock",
+   "cost": "{7}{U}{U}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Flying\"]",
+   "text": "This spell costs {X} less to cast, where X is the greatest mana value among Elementals you control.\nFlying\nWhen this creature enters, if you cast it, return all non-Elemental creatures to their owners' hands."
+  },
+  {
+   "name": "Opt",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nDraw a card."
+  },
+  {
+   "name": "Prismari Charm",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Surveil\"]",
+   "text": "Choose one —\n• Surveil 2, then draw a card.\n• Prismari Charm deals 1 damage to each of one or two targets.\n• Return target nonland permanent to its owner's hand."
+  },
+  {
+   "name": "Sleight of Hand",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Kicker\"]",
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Traumatic Critique",
+   "cost": "{X}{U}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Traumatic Critique deals X damage to any target. Draw two cards, then discard a card."
+  },
+  {
+   "name": "Winternight Stories",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Harmonize\"]",
+   "text": "Draw three cards. Then discard two cards unless you discard a creature card.\nHarmonize {4}{U} (You may cast this card from your graveyard for its harmonize cost. You may tap a creature you control to reduce that cost by {X}, where X is its power. Then exile this spell.)"
+  },
+  {
+   "name": "Get Out",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target creature or enchantment spell.\n• Return one or two target creatures and/or enchantments you own to your hand."
+  },
+  {
+   "name": "Spell Pierce",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target noncreature spell unless its controller pays {2}."
+  },
+  {
+   "name": "Impractical Joke",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Damage can't be prevented this turn. Impractical Joke deals 3 damage to up to one target creature or planeswalker."
+  },
+  {
+   "name": "Spell Snare",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell with mana value 2."
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   6
+  ],
+  [
+   "Riverpyre Verge",
+   4
+  ],
+  [
+   "Spirebluff Canal",
+   4
+  ],
+  [
+   "Steam Vents",
+   4
+  ],
+  [
+   "Stormcarved Coast",
+   1
+  ],
+  [
+   "Multiversal Passage",
+   1
+  ],
+  [
+   "Eddymurk Crab",
+   4
+  ],
+  [
+   "Hearth Elemental // Stoke Genius",
+   4
+  ],
+  [
+   "Sunderflock",
+   4
+  ],
+  [
+   "Opt",
+   4
+  ],
+  [
+   "Prismari Charm",
+   4
+  ],
+  [
+   "Sleight of Hand",
+   4
+  ],
+  [
+   "Burst Lightning",
+   3
+  ],
+  [
+   "Traumatic Critique",
+   3
+  ],
+  [
+   "Winternight Stories",
+   3
+  ],
+  [
+   "Get Out",
+   2
+  ],
+  [
+   "Spell Pierce",
+   2
+  ],
+  [
+   "Impractical Joke",
+   2
+  ],
+  [
+   "Spell Snare",
+   1
+  ]
+ ]
+}

@@ -1,0 +1,218 @@
+{
+ "name": "izzet-prowess-2026",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Monastery Swiftspear",
+   "cost": "{R}",
+   "type_line": "Creature — Human Monk",
+   "keywords": "[\"Prowess\",\"Haste\"]",
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)"
+  },
+  {
+   "name": "Dragon's Rage Channeler",
+   "cost": "{R}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[\"Delirium\",\"Surveil\"]",
+   "text": "Whenever you cast a noncreature spell, surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\nDelirium — As long as there are four or more card types among cards in your graveyard, this creature gets +2/+2, has flying, and attacks each combat if able."
+  },
+  {
+   "name": "Cori-Steel Cutter",
+   "cost": "{1}{R}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Flurry\",\"Equip\"]",
+   "text": "Equipped creature gets +1/+1 and has trample and haste.\nFlurry — Whenever you cast your second spell each turn, create a 1/1 white Monk creature token with prowess. You may attach this Equipment to it. (Whenever you cast a noncreature spell, the token gets +1/+1 until end of turn.)\nEquip {1}{R}"
+  },
+  {
+   "name": "Slickshot Show-Off",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Bird Wizard",
+   "keywords": "[\"Flying\",\"Plot\",\"Haste\"]",
+   "text": "Flying, haste\nWhenever you cast a noncreature spell, this creature gets +2/+0 until end of turn.\nPlot {1}{R} (You may pay {1}{R} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)"
+  },
+  {
+   "name": "Expressive Iteration",
+   "cost": "{U}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them. You may play the exiled card this turn."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Lava Dart",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Flashback\"]",
+   "text": "Lava Dart deals 1 damage to any target.\nFlashback—Sacrifice a Mountain. (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Mutagenic Growth",
+   "cost": "{G/P}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "({G/P} can be paid with either {G} or 2 life.)\nTarget creature gets +2/+2 until end of turn."
+  },
+  {
+   "name": "Mishra's Bauble",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Violent Urge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Delirium\"]",
+   "text": "Target creature gets +1/+0 and gains first strike until end of turn.\nDelirium — If there are four or more card types among cards in your graveyard, that creature gains double strike until end of turn."
+  },
+  {
+   "name": "Thundering Falls",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Fiery Islet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  }
+ ],
+ "list": [
+  [
+   "Monastery Swiftspear",
+   4
+  ],
+  [
+   "Dragon's Rage Channeler",
+   4
+  ],
+  [
+   "Cori-Steel Cutter",
+   4
+  ],
+  [
+   "Slickshot Show-Off",
+   4
+  ],
+  [
+   "Expressive Iteration",
+   4
+  ],
+  [
+   "Preordain",
+   4
+  ],
+  [
+   "Lightning Bolt",
+   4
+  ],
+  [
+   "Lava Dart",
+   4
+  ],
+  [
+   "Mutagenic Growth",
+   4
+  ],
+  [
+   "Mishra's Bauble",
+   4
+  ],
+  [
+   "Violent Urge",
+   2
+  ],
+  [
+   "Thundering Falls",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   3
+  ],
+  [
+   "Wooded Foothills",
+   3
+  ],
+  [
+   "Bloodstained Mire",
+   2
+  ],
+  [
+   "Fiery Islet",
+   2
+  ],
+  [
+   "Steam Vents",
+   3
+  ],
+  [
+   "Mountain",
+   3
+  ]
+ ]
+}

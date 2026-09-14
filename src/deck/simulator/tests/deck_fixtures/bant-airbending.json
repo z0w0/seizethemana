@@ -1,0 +1,229 @@
+{
+ "name": "bant-airbending",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Floodfarm Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {W}.\n{T}: Add {U}. Activate only if you control a Plains or an Island."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hushwood Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G}.\n{T}: Add {W}. Activate only if you control a Forest or a Plains."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Aang, at the Crossroads // Aang, Destined Savior",
+   "cost": "{2}{G}{W}{U} // ",
+   "type_line": "Legendary Creature — Human Avatar Ally // Legendary Creature — Avatar Ally",
+   "keywords": "[\"Flying\",\"Transform\",\"Earthbend\"]",
+   "text": "Flying\nWhen Aang enters, look at the top five cards of your library. You may put a creature card with mana value 4 or less from among them onto the battlefield. Put the rest on the bottom of your library in a random order.\nWhen another creature you control leaves the battlefield, transform Aang at the beginning of the next upkeep.\n// Flying\nLand creatures you control have vigilance.\nAt the beginning of combat on your turn, earthbend 2. (Target land you control becomes a 0/0 creature with haste that's still a land. Put two +1/+1 counters on it. When it dies or is exiled, return it to the battlefield tapped.)"
+  },
+  {
+   "name": "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   "cost": "{1}{W}{U} // ",
+   "type_line": "Legendary Creature — Human Avatar Ally // Legendary Creature — Avatar Spirit Ally",
+   "keywords": "[\"Flying\",\"Reach\",\"Airbend\",\"Transform\",\"Trample\",\"Flash\",\"Waterbend\"]",
+   "text": "Flash\nFlying\nWhen Aang enters, airbend up to one other target creature or spell. (Exile it. While it's exiled, its owner may cast it for {2} rather than its mana cost.)\nWaterbend {8}: Transform Aang.\n// Reach, trample\nWhenever Aang and La attack, put a +1/+1 counter on each tapped creature you control."
+  },
+  {
+   "name": "Appa, Steadfast Guardian",
+   "cost": "{2}{W}{W}",
+   "type_line": "Legendary Creature — Bison Ally",
+   "keywords": "[\"Flying\",\"Airbend\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhen Appa enters, airbend any number of other target nonland permanents you control. (Exile them. While each one is exiled, its owner may cast it for {2} rather than its mana cost.)\nWhenever you cast a spell from exile, create a 1/1 white Ally creature token."
+  },
+  {
+   "name": "Bramble Familiar // Fetch Quest",
+   "cost": "{1}{G} // {5}{G}{G}",
+   "type_line": "Creature — Elemental Raccoon // Sorcery — Adventure",
+   "keywords": "[\"Mill\"]",
+   "text": "{T}: Add {G}.\n{1}{G}, {T}, Discard a card: Return this creature to its owner's hand.\n// Mill seven cards. Then put a creature, enchantment, or land card from among the milled cards onto the battlefield."
+  },
+  {
+   "name": "Doc Aurlock, Grizzled Genius",
+   "cost": "{G}{U}",
+   "type_line": "Legendary Creature — Bear Druid",
+   "keywords": "[]",
+   "text": "Spells you cast from your graveyard or from exile cost {2} less to cast.\nPlotting cards from your hand costs {2} less."
+  },
+  {
+   "name": "Jennifer Walters // The Sensational She-Hulk",
+   "cost": "{1}{W} // {3}{G}{W}{W}",
+   "type_line": "Legendary Creature — Human Advisor Hero // Legendary Creature — Gamma Hero",
+   "keywords": "[\"Reach\",\"Transform\",\"Trample\"]",
+   "text": "Your opponents can't cast spells during your turn.\n{3}{G}{W}{W}: Transform Jennifer Walters. Activate only as a sorcery.\n// Reach, trample\nYour opponents can't cast spells during your turn.\nWhenever a creature you control is dealt damage, you may have The Sensational She-Hulk deal that much damage to any target. Do this only once each turn."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Spider Manifestation",
+   "cost": "{1}{R/G}",
+   "type_line": "Creature — Spider Avatar",
+   "keywords": "[\"Reach\"]",
+   "text": "Reach\n{T}: Add {R} or {G}.\nWhenever you cast a spell with mana value 4 or greater, untap this creature."
+  },
+  {
+   "name": "Michelangelo's Technique",
+   "cost": "{4}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Sneak\"]",
+   "text": "Sneak {3}{G} (You may cast this spell for {3}{G} if you also return an unblocked attacker you control to hand during the declare blockers step.)\nLook at the top eight cards of your library. Put up to two creature cards with total mana value 6 or less from among them onto the battlefield and the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Interdimensional Web Watch",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters, exile the top two cards of your library. Until the end of your next turn, you may play those cards.\n{T}: Add two mana in any combination of colors. Spend this mana only to cast spells from exile."
+  },
+  {
+   "name": "The Mind Stone",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Artifact — Infinity Stone",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\n{T}: Add {W}.\n{5}{W}, {T}: Harness The Mind Stone. (Once harnessed, its ∞ ability is active.)\n∞ — At the beginning of your end step, exile up to one other target nonland permanent you control, then return that card to the battlefield under its owner's control."
+  },
+  {
+   "name": "Airbender Ascension",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Airbend\"]",
+   "text": "When this enchantment enters, airbend up to one target creature.\nWhenever a creature you control enters, put a quest counter on this enchantment.\nAt the beginning of your end step, if this enchantment has four or more quest counters on it, exile up to one target creature you control, then return it to the battlefield under its owner's control."
+  }
+ ],
+ "list": [
+  [
+   "Breeding Pool",
+   4
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Floodfarm Verge",
+   3
+  ],
+  [
+   "Hallowed Fountain",
+   3
+  ],
+  [
+   "Hushwood Verge",
+   4
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Starting Town",
+   4
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "Aang, at the Crossroads // Aang, Destined Savior",
+   2
+  ],
+  [
+   "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   4
+  ],
+  [
+   "Appa, Steadfast Guardian",
+   4
+  ],
+  [
+   "Bramble Familiar // Fetch Quest",
+   4
+  ],
+  [
+   "Doc Aurlock, Grizzled Genius",
+   4
+  ],
+  [
+   "Jennifer Walters // The Sensational She-Hulk",
+   2
+  ],
+  [
+   "Llanowar Elves",
+   4
+  ],
+  [
+   "Spider Manifestation",
+   4
+  ],
+  [
+   "Michelangelo's Technique",
+   3
+  ],
+  [
+   "Interdimensional Web Watch",
+   4
+  ],
+  [
+   "The Mind Stone",
+   1
+  ],
+  [
+   "Airbender Ascension",
+   3
+  ]
+ ]
+}

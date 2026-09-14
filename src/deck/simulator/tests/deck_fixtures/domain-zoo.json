@@ -1,0 +1,251 @@
+{
+ "name": "domain-zoo",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Ragavan, Nimble Pilferer",
+   "cost": "{R}",
+   "type_line": "Legendary Creature — Monkey Pirate",
+   "keywords": "[\"Treasure\",\"Dash\"]",
+   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+  },
+  {
+   "name": "Doorkeeper Thrull",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Thrull",
+   "keywords": "[\"Flying\",\"Flash\"]",
+   "text": "Flash\nFlying\nArtifacts and creatures entering don't cause abilities to trigger."
+  },
+  {
+   "name": "Territorial Kavu",
+   "cost": "{R}{G}",
+   "type_line": "Creature — Kavu",
+   "keywords": "[\"Domain\"]",
+   "text": "Domain — Territorial Kavu's power and toughness are each equal to the number of basic land types among lands you control.\nWhenever this creature attacks, choose one —\n• Discard a card. If you do, draw a card.\n• Exile up to one target card from a graveyard."
+  },
+  {
+   "name": "Phlage, Titan of Fire's Fury",
+   "cost": "{1}{R}{W}",
+   "type_line": "Legendary Creature — Elder Giant",
+   "keywords": "[\"Escape\"]",
+   "text": "When Phlage enters, sacrifice it unless it escaped.\nWhenever Phlage enters or attacks, it deals 3 damage to any target and you gain 3 life.\nEscape—{R}{R}{W}{W}, Exile five other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)"
+  },
+  {
+   "name": "Scion of Draco",
+   "cost": "{12}",
+   "type_line": "Artifact Creature — Dragon",
+   "keywords": "[\"Flying\",\"Domain\"]",
+   "text": "Domain — This spell costs {2} less to cast for each basic land type among lands you control.\nFlying\nEach creature you control has vigilance if it's white, hexproof if it's blue, lifelink if it's black, first strike if it's red, and trample if it's green."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Consign to Memory",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Replicate\"]",
+   "text": "Replicate {1} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nCounter target triggered ability or colorless spell."
+  },
+  {
+   "name": "Stubborn Denial",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Ferocious\"]",
+   "text": "Counter target noncreature spell unless its controller pays {1}.\nFerocious — If you control a creature with power 4 or greater, counter that spell instead."
+  },
+  {
+   "name": "Leyline Binding",
+   "cost": "{5}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Domain\",\"Flash\"]",
+   "text": "Flash\nDomain — This spell costs {1} less to cast for each basic land type among lands you control.\nWhen this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield."
+  },
+  {
+   "name": "Leyline of the Guildpact",
+   "cost": "{G/W}{G/U}{B/G}{R/G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEach nonland permanent you control is all colors.\nLands you control are every basic land type in addition to their other types."
+  },
+  {
+   "name": "Teferi, Time Raveler",
+   "cost": "{1}{W}{U}",
+   "type_line": "Legendary Planeswalker — Teferi",
+   "keywords": "[]",
+   "text": "Each opponent can cast spells only any time they could cast a sorcery.\n+1: Until your next turn, you may cast sorcery spells as though they had flash.\n−3: Return up to one target artifact, creature, or enchantment to its owner's hand. Draw a card."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Arena of Glory",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Exert\"]",
+   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)"
+  },
+  {
+   "name": "Lush Portico",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {G} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Indatha Triome",
+   "cost": "",
+   "type_line": "Land — Plains Swamp Forest",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {W}, {B}, or {G}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  }
+ ],
+ "list": [
+  [
+   "Ragavan, Nimble Pilferer",
+   4
+  ],
+  [
+   "Doorkeeper Thrull",
+   4
+  ],
+  [
+   "Territorial Kavu",
+   4
+  ],
+  [
+   "Phlage, Titan of Fire's Fury",
+   4
+  ],
+  [
+   "Scion of Draco",
+   4
+  ],
+  [
+   "Lightning Bolt",
+   4
+  ],
+  [
+   "Consign to Memory",
+   2
+  ],
+  [
+   "Stubborn Denial",
+   2
+  ],
+  [
+   "Leyline Binding",
+   4
+  ],
+  [
+   "Leyline of the Guildpact",
+   4
+  ],
+  [
+   "Teferi, Time Raveler",
+   2
+  ],
+  [
+   "Arid Mesa",
+   4
+  ],
+  [
+   "Flooded Strand",
+   4
+  ],
+  [
+   "Wooded Foothills",
+   4
+  ],
+  [
+   "Steam Vents",
+   2
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "Arena of Glory",
+   2
+  ],
+  [
+   "Lush Portico",
+   1
+  ],
+  [
+   "Indatha Triome",
+   1
+  ],
+  [
+   "Mountain",
+   1
+  ],
+  [
+   "Plains",
+   1
+  ]
+ ]
+}

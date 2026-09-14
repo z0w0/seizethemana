@@ -1,0 +1,152 @@
+{
+ "name": "mono-black-aggro-2026",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Soulstone Sanctuary",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{4}: This land becomes a 3/3 creature with vigilance and all creature types. It's still a land."
+  },
+  {
+   "name": "Realm of Koh",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a basic land.\n{T}: Add {B}.\n{3}{B}, {T}: Create a 1/1 colorless Spirit creature token with \"This token can't block or be blocked by non-Spirit creatures.\""
+  },
+  {
+   "name": "Forsaken Miner",
+   "cost": "{B}",
+   "type_line": "Creature — Skeleton Rogue",
+   "keywords": "[]",
+   "text": "This creature can't block.\nWhenever you commit a crime, you may pay {B}. If you do, return this card from your graveyard to the battlefield. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)"
+  },
+  {
+   "name": "Shoot the Sheriff",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target non-outlaw creature. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws. Everyone else is fair game.)"
+  },
+  {
+   "name": "Desolation Prowler",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Wolf",
+   "keywords": "[]",
+   "text": "Pay 2 life: This creature gets +2/+2 until end of turn. Activate only once each turn."
+  },
+  {
+   "name": "Nighthowl Pursuer",
+   "cost": "{B}",
+   "type_line": "Creature — Wolf",
+   "keywords": "[\"Ferocious\",\"Menace\"]",
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nFerocious — Whenever this creature attacks while you control a creature with power 4 or greater, this creature gets +2/+2 until end of turn."
+  },
+  {
+   "name": "Sunset Saboteur",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Human Rogue",
+   "keywords": "[\"Menace\",\"Ward\"]",
+   "text": "Menace\nWard—Discard a card.\nWhenever this creature attacks, put a +1/+1 counter on target creature an opponent controls."
+  },
+  {
+   "name": "Corpses of the Lost",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Skeletons you control get +1/+0 and have haste.\nWhen this enchantment enters, create a 2/2 black Skeleton Pirate creature token.\nAt the beginning of your end step, if you descended this turn, you may pay 1 life. If you do, return this enchantment to its owner's hand. (You descended if a permanent card was put into your graveyard from anywhere.)"
+  },
+  {
+   "name": "Iridescent Vinelasher",
+   "cost": "{B}",
+   "type_line": "Creature — Lizard Assassin",
+   "keywords": "[\"Offspring\",\"Landfall\"]",
+   "text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nLandfall — Whenever a land you control enters, this creature deals 1 damage to target opponent."
+  },
+  {
+   "name": "Dissection Practice",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target opponent loses 1 life and you gain 1 life.\nUp to one target creature gets +1/+1 until end of turn.\nUp to one target creature gets -1/-1 until end of turn."
+  },
+  {
+   "name": "Gollum, Riddle Master",
+   "cost": "{1}{B}",
+   "type_line": "Legendary Creature — Halfling Horror",
+   "keywords": "[]",
+   "text": "As Gollum enters, choose odd or even. (Zero is even.)\nWhenever an opponent casts a spell with mana value of the chosen quality, choose one that hasn't been chosen —\n• Put a +1/+1 counter on Gollum.\n• Each opponent loses 2 life and you gain 2 life.\n• Draw a card."
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Blight\"]",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  }
+ ],
+ "list": [
+  [
+   "Swamp",
+   18
+  ],
+  [
+   "Soulstone Sanctuary",
+   3
+  ],
+  [
+   "Realm of Koh",
+   2
+  ],
+  [
+   "Forsaken Miner",
+   4
+  ],
+  [
+   "Shoot the Sheriff",
+   4
+  ],
+  [
+   "Desolation Prowler",
+   4
+  ],
+  [
+   "Nighthowl Pursuer",
+   4
+  ],
+  [
+   "Sunset Saboteur",
+   4
+  ],
+  [
+   "Corpses of the Lost",
+   4
+  ],
+  [
+   "Iridescent Vinelasher",
+   4
+  ],
+  [
+   "Dissection Practice",
+   4
+  ],
+  [
+   "Gollum, Riddle Master",
+   3
+  ],
+  [
+   "Requiting Hex",
+   2
+  ]
+ ]
+}

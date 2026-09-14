@@ -1,0 +1,1007 @@
+{
+ "name": "derevi stax",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Derevi, Empyrial Tactician",
+   "cost": "{G}{W}{U}",
+   "type_line": "Legendary Creature — Bird Wizard",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen Derevi enters and whenever a creature you control deals combat damage to a player, you may tap or untap target permanent.\n{1}{G}{W}{U}: Put Derevi onto the battlefield from the command zone."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Avacyn's Pilgrim",
+   "cost": "{G}",
+   "type_line": "Creature — Human Monk",
+   "keywords": "[]",
+   "text": "{T}: Add {W}."
+  },
+  {
+   "name": "Aven Interrupter",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature — Bird Rogue",
+   "keywords": "[\"Flying\",\"Plot\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhen this creature enters, exile target spell. It becomes plotted. (Its owner may cast it as a sorcery on a later turn without paying its mana cost.)\nSpells your opponents cast from graveyards or from exile cost {2} more to cast."
+  },
+  {
+   "name": "Aven Mindcensor",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Bird Wizard",
+   "keywords": "[\"Flying\",\"Flash\"]",
+   "text": "Flash\nFlying\nIf an opponent would search a library, that player searches the top four cards of that library instead."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Bloom Tender",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[\"Vivid\"]",
+   "text": "Vivid — {T}: For each color among permanents you control, add one mana of that color."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Delney, Streetwise Lookout",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Human Scout",
+   "keywords": "[]",
+   "text": "Creatures you control with power 2 or less can't be blocked by creatures with power 3 or greater.\nIf a triggered ability of a creature you control with power 2 or less triggers, that ability triggers an additional time."
+  },
+  {
+   "name": "Displacer Kitten",
+   "cost": "{3}{U}",
+   "type_line": "Creature — Cat Beast",
+   "keywords": "[\"Avoidance\"]",
+   "text": "Avoidance — Whenever you cast a noncreature spell, exile up to one target nonland permanent you control, then return that card to the battlefield under its owner's control."
+  },
+  {
+   "name": "Drannith Magistrate",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "Your opponents can't cast spells from anywhere other than their hands."
+  },
+  {
+   "name": "Emiel the Blessed",
+   "cost": "{2}{W}{W}",
+   "type_line": "Legendary Creature — Unicorn",
+   "keywords": "[]",
+   "text": "{3}: Exile another target creature you control, then return it to the battlefield under its owner's control.\nWhenever another creature you control enters, you may pay {G/W}. If you do, put a +1/+1 counter on it. If it's a Unicorn, put two +1/+1 counters on it instead. ({G/W} can be paid with either {G} or {W}.)"
+  },
+  {
+   "name": "Empyrean Eagle",
+   "cost": "{1}{W}{U}",
+   "type_line": "Creature — Bird Spirit",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nOther creatures you control with flying get +1/+1."
+  },
+  {
+   "name": "Esper Sentinel",
+   "cost": "{W}",
+   "type_line": "Artifact Creature — Human Soldier",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is this creature's power."
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Faeburrow Elder",
+   "cost": "{1}{G}{W}",
+   "type_line": "Creature — Treefolk Druid",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nThis creature gets +1/+1 for each color among permanents you control.\n{T}: For each color among permanents you control, add one mana of that color."
+  },
+  {
+   "name": "Faerie Mastermind",
+   "cost": "{1}{U}",
+   "type_line": "Creature — Faerie Rogue",
+   "keywords": "[\"Flying\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhenever an opponent draws their second card each turn, you draw a card.\n{3}{U}: Each player draws a card."
+  },
+  {
+   "name": "Grand Abolisher",
+   "cost": "{W}{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "During your turn, your opponents can't cast spells or activate abilities of artifacts, creatures, or enchantments."
+  },
+  {
+   "name": "Kastral, the Windcrested",
+   "cost": "{3}{W}{U}",
+   "type_line": "Legendary Creature — Bird Scout",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever one or more Birds you control deal combat damage to a player, choose one —\n• You may put a Bird creature card from your hand or graveyard onto the battlefield with a finality counter on it.\n• Put a +1/+1 counter on each Bird you control.\n• Draw a card."
+  },
+  {
+   "name": "Kinnan, Bonder Prodigy",
+   "cost": "{G}{U}",
+   "type_line": "Legendary Creature — Human Druid",
+   "keywords": "[]",
+   "text": "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced.\n{5}{G}{U}: Look at the top five cards of your library. You may put a non-Human creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Mockingbird",
+   "cost": "{X}{U}",
+   "type_line": "Creature — Bird Bard",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nYou may have this creature enter as a copy of any creature on the battlefield with mana value less than or equal to the amount of mana spent to cast this creature, except it's a Bird in addition to its other types and it has flying."
+  },
+  {
+   "name": "Noble Hierarch",
+   "cost": "{G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[\"Exalted\"]",
+   "text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\n{T}: Add {G}, {W}, or {U}."
+  },
+  {
+   "name": "Phyrexian Metamorph",
+   "cost": "{3}{U/P}",
+   "type_line": "Artifact Creature — Phyrexian Shapeshifter",
+   "keywords": "[]",
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nYou may have this creature enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types."
+  },
+  {
+   "name": "Ranger-Captain of Eos",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature — Human Soldier Ranger",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a creature card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\nSacrifice this creature: Your opponents can't cast noncreature spells this turn."
+  },
+  {
+   "name": "Seedborn Muse",
+   "cost": "{3}{G}{G}",
+   "type_line": "Creature — Spirit",
+   "keywords": "[]",
+   "text": "Untap all permanents you control during each other player's untap step."
+  },
+  {
+   "name": "Spellseeker",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for an instant or sorcery card with mana value 2 or less, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Toski, Bearer of Secrets",
+   "cost": "{3}{G}",
+   "type_line": "Legendary Creature — Squirrel",
+   "keywords": "[\"Indestructible\"]",
+   "text": "This spell can't be countered.\nIndestructible\nToski attacks each combat if able.\nWhenever a creature you control deals combat damage to a player, draw a card."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Bard",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Wan Shi Tong, Librarian",
+   "cost": "{X}{U}{U}",
+   "type_line": "Legendary Creature — Bird Spirit",
+   "keywords": "[\"Flying\",\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nFlying, vigilance\nWhen Wan Shi Tong enters, put X +1/+1 counters on him. Then draw half X cards, rounded down.\nWhenever an opponent searches their library, put a +1/+1 counter on Wan Shi Tong and draw a card."
+  },
+  {
+   "name": "Watcher of the Spheres",
+   "cost": "{W}{U}",
+   "type_line": "Creature — Bird Wizard",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nCreature spells with flying you cast cost {1} less to cast.\nWhenever another creature you control with flying enters, this creature gets +1/+1 until end of turn."
+  },
+  {
+   "name": "An Offer You Can't Refuse",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Chord of Calling",
+   "cost": "{X}{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[\"Convoke\"]",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Eladamri's Call",
+   "cost": "{G}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a creature card, reveal that card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Enlightened Tutor",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Fierce Guardianship",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell."
+  },
+  {
+   "name": "Force of Will",
+   "cost": "{3}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Silence",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Your opponents can't cast spells this turn."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Eldritch Evolution",
+   "cost": "{1}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value X or less, where X is 2 plus the sacrificed creature's mana value. Put that card onto the battlefield, then shuffle. Exile Eldritch Evolution."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Finale of Devastation",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield. If you search your library this way, shuffle. If X is 10 or more, creatures you control get +X/+X and gain haste until end of turn."
+  },
+  {
+   "name": "Neoform",
+   "cost": "{G}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card onto the battlefield with an additional +1/+1 counter on it, then shuffle."
+  },
+  {
+   "name": "Wargate",
+   "cost": "{X}{G}{W}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a permanent card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Bident of Thassa",
+   "cost": "{2}{U}{U}",
+   "type_line": "Legendary Enchantment Artifact",
+   "keywords": "[]",
+   "text": "Whenever a creature you control deals combat damage to a player, you may draw a card.\n{1}{U}, {T}: Creatures your opponents control attack this turn if able."
+  },
+  {
+   "name": "Birthing Pod",
+   "cost": "{3}{G/P}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "({G/P} can be paid with either {G} or 2 life.)\n{1}{G/P}, {T}, Sacrifice a creature: Search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card onto the battlefield, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Chromatic Orrery",
+   "cost": "{7}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "You may spend mana as though it were mana of any color.\n{T}: Add {C}{C}{C}{C}{C}.\n{5}, {T}: Draw a card for each color among permanents you control."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "The One Ring",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
+  },
+  {
+   "name": "Blind Obedience",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Extort\"]",
+   "text": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cumulative upkeep\"]",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Reconnaissance Mission",
+   "cost": "{2}{U}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cycling\"]",
+   "text": "Whenever a creature you control deals combat damage to a player, you may draw a card.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Utopia Sprawl",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant Forest\nAs this Aura enters, choose a color.\nWhenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color."
+  },
+  {
+   "name": "Verity Circle",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, you may draw a card.\n{4}{U}: Tap target creature without flying."
+  },
+  {
+   "name": "Wild Growth",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}."
+  },
+  {
+   "name": "Teferi, Time Raveler",
+   "cost": "{1}{W}{U}",
+   "type_line": "Legendary Planeswalker — Teferi",
+   "keywords": "[]",
+   "text": "Each opponent can cast spells only any time they could cast a sorcery.\n+1: Until your next turn, you may cast sorcery spells as though they had flash.\n−3: Return up to one target artifact, creature, or enchantment to its owner's hand. Draw a card."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Bountiful Promenade",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "City of Brass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Glacial Fortress",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hinterland Harbor",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Forest or an Island.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Rejuvenating Springs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Savannah",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)"
+  },
+  {
+   "name": "Sea of Clouds",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Seaside Citadel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {G}, {W}, or {U}."
+  },
+  {
+   "name": "Spara's Headquarters",
+   "cost": "",
+   "type_line": "Land — Forest Plains Island",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {G}, {W}, or {U}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Tropical Island",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)"
+  },
+  {
+   "name": "Tundra",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)"
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Yavimaya Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {G} or {U}. This land deals 1 damage to you."
+  }
+ ],
+ "list": [
+  [
+   "Avacyn's Pilgrim",
+   1
+  ],
+  [
+   "Aven Interrupter",
+   1
+  ],
+  [
+   "Aven Mindcensor",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Bloom Tender",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Delney, Streetwise Lookout",
+   1
+  ],
+  [
+   "Displacer Kitten",
+   1
+  ],
+  [
+   "Drannith Magistrate",
+   1
+  ],
+  [
+   "Emiel the Blessed",
+   1
+  ],
+  [
+   "Empyrean Eagle",
+   1
+  ],
+  [
+   "Esper Sentinel",
+   1
+  ],
+  [
+   "Eternal Witness",
+   1
+  ],
+  [
+   "Faeburrow Elder",
+   1
+  ],
+  [
+   "Faerie Mastermind",
+   1
+  ],
+  [
+   "Grand Abolisher",
+   1
+  ],
+  [
+   "Kastral, the Windcrested",
+   1
+  ],
+  [
+   "Kinnan, Bonder Prodigy",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Mockingbird",
+   1
+  ],
+  [
+   "Noble Hierarch",
+   1
+  ],
+  [
+   "Phyrexian Metamorph",
+   1
+  ],
+  [
+   "Ranger-Captain of Eos",
+   1
+  ],
+  [
+   "Seedborn Muse",
+   1
+  ],
+  [
+   "Spellseeker",
+   1
+  ],
+  [
+   "Toski, Bearer of Secrets",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Wan Shi Tong, Librarian",
+   1
+  ],
+  [
+   "Watcher of the Spheres",
+   1
+  ],
+  [
+   "An Offer You Can't Refuse",
+   1
+  ],
+  [
+   "Chord of Calling",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Eladamri's Call",
+   1
+  ],
+  [
+   "Enlightened Tutor",
+   1
+  ],
+  [
+   "Fierce Guardianship",
+   1
+  ],
+  [
+   "Force of Will",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Silence",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Eldritch Evolution",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Finale of Devastation",
+   1
+  ],
+  [
+   "Neoform",
+   1
+  ],
+  [
+   "Wargate",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Bident of Thassa",
+   1
+  ],
+  [
+   "Birthing Pod",
+   1
+  ],
+  [
+   "Chromatic Orrery",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "The One Ring",
+   1
+  ],
+  [
+   "Blind Obedience",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Reconnaissance Mission",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Utopia Sprawl",
+   1
+  ],
+  [
+   "Verity Circle",
+   1
+  ],
+  [
+   "Wild Growth",
+   1
+  ],
+  [
+   "Teferi, Time Raveler",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ],
+  [
+   "Bountiful Promenade",
+   1
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "City of Brass",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Forest",
+   4
+  ],
+  [
+   "Glacial Fortress",
+   1
+  ],
+  [
+   "Hallowed Fountain",
+   1
+  ],
+  [
+   "Hinterland Harbor",
+   1
+  ],
+  [
+   "Island",
+   4
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ],
+  [
+   "Plains",
+   4
+  ],
+  [
+   "Rejuvenating Springs",
+   1
+  ],
+  [
+   "Savannah",
+   1
+  ],
+  [
+   "Sea of Clouds",
+   1
+  ],
+  [
+   "Seaside Citadel",
+   1
+  ],
+  [
+   "Spara's Headquarters",
+   1
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "Tropical Island",
+   1
+  ],
+  [
+   "Tundra",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Yavimaya Coast",
+   1
+  ]
+ ]
+}

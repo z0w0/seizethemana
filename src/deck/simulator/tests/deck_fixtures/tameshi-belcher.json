@@ -1,0 +1,196 @@
+{
+ "name": "tameshi-belcher",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Tameshi, Reality Architect",
+   "cost": "{2}{U}",
+   "type_line": "Legendary Creature — Moonfolk Wizard",
+   "keywords": "[]",
+   "text": "Whenever one or more noncreature permanents are returned to hand, draw a card. This ability triggers only once each turn.\n{X}{W}, Return a land you control to its owner's hand: Return target artifact or enchantment card with mana value X or less from your graveyard to the battlefield. Activate only as a sorcery."
+  },
+  {
+   "name": "Goblin Charbelcher",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[\"Double\"]",
+   "text": "{3}, {T}: Reveal cards from the top of your library until you reveal a land card. This artifact deals damage equal to the number of nonland cards revealed this way to any target. If the revealed land card was a Mountain, this artifact deals double that damage instead. Put the revealed cards on the bottom of your library in any order."
+  },
+  {
+   "name": "Lotus Bloom",
+   "cost": "",
+   "type_line": "Artifact",
+   "keywords": "[\"Suspend\"]",
+   "text": "Suspend 3—{0} (Rather than cast this card from your hand, pay {0} and exile it with three time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)\n{T}, Sacrifice this artifact: Add three mana of any one color."
+  },
+  {
+   "name": "Whir of Invention",
+   "cost": "{X}{U}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nSearch your library for an artifact card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Disrupting Shoal",
+   "cost": "{X}{U}{U}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[]",
+   "text": "You may exile a blue card with mana value X from your hand rather than pay this spell's mana cost.\nCounter target spell if its mana value is X."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Into the Flood Maw",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Gift\"]",
+   "text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nReturn target creature an opponent controls to its owner's hand. If the gift was promised, instead return target nonland permanent an opponent controls to its owner's hand."
+  },
+  {
+   "name": "Spell Snare",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell with mana value 2."
+  },
+  {
+   "name": "Stern Scolding",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target creature spell with power or toughness 2 or less."
+  },
+  {
+   "name": "Hydroelectric Specimen // Hydroelectric Laboratory",
+   "cost": "{2}{U} // ",
+   "type_line": "Creature — Weird // Land",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhen this creature enters, you may change the target of target instant or sorcery spell with a single target to this creature.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Jwari Disruption // Jwari Ruins",
+   "cost": "{1}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Counter target spell unless its controller pays {1}.\n// This land enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Sea Gate Restoration // Sea Gate, Reborn",
+   "cost": "{4}{U}{U}{U} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "[]",
+   "text": "Draw cards equal to the number of cards in your hand plus one. You have no maximum hand size for the rest of the game.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Suppression Ray // Orderly Plaza",
+   "cost": "{3}{W/U}{W/U} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "[]",
+   "text": "Tap all creatures target player controls. You may pay any amount of {E}. If you do, choose up to that many creatures tapped this way. Put a stun counter on each of them. (If a permanent with a stun counter would become untapped, remove one from it instead.)\n// This land enters tapped.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Waterlogged Teachings // Inundated Archive",
+   "cost": "{3}{U/B} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Search your library for an instant card or a card with flash, reveal it, put it into your hand, then shuffle.\n// This land enters tapped.\n{T}: Add {U} or {B}."
+  }
+ ],
+ "list": [
+  [
+   "Tameshi, Reality Architect",
+   4
+  ],
+  [
+   "Goblin Charbelcher",
+   4
+  ],
+  [
+   "Lotus Bloom",
+   4
+  ],
+  [
+   "Whir of Invention",
+   4
+  ],
+  [
+   "Disrupting Shoal",
+   4
+  ],
+  [
+   "Preordain",
+   4
+  ],
+  [
+   "Counterspell",
+   3
+  ],
+  [
+   "Force of Negation",
+   3
+  ],
+  [
+   "Into the Flood Maw",
+   3
+  ],
+  [
+   "Spell Snare",
+   2
+  ],
+  [
+   "Stern Scolding",
+   2
+  ],
+  [
+   "Hydroelectric Specimen // Hydroelectric Laboratory",
+   4
+  ],
+  [
+   "Jwari Disruption // Jwari Ruins",
+   4
+  ],
+  [
+   "Sea Gate Restoration // Sea Gate, Reborn",
+   4
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   4
+  ],
+  [
+   "Suppression Ray // Orderly Plaza",
+   4
+  ],
+  [
+   "Waterlogged Teachings // Inundated Archive",
+   3
+  ]
+ ]
+}

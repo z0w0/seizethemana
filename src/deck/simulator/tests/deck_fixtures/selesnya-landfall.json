@@ -1,0 +1,196 @@
+{
+ "name": "selesnya-landfall",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Fabled Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land."
+  },
+  {
+   "name": "Escape Tunnel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\n{T}, Sacrifice this land: Target creature with power 2 or less can't be blocked this turn."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Hushwood Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G}.\n{T}: Add {W}. Activate only if you control a Forest or a Plains."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Sazh's Chocobo",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Earthbender Ascension",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Earthbend\",\"Landfall\"]",
+   "text": "When this enchantment enters, earthbend 2. Then search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\nLandfall — Whenever a land you control enters, put a quest counter on this enchantment. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target creature you control. It gains trample until end of turn."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Icetill Explorer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Scout",
+   "keywords": "[\"Mill\",\"Landfall\"]",
+   "text": "You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card."
+  },
+  {
+   "name": "Mightform Harmonizer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Druid",
+   "keywords": "[\"Warp\",\"Double\",\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, double the power of target creature you control until end of turn.\nWarp {2}{G} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Ba Sing Se",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Earthbend\"]",
+   "text": "This land enters tapped unless you control a basic land.\n{T}: Add {G}.\n{2}{G}, {T}: Earthbend 2. Activate only as a sorcery. (Target land you control becomes a 0/0 creature with haste that's still a land. Put two +1/+1 counters on it. When it dies or is exiled, return it to the battlefield tapped.)"
+  },
+  {
+   "name": "Mossborn Hydra",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elemental Hydra",
+   "keywords": "[\"Trample\",\"Double\",\"Landfall\"]",
+   "text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nThis creature enters with a +1/+1 counter on it.\nLandfall — Whenever a land you control enters, double the number of +1/+1 counters on this creature."
+  },
+  {
+   "name": "Esper Origins // Summon: Esper Maduin",
+   "cost": "{1}{G} // ",
+   "type_line": "Sorcery // Enchantment Creature — Saga Elemental",
+   "keywords": "[\"Surveil\",\"Transform\",\"Flashback\"]",
+   "text": "Surveil 2. You gain 2 life. If this spell was cast from a graveyard, exile it, then put it onto the battlefield transformed under its owner's control with a finality counter on it. (If a creature with a finality counter on it would die, exile it instead.)\nFlashback {3}{G} (You may cast this card from your graveyard for its flashback cost. Then exile it.)\n// (As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Reveal the top card of your library. If it's a permanent card, put it into your hand.\nII — Add {G}{G}.\nIII — Other creatures you control get +2/+2 and gain trample until end of turn."
+  },
+  {
+   "name": "Dyadrine, Synthesis Amalgam",
+   "cost": "{X}{G}{W}",
+   "type_line": "Legendary Artifact Creature — Construct",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nDyadrine enters with a number of +1/+1 counters on it equal to the amount of mana spent to cast it.\nWhenever you attack, you may remove a +1/+1 counter from each of two creatures you control. If you do, draw a card and create a 2/2 colorless Robot artifact creature token."
+  },
+  {
+   "name": "Shared Roots",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery — Lesson",
+   "keywords": "[]",
+   "text": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   9
+  ],
+  [
+   "Temple Garden",
+   4
+  ],
+  [
+   "Fabled Passage",
+   4
+  ],
+  [
+   "Escape Tunnel",
+   3
+  ],
+  [
+   "Plains",
+   2
+  ],
+  [
+   "Hushwood Verge",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   4
+  ],
+  [
+   "Sazh's Chocobo",
+   4
+  ],
+  [
+   "Earthbender Ascension",
+   4
+  ],
+  [
+   "Erode",
+   4
+  ],
+  [
+   "Icetill Explorer",
+   4
+  ],
+  [
+   "Mightform Harmonizer",
+   4
+  ],
+  [
+   "Ba Sing Se",
+   3
+  ],
+  [
+   "Mossborn Hydra",
+   3
+  ],
+  [
+   "Esper Origins // Summon: Esper Maduin",
+   3
+  ],
+  [
+   "Dyadrine, Synthesis Amalgam",
+   2
+  ],
+  [
+   "Shared Roots",
+   2
+  ]
+ ]
+}

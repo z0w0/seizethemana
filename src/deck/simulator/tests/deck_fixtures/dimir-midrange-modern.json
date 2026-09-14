@@ -1,0 +1,317 @@
+{
+ "name": "dimir-midrange-modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Revolt\"]",
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt — Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Psychic Frog",
+   "cost": "{U}{B}",
+   "type_line": "Creature — Frog",
+   "keywords": "[]",
+   "text": "Whenever this creature deals combat damage to a player or planeswalker, draw a card.\nDiscard a card: Put a +1/+1 counter on this creature.\nExile three cards from your graveyard: This creature gains flying until end of turn."
+  },
+  {
+   "name": "Quantum Riddler",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature — Sphinx",
+   "keywords": "[\"Flying\",\"Warp\"]",
+   "text": "Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.\nWarp {1}{U}"
+  },
+  {
+   "name": "Orcish Bowmasters",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Orc Archer",
+   "keywords": "[\"Amass\",\"Flash\"]",
+   "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1."
+  },
+  {
+   "name": "Subtlety",
+   "cost": "{2}{U}{U}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Flying\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhen this creature enters, choose up to one target creature spell or planeswalker spell. Its owner puts it on their choice of the top or bottom of their library.\nEvoke—Exile a blue card from your hand."
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar",
+   "cost": "{U} // ",
+   "type_line": "Legendary Creature — Moonfolk Wizard // Legendary Planeswalker — Tamiyo",
+   "keywords": "[\"Flying\",\"Investigate\",\"Transform\"]",
+   "text": "Flying\nWhenever Tamiyo attacks, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhen you draw your third card in a turn, exile Tamiyo, then return her to the battlefield transformed under her owner's control.\n// +2: Until your next turn, whenever a creature attacks you or a planeswalker you control, it gets -1/-0 until end of turn.\n−3: Return target instant or sorcery card from your graveyard to your hand. If it's a green card, add one mana of any color.\n−7: Draw cards equal to half the number of cards in your library, rounded up. You get an emblem with \"You have no maximum hand size.\""
+  },
+  {
+   "name": "Consign to Memory",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Replicate\"]",
+   "text": "Replicate {1} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nCounter target triggered ability or colorless spell."
+  },
+  {
+   "name": "Spell Snare",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell with mana value 2."
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Murktide Regent",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Delve\"]",
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nFlying\nThis creature enters with a +1/+1 counter on it for each instant and sorcery card exiled with it.\nWhenever an instant or sorcery card leaves your graveyard, put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Drown in the Loch",
+   "cost": "{U}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target spell with mana value less than or equal to the number of cards in its controller's graveyard.\n• Destroy target creature with mana value less than or equal to the number of cards in its controller's graveyard."
+  },
+  {
+   "name": "Sheoldred's Edict",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Each opponent sacrifices a nontoken creature of their choice.\n• Each opponent sacrifices a creature token of their choice.\n• Each opponent sacrifices a planeswalker of their choice."
+  },
+  {
+   "name": "Wan Shi Tong, Librarian",
+   "cost": "{X}{U}{U}",
+   "type_line": "Legendary Creature — Bird Spirit",
+   "keywords": "[\"Flying\",\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nFlying, vigilance\nWhen Wan Shi Tong enters, put X +1/+1 counters on him. Then draw half X cards, rounded down.\nWhenever an opponent searches their library, put a +1/+1 counter on Wan Shi Tong and draw a card."
+  },
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker — Kaito",
+   "keywords": "[\"Surveil\",\"Ninjutsu\"]",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n−2: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Undercity Sewers",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Darkslick Shores",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {U} or {B}."
+  },
+  {
+   "name": "Gloomlake Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {U}.\n{T}: Add {B}. Activate only if you control an Island or a Swamp."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  }
+ ],
+ "list": [
+  [
+   "Thoughtseize",
+   4
+  ],
+  [
+   "Fatal Push",
+   4
+  ],
+  [
+   "Psychic Frog",
+   4
+  ],
+  [
+   "Quantum Riddler",
+   4
+  ],
+  [
+   "Orcish Bowmasters",
+   3
+  ],
+  [
+   "Subtlety",
+   3
+  ],
+  [
+   "Force of Negation",
+   3
+  ],
+  [
+   "Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar",
+   2
+  ],
+  [
+   "Consign to Memory",
+   2
+  ],
+  [
+   "Spell Snare",
+   2
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   2
+  ],
+  [
+   "Murktide Regent",
+   1
+  ],
+  [
+   "Drown in the Loch",
+   1
+  ],
+  [
+   "Sheoldred's Edict",
+   1
+  ],
+  [
+   "Wan Shi Tong, Librarian",
+   1
+  ],
+  [
+   "Kaito, Bane of Nightmares",
+   1
+  ],
+  [
+   "Polluted Delta",
+   4
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Watery Grave",
+   3
+  ],
+  [
+   "Island",
+   4
+  ],
+  [
+   "Swamp",
+   2
+  ],
+  [
+   "Undercity Sewers",
+   2
+  ],
+  [
+   "Darkslick Shores",
+   1
+  ],
+  [
+   "Gloomlake Verge",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ]
+ ]
+}

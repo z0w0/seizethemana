@@ -1,0 +1,952 @@
+{
+ "name": "vivi storm",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Vivi Ornitier",
+   "cost": "{1}{U}{R}",
+   "type_line": "Legendary Creature — Wizard",
+   "keywords": "[]",
+   "text": "{0}: Add X mana in any combination of {U} and/or {R}, where X is Vivi Ornitier's power. Activate only during your turn and only once each turn.\nWhenever you cast a noncreature spell, put a +1/+1 counter on Vivi Ornitier and it deals 1 damage to each opponent."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Archmage Emeritus",
+   "cost": "{2}{U}{U}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[\"Magecraft\"]",
+   "text": "Magecraft — Whenever you cast or copy an instant or sorcery spell, draw a card."
+  },
+  {
+   "name": "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   "cost": "{2}{R} // {4}{R}",
+   "type_line": "Legendary Creature — God // Legendary Artifact",
+   "keywords": "[]",
+   "text": "Whenever you cast a spell, add {R}. Until end of turn, you don't lose this mana as steps and phases end.\nCreatures you control can boast twice during each of your turns rather than once.\n// Discard a card: Exile the top two cards of your library. You may play those cards this turn."
+  },
+  {
+   "name": "Coruscation Mage",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Otter Wizard",
+   "keywords": "[\"Offspring\"]",
+   "text": "Offspring {2} (You may pay an additional {2} as you cast this spell. If you do, when this creature enters, create a 1/1 token copy of it.)\nWhenever you cast a noncreature spell, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Guttersnipe",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin Shaman",
+   "keywords": "[]",
+   "text": "Whenever you cast an instant or sorcery spell, this creature deals 2 damage to each opponent."
+  },
+  {
+   "name": "Harmonic Prodigy",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[\"Prowess\"]",
+   "text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nIf a triggered ability of a Shaman or another Wizard you control triggers, that ability triggers an additional time."
+  },
+  {
+   "name": "Hexing Squelcher",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Sorcerer",
+   "keywords": "[\"Ward\"]",
+   "text": "This spell can't be countered.\nWard—Pay 2 life.\nSpells you control can't be countered.\nOther creatures you control have \"Ward—Pay 2 life.\""
+  },
+  {
+   "name": "Hullbreaker Horror",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature — Kraken Horror",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one —\n• Return target spell you don't control to its owner's hand.\n• Return target nonland permanent to its owner's hand."
+  },
+  {
+   "name": "Niv-Mizzet, Parun",
+   "cost": "{U}{U}{U}{R}{R}{R}",
+   "type_line": "Legendary Creature — Dragon Wizard",
+   "keywords": "[\"Flying\"]",
+   "text": "This spell can't be countered.\nFlying\nWhenever you draw a card, Niv-Mizzet deals 1 damage to any target.\nWhenever a player casts an instant or sorcery spell, you draw a card."
+  },
+  {
+   "name": "Niv-Mizzet, Visionary",
+   "cost": "{4}{U}{R}",
+   "type_line": "Legendary Creature — Dragon Wizard",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nYou have no maximum hand size.\nWhenever a source you control deals noncombat damage to an opponent, you draw that many cards."
+  },
+  {
+   "name": "Quicksilver Elemental",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[]",
+   "text": "{U}: This creature gains all activated abilities of target creature until end of turn. (If any of the abilities use that creature's name, use this creature's name instead.)\nYou may spend blue mana as though it were mana of any color to pay the activation costs of this creature's abilities."
+  },
+  {
+   "name": "Simian Spirit Guide",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Ape Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {R}."
+  },
+  {
+   "name": "Storm-Kiln Artist",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Dwarf Shaman",
+   "keywords": "[\"Treasure\",\"Magecraft\"]",
+   "text": "This creature gets +1/+0 for each artifact you control.\nMagecraft — Whenever you cast or copy an instant or sorcery spell, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Stormcatch Mentor",
+   "cost": "{U}{R}",
+   "type_line": "Creature — Otter Wizard",
+   "keywords": "[\"Prowess\",\"Haste\"]",
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nInstant and sorcery spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Tandem Lookout",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Human Scout",
+   "keywords": "[\"Soulbond\"]",
+   "text": "Soulbond (You may pair this creature with another unpaired creature when either enters. They remain paired for as long as you control both of them.)\nAs long as Tandem Lookout is paired with another creature, each of those creatures has \"Whenever this creature deals damage to an opponent, draw a card.\""
+  },
+  {
+   "name": "Veyran, Voice of Duality",
+   "cost": "{1}{U}{R}",
+   "type_line": "Legendary Creature — Efreet Wizard",
+   "keywords": "[\"Magecraft\"]",
+   "text": "Magecraft — Whenever you cast or copy an instant or sorcery spell, Veyran gets +1/+1 until end of turn.\nIf you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time."
+  },
+  {
+   "name": "An Offer You Can't Refuse",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Arcane Denial",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Brain Freeze",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Storm\",\"Mill\"]",
+   "text": "Target player mills three cards.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Brainstorm",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw three cards, then put two cards from your hand on top of your library in any order."
+  },
+  {
+   "name": "Consider",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Surveil\"]",
+   "text": "Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\nDraw a card."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability."
+  },
+  {
+   "name": "Fierce Guardianship",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell."
+  },
+  {
+   "name": "Flashback",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Flusterstorm",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Storm\"]",
+   "text": "Counter target instant or sorcery spell unless its controller pays {1}.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Force of Will",
+   "cost": "{3}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell."
+  },
+  {
+   "name": "Frantic Search",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw two cards, then discard two cards. Untap up to three lands."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Magic Damper",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target creature you control gets +1/+1 and gains hexproof until end of turn. Untap it."
+  },
+  {
+   "name": "Mystical Tutor",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for an instant or sorcery card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Negate",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target noncreature spell."
+  },
+  {
+   "name": "Opt",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nDraw a card."
+  },
+  {
+   "name": "Pongify",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token."
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Snap",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Return target creature to its owner's hand. Untap up to two lands."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Expressive Iteration",
+   "cost": "{U}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them. You may play the exiled card this turn."
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Gamble",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, discard a card at random, then shuffle."
+  },
+  {
+   "name": "Gitaxian Probe",
+   "cost": "{U/P}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "({U/P} can be paid with either {U} or 2 life.)\nLook at target player's hand.\nDraw a card."
+  },
+  {
+   "name": "Grapeshot",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Storm\"]",
+   "text": "Grapeshot deals 1 damage to any target.\nStorm (When you cast this spell, copy it for each spell cast before it this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Jeska's Will",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn."
+  },
+  {
+   "name": "Ponder",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Rite of Flame",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Add {R}{R}, then add {R} for each card named Rite of Flame in each graveyard."
+  },
+  {
+   "name": "Serum Visions",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Scry\"]",
+   "text": "Draw a card. Scry 2."
+  },
+  {
+   "name": "Strike It Rich",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Treasure\",\"Flashback\"]",
+   "text": "Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Windfall",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Izzet Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {U}{R}."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Mox Amber",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color among legendary creatures and planeswalkers you control."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Swiftfoot Boots",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has hexproof and haste. (It can't be the target of spells or abilities your opponents control. It can attack and {T} no matter when it came under your control.)\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Talisman of Creativity",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Thought Vessel",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Wizard's Staff",
+   "cost": "{1}{U}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has prowess. (Whenever its controller casts a noncreature spell, that creature gets +1/+1 until end of turn.)\nIf a triggered ability of equipped creature triggers, that ability triggers an additional time.\nEquip Wizard {1}\nEquip {3}"
+  },
+  {
+   "name": "Curiosity",
+   "cost": "{U}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cumulative upkeep\"]",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Ophidian Eye",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\",\"Flash\"]",
+   "text": "Flash (You may cast this spell any time you could cast an instant.)\nEnchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Sigil of Sleep",
+   "cost": "{U}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nWhenever enchanted creature deals damage to a player, return target creature that player controls to its owner's hand."
+  },
+  {
+   "name": "Underworld Breach",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\nAt the beginning of the end step, sacrifice this enchantment."
+  },
+  {
+   "name": "Cascade Bluffs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{U/R}, {T}: Add {U}{U}, {U}{R}, or {R}{R}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Fiery Islet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Frostboil Snarl",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal an Island or Mountain card from your hand. If you don't, this land enters tapped.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Mistrise Village",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Mountain or a Forest.\n{T}: Add {U}.\n{U}, {T}: The next spell you cast this turn can't be countered."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Reliquary Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Riverpyre Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {R}.\n{T}: Add {U}. Activate only if you control an Island or a Mountain."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Shivan Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Stormcarved Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Sulfur Falls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Thundering Falls",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Training Center",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {R}."
+  }
+ ],
+ "list": [
+  [
+   "Archmage Emeritus",
+   1
+  ],
+  [
+   "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   1
+  ],
+  [
+   "Coruscation Mage",
+   1
+  ],
+  [
+   "Guttersnipe",
+   1
+  ],
+  [
+   "Harmonic Prodigy",
+   1
+  ],
+  [
+   "Hexing Squelcher",
+   1
+  ],
+  [
+   "Hullbreaker Horror",
+   1
+  ],
+  [
+   "Niv-Mizzet, Parun",
+   1
+  ],
+  [
+   "Niv-Mizzet, Visionary",
+   1
+  ],
+  [
+   "Quicksilver Elemental",
+   1
+  ],
+  [
+   "Simian Spirit Guide",
+   1
+  ],
+  [
+   "Storm-Kiln Artist",
+   1
+  ],
+  [
+   "Stormcatch Mentor",
+   1
+  ],
+  [
+   "Tandem Lookout",
+   1
+  ],
+  [
+   "Veyran, Voice of Duality",
+   1
+  ],
+  [
+   "An Offer You Can't Refuse",
+   1
+  ],
+  [
+   "Arcane Denial",
+   1
+  ],
+  [
+   "Brain Freeze",
+   1
+  ],
+  [
+   "Brainstorm",
+   1
+  ],
+  [
+   "Consider",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Deflecting Swat",
+   1
+  ],
+  [
+   "Fierce Guardianship",
+   1
+  ],
+  [
+   "Flashback",
+   1
+  ],
+  [
+   "Flusterstorm",
+   1
+  ],
+  [
+   "Force of Negation",
+   1
+  ],
+  [
+   "Force of Will",
+   1
+  ],
+  [
+   "Frantic Search",
+   1
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Magic Damper",
+   1
+  ],
+  [
+   "Mystical Tutor",
+   1
+  ],
+  [
+   "Negate",
+   1
+  ],
+  [
+   "Opt",
+   1
+  ],
+  [
+   "Pongify",
+   1
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   1
+  ],
+  [
+   "Snap",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Expressive Iteration",
+   1
+  ],
+  [
+   "Faithless Looting",
+   1
+  ],
+  [
+   "Gamble",
+   1
+  ],
+  [
+   "Gitaxian Probe",
+   1
+  ],
+  [
+   "Grapeshot",
+   1
+  ],
+  [
+   "Jeska's Will",
+   1
+  ],
+  [
+   "Ponder",
+   1
+  ],
+  [
+   "Preordain",
+   1
+  ],
+  [
+   "Rite of Flame",
+   1
+  ],
+  [
+   "Serum Visions",
+   1
+  ],
+  [
+   "Strike It Rich",
+   1
+  ],
+  [
+   "Windfall",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Izzet Signet",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Mox Amber",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Swiftfoot Boots",
+   1
+  ],
+  [
+   "Talisman of Creativity",
+   1
+  ],
+  [
+   "Thought Vessel",
+   1
+  ],
+  [
+   "Wizard's Staff",
+   1
+  ],
+  [
+   "Curiosity",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Ophidian Eye",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Sigil of Sleep",
+   1
+  ],
+  [
+   "Underworld Breach",
+   1
+  ],
+  [
+   "Cascade Bluffs",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Fiery Islet",
+   1
+  ],
+  [
+   "Frostboil Snarl",
+   1
+  ],
+  [
+   "Island",
+   9
+  ],
+  [
+   "Mistrise Village",
+   1
+  ],
+  [
+   "Mountain",
+   7
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ],
+  [
+   "Reliquary Tower",
+   1
+  ],
+  [
+   "Riverpyre Verge",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Shivan Reef",
+   1
+  ],
+  [
+   "Steam Vents",
+   1
+  ],
+  [
+   "Stormcarved Coast",
+   1
+  ],
+  [
+   "Sulfur Falls",
+   1
+  ],
+  [
+   "Thundering Falls",
+   1
+  ],
+  [
+   "Training Center",
+   1
+  ]
+ ]
+}

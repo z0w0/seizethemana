@@ -1,0 +1,1018 @@
+{
+ "name": "jaws storm",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Jaws, Relentless Predator",
+   "cost": "{3}{R}{R}",
+   "type_line": "Legendary Creature — Shark",
+   "keywords": "[\"Haste\",\"Trample\"]",
+   "text": "Trample, haste\nWhenever Jaws deals combat damage to a player, create that many Blood tokens. (They're artifacts with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\nWhenever a noncreature artifact is sacrificed or destroyed, Jaws deals 1 damage to each opponent."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   "cost": "{2}{R} // {4}{R}",
+   "type_line": "Legendary Creature — God // Legendary Artifact",
+   "keywords": "[]",
+   "text": "Whenever you cast a spell, add {R}. Until end of turn, you don't lose this mana as steps and phases end.\nCreatures you control can boast twice during each of your turns rather than once.\n// Discard a card: Exile the top two cards of your library. You may play those cards this turn."
+  },
+  {
+   "name": "Crime Novelist",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin Bard",
+   "keywords": "[]",
+   "text": "Whenever you sacrifice an artifact, put a +1/+1 counter on this creature and add {R}."
+  },
+  {
+   "name": "Dargo, the Shipwrecker",
+   "cost": "{6}{R}",
+   "type_line": "Legendary Creature — Giant Pirate",
+   "keywords": "[\"Partner\",\"Trample\"]",
+   "text": "As an additional cost to cast this spell, you may sacrifice any number of artifacts and/or creatures. This spell costs {2} less to cast for each permanent sacrificed this way and {2} less to cast for each other artifact or creature you've sacrificed this turn.\nTrample\nPartner (You can have two commanders if both have partner.)"
+  },
+  {
+   "name": "Glaring Fleshraker",
+   "cost": "{2}{C}",
+   "type_line": "Creature — Eldrazi Drone",
+   "keywords": "[]",
+   "text": "Whenever you cast a colorless spell, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"\nWhenever another colorless creature you control enters, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Glint-Horn Buccaneer",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Minotaur Pirate",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\nWhenever you discard a card, this creature deals 1 damage to each opponent.\n{1}{R}, Discard a card: Draw a card. Activate only if this creature is attacking."
+  },
+  {
+   "name": "Goblin Engineer",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Artificer",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for an artifact card, put it into your graveyard, then shuffle.\n{R}, {T}, Sacrifice an artifact: Return target artifact card with mana value 3 or less from your graveyard to the battlefield."
+  },
+  {
+   "name": "Goblin Welder",
+   "cost": "{R}",
+   "type_line": "Creature — Goblin Artificer",
+   "keywords": "[]",
+   "text": "{T}: Choose target artifact a player controls and target artifact card in that player's graveyard. If both targets are still legal as this ability resolves, that player simultaneously sacrifices the artifact and returns the artifact card to the battlefield."
+  },
+  {
+   "name": "Imperial Recruiter",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Advisor",
+   "keywords": "[]",
+   "text": "When this creature enters, search your library for a creature card with power 2 or less, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Ingenious Artillerist",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Artificer",
+   "keywords": "[]",
+   "text": "Whenever one or more artifacts you control enter, this creature deals that much damage to each opponent."
+  },
+  {
+   "name": "Inti, Seneschal of the Sun",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Human Knight",
+   "keywords": "[]",
+   "text": "Whenever you attack, you may discard a card. When you do, put a +1/+1 counter on target attacking creature. It gains trample until end of turn.\nWhenever you discard one or more cards, exile the top card of your library. You may play that card until your next end step."
+  },
+  {
+   "name": "Kediss, Emberclaw Familiar",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Elemental Lizard",
+   "keywords": "[\"Partner\"]",
+   "text": "Whenever a commander you control deals combat damage to an opponent, it deals that much damage to each other opponent.\nPartner (You can have two commanders if both have partner.)"
+  },
+  {
+   "name": "Knuckles the Echidna",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Creature — Echidna Warrior",
+   "keywords": "[\"Treasure Hunter\",\"Treasure\",\"Haste\",\"Trample\",\"Double strike\"]",
+   "text": "Double strike, trample, haste\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nTreasure Hunter — At the beginning of your upkeep, if you control thirty or more artifacts, you win the game."
+  },
+  {
+   "name": "Longshot, Rebel Bowman",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Creature — Human Rebel Ally",
+   "keywords": "[\"Reach\"]",
+   "text": "Reach (This creature can block creatures with flying.)\nNoncreature spells you cast cost {1} less to cast.\nWhenever you cast a noncreature spell, Longshot deals 2 damage to each opponent."
+  },
+  {
+   "name": "Magus of the Moon",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Mica, Reader of Ruins",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Creature — Human Artificer",
+   "keywords": "[\"Ward\"]",
+   "text": "Ward—Pay 3 life. (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays 3 life.)\nWhenever you cast an instant or sorcery spell, you may sacrifice an artifact. If you do, copy that spell and you may choose new targets for the copy."
+  },
+  {
+   "name": "Neheb, the Eternal",
+   "cost": "{3}{R}{R}",
+   "type_line": "Legendary Creature — Zombie Minotaur Warrior",
+   "keywords": "[\"Afflict\"]",
+   "text": "Afflict 3 (Whenever this creature becomes blocked, defending player loses 3 life.)\nAt the beginning of each of your postcombat main phases, add {R} for each 1 life your opponents have lost this turn."
+  },
+  {
+   "name": "Professional Face-Breaker",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Warrior",
+   "keywords": "[\"Treasure\",\"Menace\"]",
+   "text": "Menace\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nSacrifice a Treasure: Exile the top card of your library. You may play that card this turn."
+  },
+  {
+   "name": "Ragavan, Nimble Pilferer",
+   "cost": "{R}",
+   "type_line": "Legendary Creature — Monkey Pirate",
+   "keywords": "[\"Treasure\",\"Dash\"]",
+   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+  },
+  {
+   "name": "Razorkin Needlehead",
+   "cost": "{R}{R}",
+   "type_line": "Creature — Human Assassin",
+   "keywords": "[]",
+   "text": "This creature has first strike during your turn.\nWhenever an opponent draws a card, this creature deals 1 damage to them."
+  },
+  {
+   "name": "Reckless Fireweaver",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Human Artificer",
+   "keywords": "[]",
+   "text": "Whenever an artifact you control enters, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Scrap Trawler",
+   "cost": "{3}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": "Whenever this creature dies or another artifact you control is put into a graveyard from the battlefield, return to your hand target artifact card in your graveyard with lesser mana value."
+  },
+  {
+   "name": "Simian Spirit Guide",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Ape Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {R}."
+  },
+  {
+   "name": "Treasonous Ogre",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Ogre Shaman",
+   "keywords": "[\"Dethrone\"]",
+   "text": "Dethrone (Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on it.)\nPay 3 life: Add {R}."
+  },
+  {
+   "name": "Walking Ballista",
+   "cost": "{X}{X}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": "This creature enters with X +1/+1 counters on it.\n{4}: Put a +1/+1 counter on this creature.\nRemove a +1/+1 counter from this creature: It deals 1 damage to any target."
+  },
+  {
+   "name": "Karn, the Great Creator",
+   "cost": "{4}",
+   "type_line": "Legendary Planeswalker — Karn",
+   "keywords": "[]",
+   "text": "Activated abilities of artifacts your opponents control can't be activated.\n+1: Until your next turn, up to one target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value.\n−2: You may reveal an artifact card you own from outside the game or choose a face-up artifact card you own in exile. Put that card into your hand."
+  },
+  {
+   "name": "Tezzeret, Cruel Captain",
+   "cost": "{3}",
+   "type_line": "Legendary Planeswalker — Tezzeret",
+   "keywords": "[]",
+   "text": "Whenever an artifact you control enters, put a loyalty counter on Tezzeret.\n0: Untap target artifact or creature. If it's an artifact creature, put a +1/+1 counter on it.\n−3: Search your library for an artifact card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\n−7: You get an emblem with \"At the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it's not a creature, it becomes a 0/0 Robot artifact creature.\""
+  },
+  {
+   "name": "Aetherflux Reservoir",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever you cast a spell, you gain 1 life for each spell you've cast this turn.\nPay 50 life: This artifact deals 50 damage to any target."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Basalt Monolith",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Clock of Omens",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Tap two untapped artifacts you control: Untap target artifact."
+  },
+  {
+   "name": "God-Pharaoh's Statue",
+   "cost": "{6}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "Spells your opponents cast cost {2} more to cast.\nAt the beginning of your end step, each opponent loses 1 life."
+  },
+  {
+   "name": "Grafdigger's Cage",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Creature cards in graveyards and libraries can't enter the battlefield.\nPlayers can't cast spells from graveyards or libraries."
+  },
+  {
+   "name": "Grim Monolith",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{4}: Untap this artifact."
+  },
+  {
+   "name": "Grinding Station",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[\"Mill\"]",
+   "text": "{T}, Sacrifice an artifact: Target player mills three cards.\nWhenever an artifact enters, you may untap this artifact."
+  },
+  {
+   "name": "Idol of Oblivion",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Draw a card. Activate only if you created a token this turn.\n{8}, {T}, Sacrifice this artifact: Create a 10/10 colorless Eldrazi creature token."
+  },
+  {
+   "name": "Krark-Clan Ironworks",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Sacrifice an artifact: Add {C}{C}."
+  },
+  {
+   "name": "Lion's Eye Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Manifold Key",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Untap another target artifact.\n{3}, {T}: Target creature can't be blocked this turn."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Mystic Forge",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You may look at the top card of your library any time.\nYou may cast artifact spells and colorless spells from the top of your library.\n{T}, Pay 1 life: Exile the top card of your library."
+  },
+  {
+   "name": "Radiant Lotus",
+   "cost": "{6}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice one or more artifacts: Choose a color. Target player adds three mana of the chosen color for each artifact sacrificed this way. (Activate only as an instant.)"
+  },
+  {
+   "name": "Rings of Brighthearth",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever you activate an ability, if it isn't a mana ability, you may pay {2}. If you do, copy that ability. You may choose new targets for the copy."
+  },
+  {
+   "name": "Sensei's Divining Top",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}: Look at the top three cards of your library, then put them back in any order.\n{T}: Draw a card, then put this artifact on top of its owner's library."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Staff of Domination",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}: Untap this artifact.\n{2}, {T}: You gain 1 life.\n{3}, {T}: Untap target creature.\n{4}, {T}: Tap target creature.\n{5}, {T}: Draw a card."
+  },
+  {
+   "name": "Tangle Wire",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[\"Fading\"]",
+   "text": "Fading 4 (This artifact enters with four fade counters on it. At the beginning of your upkeep, remove a fade counter from it. If you can't, sacrifice it.)\nAt the beginning of each player's upkeep, that player taps an untapped artifact, creature, or land they control for each fade counter on this artifact."
+  },
+  {
+   "name": "The One Ring",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
+  },
+  {
+   "name": "Trinisphere",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As long as this artifact is untapped, each spell that would cost less than three mana to cast costs three mana to cast. (Additional mana in the cost may be paid with any color of mana or colorless mana. For example, a spell that would cost {1}{B} to cast costs {2}{B} to cast instead.)"
+  },
+  {
+   "name": "Unwinding Clock",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Untap all artifacts you control during each other player's untap step."
+  },
+  {
+   "name": "Vexing Bauble",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a player casts a spell, if no mana was spent to cast it, counter that spell.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Voltaic Key",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Untap target artifact."
+  },
+  {
+   "name": "Winter Moon",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Players can't untap more than one nonbasic land during their untap steps."
+  },
+  {
+   "name": "Blood Moon",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Descent into Avernus",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "At the beginning of your upkeep, put two descent counters on this enchantment. Then each player creates X Treasure tokens and this enchantment deals X damage to each player, where X is the number of descent counters on this enchantment."
+  },
+  {
+   "name": "Underworld Breach",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\nAt the beginning of the end step, sacrifice this enchantment."
+  },
+  {
+   "name": "Gamble",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, discard a card at random, then shuffle."
+  },
+  {
+   "name": "Jeska's Will",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn."
+  },
+  {
+   "name": "Meltdown",
+   "cost": "{X}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy each artifact with mana value X or less."
+  },
+  {
+   "name": "Reckless Handling",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for an artifact card, reveal it, put it into your hand, shuffle, then discard a card at random. If an artifact card was discarded this way, Reckless Handling deals 2 damage to each opponent."
+  },
+  {
+   "name": "Rite of Flame",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Add {R}{R}, then add {R} for each card named Rite of Flame in each graveyard."
+  },
+  {
+   "name": "Wheel of Fortune",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player discards their hand, then draws seven cards."
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability."
+  },
+  {
+   "name": "Desperate Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[\"Splice\"]",
+   "text": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)"
+  },
+  {
+   "name": "Pyroblast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target spell if it's blue.\n• Destroy target permanent if it's blue."
+  },
+  {
+   "name": "Red Elemental Blast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent."
+  },
+  {
+   "name": "Redirect Lightning",
+   "cost": "{R}",
+   "type_line": "Instant — Lesson",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, pay 5 life or pay {2}.\nChange the target of target spell or ability with a single target."
+  },
+  {
+   "name": "Seething Song",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R}{R}{R}{R}{R}."
+  },
+  {
+   "name": "Skullcrack",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Players can't gain life this turn. Damage can't be prevented this turn. Skullcrack deals 3 damage to target player or planeswalker."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Buried Ruin",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Return target artifact card from your graveyard to your hand."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "City of Traitors",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "When you play another land, sacrifice this land.\n{T}: Add {C}{C}."
+  },
+  {
+   "name": "Crystal Vein",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Add {C}{C}."
+  },
+  {
+   "name": "Emergence Zone",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: You may cast spells this turn as though they had flash."
+  },
+  {
+   "name": "Fire Nation Palace",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a basic land.\n{T}: Add {R}.\n{1}{R}, {T}: Target creature you control gains firebending 4 until end of turn. (Whenever it attacks, add {R}{R}{R}{R}. This mana lasts until end of combat.)"
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  },
+  {
+   "name": "Inventors' Fair",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, if you control three or more artifacts, you gain 1 life.\n{T}: Add {C}.\n{4}, {T}, Sacrifice Inventors' Fair: Search your library for an artifact card, reveal it, put it into your hand, then shuffle. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Mishra's Workshop",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}{C}. Spend this mana only to cast artifact spells."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Prismatic Vista",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Spire of Industry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Activate only if you control an artifact."
+  },
+  {
+   "name": "Talon Gates of Madara",
+   "cost": "",
+   "type_line": "Land — Gate",
+   "keywords": "[]",
+   "text": "When this land enters, up to one target creature phases out.\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{4}: Put this card from your hand onto the battlefield."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   1
+  ],
+  [
+   "Crime Novelist",
+   1
+  ],
+  [
+   "Dargo, the Shipwrecker",
+   1
+  ],
+  [
+   "Glaring Fleshraker",
+   1
+  ],
+  [
+   "Glint-Horn Buccaneer",
+   1
+  ],
+  [
+   "Goblin Engineer",
+   1
+  ],
+  [
+   "Goblin Welder",
+   1
+  ],
+  [
+   "Imperial Recruiter",
+   1
+  ],
+  [
+   "Ingenious Artillerist",
+   1
+  ],
+  [
+   "Inti, Seneschal of the Sun",
+   1
+  ],
+  [
+   "Kediss, Emberclaw Familiar",
+   1
+  ],
+  [
+   "Knuckles the Echidna",
+   1
+  ],
+  [
+   "Longshot, Rebel Bowman",
+   1
+  ],
+  [
+   "Magus of the Moon",
+   1
+  ],
+  [
+   "Mica, Reader of Ruins",
+   1
+  ],
+  [
+   "Neheb, the Eternal",
+   1
+  ],
+  [
+   "Professional Face-Breaker",
+   1
+  ],
+  [
+   "Ragavan, Nimble Pilferer",
+   1
+  ],
+  [
+   "Razorkin Needlehead",
+   1
+  ],
+  [
+   "Reckless Fireweaver",
+   1
+  ],
+  [
+   "Scrap Trawler",
+   1
+  ],
+  [
+   "Simian Spirit Guide",
+   1
+  ],
+  [
+   "Treasonous Ogre",
+   1
+  ],
+  [
+   "Walking Ballista",
+   1
+  ],
+  [
+   "Karn, the Great Creator",
+   1
+  ],
+  [
+   "Tezzeret, Cruel Captain",
+   1
+  ],
+  [
+   "Aetherflux Reservoir",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Basalt Monolith",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Clock of Omens",
+   1
+  ],
+  [
+   "God-Pharaoh's Statue",
+   1
+  ],
+  [
+   "Grafdigger's Cage",
+   1
+  ],
+  [
+   "Grim Monolith",
+   1
+  ],
+  [
+   "Grinding Station",
+   1
+  ],
+  [
+   "Idol of Oblivion",
+   1
+  ],
+  [
+   "Krark-Clan Ironworks",
+   1
+  ],
+  [
+   "Lion's Eye Diamond",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Manifold Key",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Mox Opal",
+   1
+  ],
+  [
+   "Mystic Forge",
+   1
+  ],
+  [
+   "Radiant Lotus",
+   1
+  ],
+  [
+   "Rings of Brighthearth",
+   1
+  ],
+  [
+   "Sensei's Divining Top",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Staff of Domination",
+   1
+  ],
+  [
+   "Tangle Wire",
+   1
+  ],
+  [
+   "The One Ring",
+   1
+  ],
+  [
+   "Trinisphere",
+   1
+  ],
+  [
+   "Unwinding Clock",
+   1
+  ],
+  [
+   "Vexing Bauble",
+   1
+  ],
+  [
+   "Voltaic Key",
+   1
+  ],
+  [
+   "Winter Moon",
+   1
+  ],
+  [
+   "Blood Moon",
+   1
+  ],
+  [
+   "Descent into Avernus",
+   1
+  ],
+  [
+   "Underworld Breach",
+   1
+  ],
+  [
+   "Gamble",
+   1
+  ],
+  [
+   "Jeska's Will",
+   1
+  ],
+  [
+   "Meltdown",
+   1
+  ],
+  [
+   "Reckless Handling",
+   1
+  ],
+  [
+   "Rite of Flame",
+   1
+  ],
+  [
+   "Wheel of Fortune",
+   1
+  ],
+  [
+   "Deflecting Swat",
+   1
+  ],
+  [
+   "Desperate Ritual",
+   1
+  ],
+  [
+   "Pyroblast",
+   1
+  ],
+  [
+   "Red Elemental Blast",
+   1
+  ],
+  [
+   "Redirect Lightning",
+   1
+  ],
+  [
+   "Seething Song",
+   1
+  ],
+  [
+   "Skullcrack",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Buried Ruin",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "City of Traitors",
+   1
+  ],
+  [
+   "Crystal Vein",
+   1
+  ],
+  [
+   "Emergence Zone",
+   1
+  ],
+  [
+   "Fire Nation Palace",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ],
+  [
+   "Inventors' Fair",
+   1
+  ],
+  [
+   "Mishra's Workshop",
+   1
+  ],
+  [
+   "Mountain",
+   9
+  ],
+  [
+   "Prismatic Vista",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Spire of Industry",
+   1
+  ],
+  [
+   "Talon Gates of Madara",
+   1
+  ],
+  [
+   "Urza's Saga",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ]
+ ]
+}

@@ -1,0 +1,229 @@
+{
+ "name": "dimir-excruciator",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Gloomlake Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {U}.\n{T}: Add {B}. Activate only if you control an Island or a Swamp."
+  },
+  {
+   "name": "Restless Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Mill\"]",
+   "text": "This land enters tapped.\n{T}: Add {U} or {B}.\n{2}{U}{B}: Until end of turn, this land becomes a 4/4 blue and black Shark creature with deathtouch. It's still a land.\nWhenever this land attacks, target player mills four cards."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Undercity Sewers",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Hidden Lair",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. Activate only if this land entered this turn or if you control a basic land."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Deceit",
+   "cost": "{4}{U/B}{U/B}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Evoke\"]",
+   "text": "When this creature enters, if {U}{U} was spent to cast it, return up to one other target nonland permanent to its owner's hand.\nWhen this creature enters, if {B}{B} was spent to cast it, target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nEvoke {U/B}{U/B}"
+  },
+  {
+   "name": "Superior Spider-Man",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Creature — Spider Human Hero",
+   "keywords": "[\"Mind Swap\"]",
+   "text": "Mind Swap — You may have Superior Spider-Man enter as a copy of any creature card in a graveyard, except his name is Superior Spider-Man and he's a 4/4 Spider Human Hero in addition to his other types. When you do, exile that card."
+  },
+  {
+   "name": "Duress",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card."
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Blight\"]",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Doomsday Excruciator",
+   "cost": "{B}{B}{B}{B}{B}{B}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, if it was cast, each player exiles all but the bottom six cards of their library face down.\nAt the beginning of your upkeep, draw a card."
+  },
+  {
+   "name": "Bitter Triumph",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, discard a card or pay 3 life.\nDestroy target creature or planeswalker."
+  },
+  {
+   "name": "Stock Up",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Emeritus of Ideation // Ancestral Recall",
+   "cost": "{3}{U}{U} // {U}",
+   "type_line": "Creature — Human Wizard // Instant",
+   "keywords": "[\"Flying\",\"Prepared\",\"Ward\"]",
+   "text": "Flying, ward {2}\nThis creature enters prepared.\nWhenever this creature attacks, you may exile eight cards from your graveyard. If you do, this creature becomes prepared.\n// Target player draws three cards."
+  },
+  {
+   "name": "Winternight Stories",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Harmonize\"]",
+   "text": "Draw three cards. Then discard two cards unless you discard a creature card.\nHarmonize {4}{U} (You may cast this card from your graveyard for its harmonize cost. You may tap a creature you control to reduce that cost by {X}, where X is its power. Then exile this spell.)"
+  },
+  {
+   "name": "Day of Black Sun",
+   "cost": "{X}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each creature with mana value X or less loses all abilities until end of turn. Destroy those creatures."
+  },
+  {
+   "name": "Deadly Cover-Up",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Collect evidence\"]",
+   "text": "As an additional cost to cast this spell, you may collect evidence 6.\nDestroy all creatures. If evidence was collected, exile a card from an opponent's graveyard. Then search its owner's graveyard, hand, and library for any number of cards with that name and exile them. That player shuffles, then draws a card for each card exiled from their hand this way."
+  },
+  {
+   "name": "M.O.D.O.K.",
+   "cost": "{3}{B}{B}",
+   "type_line": "Legendary Artifact Creature — Villain",
+   "keywords": "[\"Mental Organism\",\"Flying\",\"Lifelink\",\"Designed Only for Killing\",\"Connive\"]",
+   "text": "Flying, lifelink\nMental Organism — Pay 3 life: M.O.D.O.K. connives. Activate only during your turn. (Draw a card, then discard a card. If you discarded a nonland card, put a +1/+1 counter on this creature.)\nDesigned Only for Killing — Creatures your opponents control get -1/-1."
+  },
+  {
+   "name": "Strategic Betrayal",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Target opponent exiles a creature they control and their graveyard."
+  }
+ ],
+ "list": [
+  [
+   "Swamp",
+   9
+  ],
+  [
+   "Gloomlake Verge",
+   4
+  ],
+  [
+   "Restless Reef",
+   4
+  ],
+  [
+   "Watery Grave",
+   4
+  ],
+  [
+   "Undercity Sewers",
+   2
+  ],
+  [
+   "Hidden Lair",
+   2
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Deceit",
+   4
+  ],
+  [
+   "Superior Spider-Man",
+   4
+  ],
+  [
+   "Duress",
+   4
+  ],
+  [
+   "Requiting Hex",
+   4
+  ],
+  [
+   "Doomsday Excruciator",
+   3
+  ],
+  [
+   "Bitter Triumph",
+   3
+  ],
+  [
+   "Stock Up",
+   3
+  ],
+  [
+   "Emeritus of Ideation // Ancestral Recall",
+   2
+  ],
+  [
+   "Winternight Stories",
+   2
+  ],
+  [
+   "Day of Black Sun",
+   2
+  ],
+  [
+   "Deadly Cover-Up",
+   1
+  ],
+  [
+   "M.O.D.O.K.",
+   1
+  ],
+  [
+   "Strategic Betrayal",
+   1
+  ]
+ ]
+}

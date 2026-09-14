@@ -1,0 +1,288 @@
+{
+ "name": "azorius-fiddlebender",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Oswald Fiddlebender",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature — Gnome Artificer",
+   "keywords": "[]",
+   "text": "Magical Tinkering — {W}, {T}, Sacrifice an artifact: Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put it onto the battlefield, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar",
+   "cost": "{U} // ",
+   "type_line": "Legendary Creature — Moonfolk Wizard // Legendary Planeswalker — Tamiyo",
+   "keywords": "[\"Flying\",\"Investigate\",\"Transform\"]",
+   "text": "Flying\nWhenever Tamiyo attacks, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhen you draw your third card in a turn, exile Tamiyo, then return her to the battlefield transformed under her owner's control.\n// +2: Until your next turn, whenever a creature attacks you or a planeswalker you control, it gets -1/-0 until end of turn.\n−3: Return target instant or sorcery card from your graveyard to your hand. If it's a green card, add one mana of any color.\n−7: Draw cards equal to half the number of cards in your library, rounded up. You get an emblem with \"You have no maximum hand size.\""
+  },
+  {
+   "name": "Emry, Lurker of the Loch",
+   "cost": "{2}{U}",
+   "type_line": "Legendary Creature — Merfolk Wizard",
+   "keywords": "[\"Affinity\",\"Mill\"]",
+   "text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhen Emry enters, mill four cards.\n{T}: Choose target artifact card in your graveyard. You may cast that card this turn. (You still pay its costs. Timing rules still apply.)"
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Mox Amber",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color among legendary creatures and planeswalkers you control."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Seachrome Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Mishra's Bauble",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Loki, God of Mischief",
+   "cost": "{1}{U}",
+   "type_line": "Legendary Creature — God Sorcerer Villain",
+   "keywords": "[]",
+   "text": "Whenever a player or permanent becomes the target of an ability you control, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Sewer-veillance Cam",
+   "cost": "{U}",
+   "type_line": "Artifact",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhen this artifact enters or leaves the battlefield, you may tap or untap target creature.\n{3}{U}, Sacrifice this artifact: Draw two cards."
+  },
+  {
+   "name": "Portable Hole",
+   "cost": "{W}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters, exile target nonland permanent an opponent controls with mana value 2 or less until this artifact leaves the battlefield."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Metallic Rebuke",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nCounter target spell unless its controller pays {3}."
+  },
+  {
+   "name": "Expedition Map",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{2}, {T}, Sacrifice this artifact: Search your library for a land card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Aether Spellbomb",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{U}, Sacrifice this artifact: Return target creature to its owner's hand.\n{1}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Agatha's Soul Cauldron",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "You may spend mana as though it were mana of any color to activate abilities of creatures you control.\nCreatures you control with +1/+1 counters on them have all activated abilities of all creature cards exiled with Agatha's Soul Cauldron.\n{T}: Exile target card from a graveyard. When a creature card is exiled this way, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Grinding Station",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[\"Mill\"]",
+   "text": "{T}, Sacrifice an artifact: Target player mills three cards.\nWhenever an artifact enters, you may untap this artifact."
+  },
+  {
+   "name": "Disruptor Flute",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nAs this artifact enters, choose a card name.\nSpells with the chosen name cost {3} more to cast.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities."
+  },
+  {
+   "name": "Pithing Needle",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities."
+  },
+  {
+   "name": "Skateboard",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "When this Equipment enters, tap target permanent.\nEquipped creature gets +1/+0 and has haste.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Scrabbling Claws",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Target player exiles a card from their graveyard.\n{1}, Sacrifice this artifact: Exile target card from a graveyard. Draw a card."
+  },
+  {
+   "name": "Minamo, School at Water's Edge",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {U}.\n{U}, {T}: Untap target legendary permanent."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  }
+ ],
+ "list": [
+  [
+   "Oswald Fiddlebender",
+   4
+  ],
+  [
+   "Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar",
+   4
+  ],
+  [
+   "Emry, Lurker of the Loch",
+   4
+  ],
+  [
+   "Urza's Saga",
+   4
+  ],
+  [
+   "Mox Opal",
+   4
+  ],
+  [
+   "Mox Amber",
+   1
+  ],
+  [
+   "Hallowed Fountain",
+   4
+  ],
+  [
+   "Seachrome Coast",
+   4
+  ],
+  [
+   "Mishra's Bauble",
+   4
+  ],
+  [
+   "Loki, God of Mischief",
+   3
+  ],
+  [
+   "Sewer-veillance Cam",
+   3
+  ],
+  [
+   "Mox Amber",
+   3
+  ],
+  [
+   "Portable Hole",
+   2
+  ],
+  [
+   "Scalding Tarn",
+   2
+  ],
+  [
+   "Island",
+   2
+  ],
+  [
+   "Metallic Rebuke",
+   2
+  ],
+  [
+   "Expedition Map",
+   1
+  ],
+  [
+   "Aether Spellbomb",
+   1
+  ],
+  [
+   "Agatha's Soul Cauldron",
+   1
+  ],
+  [
+   "Grinding Station",
+   1
+  ],
+  [
+   "Disruptor Flute",
+   1
+  ],
+  [
+   "Pithing Needle",
+   1
+  ],
+  [
+   "Skateboard",
+   1
+  ],
+  [
+   "Scrabbling Claws",
+   1
+  ],
+  [
+   "Minamo, School at Water's Edge",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ]
+ ]
+}

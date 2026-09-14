@@ -1,0 +1,251 @@
+{
+ "name": "jund-sacrifice",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Blazemire Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {B}.\n{T}: Add {R}. Activate only if you control a Swamp or a Mountain."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Blooming Marsh",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land — Swamp Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Stomping Ground",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Wastewood Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G}.\n{T}: Add {B}. Activate only if you control a Swamp or a Forest."
+  },
+  {
+   "name": "Biotech Specialist",
+   "cost": "{R}{G}",
+   "type_line": "Creature — Insect Scientist",
+   "keywords": "[]",
+   "text": "When this creature enters, create a Lander token. (It's an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")\nWhenever you sacrifice an artifact, this creature deals 2 damage to target opponent."
+  },
+  {
+   "name": "Callous Inspector",
+   "cost": "{B}",
+   "type_line": "Creature — Human Soldier",
+   "keywords": "[\"Menace\"]",
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature dies, it deals 1 damage to you. Create a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")"
+  },
+  {
+   "name": "Gene Pollinator",
+   "cost": "{G}",
+   "type_line": "Artifact Creature — Robot Insect",
+   "keywords": "[]",
+   "text": "{T}, Tap an untapped permanent you control: Add one mana of any color."
+  },
+  {
+   "name": "Greedy Freebooter",
+   "cost": "{B}",
+   "type_line": "Creature — Human Pirate",
+   "keywords": "[\"Treasure\",\"Scry\"]",
+   "text": "When this creature dies, scry 1 and create a Treasure token. (To scry 1, look at the top card of your library. You may put that card on the bottom. A Treasure token is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Mutagen Man, Living Ooze",
+   "cost": "{X}{G}{G}",
+   "type_line": "Legendary Creature — Ooze Mutant",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nActivated abilities of artifact tokens you control cost {1} less to activate.\nWhen Mutagen Man enters, create X Mutagen tokens. (They're artifacts with \"{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.\")"
+  },
+  {
+   "name": "Rottenmouth Viper",
+   "cost": "{5}{B}",
+   "type_line": "Creature — Elemental Snake",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, you may sacrifice any number of nonland permanents. This spell costs {1} less to cast for each permanent sacrificed this way.\nWhenever this creature enters or attacks, put a blight counter on it. Then for each blight counter on it, each opponent loses 4 life unless that player sacrifices a nonland permanent of their choice or discards a card."
+  },
+  {
+   "name": "The Sackville-Bagginses",
+   "cost": "{1}{B}",
+   "type_line": "Legendary Creature — Halfling Citizen",
+   "keywords": "[\"Treasure\"]",
+   "text": "When The Sackville-Bagginses enter, you may sacrifice another creature or artifact. If you do, draw a card and create a Treasure token.\nWhenever you sacrifice a token, target opponent loses 1 life."
+  },
+  {
+   "name": "Umbral Collar Zealot",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[\"Surveil\"]",
+   "text": "Sacrifice another creature or artifact: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Vinereap Mentor",
+   "cost": "{B}{G}",
+   "type_line": "Creature — Squirrel Druid",
+   "keywords": "[\"Food\"]",
+   "text": "When this creature enters or dies, create a Food token. (It's an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")"
+  },
+  {
+   "name": "Deadly Precision",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, pay {4} or sacrifice an artifact or creature.\nDestroy target creature."
+  },
+  {
+   "name": "Fanatical Offering",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Explore\"]",
+   "text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards and create a Map token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")"
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Blight\"]",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Obsessive Pursuit",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters and at the beginning of your upkeep, you lose 1 life and create a Clue token. (It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")\nWhenever you attack, put X +1/+1 counters on target attacking creature, where X is the number of permanents you've sacrificed this turn. If X is three or more, that creature gains lifelink until end of turn."
+  }
+ ],
+ "list": [
+  [
+   "Blazemire Verge",
+   4
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Blooming Marsh",
+   4
+  ],
+  [
+   "Forest",
+   1
+  ],
+  [
+   "Overgrown Tomb",
+   3
+  ],
+  [
+   "Starting Town",
+   4
+  ],
+  [
+   "Stomping Ground",
+   3
+  ],
+  [
+   "Swamp",
+   1
+  ],
+  [
+   "Wastewood Verge",
+   1
+  ],
+  [
+   "Biotech Specialist",
+   4
+  ],
+  [
+   "Callous Inspector",
+   4
+  ],
+  [
+   "Gene Pollinator",
+   4
+  ],
+  [
+   "Greedy Freebooter",
+   4
+  ],
+  [
+   "Mutagen Man, Living Ooze",
+   2
+  ],
+  [
+   "Rottenmouth Viper",
+   4
+  ],
+  [
+   "The Sackville-Bagginses",
+   4
+  ],
+  [
+   "Umbral Collar Zealot",
+   1
+  ],
+  [
+   "Vinereap Mentor",
+   2
+  ],
+  [
+   "Deadly Precision",
+   1
+  ],
+  [
+   "Fanatical Offering",
+   2
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Obsessive Pursuit",
+   4
+  ]
+ ]
+}

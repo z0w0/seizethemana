@@ -1,0 +1,1106 @@
+{
+ "name": "etali food chain",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Etali, Primal Conqueror // Etali, Primal Sickness",
+   "cost": "{5}{R}{R} // ",
+   "type_line": "Legendary Creature — Elder Dinosaur // Legendary Creature — Phyrexian Elder Dinosaur",
+   "keywords": "[\"Indestructible\",\"Transform\",\"Trample\"]",
+   "text": "Trample\nWhen Etali enters, each player exiles cards from the top of their library until they exile a nonland card. You may cast any number of spells from among the nonland cards exiled this way without paying their mana costs.\n{9}{G/P}: Transform Etali. Activate only as a sorcery.\n// Trample, indestructible\nWhenever Etali deals combat damage to a player, they get that many poison counters. (A player with ten or more poison counters loses the game.)"
+  }
+ ],
+ "cards": [
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   "cost": "{2}{R} // {4}{R}",
+   "type_line": "Legendary Creature — God // Legendary Artifact",
+   "keywords": "[]",
+   "text": "Whenever you cast a spell, add {R}. Until end of turn, you don't lose this mana as steps and phases end.\nCreatures you control can boast twice during each of your turns rather than once.\n// Discard a card: Exile the top two cards of your library. You may play those cards this turn."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Disciple of Freyalise // Garden of Freyalise",
+   "cost": "{3}{G}{G}{G} // ",
+   "type_line": "Creature — Elf Druid // Land",
+   "keywords": "[]",
+   "text": "When this creature enters, you may sacrifice another creature. If you do, you gain X life and draw X cards, where X is that creature's power.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {G}."
+  },
+  {
+   "name": "Dualcaster Mage",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhen this creature enters, copy target instant or sorcery spell. You may choose new targets for the copy."
+  },
+  {
+   "name": "Elvish Spirit Guide",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {G}."
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Fury",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Evoke\",\"Double strike\"]",
+   "text": "Double strike\nWhen this creature enters, it deals 4 damage divided as you choose among any number of target creatures and/or planeswalkers.\nEvoke—Exile a red card from your hand."
+  },
+  {
+   "name": "Hellkite Courser",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, you may put a commander you own from the command zone onto the battlefield. It gains haste. Return it to the command zone at the beginning of the next end step."
+  },
+  {
+   "name": "Hexing Squelcher",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Sorcerer",
+   "keywords": "[\"Ward\"]",
+   "text": "This spell can't be countered.\nWard—Pay 2 life.\nSpells you control can't be countered.\nOther creatures you control have \"Ward—Pay 2 life.\""
+  },
+  {
+   "name": "Hunting Velociraptor",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Dinosaur",
+   "keywords": "[\"First strike\"]",
+   "text": "First strike\nDinosaur spells you cast have prowl {2}{R}. (You may cast a spell for its prowl cost if you dealt combat damage to a player this turn with a creature with any of its creature types.)"
+  },
+  {
+   "name": "Imperial Recruiter",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Advisor",
+   "keywords": "[]",
+   "text": "When this creature enters, search your library for a creature card with power 2 or less, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Jaxis, the Troublemaker",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Creature — Human Warrior",
+   "keywords": "[\"Blitz\"]",
+   "text": "{R}, {T}, Discard a card: Create a token that's a copy of another target creature you control. It gains haste and \"When this token dies, draw a card.\" Sacrifice it at the beginning of the next end step. Activate only as a sorcery.\nBlitz {1}{R} (If you cast this spell for its blitz cost, it gains haste and \"When this creature dies, draw a card.\" Sacrifice it at the beginning of the next end step.)"
+  },
+  {
+   "name": "Orcish Lumberjack",
+   "cost": "{R}",
+   "type_line": "Creature — Orc",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice a Forest: Add three mana in any combination of {R} and/or {G}."
+  },
+  {
+   "name": "Ragavan, Nimble Pilferer",
+   "cost": "{R}",
+   "type_line": "Legendary Creature — Monkey Pirate",
+   "keywords": "[\"Treasure\",\"Dash\"]",
+   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+  },
+  {
+   "name": "Rionya, Fire Dancer",
+   "cost": "{3}{R}{R}",
+   "type_line": "Legendary Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "At the beginning of combat on your turn, create X tokens that are copies of another target creature you control, where X is one plus the number of instant and sorcery spells you've cast this turn. They gain haste. Exile them at the beginning of the next end step."
+  },
+  {
+   "name": "Roaming Throne",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[\"Ward\"]",
+   "text": "Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nIf a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time."
+  },
+  {
+   "name": "Simian Spirit Guide",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Ape Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {R}."
+  },
+  {
+   "name": "Squee, the Immortal",
+   "cost": "{1}{R}{R}",
+   "type_line": "Legendary Creature — Goblin",
+   "keywords": "[]",
+   "text": "You may cast this card from your graveyard or from exile."
+  },
+  {
+   "name": "Tinder Wall",
+   "cost": "{G}",
+   "type_line": "Creature — Plant Wall",
+   "keywords": "[\"Defender\"]",
+   "text": "Defender (This creature can't attack.)\nSacrifice this creature: Add {R}{R}.\n{R}, Sacrifice this creature: It deals 2 damage to target creature it's blocking."
+  },
+  {
+   "name": "Treasonous Ogre",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Ogre Shaman",
+   "keywords": "[\"Dethrone\"]",
+   "text": "Dethrone (Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on it.)\nPay 3 life: Add {R}."
+  },
+  {
+   "name": "Wandering Archaic // Explore the Vastlands",
+   "cost": "{5} // {3}",
+   "type_line": "Creature — Avatar // Sorcery",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts an instant or sorcery spell, they may pay {2}. If they don't, you may copy that spell. You may choose new targets for the copy.\n// Each player looks at the top five cards of their library and may reveal a land card and/or an instant or sorcery card from among them. Each player puts the cards they revealed this way into their hand and the rest on the bottom of their library in a random order. Each player gains 3 life."
+  },
+  {
+   "name": "Wild Cantor",
+   "cost": "{R/G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[]",
+   "text": "({R/G} can be paid with either {R} or {G}.)\nSacrifice this creature: Add one mana of any color."
+  },
+  {
+   "name": "Chandra, Flameshaper",
+   "cost": "{5}{R}{R}",
+   "type_line": "Legendary Planeswalker — Chandra",
+   "keywords": "[]",
+   "text": "+2: Add {R}{R}{R}. Exile the top three cards of your library. Choose one. You may play that card this turn.\n+1: Create a token that's a copy of target creature you control, except it has haste and \"At the beginning of the end step, sacrifice this token.\"\n−4: Chandra deals 8 damage divided as you choose among any number of target creatures and/or planeswalkers."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Imprint\"]",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Cursed Mirror",
+   "cost": "{2}{R}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {R}.\nAs this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Grim Monolith",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{4}: Untap this artifact."
+  },
+  {
+   "name": "Lion's Eye Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Talisman of Impulse",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {G}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "The One Ring",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
+  },
+  {
+   "name": "Cream of the Crop",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control enters, you may look at the top X cards of your library, where X is that creature's power. If you do, put one of those cards on top of your library and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Food Chain",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Exile a creature you control: Add X mana of any one color, where X is 1 plus the exiled creature's mana value. Spend this mana only to cast creature spells."
+  },
+  {
+   "name": "Underworld Breach",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard. (You may cast cards from your graveyard for their escape cost.)\nAt the beginning of the end step, sacrifice this enchantment."
+  },
+  {
+   "name": "World War Hulk",
+   "cost": "{3}{G}{G}",
+   "type_line": "Enchantment — Saga",
+   "keywords": "[\"Double\"]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — The next red or green creature spell you cast this turn can be cast without paying its mana cost.\nII — Put three +1/+1 counters on target creature you control.\nIII — Choose target creature you control. Until end of turn, double its power and toughness and it gains trample."
+  },
+  {
+   "name": "Eldritch Evolution",
+   "cost": "{1}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value X or less, where X is 2 plus the sacrificed creature's mana value. Put that card onto the battlefield, then shuffle. Exile Eldritch Evolution."
+  },
+  {
+   "name": "Electroduplicate",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Create a token that's a copy of target creature you control, except it has haste and \"At the beginning of the end step, sacrifice this token.\"\nFlashback {2}{R}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Gamble",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, discard a card at random, then shuffle."
+  },
+  {
+   "name": "Geosurge",
+   "cost": "{R}{R}{R}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Add {R}{R}{R}{R}{R}{R}{R}. Spend this mana only to cast artifact or creature spells."
+  },
+  {
+   "name": "Glimpse the Impossible",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Heat Shimmer",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create a token that's a copy of target creature, except it has haste and \"At the beginning of the end step, exile this token.\""
+  },
+  {
+   "name": "Jeska's Will",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn."
+  },
+  {
+   "name": "Kindle the Inner Flame",
+   "cost": "{3}{R}",
+   "type_line": "Kindred Sorcery — Elemental",
+   "keywords": "[\"Behold\",\"Flashback\"]",
+   "text": "Create a token that's a copy of target creature you control, except it has haste and \"At the beginning of the end step, sacrifice this token.\"\nFlashback—{1}{R}, Behold three Elementals. (You may cast this card from your graveyard for its flashback cost. Then exile it. To behold an Elemental, choose an Elemental you control or reveal an Elemental card from your hand.)"
+  },
+  {
+   "name": "Metamorphosis",
+   "cost": "{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nAdd X mana of any one color, where X is 1 plus the sacrificed creature's mana value. Spend this mana only to cast creature spells."
+  },
+  {
+   "name": "Molten Duplication",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create a token that's a copy of target artifact or creature you control, except it's an artifact in addition to its other types. It gains haste until end of turn. Sacrifice it at the beginning of the next end step."
+  },
+  {
+   "name": "Rite of Flame",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Add {R}{R}, then add {R} for each card named Rite of Flame in each graveyard."
+  },
+  {
+   "name": "Strike It Rich",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Treasure\",\"Flashback\"]",
+   "text": "Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Twinflame",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Strive\"]",
+   "text": "Strive — This spell costs {2}{R} more to cast for each target beyond the first.\nChoose any number of target creatures you control. For each of them, create a token that's a copy of that creature, except it has haste. Exile those tokens at the beginning of the next end step."
+  },
+  {
+   "name": "Wheel of Fortune",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player discards their hand, then draws seven cards."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability."
+  },
+  {
+   "name": "Desperate Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[\"Splice\"]",
+   "text": "Add {R}{R}{R}.\nSplice onto Arcane {1}{R} (As you cast an Arcane spell, you may reveal this card from your hand and pay its splice cost. If you do, add this card's effects to that spell.)"
+  },
+  {
+   "name": "Eldrazi Confluence",
+   "cost": "{2}{C}{C}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose three. You may choose the same mode more than once.\n• Target creature gets +3/-3 until end of turn.\n• Exile target nonland permanent, then return it to the battlefield tapped under its owner's control.\n• Create a 1/1 colorless Eldrazi Scion creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Force of Vigor",
+   "cost": "{2}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a green card from your hand rather than pay this spell's mana cost.\nDestroy up to two target artifacts and/or enchantments."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Manamorphose",
+   "cost": "{1}{R/G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add two mana in any combination of colors.\nDraw a card."
+  },
+  {
+   "name": "Nature's Claim",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target artifact or enchantment. Its controller gains 4 life."
+  },
+  {
+   "name": "Noxious Revival",
+   "cost": "{G/P}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "({G/P} can be paid with either {G} or 2 life.)\nPut target card from a graveyard on top of its owner's library."
+  },
+  {
+   "name": "Open the Omenpaths",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Add two mana of any one color and two mana of any other color. Spend this mana only to cast creature or enchantment spells.\n• Creatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Pyretic Ritual",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R}{R}{R}."
+  },
+  {
+   "name": "Pyroblast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target spell if it's blue.\n• Destroy target permanent if it's blue."
+  },
+  {
+   "name": "Pyrokinesis",
+   "cost": "{4}{R}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "You may exile a red card from your hand rather than pay this spell's mana cost.\nPyrokinesis deals 4 damage divided as you choose among any number of target creatures."
+  },
+  {
+   "name": "Red Elemental Blast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent."
+  },
+  {
+   "name": "Seething Song",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R}{R}{R}{R}{R}."
+  },
+  {
+   "name": "Veil of Summer",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw a card if an opponent has cast a blue or black spell this turn. Spells you control can't be countered this turn. You and permanents you control gain hexproof from blue and from black until end of turn. (You and they can't be the targets of blue or black spells or abilities your opponents control.)"
+  },
+  {
+   "name": "Worldly Tutor",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a creature card, reveal it, then shuffle and put the card on top."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "City of Brass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "City of Traitors",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "When you play another land, sacrifice this land.\n{T}: Add {C}{C}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Commercial District",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {R} or {G}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Copperline Gorge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Crystal Vein",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Add {C}{C}."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Gaea's Cradle",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  },
+  {
+   "name": "Grove of the Burnwillows",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {G}. Each opponent gains 1 life."
+  },
+  {
+   "name": "Karplusan Forest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {G}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Mana Confluence",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Spire Garden",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Stomping Ground",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Taiga",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)"
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "_____ Goblin",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin Guest",
+   "keywords": "[]",
+   "text": "When this creature enters, you may put a name sticker on it. Add {R} for each unique vowel on that sticker. (The vowels are A, E, I, O, U, and Y.)"
+  }
+ ],
+ "list": [
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Disciple of Freyalise // Garden of Freyalise",
+   1
+  ],
+  [
+   "Dualcaster Mage",
+   1
+  ],
+  [
+   "Elvish Spirit Guide",
+   1
+  ],
+  [
+   "Eternal Witness",
+   1
+  ],
+  [
+   "Fury",
+   1
+  ],
+  [
+   "Hellkite Courser",
+   1
+  ],
+  [
+   "Hexing Squelcher",
+   1
+  ],
+  [
+   "Hunting Velociraptor",
+   1
+  ],
+  [
+   "Imperial Recruiter",
+   1
+  ],
+  [
+   "Jaxis, the Troublemaker",
+   1
+  ],
+  [
+   "Orcish Lumberjack",
+   1
+  ],
+  [
+   "Ragavan, Nimble Pilferer",
+   1
+  ],
+  [
+   "Rionya, Fire Dancer",
+   1
+  ],
+  [
+   "Roaming Throne",
+   1
+  ],
+  [
+   "Simian Spirit Guide",
+   1
+  ],
+  [
+   "Squee, the Immortal",
+   1
+  ],
+  [
+   "Tinder Wall",
+   1
+  ],
+  [
+   "Treasonous Ogre",
+   1
+  ],
+  [
+   "Wandering Archaic // Explore the Vastlands",
+   1
+  ],
+  [
+   "Wild Cantor",
+   1
+  ],
+  [
+   "Chandra, Flameshaper",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Cursed Mirror",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Grim Monolith",
+   1
+  ],
+  [
+   "Lion's Eye Diamond",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Mox Opal",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Talisman of Impulse",
+   1
+  ],
+  [
+   "The One Ring",
+   1
+  ],
+  [
+   "Cream of the Crop",
+   1
+  ],
+  [
+   "Food Chain",
+   1
+  ],
+  [
+   "Underworld Breach",
+   1
+  ],
+  [
+   "World War Hulk",
+   1
+  ],
+  [
+   "Eldritch Evolution",
+   1
+  ],
+  [
+   "Electroduplicate",
+   1
+  ],
+  [
+   "Gamble",
+   1
+  ],
+  [
+   "Geosurge",
+   1
+  ],
+  [
+   "Glimpse the Impossible",
+   1
+  ],
+  [
+   "Heat Shimmer",
+   1
+  ],
+  [
+   "Jeska's Will",
+   1
+  ],
+  [
+   "Kindle the Inner Flame",
+   1
+  ],
+  [
+   "Metamorphosis",
+   1
+  ],
+  [
+   "Molten Duplication",
+   1
+  ],
+  [
+   "Rite of Flame",
+   1
+  ],
+  [
+   "Strike It Rich",
+   1
+  ],
+  [
+   "Twinflame",
+   1
+  ],
+  [
+   "Wheel of Fortune",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Deflecting Swat",
+   1
+  ],
+  [
+   "Desperate Ritual",
+   1
+  ],
+  [
+   "Eldrazi Confluence",
+   1
+  ],
+  [
+   "Force of Vigor",
+   1
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Manamorphose",
+   1
+  ],
+  [
+   "Nature's Claim",
+   1
+  ],
+  [
+   "Noxious Revival",
+   1
+  ],
+  [
+   "Open the Omenpaths",
+   1
+  ],
+  [
+   "Pyretic Ritual",
+   1
+  ],
+  [
+   "Pyroblast",
+   1
+  ],
+  [
+   "Pyrokinesis",
+   1
+  ],
+  [
+   "Red Elemental Blast",
+   1
+  ],
+  [
+   "Seething Song",
+   1
+  ],
+  [
+   "Veil of Summer",
+   1
+  ],
+  [
+   "Worldly Tutor",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ],
+  [
+   "City of Brass",
+   1
+  ],
+  [
+   "City of Traitors",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Commercial District",
+   1
+  ],
+  [
+   "Copperline Gorge",
+   1
+  ],
+  [
+   "Crystal Vein",
+   1
+  ],
+  [
+   "Forest",
+   1
+  ],
+  [
+   "Gaea's Cradle",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ],
+  [
+   "Grove of the Burnwillows",
+   1
+  ],
+  [
+   "Karplusan Forest",
+   1
+  ],
+  [
+   "Mana Confluence",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Mountain",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Spire Garden",
+   1
+  ],
+  [
+   "Starting Town",
+   1
+  ],
+  [
+   "Stomping Ground",
+   1
+  ],
+  [
+   "Taiga",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ],
+  [
+   "_____ Goblin",
+   1
+  ]
+ ]
+}

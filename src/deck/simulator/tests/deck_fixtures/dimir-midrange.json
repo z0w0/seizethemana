@@ -1,0 +1,251 @@
+{
+ "name": "dimir-midrange",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker — Kaito",
+   "keywords": "Surveil, Ninjutsu",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n−2: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Blight",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Floodpits Drowner",
+   "cost": "{1}{U}",
+   "type_line": "Creature — Merfolk",
+   "keywords": "Vigilance, Flash",
+   "text": "Flash\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter on it.\n{1}{U}, {T}: Shuffle this creature and target creature with a stun counter on it into their owners' libraries."
+  },
+  {
+   "name": "Inevitable Defeat",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "This spell can't be countered.\nExile target nonland permanent. Its controller loses 3 life and you gain 3 life."
+  },
+  {
+   "name": "Superior Spider-Man",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Creature — Spider Human Hero",
+   "keywords": "Mind Swap",
+   "text": "Mind Swap — You may have Superior Spider-Man enter as a copy of any creature card in a graveyard, except his name is Superior Spider-Man and he's a 4/4 Spider Human Hero in addition to his other types. When you do, exile that card."
+  },
+  {
+   "name": "Agatha's Soul Cauldron",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact",
+   "keywords": "",
+   "text": "You may spend mana as though it were mana of any color to activate abilities of creatures you control.\nCreatures you control with +1/+1 counters on them have all activated abilities of all creature cards exiled with Agatha's Soul Cauldron.\n{T}: Exile target card from a graveyard. When a creature card is exiled this way, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Bitter Chill",
+   "cost": "{1}{U}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "Enchant, Scry",
+   "text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature doesn't untap during its controller's untap step.\nWhen this Aura is put into a graveyard from the battlefield, you may pay {1}. If you do, scry 1, then draw a card."
+  },
+  {
+   "name": "Extract the Truth",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Choose one —\n• Target opponent reveals their hand. You may choose a creature, enchantment, or planeswalker card from it. That player discards that card.\n• Target opponent sacrifices an enchantment of their choice."
+  },
+  {
+   "name": "Sheoldred's Edict",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Choose one —\n• Each opponent sacrifices a nontoken creature of their choice.\n• Each opponent sacrifices a creature token of their choice.\n• Each opponent sacrifices a planeswalker of their choice."
+  },
+  {
+   "name": "Wail of the Forgotten",
+   "cost": "{U}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Descend",
+   "text": "Descend 8 — Choose one. If there are eight or more permanent cards in your graveyard as you cast this spell, choose one or more instead.\n• Return target nonland permanent to its owner's hand.\n• Target opponent discards a card.\n• Look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard."
+  },
+  {
+   "name": "Stock Up",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Enduring Curiosity",
+   "cost": "{2}{U}{U}",
+   "type_line": "Enchantment Creature — Cat Glimmer",
+   "keywords": "Flash",
+   "text": "Flash\nWhenever a creature you control deals combat damage to a player, draw a card.\nWhen Enduring Curiosity dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Fleeting Reflection",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Target creature you control gains hexproof until end of turn. Untap that creature. Until end of turn, it becomes a copy of up to one other target creature."
+  },
+  {
+   "name": "Consign to Memory",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Replicate",
+   "text": "Replicate {1} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nCounter target triggered ability or colorless spell."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Dismal Backwater",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {U} or {B}."
+  },
+  {
+   "name": "Dreamroot Cascade",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Underground River",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Fetid Pools",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "Cycling",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  }
+ ],
+ "list": [
+  [
+   "Kaito, Bane of Nightmares",
+   3
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Floodpits Drowner",
+   4
+  ],
+  [
+   "Inevitable Defeat",
+   2
+  ],
+  [
+   "Superior Spider-Man",
+   1
+  ],
+  [
+   "Agatha's Soul Cauldron",
+   2
+  ],
+  [
+   "Bitter Chill",
+   2
+  ],
+  [
+   "Extract the Truth",
+   3
+  ],
+  [
+   "Sheoldred's Edict",
+   3
+  ],
+  [
+   "Wail of the Forgotten",
+   3
+  ],
+  [
+   "Stock Up",
+   3
+  ],
+  [
+   "Enduring Curiosity",
+   3
+  ],
+  [
+   "Fleeting Reflection",
+   2
+  ],
+  [
+   "Consign to Memory",
+   2
+  ],
+  [
+   "Flooded Strand",
+   4
+  ],
+  [
+   "Dismal Backwater",
+   2
+  ],
+  [
+   "Dreamroot Cascade",
+   3
+  ],
+  [
+   "Underground River",
+   2
+  ],
+  [
+   "Watery Grave",
+   4
+  ],
+  [
+   "Island",
+   6
+  ],
+  [
+   "Swamp",
+   3
+  ],
+  [
+   "Fetid Pools",
+   1
+  ]
+ ]
+}

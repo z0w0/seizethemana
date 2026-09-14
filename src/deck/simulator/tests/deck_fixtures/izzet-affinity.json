@@ -1,0 +1,273 @@
+{
+ "name": "izzet-affinity",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Kappa Cannoneer",
+   "cost": "{5}{U}",
+   "type_line": "Artifact Creature — Turtle Warrior",
+   "keywords": "[\"Improvise\",\"Ward\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nWard {4}\nWhenever this creature or another artifact you control enters, put a +1/+1 counter on this creature. It can't be blocked this turn."
+  },
+  {
+   "name": "Pinnacle Emissary",
+   "cost": "{1}{U}{R}",
+   "type_line": "Artifact Creature — Robot",
+   "keywords": "[\"Warp\"]",
+   "text": "Whenever you cast an artifact spell, create a 1/1 colorless Drone artifact creature token with flying and \"This token can block only creatures with flying.\"\nWarp {U/R} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Salvage Titan",
+   "cost": "{4}{B}{B}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[]",
+   "text": "You may sacrifice three artifacts rather than pay this spell's mana cost.\nExile three artifact cards from your graveyard: Return this card from your graveyard to your hand."
+  },
+  {
+   "name": "Emry, Lurker of the Loch",
+   "cost": "{2}{U}",
+   "type_line": "Legendary Creature — Merfolk Wizard",
+   "keywords": "[\"Affinity\",\"Mill\"]",
+   "text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nWhen Emry enters, mill four cards.\n{T}: Choose target artifact card in your graveyard. You may cast that card this turn. (You still pay its costs. Timing rules still apply.)"
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Mishra's Bauble",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Weapons Manufacturing",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a nontoken artifact you control enters, create a colorless artifact token named Munitions with \"When this token leaves the battlefield, it deals 2 damage to any target.\""
+  },
+  {
+   "name": "Engineered Explosives",
+   "cost": "{X}",
+   "type_line": "Artifact",
+   "keywords": "[\"Sunburst\"]",
+   "text": "Sunburst (This artifact enters with a charge counter on it for each color of mana spent to cast it.)\n{2}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact."
+  },
+  {
+   "name": "Tormod's Crypt",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Exile target player's graveyard."
+  },
+  {
+   "name": "Fiery Islet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Metallic Rebuke",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nCounter target spell unless its controller pays {3}."
+  },
+  {
+   "name": "Claws of Gix",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, Sacrifice a permanent: You gain 1 life."
+  },
+  {
+   "name": "Welding Jar",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[\"Regenerate\"]",
+   "text": "Sacrifice this artifact: Regenerate target artifact."
+  },
+  {
+   "name": "Haywire Mite",
+   "cost": "{1}",
+   "type_line": "Artifact Creature — Insect",
+   "keywords": "[]",
+   "text": "When this creature dies, you gain 2 life.\n{G}, Sacrifice this creature: Exile target noncreature artifact or noncreature enchantment."
+  },
+  {
+   "name": "Skateboard",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "When this Equipment enters, tap target permanent.\nEquipped creature gets +1/+0 and has haste.\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Pithing Needle",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a card name.\nActivated abilities of sources with the chosen name can't be activated unless they're mana abilities."
+  },
+  {
+   "name": "Blood Moon",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Scry\"]",
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Spirebluff Canal",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  }
+ ],
+ "list": [
+  [
+   "Kappa Cannoneer",
+   4
+  ],
+  [
+   "Pinnacle Emissary",
+   4
+  ],
+  [
+   "Salvage Titan",
+   2
+  ],
+  [
+   "Emry, Lurker of the Loch",
+   2
+  ],
+  [
+   "Urza's Saga",
+   4
+  ],
+  [
+   "Mox Opal",
+   4
+  ],
+  [
+   "Mishra's Bauble",
+   4
+  ],
+  [
+   "Weapons Manufacturing",
+   4
+  ],
+  [
+   "Engineered Explosives",
+   4
+  ],
+  [
+   "Tormod's Crypt",
+   4
+  ],
+  [
+   "Fiery Islet",
+   4
+  ],
+  [
+   "Metallic Rebuke",
+   2
+  ],
+  [
+   "Claws of Gix",
+   2
+  ],
+  [
+   "Welding Jar",
+   1
+  ],
+  [
+   "Haywire Mite",
+   1
+  ],
+  [
+   "Skateboard",
+   1
+  ],
+  [
+   "Pithing Needle",
+   1
+  ],
+  [
+   "Blood Moon",
+   1
+  ],
+  [
+   "Preordain",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ],
+  [
+   "Steam Vents",
+   1
+  ],
+  [
+   "Spirebluff Canal",
+   3
+  ],
+  [
+   "Starting Town",
+   3
+  ],
+  [
+   "Island",
+   2
+  ]
+ ]
+}

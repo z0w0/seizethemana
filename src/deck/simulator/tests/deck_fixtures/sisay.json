@@ -1,0 +1,758 @@
+{
+ "name": "sisay",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Sisay, Weatherlight Captain",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Creature — Human Soldier",
+   "keywords": "",
+   "text": "Sisay gets +1/+1 for each color among other legendary permanents you control.\n{W}{U}{B}{R}{G}: Search your library for a legendary permanent card with mana value less than Sisay's power, put that card onto the battlefield, then shuffle."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Mana Crypt",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "At the beginning of your upkeep, flip a coin. If you lose the flip, this artifact deals 3 damage to you.\n{T}: Add {C}{C}."
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "Metalcraft",
+   "text": "Metalcraft — {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "Imprint",
+   "text": "Imprint — When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Chromatic Lantern",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Gilded Lotus",
+   "cost": "{5}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add three mana of any one color."
+  },
+  {
+   "name": "Commander's Sphere",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color in your commander's color identity.\nSacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "Flying",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Noble Hierarch",
+   "cost": "{G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "Exalted",
+   "text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\n{T}: Add {G}, {W}, or {U}."
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Fyndhorn Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Avacyn's Pilgrim",
+   "cost": "{G}",
+   "type_line": "Creature — Human Monk",
+   "keywords": "",
+   "text": "{T}: Add {W}."
+  },
+  {
+   "name": "Sakura-Tribe Elder",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake Shaman",
+   "keywords": "",
+   "text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Wood Elves",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "",
+   "text": "When this creature enters, search your library for a Forest card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Farhaven Elf",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "",
+   "text": "When this creature enters, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Kodama's Reach",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery — Arcane",
+   "keywords": "",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Rampant Growth",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Skyshroud Claim",
+   "cost": "{3}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Search your library for up to two Forest cards, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Beast Within",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "Overload",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Force of Will",
+   "cost": "{3}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "You may pay 1 life and exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target spell."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Vampiric Tutor",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life."
+  },
+  {
+   "name": "Mystical Tutor",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Search your library for an instant or sorcery card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Enlightened Tutor",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Worldly Tutor",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "text": "Search your library for a creature card, reveal it, then shuffle and put the card on top."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Chord of Calling",
+   "cost": "{X}{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "Convoke",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "Cumulative upkeep",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "Treasure",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Sun Titan",
+   "cost": "{4}{W}{W}",
+   "type_line": "Creature — Giant",
+   "keywords": "Vigilance",
+   "text": "Vigilance\nWhenever this creature enters or attacks, you may return target permanent card with mana value 3 or less from your graveyard to the battlefield."
+  },
+  {
+   "name": "Shalai and Hallar",
+   "cost": "{1}{R}{G}{W}",
+   "type_line": "Legendary Creature — Angel Elf",
+   "keywords": "Flying, Vigilance",
+   "text": "Flying, vigilance\nWhenever one or more +1/+1 counters are put on a creature you control, Shalai and Hallar deals that much damage to target opponent."
+  },
+  {
+   "name": "Jegantha, the Wellspring",
+   "cost": "{4}{R/G}",
+   "type_line": "Legendary Creature — Elemental Elk",
+   "keywords": "Companion",
+   "text": "Companion — No card in your starting deck has more than one of the same mana symbol in its mana cost. (If this card is your chosen companion, you may put it into your hand from outside the game for {3} as a sorcery.)\n{T}: Add {W}{U}{B}{R}{G}. This mana can't be spent to pay generic mana costs."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "City of Brass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Mana Confluence",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Gaea's Cradle",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Tropical Island",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "",
+   "text": "({T}: Add {G} or {U}.)"
+  },
+  {
+   "name": "Savannah",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "",
+   "text": "({T}: Add {G} or {W}.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Prismatic Vista",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Temple of Plenty",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Scry",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Yavimaya, Cradle of Growth",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "text": "Each land is a Forest in addition to its other land types."
+  },
+  {
+   "name": "Temple of the False God",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "text": "{T}: Add {C}{C}. Activate only if you control five or more lands."
+  },
+  {
+   "name": "Karn's Bastion",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Proliferate",
+   "text": "{T}: Add {C}.\n{4}, {T}: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Mosswort Bridge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Hideaway",
+   "text": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {G}.\n{G}, {T}: You may play the exiled card without paying its mana cost if creatures you control have total power 10 or greater."
+  },
+  {
+   "name": "Temple of Mystery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Scry",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Relic of Legends",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "{T}: Add one mana of any color.\nTap an untapped legendary creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Cultivator's Caravan",
+   "cost": "{3}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "Crew",
+   "text": "{T}: Add one mana of any color.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Herald's Horn",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "text": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
+  },
+  {
+   "name": "Infernal Plunge",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nAdd {R}{R}{R}."
+  }
+ ],
+ "list": [
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Mana Crypt",
+   1
+  ],
+  [
+   "Mox Opal",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Chromatic Lantern",
+   1
+  ],
+  [
+   "Gilded Lotus",
+   1
+  ],
+  [
+   "Commander's Sphere",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Noble Hierarch",
+   1
+  ],
+  [
+   "Elvish Mystic",
+   1
+  ],
+  [
+   "Fyndhorn Elves",
+   1
+  ],
+  [
+   "Avacyn's Pilgrim",
+   1
+  ],
+  [
+   "Sakura-Tribe Elder",
+   1
+  ],
+  [
+   "Wood Elves",
+   1
+  ],
+  [
+   "Farhaven Elf",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Kodama's Reach",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Rampant Growth",
+   1
+  ],
+  [
+   "Skyshroud Claim",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Beast Within",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Force of Will",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Vampiric Tutor",
+   1
+  ],
+  [
+   "Mystical Tutor",
+   1
+  ],
+  [
+   "Enlightened Tutor",
+   1
+  ],
+  [
+   "Worldly Tutor",
+   1
+  ],
+  [
+   "Green Sun's Zenith",
+   1
+  ],
+  [
+   "Chord of Calling",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Sun Titan",
+   1
+  ],
+  [
+   "Shalai and Hallar",
+   1
+  ],
+  [
+   "Jegantha, the Wellspring",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "City of Brass",
+   1
+  ],
+  [
+   "Mana Confluence",
+   1
+  ],
+  [
+   "Gaea's Cradle",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Tropical Island",
+   1
+  ],
+  [
+   "Savannah",
+   1
+  ],
+  [
+   "Plains",
+   13
+  ],
+  [
+   "Island",
+   9
+  ],
+  [
+   "Forest",
+   12
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ],
+  [
+   "Prismatic Vista",
+   1
+  ],
+  [
+   "Temple of Plenty",
+   1
+  ],
+  [
+   "Yavimaya, Cradle of Growth",
+   1
+  ],
+  [
+   "Temple of the False God",
+   1
+  ],
+  [
+   "Karn's Bastion",
+   1
+  ],
+  [
+   "Mosswort Bridge",
+   1
+  ],
+  [
+   "Temple of Mystery",
+   1
+  ],
+  [
+   "Relic of Legends",
+   1
+  ],
+  [
+   "Cultivator's Caravan",
+   1
+  ],
+  [
+   "Herald's Horn",
+   1
+  ],
+  [
+   "Infernal Plunge",
+   1
+  ],
+  [
+   "Plains",
+   1
+  ]
+ ]
+}

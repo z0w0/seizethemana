@@ -1,0 +1,207 @@
+{
+ "name": "boros-dwarves",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Inspiring Vantage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Multiversal Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a basic land type. Then you may pay 2 life. If you don't, it enters tapped.\nThis land is the chosen type."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sunbillow Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {W}.\n{T}: Add {R}. Activate only if you control a Mountain or a Plains."
+  },
+  {
+   "name": "The Lonely Mountain",
+   "cost": "",
+   "type_line": "Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)\nThis land enters tapped unless you control an Equipment.\n{4}{R}, {T}: Create a 2/2 red Dwarf creature token. This ability costs {1} less to activate for each Equipment you control. Activate only as a sorcery."
+  },
+  {
+   "name": "Dwalin, Weaponmaster",
+   "cost": "{1}{R/W}",
+   "type_line": "Legendary Creature — Dwarf Warrior",
+   "keywords": "[\"First strike\"]",
+   "text": "First strike\nWhenever Dwalin enters or attacks, put a hone counter on each Equipment you control. (Each hone counter on an Equipment grants +1/+0 to equipped creature.)"
+  },
+  {
+   "name": "Dwarven Mauler",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf Warrior",
+   "keywords": "[]",
+   "text": "Equip abilities you activate that target this creature cost {2} less to activate."
+  },
+  {
+   "name": "Dáin's Company",
+   "cost": "{R}{W}",
+   "type_line": "Creature — Dwarf Warrior",
+   "keywords": "[]",
+   "text": "This creature has lifelink as long as you control another Dwarf.\nWhen this creature enters, look at the top four cards of your library. You may reveal a Dwarf or Equipment card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Giott, King of the Dwarves",
+   "cost": "{R}{W}",
+   "type_line": "Legendary Creature — Dwarf Noble",
+   "keywords": "[\"Double strike\"]",
+   "text": "Double strike\nWhenever Giott or another Dwarf you control enters and whenever an Equipment you control enters, you may discard a card. If you do, draw a card."
+  },
+  {
+   "name": "Kíli the Resourceful",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature — Dwarf Scout",
+   "keywords": "[\"Storied\"]",
+   "text": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.\nWhenever another Dwarf or Equipment you control enters, draw a card. This ability triggers only once each turn."
+  },
+  {
+   "name": "Thorin, Mountain-king",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Creature — Dwarf Noble",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nWhen Thorin enters, attach any number of target Equipment you control to target creature you control. When one or more Equipment become attached to that creature this way, that creature deals damage equal to its power to up to one target creature."
+  },
+  {
+   "name": "Chainsaw",
+   "cost": "{1}{R}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "When this Equipment enters, it deals 3 damage to up to one target creature.\nWhenever one or more creatures die, put a rev counter on this Equipment.\nEquipped creature gets +X/+0, where X is the number of rev counters on this Equipment.\nEquip {3}"
+  },
+  {
+   "name": "Doc Ock's Tentacles",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Whenever a creature you control with mana value 5 or greater enters, you may attach this Equipment to it.\nEquipped creature gets +4/+4.\nEquip {5}"
+  },
+  {
+   "name": "Dragonfire Blade",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +2/+2 and has hexproof from monocolored.\nEquip {4}. This ability costs {1} less to activate for each color of the creature it targets."
+  },
+  {
+   "name": "Lavaspur Boots",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/+0 and has haste and ward {1}. (Whenever it becomes the target of a spell or ability an opponent controls, counter it unless that player pays {1}.)\nEquip {1}"
+  },
+  {
+   "name": "Leyline Axe",
+   "cost": "{4}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEquipped creature gets +1/+1 and has double strike and trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  }
+ ],
+ "list": [
+  [
+   "Cavern of Souls",
+   3
+  ],
+  [
+   "Inspiring Vantage",
+   4
+  ],
+  [
+   "Multiversal Passage",
+   1
+  ],
+  [
+   "Plains",
+   3
+  ],
+  [
+   "Sacred Foundry",
+   4
+  ],
+  [
+   "Sunbillow Verge",
+   4
+  ],
+  [
+   "The Lonely Mountain",
+   4
+  ],
+  [
+   "Dwalin, Weaponmaster",
+   2
+  ],
+  [
+   "Dwarven Mauler",
+   4
+  ],
+  [
+   "Dáin's Company",
+   4
+  ],
+  [
+   "Giott, King of the Dwarves",
+   2
+  ],
+  [
+   "Kíli the Resourceful",
+   4
+  ],
+  [
+   "Thorin, Mountain-king",
+   4
+  ],
+  [
+   "Chainsaw",
+   3
+  ],
+  [
+   "Doc Ock's Tentacles",
+   2
+  ],
+  [
+   "Dragonfire Blade",
+   4
+  ],
+  [
+   "Lavaspur Boots",
+   4
+  ],
+  [
+   "Leyline Axe",
+   4
+  ]
+ ]
+}

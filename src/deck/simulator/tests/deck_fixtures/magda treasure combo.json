@@ -1,0 +1,875 @@
+{
+ "name": "magda treasure combo",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Magda, Brazen Outlaw",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Dwarf Berserker",
+   "keywords": "[\"Treasure\"]",
+   "text": "Other Dwarves you control get +1/+0.\nWhenever a Dwarf you control becomes tapped, create a Treasure token.\nSacrifice five Treasures: Search your library for an artifact or Dragon card, put that card onto the battlefield, then shuffle."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Academy Manufactor",
+   "cost": "{3}",
+   "type_line": "Artifact Creature — Assembly-Worker",
+   "keywords": "[\"Treasure\",\"Food\"]",
+   "text": "If you would create a Clue, Food, or Treasure token, instead create one of each."
+  },
+  {
+   "name": "Adaptive Automaton",
+   "cost": "{3}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": "As this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nOther creatures you control of the chosen type get +1/+1."
+  },
+  {
+   "name": "Axgard Cavalry",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Dwarf Berserker",
+   "keywords": "[]",
+   "text": "{T}: Target creature gains haste until end of turn. (It can attack and {T} this turn.)"
+  },
+  {
+   "name": "Barkform Harvester",
+   "cost": "{3}",
+   "type_line": "Artifact Creature — Shapeshifter",
+   "keywords": "[\"Reach\",\"Changeling\"]",
+   "text": "Changeling (This card is every creature type.)\nReach\n{2}: Put target card from your graveyard on the bottom of your library."
+  },
+  {
+   "name": "Battered Golem",
+   "cost": "{3}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[]",
+   "text": "This creature doesn't untap during your untap step.\nWhenever an artifact enters, you may untap this creature."
+  },
+  {
+   "name": "Bloodfire Dwarf",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "{R}, Sacrifice this creature: It deals 1 damage to each creature without flying."
+  },
+  {
+   "name": "Dwarven Armorer",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "{R}, {T}, Discard a card: Put a +0/+1 counter or a +1/+0 counter on target creature."
+  },
+  {
+   "name": "Dwarven Bloodboiler",
+   "cost": "{R}{R}{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "Tap an untapped Dwarf you control: Target creature gets +2/+0 until end of turn."
+  },
+  {
+   "name": "Dwarven Grunt",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[\"Landwalk\",\"Mountainwalk\"]",
+   "text": "Mountainwalk (This creature can't be blocked as long as defending player controls a Mountain.)"
+  },
+  {
+   "name": "Dwarven Mauler",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf Warrior",
+   "keywords": "[]",
+   "text": "Equip abilities you activate that target this creature cost {2} less to activate."
+  },
+  {
+   "name": "Dwarven Scorcher",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "Sacrifice this creature: This creature deals 1 damage to target creature unless that creature's controller has this creature deal 2 damage to them."
+  },
+  {
+   "name": "Dwarven Trader",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": ""
+  },
+  {
+   "name": "Enslaved Dwarf",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "{R}, Sacrifice this creature: Target black creature gets +1/+0 and gains first strike until end of turn."
+  },
+  {
+   "name": "Gimli of the Glittering Caves",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Dwarf Warrior",
+   "keywords": "[\"Treasure\",\"Double strike\"]",
+   "text": "Double strike\nWhenever another legendary creature you control enters, put a +1/+1 counter on Gimli.\nWhenever Gimli deals combat damage to a player, create a Treasure token."
+  },
+  {
+   "name": "Glóin, Dwarf Emissary",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Dwarf Advisor",
+   "keywords": "[\"Goad\",\"Treasure\"]",
+   "text": "Whenever you cast a historic spell, create a Treasure token. This ability triggers only once each turn. (Artifacts, legendaries, and Sagas are historic.)\n{T}, Sacrifice a Treasure: Goad target creature. (Until your next turn, that creature attacks each combat if able and attacks a player other than you if able.)"
+  },
+  {
+   "name": "Goldspan Dragon",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Treasure\",\"Haste\"]",
+   "text": "Flying, haste\nWhenever this creature attacks or becomes the target of a spell, create a Treasure token.\nTreasures you control have \"{T}, Sacrifice this artifact: Add two mana of any one color.\""
+  },
+  {
+   "name": "Hellkite Tyrant",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nWhenever this creature deals combat damage to a player, gain control of all artifacts that player controls.\nAt the beginning of your upkeep, if you control twenty or more artifacts, you win the game."
+  },
+  {
+   "name": "Liberated Dwarf",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf",
+   "keywords": "[]",
+   "text": "{R}, Sacrifice this creature: Target green creature gets +1/+0 and gains first strike until end of turn."
+  },
+  {
+   "name": "Magda, the Hoardmaster",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Dwarf Berserker",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever you commit a crime, create a tapped Treasure token. This ability triggers only once each turn. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)\nSacrifice three Treasures: Create a 4/4 red Scorpion Dragon creature token with flying and haste. Activate only as a sorcery."
+  },
+  {
+   "name": "Metallic Mimic",
+   "cost": "{2}",
+   "type_line": "Artifact Creature — Shapeshifter",
+   "keywords": "[]",
+   "text": "As this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nEach other creature you control of the chosen type enters with an additional +1/+1 counter on it."
+  },
+  {
+   "name": "Plundering Barbarian",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Dwarf Barbarian",
+   "keywords": "[\"Treasure\"]",
+   "text": "When this creature enters, choose one —\n• Smash the Chest — Destroy target artifact.\n• Pry It Open — Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Professional Face-Breaker",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Human Warrior",
+   "keywords": "[\"Treasure\",\"Menace\"]",
+   "text": "Menace\nWhenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nSacrifice a Treasure: Exile the top card of your library. You may play that card this turn."
+  },
+  {
+   "name": "Roaming Throne",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[\"Ward\"]",
+   "text": "Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nIf a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time."
+  },
+  {
+   "name": "Simian Spirit Guide",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Ape Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {R}."
+  },
+  {
+   "name": "Spark Mage",
+   "cost": "{R}",
+   "type_line": "Creature — Dwarf Wizard",
+   "keywords": "[]",
+   "text": "Whenever this creature deals combat damage to a player, you may have this creature deal 1 damage to target creature that player controls."
+  },
+  {
+   "name": "Three Tree Mascot",
+   "cost": "{2}",
+   "type_line": "Artifact Creature — Shapeshifter",
+   "keywords": "[\"Changeling\"]",
+   "text": "Changeling (This card is every creature type.)\n{1}: Add one mana of any color. Activate only once each turn."
+  },
+  {
+   "name": "Universal Automaton",
+   "cost": "{1}",
+   "type_line": "Artifact Creature — Shapeshifter",
+   "keywords": "[\"Changeling\"]",
+   "text": "Changeling (This card is every creature type.)"
+  },
+  {
+   "name": "Vault Robber",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Dwarf Rogue",
+   "keywords": "[\"Treasure\"]",
+   "text": "{1}, {T}, Exile a creature card from your graveyard: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Xorn",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Treasure\"]",
+   "text": "If you would create one or more Treasure tokens, instead create those tokens plus an additional Treasure token."
+  },
+  {
+   "name": "Óin the Brave",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Dwarf Warrior",
+   "keywords": "[\"Storied\"]",
+   "text": "Storied (If you control three or more artifacts, legendaries, and/or Sagas, you have an enduring story for the rest of the game.)\nAs long as you have an enduring story, Óin gets +1/+0 and has haste.\n{1}, {T}, Discard a card: Draw a card."
+  },
+  {
+   "name": "Abrade",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Abrade deals 3 damage to target creature.\n• Destroy target artifact."
+  },
+  {
+   "name": "Bottle-Cap Blast",
+   "cost": "{4}{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\",\"Treasure\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nBottle-Cap Blast deals 5 damage to any target. If excess damage was dealt to a permanent this way, create that many tapped Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Chaos Warp",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield."
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability."
+  },
+  {
+   "name": "Galvanic Blast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Metalcraft\"]",
+   "text": "Galvanic Blast deals 2 damage to any target.\nMetalcraft — Galvanic Blast deals 4 damage instead if you control three or more artifacts."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Pyroblast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target spell if it's blue.\n• Destroy target permanent if it's blue."
+  },
+  {
+   "name": "Red Elemental Blast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Counter target blue spell.\n• Destroy target blue permanent."
+  },
+  {
+   "name": "Return the Favor",
+   "cost": "{R}{R}",
+   "type_line": "Instant",
+   "keywords": "[\"Spree\"]",
+   "text": "Spree (Choose one or more additional costs.)\n+ {1} — Copy target instant spell, sorcery spell, activated ability, or triggered ability. You may choose new targets for the copy.\n+ {1} — Change the target of target spell or ability with a single target."
+  },
+  {
+   "name": "Untimely Malfunction",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Destroy target artifact.\n• Change the target of target spell or ability with a single target.\n• One or two target creatures can't block this turn."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Jeska's Will",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one. If you control a commander as you cast this spell, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn."
+  },
+  {
+   "name": "Seize the Spoils",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Treasure\"]",
+   "text": "As an additional cost to cast this spell, discard a card.\nDraw two cards and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Sundering Eruption // Volcanic Fissure",
+   "cost": "{2}{R} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "[]",
+   "text": "Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle. Creatures without flying can't block this turn.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {R}."
+  },
+  {
+   "name": "Vandalblast",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Overload\"]",
+   "text": "Destroy target artifact you don't control.\nOverload {4}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Clock of Omens",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Tap two untapped artifacts you control: Untap target artifact."
+  },
+  {
+   "name": "Clown Car",
+   "cost": "{X}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "When this Vehicle enters, roll X six-sided dice. For each odd result, create a 1/1 white Clown Robot artifact creature token. For each even result, put a +1/+1 counter on this Vehicle.\nCrew 2"
+  },
+  {
+   "name": "Cursed Mirror",
+   "cost": "{2}{R}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {R}.\nAs this artifact enters, you may have it become a copy of any creature on the battlefield until end of turn, except it has haste."
+  },
+  {
+   "name": "Damping Sphere",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "If a land is tapped for two or more mana, it produces {C} instead of any other type and amount.\nEach spell a player casts costs {1} more to cast for each other spell that player has cast this turn."
+  },
+  {
+   "name": "Firdoch Core",
+   "cost": "{3}",
+   "type_line": "Kindred Artifact — Shapeshifter",
+   "keywords": "[\"Changeling\"]",
+   "text": "Changeling (This card is every creature type.)\n{T}: Add one mana of any color.\n{4}: This artifact becomes a 4/4 artifact creature until end of turn."
+  },
+  {
+   "name": "Flywheel Racer",
+   "cost": "{2}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Vigilance\",\"Crew\"]",
+   "text": "Vigilance\n{T}: Add one mana of any color. Activate only if this permanent is a creature.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "God-Pharaoh's Statue",
+   "cost": "{6}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "Spells your opponents cast cost {2} more to cast.\nAt the beginning of your end step, each opponent loses 1 life."
+  },
+  {
+   "name": "High-Speed Hoverbike",
+   "cost": "{2}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Flying\",\"Crew\",\"Flash\"]",
+   "text": "Flash\nFlying\nWhen this Vehicle enters, tap up to one target creature.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Lifecraft Engine",
+   "cost": "{3}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "As this Vehicle enters, choose a creature type.\nVehicle creatures you control are the chosen creature type in addition to their other types.\nEach creature you control of the chosen type other than this Vehicle gets +1/+1.\nCrew 3"
+  },
+  {
+   "name": "Liquimetal Torque",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Target nonland permanent becomes an artifact in addition to its other types until end of turn."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Maskwood Nexus",
+   "cost": "{4}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.\n{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling. (It is every creature type.)"
+  },
+  {
+   "name": "Portal to Phyrexia",
+   "cost": "{9}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "When this artifact enters, each opponent sacrifices three creatures of their choice.\nAt the beginning of your upkeep, put target creature card from a graveyard onto the battlefield under your control. It's a Phyrexian in addition to its other types."
+  },
+  {
+   "name": "Sculpting Steel",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You may have this artifact enter as a copy of any artifact on the battlefield."
+  },
+  {
+   "name": "Smuggler's Copter",
+   "cost": "{2}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Flying\",\"Crew\"]",
+   "text": "Flying\nWhenever this Vehicle attacks or blocks, you may draw a card. If you do, discard a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Springleaf Drum",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "The One Ring",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
+  },
+  {
+   "name": "Unlicensed Hearse",
+   "cost": "{2}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{T}: Exile up to two target cards from a single graveyard.\nUnlicensed Hearse's power and toughness are each equal to the number of cards exiled with it.\nCrew 2"
+  },
+  {
+   "name": "Blood Moon",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Sticky Fingers",
+   "cost": "{R}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Treasure\",\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature has menace and \"Whenever this creature deals combat damage to a player, create a Treasure token.\" (It can't be blocked except by two or more creatures. The token is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")\nWhen enchanted creature dies, draw a card."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Dwarven Mine",
+   "cost": "",
+   "type_line": "Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)\nThis land enters tapped unless you control three or more other Mountains.\nWhen this land enters untapped, create a 1/1 red Dwarf creature token."
+  },
+  {
+   "name": "Great Furnace",
+   "cost": "",
+   "type_line": "Artifact Land",
+   "keywords": "[]",
+   "text": "{T}: Add {R}."
+  },
+  {
+   "name": "Holdout Settlement",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}. ({C} represents colorless mana.)\n{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Mines of Moria",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Treasure\"]",
+   "text": "Mines of Moria enters tapped unless you control a legendary creature.\n{T}: Add {R}.\n{3}{R}, {T}, Exile three cards from your graveyard: Create two Treasure tokens."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Mutavault",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land."
+  },
+  {
+   "name": "Survivors' Encampment",
+   "cost": "",
+   "type_line": "Land — Desert",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Treasure Vault",
+   "cost": "",
+   "type_line": "Artifact Land",
+   "keywords": "[\"Treasure\"]",
+   "text": "{T}: Add {C}.\n{X}{X}, {T}, Sacrifice this land: Create X Treasure tokens."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Volatile Fault",
+   "cost": "",
+   "type_line": "Land — Cave",
+   "keywords": "[\"Treasure\"]",
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That player may search their library for a basic land card, put it onto the battlefield, then shuffle. You create a Treasure token."
+  }
+ ],
+ "list": [
+  [
+   "Academy Manufactor",
+   1
+  ],
+  [
+   "Adaptive Automaton",
+   1
+  ],
+  [
+   "Axgard Cavalry",
+   1
+  ],
+  [
+   "Barkform Harvester",
+   1
+  ],
+  [
+   "Battered Golem",
+   1
+  ],
+  [
+   "Bloodfire Dwarf",
+   1
+  ],
+  [
+   "Dwarven Armorer",
+   1
+  ],
+  [
+   "Dwarven Bloodboiler",
+   1
+  ],
+  [
+   "Dwarven Grunt",
+   1
+  ],
+  [
+   "Dwarven Mauler",
+   1
+  ],
+  [
+   "Dwarven Scorcher",
+   1
+  ],
+  [
+   "Dwarven Trader",
+   1
+  ],
+  [
+   "Enslaved Dwarf",
+   1
+  ],
+  [
+   "Gimli of the Glittering Caves",
+   1
+  ],
+  [
+   "Glóin, Dwarf Emissary",
+   1
+  ],
+  [
+   "Goldspan Dragon",
+   1
+  ],
+  [
+   "Hellkite Tyrant",
+   1
+  ],
+  [
+   "Liberated Dwarf",
+   1
+  ],
+  [
+   "Magda, the Hoardmaster",
+   1
+  ],
+  [
+   "Metallic Mimic",
+   1
+  ],
+  [
+   "Plundering Barbarian",
+   1
+  ],
+  [
+   "Professional Face-Breaker",
+   1
+  ],
+  [
+   "Roaming Throne",
+   1
+  ],
+  [
+   "Simian Spirit Guide",
+   1
+  ],
+  [
+   "Spark Mage",
+   1
+  ],
+  [
+   "Three Tree Mascot",
+   1
+  ],
+  [
+   "Universal Automaton",
+   1
+  ],
+  [
+   "Vault Robber",
+   1
+  ],
+  [
+   "Xorn",
+   1
+  ],
+  [
+   "Óin the Brave",
+   1
+  ],
+  [
+   "Abrade",
+   1
+  ],
+  [
+   "Bottle-Cap Blast",
+   1
+  ],
+  [
+   "Chaos Warp",
+   1
+  ],
+  [
+   "Deflecting Swat",
+   1
+  ],
+  [
+   "Galvanic Blast",
+   1
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Pyroblast",
+   1
+  ],
+  [
+   "Red Elemental Blast",
+   1
+  ],
+  [
+   "Return the Favor",
+   1
+  ],
+  [
+   "Untimely Malfunction",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Jeska's Will",
+   1
+  ],
+  [
+   "Seize the Spoils",
+   1
+  ],
+  [
+   "Sundering Eruption // Volcanic Fissure",
+   1
+  ],
+  [
+   "Vandalblast",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Clock of Omens",
+   1
+  ],
+  [
+   "Clown Car",
+   1
+  ],
+  [
+   "Cursed Mirror",
+   1
+  ],
+  [
+   "Damping Sphere",
+   1
+  ],
+  [
+   "Firdoch Core",
+   1
+  ],
+  [
+   "Flywheel Racer",
+   1
+  ],
+  [
+   "God-Pharaoh's Statue",
+   1
+  ],
+  [
+   "High-Speed Hoverbike",
+   1
+  ],
+  [
+   "Lifecraft Engine",
+   1
+  ],
+  [
+   "Liquimetal Torque",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Maskwood Nexus",
+   1
+  ],
+  [
+   "Portal to Phyrexia",
+   1
+  ],
+  [
+   "Sculpting Steel",
+   1
+  ],
+  [
+   "Smuggler's Copter",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Springleaf Drum",
+   1
+  ],
+  [
+   "The One Ring",
+   1
+  ],
+  [
+   "Unlicensed Hearse",
+   1
+  ],
+  [
+   "Blood Moon",
+   1
+  ],
+  [
+   "Sticky Fingers",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Dwarven Mine",
+   1
+  ],
+  [
+   "Great Furnace",
+   1
+  ],
+  [
+   "Holdout Settlement",
+   1
+  ],
+  [
+   "Mines of Moria",
+   1
+  ],
+  [
+   "Mountain",
+   22
+  ],
+  [
+   "Mutavault",
+   1
+  ],
+  [
+   "Survivors' Encampment",
+   1
+  ],
+  [
+   "Treasure Vault",
+   1
+  ],
+  [
+   "Urza's Saga",
+   1
+  ],
+  [
+   "Volatile Fault",
+   1
+  ]
+ ]
+}

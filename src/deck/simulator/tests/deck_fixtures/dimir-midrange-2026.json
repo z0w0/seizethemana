@@ -1,0 +1,248 @@
+{
+ "name": "dimir-midrange-2026",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Gloomlake Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {U}.\n{T}: Add {B}. Activate only if you control an Island or a Swamp."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hidden Lair",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. Activate only if this land entered this turn or if you control a basic land."
+  },
+  {
+   "name": "Restless Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Mill\"]",
+   "text": "This land enters tapped.\n{T}: Add {U} or {B}.\n{2}{U}{B}: Until end of turn, this land becomes a 4/4 blue and black Shark creature with deathtouch. It's still a land.\nWhenever this land attacks, target player mills four cards."
+  },
+  {
+   "name": "Soulstone Sanctuary",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{4}: This land becomes a 3/3 creature with vigilance and all creature types. It's still a land."
+  },
+  {
+   "name": "Enduring Curiosity",
+   "cost": "{2}{U}{U}",
+   "type_line": "Enchantment Creature — Cat Glimmer",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhenever a creature you control deals combat damage to a player, draw a card.\nWhen Enduring Curiosity dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Floodpits Drowner",
+   "cost": "{1}{U}",
+   "type_line": "Creature — Merfolk",
+   "keywords": "[\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter on it.\n{1}{U}, {T}: Shuffle this creature and target creature with a stun counter on it into their owners' libraries."
+  },
+  {
+   "name": "Spyglass Siren",
+   "cost": "{U}",
+   "type_line": "Creature — Siren Pirate",
+   "keywords": "[\"Flying\",\"Explore\"]",
+   "text": "Flying\nWhen this creature enters, create a Map token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")"
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Blight\"]",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker — Kaito",
+   "keywords": "[\"Surveil\",\"Ninjutsu\"]",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n−2: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Dream Beavers",
+   "cost": "{B}",
+   "type_line": "Creature — Beaver Nightmare",
+   "keywords": "[\"Scry\",\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "The Wondrous Wasp",
+   "cost": "{1}{U}",
+   "type_line": "Legendary Creature — Human Hero",
+   "keywords": "[\"Flying\",\"Wasp's Sting\",\"Flash\"]",
+   "text": "Flash\nFlying\nWasp's Sting — When The Wondrous Wasp enters, tap up to one target creature. It loses all abilities for as long as The Wondrous Wasp remains on the battlefield."
+  },
+  {
+   "name": "Bitter Triumph",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, discard a card or pay 3 life.\nDestroy target creature or planeswalker."
+  },
+  {
+   "name": "Shoot the Sheriff",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target non-outlaw creature. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws. Everyone else is fair game.)"
+  },
+  {
+   "name": "We Say Thee Nay!",
+   "cost": "{1}{U}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[\"Teamwork\"]",
+   "text": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nCounter target spell unless its controller pays {2}. Counter that spell unless its controller pays {4} instead if this spell was cast using teamwork."
+  },
+  {
+   "name": "Tishana's Tidebinder",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Merfolk Wizard",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhen this creature enters, counter up to one target activated or triggered ability. If an ability of an artifact, creature, or planeswalker is countered this way, that permanent loses all abilities for as long as this creature remains on the battlefield. (Mana abilities can't be targeted.)"
+  },
+  {
+   "name": "Spell Pierce",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target noncreature spell unless its controller pays {2}."
+  },
+  {
+   "name": "Wan Shi Tong, Librarian",
+   "cost": "{X}{U}{U}",
+   "type_line": "Legendary Creature — Bird Spirit",
+   "keywords": "[\"Flying\",\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nFlying, vigilance\nWhen Wan Shi Tong enters, put X +1/+1 counters on him. Then draw half X cards, rounded down.\nWhenever an opponent searches their library, put a +1/+1 counter on Wan Shi Tong and draw a card."
+  },
+  {
+   "name": "Spell Snare",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell with mana value 2."
+  }
+ ],
+ "list": [
+  [
+   "Gloomlake Verge",
+   4
+  ],
+  [
+   "Island",
+   4
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Watery Grave",
+   4
+  ],
+  [
+   "Hidden Lair",
+   3
+  ],
+  [
+   "Restless Reef",
+   2
+  ],
+  [
+   "Soulstone Sanctuary",
+   2
+  ],
+  [
+   "Enduring Curiosity",
+   4
+  ],
+  [
+   "Floodpits Drowner",
+   4
+  ],
+  [
+   "Spyglass Siren",
+   4
+  ],
+  [
+   "Requiting Hex",
+   4
+  ],
+  [
+   "Kaito, Bane of Nightmares",
+   4
+  ],
+  [
+   "Dream Beavers",
+   2
+  ],
+  [
+   "The Wondrous Wasp",
+   2
+  ],
+  [
+   "Bitter Triumph",
+   2
+  ],
+  [
+   "Shoot the Sheriff",
+   2
+  ],
+  [
+   "We Say Thee Nay!",
+   2
+  ],
+  [
+   "Tishana's Tidebinder",
+   2
+  ],
+  [
+   "Spell Pierce",
+   1
+  ],
+  [
+   "Wan Shi Tong, Librarian",
+   1
+  ],
+  [
+   "Spell Snare",
+   1
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Swamp",
+   1
+  ]
+ ]
+}

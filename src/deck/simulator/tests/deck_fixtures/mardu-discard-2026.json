@@ -1,0 +1,233 @@
+{
+ "name": "mardu-discard-2026",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Concealed Courtyard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Inspiring Vantage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Bloodghast",
+   "cost": "{B}{B}",
+   "type_line": "Creature — Vampire Spirit",
+   "keywords": "[\"Landfall\"]",
+   "text": "This creature can't block.\nThis creature has haste as long as an opponent has 10 or less life.\nLandfall — Whenever a land you control enters, you may return this card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Hardened Academic",
+   "cost": "{R}{W}",
+   "type_line": "Creature — Bird Cleric",
+   "keywords": "[\"Flying\",\"Haste\"]",
+   "text": "Flying, haste\nDiscard a card: This creature gains lifelink until end of turn.\nWhenever one or more cards leave your graveyard, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Iron-Shield Elf",
+   "cost": "{1}{B}",
+   "type_line": "Creature — Elf Warrior",
+   "keywords": "[]",
+   "text": "Discard a card: This creature gains indestructible until end of turn. Tap it. (Damage and effects that say \"destroy\" don't destroy it. If its toughness is 0 or less, it still dies.)"
+  },
+  {
+   "name": "Marauding Mako",
+   "cost": "{R}",
+   "type_line": "Creature — Shark Pirate",
+   "keywords": "[\"Cycling\"]",
+   "text": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Moonshadow",
+   "cost": "{B}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Menace\"]",
+   "text": "Menace\nThis creature enters with six -1/-1 counters on it.\nWhenever one or more permanent cards are put into your graveyard from anywhere while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature."
+  },
+  {
+   "name": "Cool but Rude",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment — Class",
+   "keywords": "[]",
+   "text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, you may discard a card. If you do, draw a card.\n{1}{R}: Level 2\nWhenever you discard a card, this Class deals 2 damage to each opponent.\n{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
+  },
+  {
+   "name": "Practiced Offense",
+   "cost": "{2}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Put a +1/+1 counter on each creature target player controls. Target creature gains your choice of double strike or lifelink until end of turn.\nFlashback {1}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Carnage, Crimson Chaos",
+   "cost": "{2}{B}{R}",
+   "type_line": "Legendary Creature — Symbiote Villain",
+   "keywords": "[\"Mayhem\",\"Trample\"]",
+   "text": "Trample\nWhen Carnage enters, return target creature card with mana value 3 or less from your graveyard to the battlefield. It gains \"This creature attacks each combat if able\" and \"When this creature deals combat damage to a player, sacrifice it.\"\nMayhem {B}{R}"
+  },
+  {
+   "name": "Inti, Seneschal of the Sun",
+   "cost": "{1}{R}",
+   "type_line": "Legendary Creature — Human Knight",
+   "keywords": "[]",
+   "text": "Whenever you attack, you may discard a card. When you do, put a +1/+1 counter on target attacking creature. It gains trample until end of turn.\nWhenever you discard one or more cards, exile the top card of your library. You may play that card until your next end step."
+  },
+  {
+   "name": "Tersa Lightshatter",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Orc Wizard",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\nWhen Tersa Lightshatter enters, discard up to two cards, then draw that many cards.\nWhenever Tersa Lightshatter attacks, if there are seven or more cards in your graveyard, exile a card at random from your graveyard. You may play that card this turn."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[\"Blight\"]",
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  }
+ ],
+ "list": [
+  [
+   "Blood Crypt",
+   4
+  ],
+  [
+   "Sacred Foundry",
+   4
+  ],
+  [
+   "Starting Town",
+   4
+  ],
+  [
+   "Concealed Courtyard",
+   3
+  ],
+  [
+   "Godless Shrine",
+   3
+  ],
+  [
+   "Inspiring Vantage",
+   2
+  ],
+  [
+   "Mountain",
+   1
+  ],
+  [
+   "Swamp",
+   1
+  ],
+  [
+   "Bloodghast",
+   4
+  ],
+  [
+   "Hardened Academic",
+   4
+  ],
+  [
+   "Iron-Shield Elf",
+   4
+  ],
+  [
+   "Marauding Mako",
+   4
+  ],
+  [
+   "Moonshadow",
+   4
+  ],
+  [
+   "Cool but Rude",
+   4
+  ],
+  [
+   "Practiced Offense",
+   3
+  ],
+  [
+   "Carnage, Crimson Chaos",
+   2
+  ],
+  [
+   "Inti, Seneschal of the Sun",
+   2
+  ],
+  [
+   "Tersa Lightshatter",
+   2
+  ],
+  [
+   "Erode",
+   2
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Concealed Courtyard",
+   1
+  ]
+ ]
+}

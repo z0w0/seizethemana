@@ -1,0 +1,963 @@
+{
+ "name": "kaalia angels-demons-dragons",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Kaalia of the Vast",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Legendary Creature — Human Cleric",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever Kaalia attacks an opponent, you may put an Angel, Demon, or Dragon creature card from your hand onto the battlefield tapped and attacking that opponent."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Ancient Copper Dragon",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Elder Dragon",
+   "keywords": "[\"Flying\",\"Treasure\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. You create a number of Treasure tokens equal to the result."
+  },
+  {
+   "name": "Angel of Despair",
+   "cost": "{3}{W}{W}{B}{B}",
+   "type_line": "Creature — Angel",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, destroy target permanent."
+  },
+  {
+   "name": "Angel of Serenity",
+   "cost": "{4}{W}{W}{W}",
+   "type_line": "Creature — Angel",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, you may exile up to three other target creatures from the battlefield and/or creature cards from graveyards.\nWhen this creature leaves the battlefield, return the exiled cards to their owners' hands."
+  },
+  {
+   "name": "Angelic Arbiter",
+   "cost": "{5}{W}{W}",
+   "type_line": "Creature — Angel",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nEach opponent who cast a spell this turn can't attack with creatures.\nEach opponent who attacked with a creature this turn can't cast spells."
+  },
+  {
+   "name": "Archfiend of Depravity",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nAt the beginning of each opponent's end step, that player chooses up to two creatures they control, then sacrifices the rest."
+  },
+  {
+   "name": "Archfiend of Despair",
+   "cost": "{6}{B}{B}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nYour opponents can't gain life.\nAt the beginning of each end step, each opponent loses life equal to the life that player lost this turn. (Damage causes loss of life.)"
+  },
+  {
+   "name": "Aurelia, the Warleader",
+   "cost": "{2}{R}{R}{W}{W}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\",\"Vigilance\",\"Haste\"]",
+   "text": "Flying, vigilance, haste\nWhenever Aurelia attacks for the first time each turn, untap all creatures you control. After this phase, there is an additional combat phase."
+  },
+  {
+   "name": "Avacyn, Angel of Hope",
+   "cost": "{5}{W}{W}{W}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\",\"Indestructible\",\"Vigilance\"]",
+   "text": "Flying, vigilance, indestructible\nOther permanents you control have indestructible."
+  },
+  {
+   "name": "Balefire Dragon",
+   "cost": "{5}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, it deals that much damage to each creature that player controls."
+  },
+  {
+   "name": "Drakuseth, Maw of Flames",
+   "cost": "{4}{R}{R}{R}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever Drakuseth attacks, it deals 4 damage to any target and 3 damage to each of up to two other targets."
+  },
+  {
+   "name": "Drana and Linvala",
+   "cost": "{1}{W}{W}{B}",
+   "type_line": "Legendary Creature — Vampire Angel",
+   "keywords": "[\"Flying\",\"Vigilance\"]",
+   "text": "Flying, vigilance\nActivated abilities of creatures your opponents control can't be activated.\nDrana and Linvala has all activated abilities of all creatures your opponents control. You may spend mana as though it were mana of any color to activate those abilities."
+  },
+  {
+   "name": "Gisela, Blade of Goldnight",
+   "cost": "{4}{R}{W}{W}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\",\"First strike\",\"Double\"]",
+   "text": "Flying, first strike\nIf a source would deal damage to an opponent or a permanent an opponent controls, that source deals double that damage to that player or permanent instead.\nIf a source would deal damage to you or a permanent you control, prevent half that damage, rounded up."
+  },
+  {
+   "name": "Grand Abolisher",
+   "cost": "{W}{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "During your turn, your opponents can't cast spells or activate abilities of artifacts, creatures, or enchantments."
+  },
+  {
+   "name": "Hellkite Tyrant",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nWhenever this creature deals combat damage to a player, gain control of all artifacts that player controls.\nAt the beginning of your upkeep, if you control twenty or more artifacts, you win the game."
+  },
+  {
+   "name": "Isshin, Two Heavens as One",
+   "cost": "{R}{W}{B}",
+   "type_line": "Legendary Creature — Human Samurai",
+   "keywords": "[]",
+   "text": "If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time."
+  },
+  {
+   "name": "Kaalia, Zenith Seeker",
+   "cost": "{R}{W}{B}",
+   "type_line": "Legendary Creature — Human Cleric",
+   "keywords": "[\"Flying\",\"Vigilance\"]",
+   "text": "Flying, vigilance\nWhen Kaalia enters, look at the top six cards of your library. You may reveal an Angel card, a Demon card, and/or a Dragon card from among them and put them into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Liesa, Forgotten Archangel",
+   "cost": "{2}{W}{W}{B}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\",\"Lifelink\"]",
+   "text": "Flying, lifelink\nWhenever another nontoken creature you control dies, return that card to its owner's hand at the beginning of the next end step.\nIf a creature an opponent controls would die, exile it instead."
+  },
+  {
+   "name": "Lord of the Void",
+   "cost": "{4}{B}{B}{B}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, exile the top seven cards of that player's library, then put a creature card from among them onto the battlefield under your control."
+  },
+  {
+   "name": "Master of Cruelties",
+   "cost": "{3}{B}{R}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"First strike\",\"Deathtouch\"]",
+   "text": "First strike, deathtouch\nThis creature can only attack alone.\nWhenever this creature attacks a player and isn't blocked, that player's life total becomes 1. This creature assigns no combat damage this combat."
+  },
+  {
+   "name": "Mother of Runes",
+   "cost": "{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "{T}: Target creature you control gains protection from the color of your choice until end of turn."
+  },
+  {
+   "name": "Rakdos, Patron of Chaos",
+   "cost": "{4}{B}{R}",
+   "type_line": "Legendary Creature — Demon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nAt the beginning of your end step, target opponent may sacrifice two nonland, nontoken permanents of their choice. If they don't, you draw two cards."
+  },
+  {
+   "name": "Razaketh, the Foulblooded",
+   "cost": "{5}{B}{B}{B}",
+   "type_line": "Legendary Creature — Demon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nPay 2 life, Sacrifice another creature: Search your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "Reya Dawnbringer",
+   "cost": "{6}{W}{W}{W}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nAt the beginning of your upkeep, you may return target creature card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Rune-Scarred Demon",
+   "cost": "{5}{B}{B}",
+   "type_line": "Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, search your library for a card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Sephara, Sky's Blade",
+   "cost": "{4}{W}{W}{W}",
+   "type_line": "Legendary Creature — Angel",
+   "keywords": "[\"Flying\",\"Lifelink\"]",
+   "text": "You may pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost.\nFlying, lifelink\nOther creatures you control with flying have indestructible. (Damage and effects that say \"destroy\" don't destroy them.)"
+  },
+  {
+   "name": "Serra's Emissary",
+   "cost": "{4}{W}{W}{W}",
+   "type_line": "Creature — Angel",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nAs this creature enters, choose a card type.\nYou and creatures you control have protection from the chosen card type."
+  },
+  {
+   "name": "Terror of the Peaks",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nSpells your opponents cast that target this creature cost an additional 3 life to cast.\nWhenever another creature you control enters, this creature deals damage equal to that creature's power to any target."
+  },
+  {
+   "name": "Twinflame Tyrant",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Double\"]",
+   "text": "Flying\nIf a source you control would deal damage to an opponent or a permanent an opponent controls, it deals double that damage instead."
+  },
+  {
+   "name": "Valgavoth, Terror Eater",
+   "cost": "{6}{B}{B}{B}",
+   "type_line": "Legendary Creature — Elder Demon",
+   "keywords": "[\"Flying\",\"Lifelink\",\"Ward\"]",
+   "text": "Flying, lifelink\nWard—Sacrifice three nonland permanents.\nIf a card you didn't control would be put into an opponent's graveyard from anywhere, exile it instead.\nDuring your turn, you may play cards exiled with Valgavoth. If you cast a spell this way, pay life equal to its mana value rather than pay its mana cost."
+  },
+  {
+   "name": "Vilis, Broker of Blood",
+   "cost": "{5}{B}{B}{B}",
+   "type_line": "Legendary Creature — Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{B}, Pay 2 life: Target creature gets -1/-1 until end of turn.\nWhenever you lose life, draw that many cards. (Damage causes loss of life.)"
+  },
+  {
+   "name": "Anguished Unmaking",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target nonland permanent. You lose 3 life."
+  },
+  {
+   "name": "Boros Charm",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Boros Charm deals 4 damage to target player or planeswalker.\n• Permanents you control gain indestructible until end of turn.\n• Target creature gains double strike until end of turn."
+  },
+  {
+   "name": "Dark Ritual",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {B}{B}{B}."
+  },
+  {
+   "name": "Deflecting Swat",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nYou may choose new targets for target spell or ability."
+  },
+  {
+   "name": "Flawless Maneuver",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCreatures you control gain indestructible until end of turn."
+  },
+  {
+   "name": "Mortify",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or enchantment."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Teferi's Protection",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection."
+  },
+  {
+   "name": "Terminate",
+   "cost": "{B}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature. It can't be regenerated."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Damn",
+   "cost": "{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Overload\"]",
+   "text": "Destroy target creature. A creature destroyed this way can't be regenerated.\nOverload {2}{W}{W} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Demonic Counsel",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Delirium\"]",
+   "text": "Search your library for a Demon card, reveal it, put it into your hand, then shuffle.\nDelirium — If there are four or more card types among cards in your graveyard, instead search your library for any card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Demonic Tutor",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "Night's Whisper",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You draw two cards and lose 2 life."
+  },
+  {
+   "name": "Reanimate",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Ruinous Ultimatum",
+   "cost": "{R}{R}{W}{W}{W}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all nonland permanents your opponents control."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Boros Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {R}{W}."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Lightning Greaves",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}"
+  },
+  {
+   "name": "Orzhov Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {W}{B}."
+  },
+  {
+   "name": "Rakdos Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {B}{R}."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Swiftfoot Boots",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has hexproof and haste. (It can't be the target of spells or abilities your opponents control. It can attack and {T} no matter when it came under your control.)\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Talisman of Conviction",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {W}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Talisman of Hierarchy",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Talisman of Indulgence",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {B} or {R}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Dragon Tempest",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control with flying enters, it gains haste until end of turn.\nWhenever a Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control."
+  },
+  {
+   "name": "Phyrexian Arena",
+   "cost": "{1}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, you draw a card and you lose 1 life."
+  },
+  {
+   "name": "Rising of the Day",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures you control have haste.\nLegendary creatures you control get +1/+0."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Windcrag Siege",
+   "cost": "{1}{R}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "As this enchantment enters, choose Mardu or Jeskai.\n• Mardu — If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\n• Jeskai — At the beginning of your upkeep, create a 1/1 red Goblin creature token. It gains lifelink and haste until end of turn."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Battlefield Forge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {W}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Caves of Koilos",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Clifftop Retreat",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Mountain or a Plains.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Dragonskull Summit",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Evolving Wilds",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Isolated Chapel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Luxury Suite",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nomad Outpost",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {R}, {W}, or {B}."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Rogue's Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{4}, {T}: Target creature can't be blocked this turn."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Savai Triome",
+   "cost": "",
+   "type_line": "Land — Mountain Plains Swamp",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {R}, {W}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Spectator Seating",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Vault of Champions",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {B}."
+  }
+ ],
+ "list": [
+  [
+   "Ancient Copper Dragon",
+   1
+  ],
+  [
+   "Angel of Despair",
+   1
+  ],
+  [
+   "Angel of Serenity",
+   1
+  ],
+  [
+   "Angelic Arbiter",
+   1
+  ],
+  [
+   "Archfiend of Depravity",
+   1
+  ],
+  [
+   "Archfiend of Despair",
+   1
+  ],
+  [
+   "Aurelia, the Warleader",
+   1
+  ],
+  [
+   "Avacyn, Angel of Hope",
+   1
+  ],
+  [
+   "Balefire Dragon",
+   1
+  ],
+  [
+   "Drakuseth, Maw of Flames",
+   1
+  ],
+  [
+   "Drana and Linvala",
+   1
+  ],
+  [
+   "Gisela, Blade of Goldnight",
+   1
+  ],
+  [
+   "Grand Abolisher",
+   1
+  ],
+  [
+   "Hellkite Tyrant",
+   1
+  ],
+  [
+   "Isshin, Two Heavens as One",
+   1
+  ],
+  [
+   "Kaalia, Zenith Seeker",
+   1
+  ],
+  [
+   "Liesa, Forgotten Archangel",
+   1
+  ],
+  [
+   "Lord of the Void",
+   1
+  ],
+  [
+   "Master of Cruelties",
+   1
+  ],
+  [
+   "Mother of Runes",
+   1
+  ],
+  [
+   "Rakdos, Patron of Chaos",
+   1
+  ],
+  [
+   "Razaketh, the Foulblooded",
+   1
+  ],
+  [
+   "Reya Dawnbringer",
+   1
+  ],
+  [
+   "Rune-Scarred Demon",
+   1
+  ],
+  [
+   "Sephara, Sky's Blade",
+   1
+  ],
+  [
+   "Serra's Emissary",
+   1
+  ],
+  [
+   "Terror of the Peaks",
+   1
+  ],
+  [
+   "Twinflame Tyrant",
+   1
+  ],
+  [
+   "Valgavoth, Terror Eater",
+   1
+  ],
+  [
+   "Vilis, Broker of Blood",
+   1
+  ],
+  [
+   "Anguished Unmaking",
+   1
+  ],
+  [
+   "Boros Charm",
+   1
+  ],
+  [
+   "Dark Ritual",
+   1
+  ],
+  [
+   "Deflecting Swat",
+   1
+  ],
+  [
+   "Flawless Maneuver",
+   1
+  ],
+  [
+   "Mortify",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Teferi's Protection",
+   1
+  ],
+  [
+   "Terminate",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Damn",
+   1
+  ],
+  [
+   "Demonic Counsel",
+   1
+  ],
+  [
+   "Demonic Tutor",
+   1
+  ],
+  [
+   "Night's Whisper",
+   1
+  ],
+  [
+   "Reanimate",
+   1
+  ],
+  [
+   "Ruinous Ultimatum",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Boros Signet",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Lightning Greaves",
+   1
+  ],
+  [
+   "Orzhov Signet",
+   1
+  ],
+  [
+   "Rakdos Signet",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Swiftfoot Boots",
+   1
+  ],
+  [
+   "Talisman of Conviction",
+   1
+  ],
+  [
+   "Talisman of Hierarchy",
+   1
+  ],
+  [
+   "Talisman of Indulgence",
+   1
+  ],
+  [
+   "Dragon Tempest",
+   1
+  ],
+  [
+   "Phyrexian Arena",
+   1
+  ],
+  [
+   "Rising of the Day",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Windcrag Siege",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Battlefield Forge",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Caves of Koilos",
+   1
+  ],
+  [
+   "Clifftop Retreat",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Dragonskull Summit",
+   1
+  ],
+  [
+   "Evolving Wilds",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Isolated Chapel",
+   1
+  ],
+  [
+   "Luxury Suite",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Mountain",
+   4
+  ],
+  [
+   "Nomad Outpost",
+   1
+  ],
+  [
+   "Plains",
+   6
+  ],
+  [
+   "Rogue's Passage",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Savai Triome",
+   1
+  ],
+  [
+   "Spectator Seating",
+   1
+  ],
+  [
+   "Swamp",
+   6
+  ],
+  [
+   "Vault of Champions",
+   1
+  ]
+ ]
+}

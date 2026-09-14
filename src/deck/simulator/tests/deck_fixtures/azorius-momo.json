@@ -1,0 +1,218 @@
+{
+ "name": "azorius-momo",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Floodfarm Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {W}.\n{T}: Add {U}. Activate only if you control a Plains or an Island."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Multiversal Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a basic land type. Then you may pay 2 life. If you don't, it enters tapped.\nThis land is the chosen type."
+  },
+  {
+   "name": "Abandoned Air Temple",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a basic land.\n{T}: Add {W}.\n{3}{W}, {T}: Put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Momo, Friendly Flier",
+   "cost": "{W}",
+   "type_line": "Legendary Creature — Lemur Bat Ally",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nThe first non-Lemur creature spell with flying you cast during each of your turns costs {1} less to cast.\nWhenever another creature you control with flying enters, Momo gets +1/+1 until end of turn."
+  },
+  {
+   "name": "Quantum Riddler",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature — Sphinx",
+   "keywords": "[\"Flying\",\"Warp\"]",
+   "text": "Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.\nWarp {1}{U}"
+  },
+  {
+   "name": "Sage of the Skies",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Human Monk",
+   "keywords": "[\"Flying\",\"Lifelink\"]",
+   "text": "When you cast this spell, if you've cast another spell this turn, copy this spell. (The copy becomes a token.)\nFlying, lifelink"
+  },
+  {
+   "name": "Starfield Shepherd",
+   "cost": "{3}{W}{W}",
+   "type_line": "Creature — Angel",
+   "keywords": "[\"Flying\",\"Warp\"]",
+   "text": "Flying\nWhen this creature enters, search your library for a basic Plains card or a creature card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\nWarp {1}{W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Daydream",
+   "cost": "{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Exile target creature you control, then return that card to the battlefield under its owner's control with a +1/+1 counter on it.\nFlashback {2}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Practiced Offense",
+   "cost": "{2}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Put a +1/+1 counter on each creature target player controls. Target creature gains your choice of double strike or lifelink until end of turn.\nFlashback {1}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Springleaf Drum",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Steamcore Scholar",
+   "cost": "{2}{U}",
+   "type_line": "Creature — Weird Detective",
+   "keywords": "[\"Flying\",\"Vigilance\"]",
+   "text": "Flying, vigilance\nWhen this creature enters, draw two cards. Then discard two cards unless you discard an instant or sorcery card or a creature card with flying."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Nurturing Pixie",
+   "cost": "{W}",
+   "type_line": "Creature — Faerie Rogue",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, return up to one target non-Faerie, nonland permanent you control to its owner's hand. If a permanent was returned this way, put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   "cost": "{1}{W}{U} // ",
+   "type_line": "Legendary Creature — Human Avatar Ally // Legendary Creature — Avatar Spirit Ally",
+   "keywords": "[\"Flying\",\"Reach\",\"Airbend\",\"Transform\",\"Trample\",\"Flash\",\"Waterbend\"]",
+   "text": "Flash\nFlying\nWhen Aang enters, airbend up to one other target creature or spell. (Exile it. While it's exiled, its owner may cast it for {2} rather than its mana cost.)\nWaterbend {8}: Transform Aang.\n// Reach, trample\nWhenever Aang and La attack, put a +1/+1 counter on each tapped creature you control."
+  },
+  {
+   "name": "We Say Thee Nay!",
+   "cost": "{1}{U}",
+   "type_line": "Instant — Arcane",
+   "keywords": "[\"Teamwork\"]",
+   "text": "Teamwork 2 (As an additional cost to cast this spell, you may tap any number of creatures you control with total power 2 or more.)\nCounter target spell unless its controller pays {2}. Counter that spell unless its controller pays {4} instead if this spell was cast using teamwork."
+  },
+  {
+   "name": "Flitterwing Nuisance",
+   "cost": "{U}",
+   "type_line": "Creature — Faerie Rogue",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nThis creature enters with a -1/-1 counter on it.\n{2}{U}, Remove a counter from this creature: Whenever a creature you control deals combat damage to a player or planeswalker this turn, draw a card."
+  }
+ ],
+ "list": [
+  [
+   "Plains",
+   6
+  ],
+  [
+   "Floodfarm Verge",
+   4
+  ],
+  [
+   "Hallowed Fountain",
+   4
+  ],
+  [
+   "Multiversal Passage",
+   4
+  ],
+  [
+   "Abandoned Air Temple",
+   2
+  ],
+  [
+   "Starting Town",
+   1
+  ],
+  [
+   "Momo, Friendly Flier",
+   4
+  ],
+  [
+   "Quantum Riddler",
+   4
+  ],
+  [
+   "Sage of the Skies",
+   4
+  ],
+  [
+   "Starfield Shepherd",
+   4
+  ],
+  [
+   "Daydream",
+   4
+  ],
+  [
+   "Practiced Offense",
+   4
+  ],
+  [
+   "Springleaf Drum",
+   4
+  ],
+  [
+   "Steamcore Scholar",
+   3
+  ],
+  [
+   "Erode",
+   3
+  ],
+  [
+   "Nurturing Pixie",
+   2
+  ],
+  [
+   "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   1
+  ],
+  [
+   "We Say Thee Nay!",
+   1
+  ],
+  [
+   "Flitterwing Nuisance",
+   1
+  ]
+ ]
+}

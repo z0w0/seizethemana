@@ -1,0 +1,350 @@
+{
+ "name": "four-color-control",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Great Hall of the Biblioplex",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Spend this mana only to cast an instant or sorcery spell.\n{5}: If this land isn't a creature, it becomes a 2/4 Wizard creature with \"Whenever you cast an instant or sorcery spell, this creature gets +1/+0 until end of turn.\" It's still a land."
+  },
+  {
+   "name": "Bleachbone Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {B}.\n{T}: Add {W}. Activate only if you control a Plains or a Swamp."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Shattered Sanctum",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Riverpyre Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {R}.\n{T}: Add {U}. Activate only if you control an Island or a Mountain."
+  },
+  {
+   "name": "Sundown Pass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[]",
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Flash\"]",
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Stormcarved Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Undercity Sewers",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Cori Mountain Monastery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {R}.\n{3}{R}, {T}: Exile the top card of your library. Until the end of your next turn, you may play that card."
+  },
+  {
+   "name": "Jeskai Revelation",
+   "cost": "{4}{U}{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Return target spell or permanent to its owner's hand. Jeskai Revelation deals 4 damage to any target. Create two 1/1 white Monk creature tokens with prowess. Draw two cards. You gain 4 life."
+  },
+  {
+   "name": "Stock Up",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Tablet of Discovery",
+   "cost": "{2}{R}",
+   "type_line": "Artifact",
+   "keywords": "[\"Mill\"]",
+   "text": "When this artifact enters, mill a card. You may play that card this turn. (To mill a card, put the top card of your library into your graveyard.)\n{T}: Add {R}.\n{T}: Add {R}{R}. Spend this mana only to cast instant and sorcery spells."
+  },
+  {
+   "name": "Inevitable Defeat",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "This spell can't be countered.\nExile target nonland permanent. Its controller loses 3 life and you gain 3 life."
+  },
+  {
+   "name": "Consult the Star Charts",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Kicker\"]",
+   "text": "Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)\nLook at the top X cards of your library, where X is the number of lands you control. Put one of those cards into your hand. If this spell was kicked, put two of those cards into your hand instead. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Flashback",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Sear",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Sear deals 4 damage to target creature or planeswalker."
+  },
+  {
+   "name": "Together as One",
+   "cost": "{6}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Converge\"]",
+   "text": "Converge — Target player draws X cards, Together as One deals X damage to any target, and you gain X life, where X is the number of colors of mana spent to cast this spell."
+  },
+  {
+   "name": "Firebending Lesson",
+   "cost": "{R}",
+   "type_line": "Instant — Lesson",
+   "keywords": "[\"Kicker\"]",
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nFirebending Lesson deals 2 damage to target creature. If this spell was kicked, it deals 5 damage to that creature instead."
+  },
+  {
+   "name": "Deadly Cover-Up",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Collect evidence\"]",
+   "text": "As an additional cost to cast this spell, you may collect evidence 6.\nDestroy all creatures. If evidence was collected, exile a card from an opponent's graveyard. Then search its owner's graveyard, hand, and library for any number of cards with that name and exile them. That player shuffles, then draws a card for each card exiled from their hand this way."
+  },
+  {
+   "name": "Shoot the Sheriff",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target non-outlaw creature. (Assassins, Mercenaries, Pirates, Rogues, and Warlocks are outlaws. Everyone else is fair game.)"
+  },
+  {
+   "name": "Day of Judgment",
+   "cost": "{2}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all creatures."
+  },
+  {
+   "name": "Lightning Helix",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Helix deals 3 damage to any target and you gain 3 life."
+  }
+ ],
+ "list": [
+  [
+   "Great Hall of the Biblioplex",
+   4
+  ],
+  [
+   "Bleachbone Verge",
+   3
+  ],
+  [
+   "Sacred Foundry",
+   2
+  ],
+  [
+   "Shattered Sanctum",
+   2
+  ],
+  [
+   "Steam Vents",
+   2
+  ],
+  [
+   "Hallowed Fountain",
+   2
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Watery Grave",
+   1
+  ],
+  [
+   "Riverpyre Verge",
+   1
+  ],
+  [
+   "Sundown Pass",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Starting Town",
+   1
+  ],
+  [
+   "Swamp",
+   1
+  ],
+  [
+   "Nowhere to Run",
+   1
+  ],
+  [
+   "Stormcarved Coast",
+   1
+  ],
+  [
+   "Undercity Sewers",
+   1
+  ],
+  [
+   "Cori Mountain Monastery",
+   1
+  ],
+  [
+   "Jeskai Revelation",
+   4
+  ],
+  [
+   "Stock Up",
+   4
+  ],
+  [
+   "Tablet of Discovery",
+   4
+  ],
+  [
+   "Inevitable Defeat",
+   3
+  ],
+  [
+   "Consult the Star Charts",
+   3
+  ],
+  [
+   "Flashback",
+   2
+  ],
+  [
+   "Sear",
+   2
+  ],
+  [
+   "Together as One",
+   2
+  ],
+  [
+   "Firebending Lesson",
+   2
+  ],
+  [
+   "Deadly Cover-Up",
+   2
+  ],
+  [
+   "Shoot the Sheriff",
+   2
+  ],
+  [
+   "Day of Judgment",
+   2
+  ],
+  [
+   "Lightning Helix",
+   1
+  ]
+ ]
+}

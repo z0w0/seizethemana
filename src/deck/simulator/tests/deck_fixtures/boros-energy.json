@@ -1,0 +1,229 @@
+{
+ "name": "boros-energy",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
+   "cost": "{1}{W} // ",
+   "type_line": "Legendary Creature — Cat Warrior // Legendary Planeswalker — Ajani",
+   "keywords": "[\"Transform\"]",
+   "text": "When Ajani enters, create a 2/1 white Cat Warrior creature token.\nWhenever one or more other Cats you control die, you may exile Ajani, then return him to the battlefield transformed under his owner's control.\n// +2: Put a +1/+1 counter on each Cat you control.\n0: Create a 2/1 white Cat Warrior creature token. When you do, if you control a red permanent other than Ajani, he deals damage equal to the number of creatures you control to any target.\n−4: Each opponent chooses an artifact, a creature, an enchantment, and a planeswalker from among the nonland permanents they control, then sacrifices the rest."
+  },
+  {
+   "name": "Guide of Souls",
+   "cost": "{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "Whenever another creature you control enters, you gain 1 life and get {E} (an energy counter).\nWhenever you attack, you may pay {E}{E}{E}. When you do, put two +1/+1 counters and a flying counter on target attacking creature. It becomes an Angel in addition to its other types."
+  },
+  {
+   "name": "Ocelot Pride",
+   "cost": "{W}",
+   "type_line": "Creature — Cat",
+   "keywords": "[\"Lifelink\",\"Ascend\",\"First strike\"]",
+   "text": "First strike, lifelink\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your end step, if you gained life this turn, create a 1/1 white Cat creature token. Then if you have the city's blessing, for each token you control that entered this turn, create a token that's a copy of it."
+  },
+  {
+   "name": "Ragavan, Nimble Pilferer",
+   "cost": "{R}",
+   "type_line": "Legendary Creature — Monkey Pirate",
+   "keywords": "[\"Treasure\",\"Dash\"]",
+   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+  },
+  {
+   "name": "Seasoned Pyromancer",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, discard two cards, then draw two cards. For each nonland card discarded this way, create a 1/1 red Elemental creature token.\n{3}{R}{R}, Exile this card from your graveyard: Create two 1/1 red Elemental creature tokens."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Bard",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Galvanic Discharge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
+  },
+  {
+   "name": "Goblin Bombardment",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+  },
+  {
+   "name": "Thraben Charm",
+   "cost": "{1}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Thraben Charm deals damage equal to twice the number of creatures you control to target creature.\n• Destroy target enchantment.\n• Exile any number of target players' graveyards."
+  },
+  {
+   "name": "Practiced Offense",
+   "cost": "{2}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Put a +1/+1 counter on each creature target player controls. Target creature gains your choice of double strike or lifelink until end of turn.\nFlashback {1}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Blood Moon",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Static Prison",
+   "cost": "{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield. You get {E}{E} (two energy counters).\nAt the beginning of your first main phase, sacrifice this enchantment unless you pay {E}."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Elegant Parlor",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[\"Surveil\"]",
+   "text": "({T}: Add {R} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Sunbaked Canyon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life: Add {R} or {W}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Arena of Glory",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Exert\"]",
+   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)"
+  }
+ ],
+ "list": [
+  [
+   "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
+   4
+  ],
+  [
+   "Guide of Souls",
+   4
+  ],
+  [
+   "Ocelot Pride",
+   4
+  ],
+  [
+   "Ragavan, Nimble Pilferer",
+   4
+  ],
+  [
+   "Seasoned Pyromancer",
+   4
+  ],
+  [
+   "Voice of Victory",
+   3
+  ],
+  [
+   "Galvanic Discharge",
+   4
+  ],
+  [
+   "Goblin Bombardment",
+   3
+  ],
+  [
+   "Thraben Charm",
+   3
+  ],
+  [
+   "Practiced Offense",
+   2
+  ],
+  [
+   "Blood Moon",
+   2
+  ],
+  [
+   "Static Prison",
+   1
+  ],
+  [
+   "Arid Mesa",
+   4
+  ],
+  [
+   "Flooded Strand",
+   4
+  ],
+  [
+   "Marsh Flats",
+   2
+  ],
+  [
+   "Plains",
+   4
+  ],
+  [
+   "Sacred Foundry",
+   3
+  ],
+  [
+   "Elegant Parlor",
+   2
+  ],
+  [
+   "Sunbaked Canyon",
+   2
+  ],
+  [
+   "Arena of Glory",
+   1
+  ]
+ ]
+}

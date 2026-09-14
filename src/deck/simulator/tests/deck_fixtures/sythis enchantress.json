@@ -1,0 +1,908 @@
+{
+ "name": "sythis enchantress",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Sythis, Harvest's Hand",
+   "cost": "{G}{W}",
+   "type_line": "Legendary Enchantment Creature — Nymph",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, you gain 1 life and draw a card."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Ajani's Chosen",
+   "cost": "{2}{W}{W}",
+   "type_line": "Creature — Cat Soldier",
+   "keywords": "[]",
+   "text": "Whenever an enchantment you control enters, create a 2/2 white Cat creature token. If that enchantment is an Aura, you may attach it to the token."
+  },
+  {
+   "name": "Alseid of Life's Bounty",
+   "cost": "{W}",
+   "type_line": "Enchantment Creature — Nymph",
+   "keywords": "[\"Lifelink\"]",
+   "text": "Lifelink\n{1}, Sacrifice this creature: Target creature or enchantment you control gains protection from the color of your choice until end of turn."
+  },
+  {
+   "name": "Archon of Sun's Grace",
+   "cost": "{2}{W}{W}",
+   "type_line": "Creature — Archon",
+   "keywords": "[\"Flying\",\"Lifelink\",\"Constellation\"]",
+   "text": "Flying\nLifelink (Damage dealt by this creature also causes you to gain that much life.)\nPegasus creatures you control have lifelink.\nConstellation — Whenever an enchantment you control enters, create a 2/2 white Pegasus creature token with flying."
+  },
+  {
+   "name": "Argothian Enchantress",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[\"Shroud\"]",
+   "text": "Shroud (This creature can't be the target of spells or abilities.)\nWhenever you cast an enchantment spell, draw a card."
+  },
+  {
+   "name": "Calix, Guided by Fate",
+   "cost": "{1}{G}{W}",
+   "type_line": "Legendary Enchantment Creature — Human Druid",
+   "keywords": "[\"Constellation\"]",
+   "text": "Constellation — Whenever Calix or another enchantment you control enters, put a +1/+1 counter on target creature.\nWhenever Calix or an enchanted creature you control deals combat damage to a player, you may create a token that's a copy of a nonlegendary enchantment you control. Do this only once each turn."
+  },
+  {
+   "name": "Composer of Spring",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Satyr Bard",
+   "keywords": "[\"Constellation\"]",
+   "text": "Constellation — Whenever an enchantment you control enters, you may put a land card from your hand onto the battlefield tapped. If you control six or more enchantments, instead you may put a creature or land card from your hand onto the battlefield tapped."
+  },
+  {
+   "name": "Courser of Kruphix",
+   "cost": "{1}{G}{G}",
+   "type_line": "Enchantment Creature — Centaur",
+   "keywords": "[\"Landfall\"]",
+   "text": "Play with the top card of your library revealed.\nYou may play lands from the top of your library.\nLandfall — Whenever a land you control enters, you gain 1 life."
+  },
+  {
+   "name": "Destiny Spinner",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment Creature — Human",
+   "keywords": "[]",
+   "text": "Creature and enchantment spells you control can't be countered.\n{3}{G}: Target land you control becomes an X/X Elemental creature with trample and haste until end of turn, where X is the number of enchantments you control. It's still a land."
+  },
+  {
+   "name": "Dryad of the Ilysian Grove",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment Creature — Nymph Dryad",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns.\nLands you control are every basic land type in addition to their other types."
+  },
+  {
+   "name": "Eidolon of Blossoms",
+   "cost": "{2}{G}{G}",
+   "type_line": "Enchantment Creature — Spirit",
+   "keywords": "[\"Constellation\"]",
+   "text": "Constellation — Whenever this creature or another enchantment you control enters, draw a card."
+  },
+  {
+   "name": "Heliod, Sun-Crowned",
+   "cost": "{2}{W}",
+   "type_line": "Legendary Enchantment Creature — God",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nAs long as your devotion to white is less than five, Heliod isn't a creature.\nWhenever you gain life, put a +1/+1 counter on target creature or enchantment you control.\n{1}{W}: Another target creature gains lifelink until end of turn."
+  },
+  {
+   "name": "Herald of the Pantheon",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Centaur Shaman",
+   "keywords": "[]",
+   "text": "Enchantment spells you cast cost {1} less to cast.\nWhenever you cast an enchantment spell, you gain 1 life."
+  },
+  {
+   "name": "Jukai Naturalist",
+   "cost": "{G}{W}",
+   "type_line": "Enchantment Creature — Human Monk",
+   "keywords": "[\"Lifelink\"]",
+   "text": "Lifelink\nEnchantment spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Mesa Enchantress",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, you may draw a card."
+  },
+  {
+   "name": "Moon-Blessed Cleric",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Human Elf Cleric",
+   "keywords": "[]",
+   "text": "Divine Intervention — When this creature enters, you may search your library for an enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Sanctum Weaver",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment Creature — Dryad",
+   "keywords": "[]",
+   "text": "{T}: Add X mana of any one color, where X is the number of enchantments you control."
+  },
+  {
+   "name": "Satyr Enchanter",
+   "cost": "{1}{G}{W}",
+   "type_line": "Creature — Satyr Druid",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, draw a card."
+  },
+  {
+   "name": "Setessan Champion",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Human Warrior",
+   "keywords": "[\"Constellation\"]",
+   "text": "Constellation — Whenever an enchantment you control enters, put a +1/+1 counter on this creature and draw a card."
+  },
+  {
+   "name": "Starfield Mystic",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Cleric",
+   "keywords": "[]",
+   "text": "Enchantment spells you cast cost {1} less to cast.\nWhenever an enchantment you control is put into a graveyard from the battlefield, put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Verduran Enchantress",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, you may draw a card."
+  },
+  {
+   "name": "Weaver of Harmony",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment Creature — Snake Druid",
+   "keywords": "[]",
+   "text": "Other enchantment creatures you control get +1/+1.\n{G}, {T}: Copy target activated or triggered ability you control from an enchantment source. You may choose new targets for the copy. (Mana abilities can't be targeted.)"
+  },
+  {
+   "name": "Yenna, Redtooth Regent",
+   "cost": "{2}{G}{W}",
+   "type_line": "Legendary Creature — Elf Noble",
+   "keywords": "[\"Scry\"]",
+   "text": "{2}, {T}: Choose target enchantment you control that doesn't have the same name as another permanent you control. Create a token that's a copy of it, except it isn't legendary. If the token is an Aura, untap Yenna, then scry 2. Activate only as a sorcery."
+  },
+  {
+   "name": "Eladamri's Call",
+   "cost": "{G}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a creature card, reveal that card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Enlightened Tutor",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Heroic Intervention",
+   "cost": "{1}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Permanents you control gain hexproof and indestructible until end of turn."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Austere Command",
+   "cost": "{4}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose two —\n• Destroy all artifacts.\n• Destroy all enchantments.\n• Destroy all creatures with mana value 3 or less.\n• Destroy all creatures with mana value 4 or greater."
+  },
+  {
+   "name": "Idyllic Tutor",
+   "cost": "{2}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for an enchantment card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Resurgent Belief",
+   "cost": "",
+   "type_line": "Sorcery",
+   "keywords": "[\"Suspend\"]",
+   "text": "Suspend 2—{1}{W} (Rather than cast this card from your hand, pay {1}{W} and exile it with two time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)\nReturn all enchantment cards from your graveyard to the battlefield. (Auras with nothing to enchant remain in your graveyard.)"
+  },
+  {
+   "name": "Winds of Rath",
+   "cost": "{3}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all creatures that aren't enchanted. They can't be regenerated."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Thought Vessel",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Abundant Growth",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant land\nWhen this Aura enters, draw a card.\nEnchanted land has \"{T}: Add one mana of any color.\""
+  },
+  {
+   "name": "All That Glitters",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +1/+1 for each artifact and/or enchantment you control."
+  },
+  {
+   "name": "Ancestral Mask",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +2/+2 for each other enchantment on the battlefield."
+  },
+  {
+   "name": "Aura of Silence",
+   "cost": "{1}{W}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Artifact and enchantment spells your opponents cast cost {2} more to cast.\nSacrifice this enchantment: Destroy target artifact or enchantment."
+  },
+  {
+   "name": "Authority of the Consuls",
+   "cost": "{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures your opponents control enter tapped.\nWhenever a creature an opponent controls enters, you gain 1 life."
+  },
+  {
+   "name": "Blind Obedience",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Extort\"]",
+   "text": "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)\nArtifacts and creatures your opponents control enter tapped."
+  },
+  {
+   "name": "Darksteel Mutation",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types."
+  },
+  {
+   "name": "Enchantress's Presence",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, draw a card."
+  },
+  {
+   "name": "Ethereal Armor",
+   "cost": "{W}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +1/+1 for each enchantment you control and has first strike."
+  },
+  {
+   "name": "Exploration",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns."
+  },
+  {
+   "name": "Fertile Ground",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional one mana of any color."
+  },
+  {
+   "name": "Flickering Ward",
+   "cost": "{W}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nAs this Aura enters, choose a color.\nEnchanted creature has protection from the chosen color. This effect doesn't remove this Aura.\n{W}: Return this Aura to its owner's hand."
+  },
+  {
+   "name": "Ghostly Prison",
+   "cost": "{2}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you."
+  },
+  {
+   "name": "Grasp of Fate",
+   "cost": "{1}{W}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, for each opponent, exile up to one target nonland permanent that player controls until this enchantment leaves the battlefield. (Those permanents return under their owners' control.)"
+  },
+  {
+   "name": "Hallowed Haunting",
+   "cost": "{2}{W}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "As long as you control seven or more enchantments, creatures you control have flying and vigilance.\nWhenever you cast an enchantment spell, create a white Spirit Cleric creature token with \"This token's power and toughness are each equal to the number of Spirits you control.\""
+  },
+  {
+   "name": "Kenrith's Transformation",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nWhen this Aura enters, draw a card.\nEnchanted creature loses all abilities and is a green Elk creature with base power and toughness 3/3. (It loses all other card types and creature types.)"
+  },
+  {
+   "name": "Mirari's Wake",
+   "cost": "{3}{G}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures you control get +1/+1.\nWhenever you tap a land for mana, add one mana of any type that land produced."
+  },
+  {
+   "name": "Overgrowth",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}{G}."
+  },
+  {
+   "name": "Privileged Position",
+   "cost": "{2}{G/W}{G/W}{G/W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "({G/W} can be paid with either {G} or {W}.)\nOther permanents you control have hexproof. (They can't be the targets of spells or abilities your opponents control.)"
+  },
+  {
+   "name": "Rancor",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +2/+0 and has trample.\nWhen this Aura is put into a graveyard from the battlefield, return it to its owner's hand."
+  },
+  {
+   "name": "Seal of Cleansing",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice this enchantment: Destroy target artifact or enchantment."
+  },
+  {
+   "name": "Seal of Primordium",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice this enchantment: Destroy target artifact or enchantment."
+  },
+  {
+   "name": "Sigil of the Empty Throne",
+   "cost": "{3}{W}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever you cast an enchantment spell, create a 4/4 white Angel creature token with flying."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Solitary Confinement",
+   "cost": "{2}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, sacrifice this enchantment unless you discard a card.\nSkip your draw step.\nYou have shroud. (You can't be the target of spells or abilities.)\nPrevent all damage that would be dealt to you."
+  },
+  {
+   "name": "Sphere of Safety",
+   "cost": "{4}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control."
+  },
+  {
+   "name": "Sterling Grove",
+   "cost": "{G}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Other enchantments you control have shroud. (They can't be the targets of spells or abilities.)\n{1}, Sacrifice this enchantment: Search your library for an enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Strength of the Harvest // Haven of the Harvest",
+   "cost": "{2}{G/W} // ",
+   "type_line": "Enchantment — Aura // Land",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature gets +1/+1 for each creature and/or enchantment you control.\n// This land enters tapped.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Utopia Sprawl",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant Forest\nAs this Aura enters, choose a color.\nWhenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color."
+  },
+  {
+   "name": "Whip Silk",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant creature\nEnchanted creature has reach. (It can block creatures with flying.)\n{G}: Return this Aura to its owner's hand."
+  },
+  {
+   "name": "Wild Growth",
+   "cost": "{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}."
+  },
+  {
+   "name": "Bountiful Promenade",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Branchloft Pathway // Boulderloft Pathway",
+   "cost": " // ",
+   "type_line": "Land // Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G}.\n// {T}: Add {W}."
+  },
+  {
+   "name": "Brushland",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {G} or {W}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Canopy Vista",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Fortified Village",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal a Forest or Plains card from your hand. If you don't, this land enters tapped.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Hall of Heliod's Generosity",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}{W}, {T}: Put target enchantment card from your graveyard on top of your library."
+  },
+  {
+   "name": "Overgrown Farmland",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Reliquary Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Sungrass Prairie",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {G}{W}."
+  },
+  {
+   "name": "Sunpetal Grove",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Forest or a Plains.\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Temple of Plenty",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {G} or {W}."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Ajani's Chosen",
+   1
+  ],
+  [
+   "Alseid of Life's Bounty",
+   1
+  ],
+  [
+   "Archon of Sun's Grace",
+   1
+  ],
+  [
+   "Argothian Enchantress",
+   1
+  ],
+  [
+   "Calix, Guided by Fate",
+   1
+  ],
+  [
+   "Composer of Spring",
+   1
+  ],
+  [
+   "Courser of Kruphix",
+   1
+  ],
+  [
+   "Destiny Spinner",
+   1
+  ],
+  [
+   "Dryad of the Ilysian Grove",
+   1
+  ],
+  [
+   "Eidolon of Blossoms",
+   1
+  ],
+  [
+   "Heliod, Sun-Crowned",
+   1
+  ],
+  [
+   "Herald of the Pantheon",
+   1
+  ],
+  [
+   "Jukai Naturalist",
+   1
+  ],
+  [
+   "Mesa Enchantress",
+   1
+  ],
+  [
+   "Moon-Blessed Cleric",
+   1
+  ],
+  [
+   "Sanctum Weaver",
+   1
+  ],
+  [
+   "Satyr Enchanter",
+   1
+  ],
+  [
+   "Setessan Champion",
+   1
+  ],
+  [
+   "Starfield Mystic",
+   1
+  ],
+  [
+   "Verduran Enchantress",
+   1
+  ],
+  [
+   "Weaver of Harmony",
+   1
+  ],
+  [
+   "Yenna, Redtooth Regent",
+   1
+  ],
+  [
+   "Eladamri's Call",
+   1
+  ],
+  [
+   "Enlightened Tutor",
+   1
+  ],
+  [
+   "Heroic Intervention",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Austere Command",
+   1
+  ],
+  [
+   "Idyllic Tutor",
+   1
+  ],
+  [
+   "Resurgent Belief",
+   1
+  ],
+  [
+   "Winds of Rath",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Thought Vessel",
+   1
+  ],
+  [
+   "Abundant Growth",
+   1
+  ],
+  [
+   "All That Glitters",
+   1
+  ],
+  [
+   "Ancestral Mask",
+   1
+  ],
+  [
+   "Aura of Silence",
+   1
+  ],
+  [
+   "Authority of the Consuls",
+   1
+  ],
+  [
+   "Blind Obedience",
+   1
+  ],
+  [
+   "Darksteel Mutation",
+   1
+  ],
+  [
+   "Enchantress's Presence",
+   1
+  ],
+  [
+   "Ethereal Armor",
+   1
+  ],
+  [
+   "Exploration",
+   1
+  ],
+  [
+   "Fertile Ground",
+   1
+  ],
+  [
+   "Flickering Ward",
+   1
+  ],
+  [
+   "Ghostly Prison",
+   1
+  ],
+  [
+   "Grasp of Fate",
+   1
+  ],
+  [
+   "Hallowed Haunting",
+   1
+  ],
+  [
+   "Kenrith's Transformation",
+   1
+  ],
+  [
+   "Mirari's Wake",
+   1
+  ],
+  [
+   "Overgrowth",
+   1
+  ],
+  [
+   "Privileged Position",
+   1
+  ],
+  [
+   "Rancor",
+   1
+  ],
+  [
+   "Seal of Cleansing",
+   1
+  ],
+  [
+   "Seal of Primordium",
+   1
+  ],
+  [
+   "Sigil of the Empty Throne",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Solitary Confinement",
+   1
+  ],
+  [
+   "Sphere of Safety",
+   1
+  ],
+  [
+   "Sterling Grove",
+   1
+  ],
+  [
+   "Strength of the Harvest // Haven of the Harvest",
+   1
+  ],
+  [
+   "Utopia Sprawl",
+   1
+  ],
+  [
+   "Whip Silk",
+   1
+  ],
+  [
+   "Wild Growth",
+   1
+  ],
+  [
+   "Bountiful Promenade",
+   1
+  ],
+  [
+   "Branchloft Pathway // Boulderloft Pathway",
+   1
+  ],
+  [
+   "Brushland",
+   1
+  ],
+  [
+   "Canopy Vista",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Forest",
+   9
+  ],
+  [
+   "Fortified Village",
+   1
+  ],
+  [
+   "Hall of Heliod's Generosity",
+   1
+  ],
+  [
+   "Overgrown Farmland",
+   1
+  ],
+  [
+   "Plains",
+   11
+  ],
+  [
+   "Reliquary Tower",
+   1
+  ],
+  [
+   "Sungrass Prairie",
+   1
+  ],
+  [
+   "Sunpetal Grove",
+   1
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "Temple of Plenty",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ]
+ ]
+}

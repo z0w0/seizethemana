@@ -1,0 +1,1062 @@
+{
+ "name": "the ur-dragon dragons",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "The Ur-Dragon",
+   "cost": "{4}{W}{U}{B}{R}{G}",
+   "type_line": "Legendary Creature — Dragon Avatar",
+   "keywords": "[\"Flying\",\"Eminence\"]",
+   "text": "Eminence — As long as The Ur-Dragon is in the command zone or on the battlefield, other Dragon spells you cast cost {1} less to cast.\nFlying\nWhenever one or more Dragons you control attack, draw that many cards, then you may put a permanent card from your hand onto the battlefield."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Ancient Copper Dragon",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Elder Dragon",
+   "keywords": "[\"Flying\",\"Treasure\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. You create a number of Treasure tokens equal to the result."
+  },
+  {
+   "name": "Ancient Gold Dragon",
+   "cost": "{5}{W}{W}",
+   "type_line": "Creature — Elder Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. You create a number of 1/1 blue Faerie Dragon creature tokens with flying equal to the result."
+  },
+  {
+   "name": "Ancient Silver Dragon",
+   "cost": "{6}{U}{U}",
+   "type_line": "Creature — Elder Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. Draw cards equal to the result. You have no maximum hand size for the rest of the game."
+  },
+  {
+   "name": "Atarka, World Render",
+   "cost": "{5}{R}{G}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nWhenever a Dragon you control attacks, it gains double strike until end of turn."
+  },
+  {
+   "name": "Balefire Dragon",
+   "cost": "{5}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, it deals that much damage to each creature that player controls."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Bladewing the Risen",
+   "cost": "{3}{B}{B}{R}{R}",
+   "type_line": "Legendary Creature — Zombie Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen Bladewing enters, you may return target Dragon permanent card from your graveyard to the battlefield.\n{B}{R}: Dragon creatures get +1/+1 until end of turn."
+  },
+  {
+   "name": "Dragonlord Dromoka",
+   "cost": "{4}{G}{W}",
+   "type_line": "Legendary Creature — Elder Dragon",
+   "keywords": "[\"Flying\",\"Lifelink\"]",
+   "text": "This spell can't be countered.\nFlying, lifelink\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Dragonlord's Servant",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Shaman",
+   "keywords": "[]",
+   "text": "Dragon spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Dragonspeaker Shaman",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Human Barbarian Shaman",
+   "keywords": "[]",
+   "text": "Dragon spells you cast cost {2} less to cast."
+  },
+  {
+   "name": "Goldspan Dragon",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Treasure\",\"Haste\"]",
+   "text": "Flying, haste\nWhenever this creature attacks or becomes the target of a spell, create a Treasure token.\nTreasures you control have \"{T}, Sacrifice this artifact: Add two mana of any one color.\""
+  },
+  {
+   "name": "Hellkite Courser",
+   "cost": "{4}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, you may put a commander you own from the command zone onto the battlefield. It gains haste. Return it to the command zone at the beginning of the next end step."
+  },
+  {
+   "name": "Klauth, Unrivaled Ancient",
+   "cost": "{5}{R}{G}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\",\"Haste\"]",
+   "text": "Flying, haste\nWhenever Klauth attacks, add X mana in any combination of colors, where X is the total power of attacking creatures. Spend this mana only to cast spells. Until end of turn, you don't lose this mana as steps and phases end."
+  },
+  {
+   "name": "Lathliss, Dragon Queen",
+   "cost": "{4}{R}{R}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever another nontoken Dragon you control enters, create a 5/5 red Dragon creature token with flying.\n{1}{R}: Dragons you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Miirym, Sentinel Wyrm",
+   "cost": "{3}{G}{U}{R}",
+   "type_line": "Legendary Creature — Dragon Spirit",
+   "keywords": "[\"Flying\",\"Ward\"]",
+   "text": "Flying, ward {2}\nWhenever another nontoken Dragon you control enters, create a token that's a copy of it, except the token isn't legendary."
+  },
+  {
+   "name": "Morophon, the Boundless",
+   "cost": "{7}",
+   "type_line": "Legendary Creature — Shapeshifter",
+   "keywords": "[\"Changeling\"]",
+   "text": "Changeling (This card is every creature type.)\nAs Morophon enters, choose a creature type.\nSpells of the chosen type you cast cost {W}{U}{B}{R}{G} less to cast. This effect reduces only the amount of colored mana you pay.\nOther creatures you control of the chosen type get +1/+1."
+  },
+  {
+   "name": "Old Gnawbone",
+   "cost": "{5}{G}{G}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\",\"Treasure\"]",
+   "text": "Flying\nWhenever a creature you control deals combat damage to a player, create that many Treasure tokens."
+  },
+  {
+   "name": "Ramos, Dragon Engine",
+   "cost": "{6}",
+   "type_line": "Legendary Artifact Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever you cast a spell, put a +1/+1 counter on Ramos for each of that spell's colors.\nRemove five +1/+1 counters from Ramos: Add {W}{W}{U}{U}{B}{B}{R}{R}{G}{G}. Activate only once each turn."
+  },
+  {
+   "name": "Rith, Liberated Primeval",
+   "cost": "{2}{R}{G}{W}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\",\"Ward\"]",
+   "text": "Flying, ward {2}\nOther Dragons you control have ward {2}.\nAt the beginning of your end step, if a creature or planeswalker an opponent controlled was dealt excess damage this turn, create a 4/4 red Dragon creature token with flying."
+  },
+  {
+   "name": "Rivaz of the Claw",
+   "cost": "{1}{B}{R}",
+   "type_line": "Legendary Creature — Lizard Warlock",
+   "keywords": "[\"Menace\"]",
+   "text": "Menace\n{T}: Add two mana in any combination of colors. Spend this mana only to cast Dragon creature spells.\nOnce during each of your turns, you may cast a Dragon creature spell from your graveyard.\nWhenever you cast a Dragon creature spell from your graveyard, it gains \"When this creature dies, exile it.\""
+  },
+  {
+   "name": "Roaming Throne",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[\"Ward\"]",
+   "text": "Ward {2}\nAs this creature enters, choose a creature type.\nThis creature is the chosen type in addition to its other types.\nIf a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time."
+  },
+  {
+   "name": "Sarkhan, Soul Aflame",
+   "cost": "{1}{U}{R}",
+   "type_line": "Legendary Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "Dragon spells you cast cost {1} less to cast.\nWhenever a Dragon you control enters, you may have Sarkhan become a copy of it until end of turn, except its name is Sarkhan, Soul Aflame and it's legendary in addition to its other types."
+  },
+  {
+   "name": "Savage Ventmaw",
+   "cost": "{4}{R}{G}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature attacks, add {R}{R}{R}{G}{G}{G}. Until end of turn, you don't lose this mana as steps and phases end."
+  },
+  {
+   "name": "Scion of Draco",
+   "cost": "{12}",
+   "type_line": "Artifact Creature — Dragon",
+   "keywords": "[\"Flying\",\"Domain\"]",
+   "text": "Domain — This spell costs {2} less to cast for each basic land type among lands you control.\nFlying\nEach creature you control has vigilance if it's white, hexproof if it's blue, lifelink if it's black, first strike if it's red, and trample if it's green."
+  },
+  {
+   "name": "Scion of the Ur-Dragon",
+   "cost": "{W}{U}{B}{R}{G}",
+   "type_line": "Legendary Creature — Dragon Avatar",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{2}: Search your library for a Dragon permanent card and put it into your graveyard. If you do, Scion of the Ur-Dragon becomes a copy of that card until end of turn. Then shuffle."
+  },
+  {
+   "name": "Scourge of Valkas",
+   "cost": "{2}{R}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature or another Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control.\n{R}: This creature gets +1/+0 until end of turn."
+  },
+  {
+   "name": "Silumgar, the Drifting Death",
+   "cost": "{4}{U}{B}",
+   "type_line": "Legendary Creature — Dragon",
+   "keywords": "[\"Flying\",\"Hexproof\"]",
+   "text": "Flying, hexproof\nWhenever a Dragon you control attacks, creatures defending player controls get -1/-1 until end of turn."
+  },
+  {
+   "name": "Terror of the Peaks",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nSpells your opponents cast that target this creature cost an additional 3 life to cast.\nWhenever another creature you control enters, this creature deals damage equal to that creature's power to any target."
+  },
+  {
+   "name": "Tiamat",
+   "cost": "{2}{W}{U}{B}{R}{G}",
+   "type_line": "Legendary Creature — Dragon God",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen Tiamat enters, if you cast it, search your library for up to five Dragon cards not named Tiamat that each have different names, reveal them, put them into your hand, then shuffle."
+  },
+  {
+   "name": "Twinflame Tyrant",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\",\"Double\"]",
+   "text": "Flying\nIf a source you control would deal damage to an opponent or a permanent an opponent controls, it deals double that damage instead."
+  },
+  {
+   "name": "Ureni of the Unwritten",
+   "cost": "{4}{G}{U}{R}",
+   "type_line": "Legendary Creature — Spirit Dragon",
+   "keywords": "[\"Flying\",\"Trample\"]",
+   "text": "Flying, trample\nWhenever Ureni enters or attacks, look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Utvara Hellkite",
+   "cost": "{6}{R}{R}",
+   "type_line": "Creature — Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever a Dragon you control attacks, create a 6/6 red Dragon creature token with flying."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Heroic Intervention",
+   "cost": "{1}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Permanents you control gain hexproof and indestructible until end of turn."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Sarkhan's Triumph",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a Dragon creature card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Teferi's Protection",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Until your next turn, your life total can't change and you gain protection from everything. All permanents you control phase out. (While they're phased out, they're treated as though they don't exist. They phase in before you untap during your untap step.)\nExile Teferi's Protection."
+  },
+  {
+   "name": "Crux of Fate",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one —\n• Destroy all Dragon creatures.\n• Destroy all non-Dragon creatures."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Demonic Tutor",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Kodama's Reach",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery — Arcane",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Nature's Lore",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Forest card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Three Visits",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Chromatic Lantern",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Dragon's Hoard",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a Dragon you control enters, put a gold counter on this artifact.\n{T}, Remove a gold counter from this artifact: Draw a card.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Herald's Horn",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a creature type.\nCreature spells you cast of the chosen type cost {1} less to cast.\nAt the beginning of your upkeep, look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
+  },
+  {
+   "name": "Lightning Greaves",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}"
+  },
+  {
+   "name": "Mox Jasper",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color. Activate only if you control a Dragon."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Urza's Incubator",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As this artifact enters, choose a creature type.\nCreature spells of the chosen type cost {2} less to cast."
+  },
+  {
+   "name": "Call the Spirit Dragons",
+   "cost": "{W}{U}{B}{R}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Dragons you control have indestructible.\nAt the beginning of your upkeep, for each color, put a +1/+1 counter on a Dragon you control of that color. If you put +1/+1 counters on five Dragons this way, you win the game."
+  },
+  {
+   "name": "Dracogenesis",
+   "cost": "{6}{R}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may cast Dragon spells without paying their mana costs."
+  },
+  {
+   "name": "Dragon Tempest",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control with flying enters, it gains haste until end of turn.\nWhenever a Dragon you control enters, it deals X damage to any target, where X is the number of Dragons you control."
+  },
+  {
+   "name": "Garruk's Uprising",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, if you control a creature with power 4 or greater, draw a card.\nCreatures you control have trample. (Each of those creatures can deal excess combat damage to the player or planeswalker it's attacking.)\nWhenever a creature you control with power 4 or greater enters, draw a card."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Rhythm of the Wild",
+   "cost": "{1}{R}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creature spells you control can't be countered.\nNontoken creatures you control have riot. (They enter with your choice of a +1/+1 counter or haste.)"
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Temur Ascendancy",
+   "cost": "{G}{U}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creatures you control have haste.\nWhenever a creature you control with power 4 or greater enters, you may draw a card."
+  },
+  {
+   "name": "Sarkhan Unbroken",
+   "cost": "{2}{G}{U}{R}",
+   "type_line": "Legendary Planeswalker — Sarkhan",
+   "keywords": "[]",
+   "text": "+1: Draw a card, then add one mana of any color.\n−2: Create a 4/4 red Dragon creature token with flying.\n−8: Search your library for any number of Dragon creature cards, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Haven of the Spirit Dragon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Dragon creature spell.\n{2}, {T}, Sacrifice this land: Return target Dragon creature card or Ugin planeswalker card from your graveyard to your hand."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Ketria Triome",
+   "cost": "",
+   "type_line": "Land — Forest Island Mountain",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {G}, {U}, or {R}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Maelstrom of the Spirit Dragon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a Dragon spell or an Omen spell.\n{4}, {T}, Sacrifice this land: Search your library for a Dragon card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land — Swamp Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Path of Ancestry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Reflecting Pool",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any type that a land you control could produce."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land — Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land — Island Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Stomping Ground",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land — Forest Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "The World Tree",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {G}.\nAs long as you control six or more lands, lands you control have \"{T}: Add one mana of any color.\"\n{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}, {T}, Sacrifice this land: Search your library for any number of God cards, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Ancient Copper Dragon",
+   1
+  ],
+  [
+   "Ancient Gold Dragon",
+   1
+  ],
+  [
+   "Ancient Silver Dragon",
+   1
+  ],
+  [
+   "Atarka, World Render",
+   1
+  ],
+  [
+   "Balefire Dragon",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Bladewing the Risen",
+   1
+  ],
+  [
+   "Dragonlord Dromoka",
+   1
+  ],
+  [
+   "Dragonlord's Servant",
+   1
+  ],
+  [
+   "Dragonspeaker Shaman",
+   1
+  ],
+  [
+   "Goldspan Dragon",
+   1
+  ],
+  [
+   "Hellkite Courser",
+   1
+  ],
+  [
+   "Klauth, Unrivaled Ancient",
+   1
+  ],
+  [
+   "Lathliss, Dragon Queen",
+   1
+  ],
+  [
+   "Miirym, Sentinel Wyrm",
+   1
+  ],
+  [
+   "Morophon, the Boundless",
+   1
+  ],
+  [
+   "Old Gnawbone",
+   1
+  ],
+  [
+   "Ramos, Dragon Engine",
+   1
+  ],
+  [
+   "Rith, Liberated Primeval",
+   1
+  ],
+  [
+   "Rivaz of the Claw",
+   1
+  ],
+  [
+   "Roaming Throne",
+   1
+  ],
+  [
+   "Sarkhan, Soul Aflame",
+   1
+  ],
+  [
+   "Savage Ventmaw",
+   1
+  ],
+  [
+   "Scion of Draco",
+   1
+  ],
+  [
+   "Scion of the Ur-Dragon",
+   1
+  ],
+  [
+   "Scourge of Valkas",
+   1
+  ],
+  [
+   "Silumgar, the Drifting Death",
+   1
+  ],
+  [
+   "Terror of the Peaks",
+   1
+  ],
+  [
+   "Tiamat",
+   1
+  ],
+  [
+   "Twinflame Tyrant",
+   1
+  ],
+  [
+   "Ureni of the Unwritten",
+   1
+  ],
+  [
+   "Utvara Hellkite",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Heroic Intervention",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Sarkhan's Triumph",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Teferi's Protection",
+   1
+  ],
+  [
+   "Crux of Fate",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Demonic Tutor",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Kodama's Reach",
+   1
+  ],
+  [
+   "Nature's Lore",
+   1
+  ],
+  [
+   "Three Visits",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Chromatic Lantern",
+   1
+  ],
+  [
+   "Dragon's Hoard",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Herald's Horn",
+   1
+  ],
+  [
+   "Lightning Greaves",
+   1
+  ],
+  [
+   "Mox Jasper",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Urza's Incubator",
+   1
+  ],
+  [
+   "Call the Spirit Dragons",
+   1
+  ],
+  [
+   "Dracogenesis",
+   1
+  ],
+  [
+   "Dragon Tempest",
+   1
+  ],
+  [
+   "Garruk's Uprising",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Rhythm of the Wild",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Temur Ascendancy",
+   1
+  ],
+  [
+   "Sarkhan Unbroken",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Forest",
+   2
+  ],
+  [
+   "Haven of the Spirit Dragon",
+   1
+  ],
+  [
+   "Island",
+   2
+  ],
+  [
+   "Ketria Triome",
+   1
+  ],
+  [
+   "Maelstrom of the Spirit Dragon",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Mountain",
+   2
+  ],
+  [
+   "Overgrown Tomb",
+   1
+  ],
+  [
+   "Path of Ancestry",
+   1
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Polluted Delta",
+   1
+  ],
+  [
+   "Reflecting Pool",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Steam Vents",
+   1
+  ],
+  [
+   "Stomping Ground",
+   1
+  ],
+  [
+   "Swamp",
+   2
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "The World Tree",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Watery Grave",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ]
+ ]
+}

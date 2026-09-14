@@ -1,0 +1,798 @@
+{
+ "name": "krenko goblins",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Krenko, Mob Boss",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "{T}: Create X 1/1 red Goblin creature tokens, where X is the number of Goblins you control."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Battle Cry Goblin",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[\"Pack tactics\"]",
+   "text": "{1}{R}: Goblins you control get +1/+0 and gain haste until end of turn.\nPack tactics — Whenever this creature attacks, if you attacked with creatures with total power 6 or greater this combat, create a 1/1 red Goblin creature token that's tapped and attacking."
+  },
+  {
+   "name": "Beetleback Chief",
+   "cost": "{2}{R}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "When this creature enters, create two 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Conspicuous Snoop",
+   "cost": "{R}{R}",
+   "type_line": "Creature — Goblin Rogue",
+   "keywords": "[]",
+   "text": "Play with the top card of your library revealed.\nYou may cast Goblin spells from the top of your library.\nAs long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
+  },
+  {
+   "name": "Gempalm Incinerator",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[\"Cycling\"]",
+   "text": "Cycling {1}{R} ({1}{R}, Discard this card: Draw a card.)\nWhen you cycle this card, you may have it deal X damage to target creature, where X is the number of Goblins on the battlefield."
+  },
+  {
+   "name": "General Kreat, the Boltbringer",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Goblin Soldier",
+   "keywords": "[]",
+   "text": "Whenever one or more Goblins you control attack, create a 1/1 red Goblin creature token that's tapped and attacking.\nWhenever another creature you control enters, General Kreat deals 1 damage to each opponent."
+  },
+  {
+   "name": "Goblin Chieftain",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste (This creature can attack and {T} as soon as it comes under your control.)\nOther Goblin creatures you control get +1/+1 and have haste."
+  },
+  {
+   "name": "Goblin Chirurgeon",
+   "cost": "{R}",
+   "type_line": "Creature — Goblin Shaman",
+   "keywords": "[\"Regenerate\"]",
+   "text": "Sacrifice a Goblin: Regenerate target creature."
+  },
+  {
+   "name": "Goblin Instigator",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Rogue",
+   "keywords": "[]",
+   "text": "When this creature enters, create a 1/1 red Goblin creature token."
+  },
+  {
+   "name": "Goblin King",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "Other Goblins get +1/+1 and have mountainwalk."
+  },
+  {
+   "name": "Goblin Lackey",
+   "cost": "{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "Whenever this creature deals damage to a player, you may put a Goblin permanent card from your hand onto the battlefield."
+  },
+  {
+   "name": "Goblin Matron",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Goblin Piledriver",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[\"Protection\"]",
+   "text": "Protection from blue (This creature can't be blocked, targeted, dealt damage, or enchanted by anything blue.)\nWhenever this creature attacks, it gets +2/+0 until end of turn for each other attacking Goblin."
+  },
+  {
+   "name": "Goblin Recruiter",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "When this creature enters, search your library for any number of Goblin cards, reveal them, then shuffle and put those cards on top in any order."
+  },
+  {
+   "name": "Goblin Ringleader",
+   "cost": "{3}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste (This creature can attack and {T} as soon as it comes under your control.)\nWhen this creature enters, reveal the top four cards of your library. Put all Goblin cards revealed this way into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Goblin Trashmaster",
+   "cost": "{2}{R}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "Other Goblins you control get +1/+1.\nSacrifice a Goblin: Destroy target artifact."
+  },
+  {
+   "name": "Goblin Warchief",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "Goblin spells you cast cost {1} less to cast.\nGoblins you control have haste."
+  },
+  {
+   "name": "Grenzo, Havoc Raiser",
+   "cost": "{R}{R}",
+   "type_line": "Legendary Creature — Goblin Rogue",
+   "keywords": "[\"Goad\"]",
+   "text": "Whenever a creature you control deals combat damage to a player, choose one —\n• Goad target creature that player controls.\n• Exile the top card of that player's library. Until end of turn, you may cast that card and you may spend mana as though it were mana of any color to cast that spell."
+  },
+  {
+   "name": "Hexing Squelcher",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Sorcerer",
+   "keywords": "[\"Ward\"]",
+   "text": "This spell can't be countered.\nWard—Pay 2 life.\nSpells you control can't be countered.\nOther creatures you control have \"Ward—Pay 2 life.\""
+  },
+  {
+   "name": "Hobgoblin Bandit Lord",
+   "cost": "{1}{R}{R}",
+   "type_line": "Creature — Goblin Rogue",
+   "keywords": "[]",
+   "text": "Other Goblins you control get +1/+1.\n{R}, {T}: This creature deals damage equal to the number of Goblins that entered the battlefield under your control this turn to any target."
+  },
+  {
+   "name": "Howlsquad Heavy",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin Mercenary",
+   "keywords": "[\"Max speed\",\"Start your engines!\"]",
+   "text": "Start your engines!\nOther Goblins you control have haste.\nAt the beginning of combat on your turn, create a 1/1 red Goblin creature token. That token attacks this combat if able.\nMax speed — {T}: Add {R} for each Goblin you control."
+  },
+  {
+   "name": "Kiki-Jiki, Mirror Breaker",
+   "cost": "{2}{R}{R}{R}",
+   "type_line": "Legendary Creature — Goblin Shaman",
+   "keywords": "[\"Haste\"]",
+   "text": "Haste\n{T}: Create a token that's a copy of target nonlegendary creature you control, except it has haste. Sacrifice it at the beginning of the next end step."
+  },
+  {
+   "name": "Krenko, Tin Street Kingpin",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Goblin",
+   "keywords": "[]",
+   "text": "Whenever Krenko attacks, put a +1/+1 counter on it, then create a number of 1/1 red Goblin creature tokens equal to Krenko's power."
+  },
+  {
+   "name": "Legion Warboss",
+   "cost": "{2}{R}",
+   "type_line": "Creature — Goblin Soldier",
+   "keywords": "[\"Mentor\"]",
+   "text": "Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)\nAt the beginning of combat on your turn, create a 1/1 red Goblin creature token. That token gains haste until end of turn and attacks this combat if able."
+  },
+  {
+   "name": "Mogg War Marshal",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[\"Echo\"]",
+   "text": "Echo {1}{R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters or dies, create a 1/1 red Goblin creature token."
+  },
+  {
+   "name": "Muxus, Goblin Grandee",
+   "cost": "{4}{R}{R}",
+   "type_line": "Legendary Creature — Goblin Noble",
+   "keywords": "[]",
+   "text": "When Muxus enters, reveal the top six cards of your library. Put all Goblin creature cards with mana value 5 or less from among them onto the battlefield and the rest on the bottom of your library in a random order.\nWhenever Muxus attacks, it gets +1/+1 until end of turn for each other Goblin you control."
+  },
+  {
+   "name": "Pashalik Mons",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "Whenever Pashalik Mons or another Goblin you control dies, Pashalik Mons deals 1 damage to any target.\n{3}{R}, Sacrifice a Goblin: Create two 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Purphoros, God of the Forge",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Enchantment Creature — God",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nAs long as your devotion to red is less than five, Purphoros isn't a creature.\nWhenever another creature you control enters, Purphoros deals 2 damage to each opponent.\n{2}{R}: Creatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Rundvelt Hordemaster",
+   "cost": "{1}{R}",
+   "type_line": "Creature — Goblin Warrior",
+   "keywords": "[]",
+   "text": "Other Goblins you control get +1/+1.\nWhenever this creature or another Goblin you control dies, exile the top card of your library. If it's a Goblin creature card, you may cast that card until the end of your next turn."
+  },
+  {
+   "name": "Siege-Gang Commander",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "When this creature enters, create three 1/1 red Goblin creature tokens.\n{1}{R}, Sacrifice a Goblin: This creature deals 2 damage to any target."
+  },
+  {
+   "name": "Skirk Prospector",
+   "cost": "{R}",
+   "type_line": "Creature — Goblin",
+   "keywords": "[]",
+   "text": "Sacrifice a Goblin: Add {R}."
+  },
+  {
+   "name": "Warren Instigator",
+   "cost": "{R}{R}",
+   "type_line": "Creature — Goblin Berserker",
+   "keywords": "[\"Double strike\"]",
+   "text": "Double strike\nWhenever this creature deals damage to an opponent, you may put a Goblin creature card from your hand onto the battlefield."
+  },
+  {
+   "name": "Abrade",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Abrade deals 3 damage to target creature.\n• Destroy target artifact."
+  },
+  {
+   "name": "Battle Hymn",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R} for each creature you control."
+  },
+  {
+   "name": "Brightstone Ritual",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {R} for each Goblin on the battlefield."
+  },
+  {
+   "name": "Chaos Warp",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Massive Raid",
+   "cost": "{1}{R}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Massive Raid deals damage to any target equal to the number of creatures you control."
+  },
+  {
+   "name": "Thrill of Possibility",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, discard a card.\nDraw two cards."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Dragon Fodder",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create two 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Flashback\"]",
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Goblin Grenade",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a Goblin.\nGoblin Grenade deals 5 damage to any target."
+  },
+  {
+   "name": "Goblin War Strike",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Goblin War Strike deals damage to target player or planeswalker equal to the number of Goblins you control."
+  },
+  {
+   "name": "Hordeling Outburst",
+   "cost": "{1}{R}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create three 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Krenko's Command",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create two 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Vandalblast",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Overload\"]",
+   "text": "Destroy target artifact you don't control.\nOverload {4}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Coat of Arms",
+   "cost": "{5}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it. (For example, if two Goblin Warriors and a Goblin Shaman are on the battlefield, each gets +2/+2.)"
+  },
+  {
+   "name": "Hazoret's Monument",
+   "cost": "{3}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[]",
+   "text": "Red creature spells you cast cost {1} less to cast.\nWhenever you cast a creature spell, you may discard a card. If you do, draw a card."
+  },
+  {
+   "name": "Lightning Greaves",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has haste and shroud. (It can't be the target of spells or abilities.)\nEquip {0}"
+  },
+  {
+   "name": "Patriar's Seal",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color.\n{1}, {T}: Untap target legendary creature you control."
+  },
+  {
+   "name": "Ruby Medallion",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Red spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Staff of Domination",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}: Untap this artifact.\n{2}, {T}: You gain 1 life.\n{3}, {T}: Untap target creature.\n{4}, {T}: Tap target creature.\n{5}, {T}: Draw a card."
+  },
+  {
+   "name": "Sting, the Glinting Dagger",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/+1 and has haste.\nAt the beginning of each combat, untap equipped creature.\nEquipped creature has first strike as long as it's blocking or blocked by a Goblin or Orc.\nEquip {2}"
+  },
+  {
+   "name": "Swiftfoot Boots",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature has hexproof and haste. (It can't be the target of spells or abilities your opponents control. It can attack and {T} no matter when it came under your control.)\nEquip {1} ({1}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Thousand-Year Elixir",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You may activate abilities of creatures you control as though those creatures had haste.\n{1}, {T}: Untap target creature."
+  },
+  {
+   "name": "Blood Moon",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Nonbasic lands are Mountains."
+  },
+  {
+   "name": "Boggart Shenanigans",
+   "cost": "{2}{R}",
+   "type_line": "Kindred Enchantment — Goblin",
+   "keywords": "[]",
+   "text": "Whenever another Goblin you control is put into a graveyard from the battlefield, you may have this enchantment deal 1 damage to target player or planeswalker."
+  },
+  {
+   "name": "Goblin Bombardment",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+  },
+  {
+   "name": "Impact Tremors",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent."
+  },
+  {
+   "name": "Quest for the Goblin Lord",
+   "cost": "{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a Goblin you control enters, you may put a quest counter on this enchantment.\nAs long as this enchantment has five or more quest counters on it, creatures you control get +2/+0."
+  },
+  {
+   "name": "Raid Bombardment",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control with power 2 or less attacks, this enchantment deals 1 damage to the player or planeswalker that creature is attacking."
+  },
+  {
+   "name": "Shared Animosity",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control attacks, it gets +1/+0 until end of turn for each other attacking creature that shares a creature type with it."
+  },
+  {
+   "name": "Arena of Glory",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Exert\"]",
+   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)"
+  },
+  {
+   "name": "Castle Embereth",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{1}{R}{R}, {T}: Creatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Den of the Bugbear",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "If you control two or more other lands, this land enters tapped.\n{T}: Add {R}.\n{3}{R}: Until end of turn, this land becomes a 3/2 red Goblin creature with \"Whenever this creature attacks, create a 1/1 red Goblin creature token that's tapped and attacking.\" It's still a land."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Path of Ancestry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Three Tree City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "As Three Tree City enters, choose a creature type.\n{T}: Add {C}.\n{2}, {T}: Choose a color. Add an amount of mana of that color equal to the number of creatures you control of the chosen type."
+  }
+ ],
+ "list": [
+  [
+   "Battle Cry Goblin",
+   1
+  ],
+  [
+   "Beetleback Chief",
+   1
+  ],
+  [
+   "Conspicuous Snoop",
+   1
+  ],
+  [
+   "Gempalm Incinerator",
+   1
+  ],
+  [
+   "General Kreat, the Boltbringer",
+   1
+  ],
+  [
+   "Goblin Chieftain",
+   1
+  ],
+  [
+   "Goblin Chirurgeon",
+   1
+  ],
+  [
+   "Goblin Instigator",
+   1
+  ],
+  [
+   "Goblin King",
+   1
+  ],
+  [
+   "Goblin Lackey",
+   1
+  ],
+  [
+   "Goblin Matron",
+   1
+  ],
+  [
+   "Goblin Piledriver",
+   1
+  ],
+  [
+   "Goblin Recruiter",
+   1
+  ],
+  [
+   "Goblin Ringleader",
+   1
+  ],
+  [
+   "Goblin Trashmaster",
+   1
+  ],
+  [
+   "Goblin Warchief",
+   1
+  ],
+  [
+   "Grenzo, Havoc Raiser",
+   1
+  ],
+  [
+   "Hexing Squelcher",
+   1
+  ],
+  [
+   "Hobgoblin Bandit Lord",
+   1
+  ],
+  [
+   "Howlsquad Heavy",
+   1
+  ],
+  [
+   "Kiki-Jiki, Mirror Breaker",
+   1
+  ],
+  [
+   "Krenko, Tin Street Kingpin",
+   1
+  ],
+  [
+   "Legion Warboss",
+   1
+  ],
+  [
+   "Mogg War Marshal",
+   1
+  ],
+  [
+   "Muxus, Goblin Grandee",
+   1
+  ],
+  [
+   "Pashalik Mons",
+   1
+  ],
+  [
+   "Purphoros, God of the Forge",
+   1
+  ],
+  [
+   "Rundvelt Hordemaster",
+   1
+  ],
+  [
+   "Siege-Gang Commander",
+   1
+  ],
+  [
+   "Skirk Prospector",
+   1
+  ],
+  [
+   "Warren Instigator",
+   1
+  ],
+  [
+   "Abrade",
+   1
+  ],
+  [
+   "Battle Hymn",
+   1
+  ],
+  [
+   "Brightstone Ritual",
+   1
+  ],
+  [
+   "Chaos Warp",
+   1
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Massive Raid",
+   1
+  ],
+  [
+   "Thrill of Possibility",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Dragon Fodder",
+   1
+  ],
+  [
+   "Faithless Looting",
+   1
+  ],
+  [
+   "Goblin Grenade",
+   1
+  ],
+  [
+   "Goblin War Strike",
+   1
+  ],
+  [
+   "Hordeling Outburst",
+   1
+  ],
+  [
+   "Krenko's Command",
+   1
+  ],
+  [
+   "Vandalblast",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Coat of Arms",
+   1
+  ],
+  [
+   "Hazoret's Monument",
+   1
+  ],
+  [
+   "Lightning Greaves",
+   1
+  ],
+  [
+   "Patriar's Seal",
+   1
+  ],
+  [
+   "Ruby Medallion",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Staff of Domination",
+   1
+  ],
+  [
+   "Sting, the Glinting Dagger",
+   1
+  ],
+  [
+   "Swiftfoot Boots",
+   1
+  ],
+  [
+   "Thousand-Year Elixir",
+   1
+  ],
+  [
+   "Blood Moon",
+   1
+  ],
+  [
+   "Boggart Shenanigans",
+   1
+  ],
+  [
+   "Goblin Bombardment",
+   1
+  ],
+  [
+   "Impact Tremors",
+   1
+  ],
+  [
+   "Quest for the Goblin Lord",
+   1
+  ],
+  [
+   "Raid Bombardment",
+   1
+  ],
+  [
+   "Shared Animosity",
+   1
+  ],
+  [
+   "Arena of Glory",
+   1
+  ],
+  [
+   "Castle Embereth",
+   1
+  ],
+  [
+   "Den of the Bugbear",
+   1
+  ],
+  [
+   "Mountain",
+   29
+  ],
+  [
+   "Path of Ancestry",
+   1
+  ],
+  [
+   "Three Tree City",
+   1
+  ]
+ ]
+}

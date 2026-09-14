@@ -1,0 +1,1029 @@
+{
+ "name": "lumra landfall stax",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Lumra, Bellow of the Woods",
+   "cost": "{4}{G}{G}",
+   "type_line": "Legendary Creature — Elemental Bear",
+   "keywords": "[\"Reach\",\"Vigilance\",\"Mill\"]",
+   "text": "Reach, vigilance\nLumra's power and toughness are each equal to the number of lands you control.\nWhen Lumra enters, mill four cards. Then return all land cards from your graveyard to the battlefield tapped."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Aftermath Analyst",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Elf Detective",
+   "keywords": "[\"Mill\"]",
+   "text": "When this creature enters, mill three cards. (Put the top three cards of your library into your graveyard.)\n{3}{G}, Sacrifice this creature: Return all land cards from your graveyard to the battlefield tapped."
+  },
+  {
+   "name": "Ashaya, Soul of the Wild",
+   "cost": "{3}{G}{G}",
+   "type_line": "Legendary Creature — Elemental",
+   "keywords": "[]",
+   "text": "Ashaya's power and toughness are each equal to the number of lands you control.\nNontoken creatures you control are Forest lands in addition to their other types. (They're still affected by summoning sickness.)"
+  },
+  {
+   "name": "Blossoming Tortoise",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Turtle",
+   "keywords": "[\"Mill\"]",
+   "text": "Whenever this creature enters or attacks, mill three cards, then return a land card from your graveyard to the battlefield tapped.\nActivated abilities of lands you control cost {1} less to activate.\nLand creatures you control get +1/+1."
+  },
+  {
+   "name": "Collector Ouphe",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Ouphe",
+   "keywords": "[]",
+   "text": "Activated abilities of artifacts can't be activated."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Elvish Reclaimer",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Warrior",
+   "keywords": "[]",
+   "text": "This creature gets +2/+2 as long as there are three or more land cards in your graveyard.\n{2}, {T}, Sacrifice a land: Search your library for a land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Elvish Spirit Guide",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Spirit",
+   "keywords": "[]",
+   "text": "Exile this card from your hand: Add {G}."
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Elemental Incarnation",
+   "keywords": "[\"Reach\",\"Evoke\",\"Flash\"]",
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke—Exile a green card from your hand."
+  },
+  {
+   "name": "Famished Worldsire",
+   "cost": "{5}{G}{G}{G}",
+   "type_line": "Creature — Leviathan",
+   "keywords": "[\"Ward\",\"Devour\"]",
+   "text": "Ward {3}\nDevour land 3 (As this creature enters, you may sacrifice any number of lands. It enters with three times that many +1/+1 counters on it.)\nWhen this creature enters, look at the top X cards of your library, where X is this creature's power. Put any number of land cards from among them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Horizon Explorer",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Insect Scout",
+   "keywords": "[]",
+   "text": "Lands you control enter untapped.\nWhenever you attack a player, create a Lander token. (It's an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")"
+  },
+  {
+   "name": "Icetill Explorer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Scout",
+   "keywords": "[\"Mill\",\"Landfall\"]",
+   "text": "You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card."
+  },
+  {
+   "name": "Lotus Cobra",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, add one mana of any color."
+  },
+  {
+   "name": "Nissa, Resurgent Animist",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature — Elf Scout",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, add one mana of any color. Then if this is the second time this ability has resolved this turn, reveal cards from the top of your library until you reveal an Elf or Elemental card. Put that card into your hand and the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Rootpath Purifier",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "Lands you control and land cards in your library are basic."
+  },
+  {
+   "name": "Six",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature — Treefolk",
+   "keywords": "[\"Reach\",\"Mill\"]",
+   "text": "Reach\nWhenever Six attacks, mill three cards. You may put a land card from among them into your hand.\nDuring your turn, nonland permanent cards in your graveyard have retrace. (You may cast permanent cards from your graveyard by discarding a land card in addition to paying their other costs.)"
+  },
+  {
+   "name": "Sowing Mycospawn",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Eldrazi Fungus",
+   "keywords": "[\"Devoid\",\"Kicker\"]",
+   "text": "Devoid (This card has no color.)\nKicker {1}{C} (You may pay an additional {1}{C} as you cast this spell.)\nWhen you cast this spell, search your library for a land card, put it onto the battlefield, then shuffle.\nWhen you cast this spell, if it was kicked, exile target land."
+  },
+  {
+   "name": "Springheart Nantuko",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment Creature — Insect Monk",
+   "keywords": "[\"Bestow\",\"Landfall\"]",
+   "text": "Bestow {1}{G}\nEnchanted creature gets +1/+1.\nLandfall — Whenever a land you control enters, you may pay {1}{G} if this permanent is attached to a creature you control. If you do, create a token that's a copy of that creature. If you didn't create a token this way, create a 1/1 green Insect creature token."
+  },
+  {
+   "name": "Sylvan Safekeeper",
+   "cost": "{G}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "Sacrifice a land: Target creature you control gains shroud until end of turn. (It can't be the target of spells or abilities.)"
+  },
+  {
+   "name": "Tiller Engine",
+   "cost": "{2}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[]",
+   "text": "Whenever a land you control enters tapped, choose one —\n• Untap that land.\n• Tap target nonland permanent an opponent controls."
+  },
+  {
+   "name": "Timeless Witness",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[\"Eternalize\"]",
+   "text": "When this creature enters, return target card from your graveyard to your hand.\nEternalize {5}{G}{G} ({5}{G}{G}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a 4/4 black Zombie Human Shaman with no mana cost. Eternalize only as a sorcery.)"
+  },
+  {
+   "name": "Tireless Provisioner",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "[\"Treasure\",\"Food\",\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, create a Food token or a Treasure token. (Food is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\" Treasure is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Tezzeret, Cruel Captain",
+   "cost": "{3}",
+   "type_line": "Legendary Planeswalker — Tezzeret",
+   "keywords": "[]",
+   "text": "Whenever an artifact you control enters, put a loyalty counter on Tezzeret.\n0: Untap target artifact or creature. If it's an artifact creature, put a +1/+1 counter on it.\n−3: Search your library for an artifact card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\n−7: You get an emblem with \"At the beginning of combat on your turn, put three +1/+1 counters on target artifact you control. If it's not a creature, it becomes a 0/0 Robot artifact creature.\""
+  },
+  {
+   "name": "Invasion of Ikoria // Zilortha, Apex of Ikoria",
+   "cost": "{X}{G}{G} // ",
+   "type_line": "Battle — Siege // Legendary Creature — Dinosaur",
+   "keywords": "[\"Reach\",\"Transform\"]",
+   "text": "(As a Siege enters, choose an opponent to protect it. You and others can attack it. When it's defeated, exile it, then cast it transformed.)\nWhen this Siege enters, search your library and/or graveyard for a non-Human creature card with mana value X or less and put it onto the battlefield. If you search your library this way, shuffle.\n// Reach\nFor each non-Human creature you control, you may have that creature assign its combat damage as though it weren't blocked."
+  },
+  {
+   "name": "Amulet of Vigor",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a permanent you control enters tapped, untap it."
+  },
+  {
+   "name": "Grim Monolith",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{4}: Untap this artifact."
+  },
+  {
+   "name": "Lion's Eye Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant."
+  },
+  {
+   "name": "Lotus Petal",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this artifact: Add one mana of any color."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Trinisphere",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "As long as this artifact is untapped, each spell that would cost less than three mana to cast costs three mana to cast. (Additional mana in the cost may be paid with any color of mana or colorless mana. For example, a spell that would cost {1}{B} to cast costs {2}{B} to cast instead.)"
+  },
+  {
+   "name": "Vexing Bauble",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Whenever a player casts a spell, if no mana was spent to cast it, counter that spell.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Zuran Orb",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Sacrifice a land: You gain 2 life."
+  },
+  {
+   "name": "Burgeoning",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent plays a land, you may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Earthcraft",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Tap an untapped creature you control: Untap target basic land."
+  },
+  {
+   "name": "Exploration",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns."
+  },
+  {
+   "name": "Food Chain",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Exile a creature you control: Add X mana of any one color, where X is 1 plus the exiled creature's mana value. Spend this mana only to cast creature spells."
+  },
+  {
+   "name": "Root Maze",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Artifacts and lands enter tapped."
+  },
+  {
+   "name": "Song of the Dryads",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment — Aura",
+   "keywords": "[\"Enchant\"]",
+   "text": "Enchant permanent\nEnchanted permanent is a colorless Forest land."
+  },
+  {
+   "name": "Spelunking",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, draw a card, then you may put a land card from your hand onto the battlefield. If you put a Cave onto the battlefield this way, you gain 4 life.\nLands you control enter untapped."
+  },
+  {
+   "name": "Sylvan Library",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your draw step, you may draw two additional cards. If you do, choose two cards in your hand drawn this turn. For each of those cards, pay 4 life or put the card on top of your library."
+  },
+  {
+   "name": "Eldritch Evolution",
+   "cost": "{1}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nSearch your library for a creature card with mana value X or less, where X is 2 plus the sacrificed creature's mana value. Put that card onto the battlefield, then shuffle. Exile Eldritch Evolution."
+  },
+  {
+   "name": "Finale of Devastation",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library and/or graveyard for a creature card with mana value X or less and put it onto the battlefield. If you search your library this way, shuffle. If X is 10 or more, creatures you control get +X/+X and gain haste until end of turn."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Natural Order",
+   "cost": "{2}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a green creature.\nSearch your library for a green creature card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Nature's Rhythm",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Harmonize\"]",
+   "text": "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.\nHarmonize {X}{G}{G}{G}{G} (You may cast this card from your graveyard for its harmonize cost. You may tap a creature you control to reduce that cost by an amount of generic mana equal to its power. Then exile this spell.)"
+  },
+  {
+   "name": "Scapeshift",
+   "cost": "{2}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Sacrifice any number of lands. Search your library for up to that many land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Archdruid's Charm",
+   "cost": "{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one —\n• Search your library for a creature or land card and reveal it. Put it onto the battlefield tapped if it's a land card. Otherwise, put it into your hand. Then shuffle.\n• Put a +1/+1 counter on target creature you control. It deals damage equal to its power to target creature you don't control.\n• Exile target artifact or enchantment."
+  },
+  {
+   "name": "Chord of Calling",
+   "cost": "{X}{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[\"Convoke\"]",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Eldrazi Confluence",
+   "cost": "{2}{C}{C}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose three. You may choose the same mode more than once.\n• Target creature gets +3/-3 until end of turn.\n• Exile target nonland permanent, then return it to the battlefield tapped under its owner's control.\n• Create a 1/1 colorless Eldrazi Scion creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Force of Vigor",
+   "cost": "{2}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If it's not your turn, you may exile a green card from your hand rather than pay this spell's mana cost.\nDestroy up to two target artifacts and/or enchantments."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "Arid Archway",
+   "cost": "",
+   "type_line": "Land — Desert",
+   "keywords": "[\"Surveil\"]",
+   "text": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand. If another Desert was returned this way, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)\n{T}: Add {C}{C}."
+  },
+  {
+   "name": "Blast Zone",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters with a charge counter on it.\n{T}: Add {C}.\n{X}{X}, {T}: Put X charge counters on this land.\n{3}, {T}, Sacrifice this land: Destroy each nonland permanent with mana value equal to the number of charge counters on this land."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {G}.\nChannel — {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "City of Traitors",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "When you play another land, sacrifice this land.\n{T}: Add {C}{C}."
+  },
+  {
+   "name": "Command Beacon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Put your commander into your hand from the command zone."
+  },
+  {
+   "name": "Crumbling Vestige",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)"
+  },
+  {
+   "name": "Crystal Vein",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Add {C}{C}."
+  },
+  {
+   "name": "Echoing Deeps",
+   "cost": "",
+   "type_line": "Land — Cave",
+   "keywords": "[]",
+   "text": "You may have this land enter tapped as a copy of any land card in a graveyard, except it's a Cave in addition to its other types.\n{T}: Add {C}."
+  },
+  {
+   "name": "Eden, Seat of the Sanctum",
+   "cost": "",
+   "type_line": "Land — Town",
+   "keywords": "[\"Mill\"]",
+   "text": "{T}: Add {C}.\n{5}, {T}: Mill two cards. Then you may sacrifice this land. When you do, return another target permanent card from your graveyard to your hand."
+  },
+  {
+   "name": "Emergence Zone",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this land: You may cast spells this turn as though they had flash."
+  },
+  {
+   "name": "Fabled Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land."
+  },
+  {
+   "name": "Field of the Dead",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {C}.\nWhenever this land or another land you control enters, if you control seven or more lands with different names, create a 2/2 black Zombie creature token."
+  },
+  {
+   "name": "Gaea's Cradle",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "Geier Reach Sanitarium",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{2}, {T}: Each player draws a card, then discards a card."
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  },
+  {
+   "name": "Ghost Quarter",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Havenwood Battleground",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {G}.\n{T}, Sacrifice this land: Add {G}{G}."
+  },
+  {
+   "name": "Hickory Woodlot",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped with two depletion counters on it.\n{T}, Remove a depletion counter from this land: Add {G}{G}. If there are no depletion counters on this land, sacrifice it."
+  },
+  {
+   "name": "Lazotep Quarry",
+   "cost": "",
+   "type_line": "Land — Desert",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice a creature: Add one mana of any color.\n{X}{2}, {T}, Sacrifice a Desert: Exile target creature card with mana value X from your graveyard. Create a token that's a copy of it, except it's a 4/4 black Zombie. Activate only as a sorcery."
+  },
+  {
+   "name": "Lotus Field",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Hexproof\"]",
+   "text": "Hexproof\nThis land enters tapped.\nWhen this land enters, sacrifice two lands.\n{T}: Add three mana of any one color."
+  },
+  {
+   "name": "Mirrorpool",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {C}.\n{2}{C}, {T}, Sacrifice this land: Copy target instant or sorcery spell you control. You may choose new targets for the copy.\n{4}{C}, {T}, Sacrifice this land: Create a token that's a copy of target creature you control."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Mouth of Ronom",
+   "cost": "",
+   "type_line": "Snow Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{4}{S}, {T}, Sacrifice this land: It deals 4 damage to target creature. ({S} can be paid with one mana from a snow source.)"
+  },
+  {
+   "name": "Pit of Offerings",
+   "cost": "",
+   "type_line": "Land — Cave",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, exile up to three target cards from graveyards.\n{T}: Add {C}.\n{T}: Add one mana of any of the exiled cards' colors."
+  },
+  {
+   "name": "Prismatic Vista",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Shifting Woodland",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Delirium\"]",
+   "text": "This land enters tapped unless you control a Forest.\n{T}: Add {G}.\nDelirium — {2}{G}{G}: This land becomes a copy of target permanent card in your graveyard until end of turn. Activate only if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Snow-Covered Forest",
+   "cost": "",
+   "type_line": "Basic Snow Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Strip Mine",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Destroy target land."
+  },
+  {
+   "name": "Sunscorched Desert",
+   "cost": "",
+   "type_line": "Land — Desert",
+   "keywords": "[]",
+   "text": "When this land enters, it deals 1 damage to target player or planeswalker.\n{T}: Add {C}."
+  },
+  {
+   "name": "Talon Gates of Madara",
+   "cost": "",
+   "type_line": "Land — Gate",
+   "keywords": "[]",
+   "text": "When this land enters, up to one target creature phases out.\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{4}: Put this card from your hand onto the battlefield."
+  },
+  {
+   "name": "The Tabernacle at Pendrell Vale",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "All creatures have \"At the beginning of your upkeep, destroy this creature unless you pay {1}.\""
+  },
+  {
+   "name": "Urza's Cave",
+   "cost": "",
+   "type_line": "Land — Urza's Cave",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{3}, {T}, Sacrifice this land: Search your library for a land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land — Urza's Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — This Saga gains \"{T}: Add {C}.\"\nII — This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII — Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Vesuva",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You may have this land enter tapped as a copy of any land on the battlefield."
+  },
+  {
+   "name": "Wasteland",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Destroy target nonbasic land."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Yavimaya, Cradle of Growth",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "Each land is a Forest in addition to its other land types."
+  }
+ ],
+ "list": [
+  [
+   "Aftermath Analyst",
+   1
+  ],
+  [
+   "Ashaya, Soul of the Wild",
+   1
+  ],
+  [
+   "Blossoming Tortoise",
+   1
+  ],
+  [
+   "Collector Ouphe",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Elvish Reclaimer",
+   1
+  ],
+  [
+   "Elvish Spirit Guide",
+   1
+  ],
+  [
+   "Endurance",
+   1
+  ],
+  [
+   "Famished Worldsire",
+   1
+  ],
+  [
+   "Horizon Explorer",
+   1
+  ],
+  [
+   "Icetill Explorer",
+   1
+  ],
+  [
+   "Lotus Cobra",
+   1
+  ],
+  [
+   "Nissa, Resurgent Animist",
+   1
+  ],
+  [
+   "Rootpath Purifier",
+   1
+  ],
+  [
+   "Six",
+   1
+  ],
+  [
+   "Sowing Mycospawn",
+   1
+  ],
+  [
+   "Springheart Nantuko",
+   1
+  ],
+  [
+   "Sylvan Safekeeper",
+   1
+  ],
+  [
+   "Tiller Engine",
+   1
+  ],
+  [
+   "Timeless Witness",
+   1
+  ],
+  [
+   "Tireless Provisioner",
+   1
+  ],
+  [
+   "Tezzeret, Cruel Captain",
+   1
+  ],
+  [
+   "Invasion of Ikoria // Zilortha, Apex of Ikoria",
+   1
+  ],
+  [
+   "Amulet of Vigor",
+   1
+  ],
+  [
+   "Grim Monolith",
+   1
+  ],
+  [
+   "Lion's Eye Diamond",
+   1
+  ],
+  [
+   "Lotus Petal",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Trinisphere",
+   1
+  ],
+  [
+   "Vexing Bauble",
+   1
+  ],
+  [
+   "Zuran Orb",
+   1
+  ],
+  [
+   "Burgeoning",
+   1
+  ],
+  [
+   "Earthcraft",
+   1
+  ],
+  [
+   "Exploration",
+   1
+  ],
+  [
+   "Food Chain",
+   1
+  ],
+  [
+   "Root Maze",
+   1
+  ],
+  [
+   "Song of the Dryads",
+   1
+  ],
+  [
+   "Spelunking",
+   1
+  ],
+  [
+   "Sylvan Library",
+   1
+  ],
+  [
+   "Eldritch Evolution",
+   1
+  ],
+  [
+   "Finale of Devastation",
+   1
+  ],
+  [
+   "Green Sun's Zenith",
+   1
+  ],
+  [
+   "Natural Order",
+   1
+  ],
+  [
+   "Nature's Rhythm",
+   1
+  ],
+  [
+   "Scapeshift",
+   1
+  ],
+  [
+   "Archdruid's Charm",
+   1
+  ],
+  [
+   "Chord of Calling",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Eldrazi Confluence",
+   1
+  ],
+  [
+   "Force of Vigor",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "Arid Archway",
+   1
+  ],
+  [
+   "Blast Zone",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "City of Traitors",
+   1
+  ],
+  [
+   "Command Beacon",
+   1
+  ],
+  [
+   "Crumbling Vestige",
+   1
+  ],
+  [
+   "Crystal Vein",
+   1
+  ],
+  [
+   "Echoing Deeps",
+   1
+  ],
+  [
+   "Eden, Seat of the Sanctum",
+   1
+  ],
+  [
+   "Emergence Zone",
+   1
+  ],
+  [
+   "Fabled Passage",
+   1
+  ],
+  [
+   "Field of the Dead",
+   1
+  ],
+  [
+   "Gaea's Cradle",
+   1
+  ],
+  [
+   "Geier Reach Sanitarium",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ],
+  [
+   "Ghost Quarter",
+   1
+  ],
+  [
+   "Havenwood Battleground",
+   1
+  ],
+  [
+   "Hickory Woodlot",
+   1
+  ],
+  [
+   "Lazotep Quarry",
+   1
+  ],
+  [
+   "Lotus Field",
+   1
+  ],
+  [
+   "Mirrorpool",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Mouth of Ronom",
+   1
+  ],
+  [
+   "Pit of Offerings",
+   1
+  ],
+  [
+   "Prismatic Vista",
+   1
+  ],
+  [
+   "Shifting Woodland",
+   1
+  ],
+  [
+   "Snow-Covered Forest",
+   8
+  ],
+  [
+   "Strip Mine",
+   1
+  ],
+  [
+   "Sunscorched Desert",
+   1
+  ],
+  [
+   "Talon Gates of Madara",
+   1
+  ],
+  [
+   "The Tabernacle at Pendrell Vale",
+   1
+  ],
+  [
+   "Urza's Cave",
+   1
+  ],
+  [
+   "Urza's Saga",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Vesuva",
+   1
+  ],
+  [
+   "Wasteland",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Yavimaya, Cradle of Growth",
+   1
+  ]
+ ]
+}

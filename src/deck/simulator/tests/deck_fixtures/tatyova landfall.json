@@ -1,0 +1,886 @@
+{
+ "name": "tatyova landfall",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Tatyova, Benthic Druid",
+   "cost": "{3}{G}{U}",
+   "type_line": "Legendary Creature — Merfolk Druid",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, you gain 1 life and draw a card."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Aesi, Tyrant of Gyre Strait",
+   "cost": "{4}{G}{U}",
+   "type_line": "Legendary Creature — Serpent",
+   "keywords": "[\"Landfall\"]",
+   "text": "You may play an additional land on each of your turns.\nLandfall — Whenever a land you control enters, you may draw a card."
+  },
+  {
+   "name": "Ancient Greenwarden",
+   "cost": "{4}{G}{G}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Reach\"]",
+   "text": "Reach (This creature can block creatures with flying.)\nYou may play lands from your graveyard.\nIf a land entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time."
+  },
+  {
+   "name": "Ashaya, Soul of the Wild",
+   "cost": "{3}{G}{G}",
+   "type_line": "Legendary Creature — Elemental",
+   "keywords": "[]",
+   "text": "Ashaya's power and toughness are each equal to the number of lands you control.\nNontoken creatures you control are Forest lands in addition to their other types. (They're still affected by summoning sickness.)"
+  },
+  {
+   "name": "Avenger of Zendikar",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[\"Landfall\"]",
+   "text": "When this creature enters, create a 0/1 green Plant creature token for each land you control.\nLandfall — Whenever a land you control enters, you may put a +1/+1 counter on each Plant creature you control."
+  },
+  {
+   "name": "Azusa, Lost but Seeking",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature — Human Monk",
+   "keywords": "[]",
+   "text": "You may play two additional lands on each of your turns."
+  },
+  {
+   "name": "Coiling Oracle",
+   "cost": "{G}{U}",
+   "type_line": "Creature — Snake Elf Druid",
+   "keywords": "[]",
+   "text": "When this creature enters, reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand."
+  },
+  {
+   "name": "Courser of Kruphix",
+   "cost": "{1}{G}{G}",
+   "type_line": "Enchantment Creature — Centaur",
+   "keywords": "[\"Landfall\"]",
+   "text": "Play with the top card of your library revealed.\nYou may play lands from the top of your library.\nLandfall — Whenever a land you control enters, you gain 1 life."
+  },
+  {
+   "name": "Cultivator Colossus",
+   "cost": "{4}{G}{G}{G}",
+   "type_line": "Creature — Plant Beast",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nCultivator Colossus's power and toughness are each equal to the number of lands you control.\nWhen this creature enters, you may put a land card from your hand onto the battlefield tapped. If you do, draw a card and repeat this process."
+  },
+  {
+   "name": "Dryad of the Ilysian Grove",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment Creature — Nymph Dryad",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns.\nLands you control are every basic land type in addition to their other types."
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[]",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Icetill Explorer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Insect Scout",
+   "keywords": "[\"Mill\",\"Landfall\"]",
+   "text": "You may play an additional land on each of your turns.\nYou may play lands from your graveyard.\nLandfall — Whenever a land you control enters, mill a card."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Llanowar Scout",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "[]",
+   "text": "{T}: You may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Loot, Exuberant Explorer",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature — Beast Noble",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns.\n{4}{G}{G}, {T}: Look at the top six cards of your library. You may reveal a creature card with mana value less than or equal to the number of lands you control from among them and put it onto the battlefield. Put the rest on the bottom in a random order."
+  },
+  {
+   "name": "Lotus Cobra",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, add one mana of any color."
+  },
+  {
+   "name": "Mossborn Hydra",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elemental Hydra",
+   "keywords": "[\"Trample\",\"Double\",\"Landfall\"]",
+   "text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nThis creature enters with a +1/+1 counter on it.\nLandfall — Whenever a land you control enters, double the number of +1/+1 counters on this creature."
+  },
+  {
+   "name": "Oracle of Mul Daya",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Elf Shaman",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns.\nPlay with the top card of your library revealed.\nYou may play lands from the top of your library."
+  },
+  {
+   "name": "Rampaging Baloths",
+   "cost": "{4}{G}{G}",
+   "type_line": "Creature — Beast",
+   "keywords": "[\"Trample\",\"Landfall\"]",
+   "text": "Trample\nLandfall — Whenever a land you control enters, create a 4/4 green Beast creature token."
+  },
+  {
+   "name": "Ramunap Excavator",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Snake Cleric",
+   "keywords": "[]",
+   "text": "You may play lands from your graveyard."
+  },
+  {
+   "name": "Sakura-Tribe Elder",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake Shaman",
+   "keywords": "[]",
+   "text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Sakura-Tribe Scout",
+   "cost": "{G}",
+   "type_line": "Creature — Snake Shaman Scout",
+   "keywords": "[]",
+   "text": "{T}: You may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Scute Swarm",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Insect",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, create a 1/1 green Insect creature token. If you control six or more lands, create a token that's a copy of this creature instead."
+  },
+  {
+   "name": "Springbloom Druid",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "When this creature enters, you may sacrifice a land. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Tireless Provisioner",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "[\"Treasure\",\"Food\",\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, create a Food token or a Treasure token. (Food is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\" Treasure is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Wayward Swordtooth",
+   "cost": "{2}{G}",
+   "type_line": "Creature — Dinosaur",
+   "keywords": "[\"Ascend\"]",
+   "text": "Ascend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nYou may play an additional land on each of your turns.\nThis creature can't attack or block unless you have the city's blessing."
+  },
+  {
+   "name": "An Offer You Can't Refuse",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Arcane Denial",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Beast Within",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Entish Restoration",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle. If you control a creature with power 4 or greater, instead search your library for up to three basic land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Growth Spiral",
+   "cost": "{G}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Draw a card. You may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Harrow",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for up to two basic land cards, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Heroic Intervention",
+   "cost": "{1}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Permanents you control gain hexproof and indestructible until end of turn."
+  },
+  {
+   "name": "Negate",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target noncreature spell."
+  },
+  {
+   "name": "Pongify",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token."
+  },
+  {
+   "name": "Roiling Regrowth",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Sacrifice a land. Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Broken Bond",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy target artifact or enchantment. You may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Explore",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You may play an additional land this turn.\nDraw a card."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Kodama's Reach",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery — Arcane",
+   "keywords": "[]",
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Nature's Lore",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Forest card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Rampant Growth",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Skyshroud Claim",
+   "cost": "{3}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for up to two Forest cards, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Summer Bloom",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "You may play up to three additional lands this turn."
+  },
+  {
+   "name": "Three Visits",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Conduit of Worlds",
+   "cost": "{2}{G}{G}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You may play lands from your graveyard.\n{T}: Choose target nonland permanent card in your graveyard. If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn. Activate only as a sorcery."
+  },
+  {
+   "name": "Crucible of Worlds",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You may play lands from your graveyard."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Thought Vessel",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Burgeoning",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent plays a land, you may put a land card from your hand onto the battlefield."
+  },
+  {
+   "name": "Druid Class",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment — Class",
+   "keywords": "[\"Landfall\"]",
+   "text": "(Gain the next level as a sorcery to add its ability.)\nLandfall — Whenever a land you control enters, you gain 1 life.\n{2}{G}: Level 2\nYou may play an additional land on each of your turns.\n{4}{G}: Level 3\nWhen this Class becomes level 3, target land you control becomes a creature with haste and \"This creature's power and toughness are each equal to the number of lands you control.\" It's still a land."
+  },
+  {
+   "name": "Exploration",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "You may play an additional land on each of your turns."
+  },
+  {
+   "name": "Khalni Heart Expedition",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, you may put a quest counter on this enchantment.\nRemove three quest counters from this enchantment and sacrifice it: Search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Retreat to Coralhelm",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Landfall\",\"Scry\"]",
+   "text": "Landfall — Whenever a land you control enters, choose one —\n• You may tap or untap target creature.\n• Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Spelunking",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, draw a card, then you may put a land card from your hand onto the battlefield. If you put a Cave onto the battlefield this way, you gain 4 life.\nLands you control enter untapped."
+  },
+  {
+   "name": "Zendikar's Roil",
+   "cost": "{3}{G}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Landfall\"]",
+   "text": "Landfall — Whenever a land you control enters, create a 2/2 green Elemental creature token."
+  },
+  {
+   "name": "Wrenn and Seven",
+   "cost": "{3}{G}{G}",
+   "type_line": "Legendary Planeswalker — Wrenn",
+   "keywords": "[]",
+   "text": "+1: Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.\n0: Put any number of land cards from your hand onto the battlefield tapped.\n−3: Create a green Treefolk creature token with reach and \"This token's power and toughness are each equal to the number of lands you control.\"\n−8: Return all permanent cards from your graveyard to your hand. You get an emblem with \"You have no maximum hand size.\""
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land — Forest Island",
+   "keywords": "[]",
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Brokers Hideout",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "When this land enters, sacrifice it. When you do, search your library for a basic Forest, Plains, or Island card, put it onto the battlefield tapped, then shuffle and you gain 1 life."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Dreamroot Cascade",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Evolving Wilds",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Fabled Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Hinterland Harbor",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Forest or an Island.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Myriad Landscape",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Mystic Sanctuary",
+   "cost": "",
+   "type_line": "Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)\nThis land enters tapped unless you control three or more other Islands.\nWhen this land enters untapped, you may put target instant or sorcery card from your graveyard on top of your library."
+  },
+  {
+   "name": "Rejuvenating Springs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Reliquary Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Simic Growth Chamber",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\nWhen this land enters, return a land you control to its owner's hand.\n{T}: Add {G}{U}."
+  },
+  {
+   "name": "Temple of Mystery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {G} or {U}."
+  },
+  {
+   "name": "Terramorphic Expanse",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Yavimaya Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {G} or {U}. This land deals 1 damage to you."
+  }
+ ],
+ "list": [
+  [
+   "Aesi, Tyrant of Gyre Strait",
+   1
+  ],
+  [
+   "Ancient Greenwarden",
+   1
+  ],
+  [
+   "Ashaya, Soul of the Wild",
+   1
+  ],
+  [
+   "Avenger of Zendikar",
+   1
+  ],
+  [
+   "Azusa, Lost but Seeking",
+   1
+  ],
+  [
+   "Coiling Oracle",
+   1
+  ],
+  [
+   "Courser of Kruphix",
+   1
+  ],
+  [
+   "Cultivator Colossus",
+   1
+  ],
+  [
+   "Dryad of the Ilysian Grove",
+   1
+  ],
+  [
+   "Eternal Witness",
+   1
+  ],
+  [
+   "Icetill Explorer",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Llanowar Scout",
+   1
+  ],
+  [
+   "Loot, Exuberant Explorer",
+   1
+  ],
+  [
+   "Lotus Cobra",
+   1
+  ],
+  [
+   "Mossborn Hydra",
+   1
+  ],
+  [
+   "Oracle of Mul Daya",
+   1
+  ],
+  [
+   "Rampaging Baloths",
+   1
+  ],
+  [
+   "Ramunap Excavator",
+   1
+  ],
+  [
+   "Sakura-Tribe Elder",
+   1
+  ],
+  [
+   "Sakura-Tribe Scout",
+   1
+  ],
+  [
+   "Scute Swarm",
+   1
+  ],
+  [
+   "Springbloom Druid",
+   1
+  ],
+  [
+   "Tireless Provisioner",
+   1
+  ],
+  [
+   "Wayward Swordtooth",
+   1
+  ],
+  [
+   "An Offer You Can't Refuse",
+   1
+  ],
+  [
+   "Arcane Denial",
+   1
+  ],
+  [
+   "Beast Within",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Entish Restoration",
+   1
+  ],
+  [
+   "Growth Spiral",
+   1
+  ],
+  [
+   "Harrow",
+   1
+  ],
+  [
+   "Heroic Intervention",
+   1
+  ],
+  [
+   "Negate",
+   1
+  ],
+  [
+   "Pongify",
+   1
+  ],
+  [
+   "Roiling Regrowth",
+   1
+  ],
+  [
+   "Broken Bond",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Explore",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Kodama's Reach",
+   1
+  ],
+  [
+   "Nature's Lore",
+   1
+  ],
+  [
+   "Rampant Growth",
+   1
+  ],
+  [
+   "Skyshroud Claim",
+   1
+  ],
+  [
+   "Summer Bloom",
+   1
+  ],
+  [
+   "Three Visits",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Conduit of Worlds",
+   1
+  ],
+  [
+   "Crucible of Worlds",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Thought Vessel",
+   1
+  ],
+  [
+   "Burgeoning",
+   1
+  ],
+  [
+   "Druid Class",
+   1
+  ],
+  [
+   "Exploration",
+   1
+  ],
+  [
+   "Khalni Heart Expedition",
+   1
+  ],
+  [
+   "Retreat to Coralhelm",
+   1
+  ],
+  [
+   "Spelunking",
+   1
+  ],
+  [
+   "Zendikar's Roil",
+   1
+  ],
+  [
+   "Wrenn and Seven",
+   1
+  ],
+  [
+   "Breeding Pool",
+   1
+  ],
+  [
+   "Brokers Hideout",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Dreamroot Cascade",
+   1
+  ],
+  [
+   "Evolving Wilds",
+   1
+  ],
+  [
+   "Fabled Passage",
+   1
+  ],
+  [
+   "Forest",
+   13
+  ],
+  [
+   "Hinterland Harbor",
+   1
+  ],
+  [
+   "Island",
+   9
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Myriad Landscape",
+   1
+  ],
+  [
+   "Mystic Sanctuary",
+   1
+  ],
+  [
+   "Rejuvenating Springs",
+   1
+  ],
+  [
+   "Reliquary Tower",
+   1
+  ],
+  [
+   "Simic Growth Chamber",
+   1
+  ],
+  [
+   "Temple of Mystery",
+   1
+  ],
+  [
+   "Terramorphic Expanse",
+   1
+  ],
+  [
+   "Yavimaya Coast",
+   1
+  ]
+ ]
+}

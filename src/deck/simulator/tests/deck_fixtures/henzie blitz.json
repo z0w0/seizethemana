@@ -1,0 +1,996 @@
+{
+ "name": "henzie blitz",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Henzie \"Toolbox\" Torre",
+   "cost": "{B}{R}{G}",
+   "type_line": "Legendary Creature — Devil Rogue",
+   "keywords": "[]",
+   "text": "Each creature spell you cast with mana value 4 or greater has blitz. The blitz cost is equal to its mana cost. (You may choose to cast that spell for its blitz cost. If you do, it gains haste and \"When this creature dies, draw a card.\" Sacrifice it at the beginning of the next end step.)\nBlitz costs you pay cost {1} less for each time you've cast your commander from the command zone this game."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Ancient Brass Dragon",
+   "cost": "{5}{B}{B}",
+   "type_line": "Creature — Elder Dragon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature deals combat damage to a player, roll a d20. When you do, put any number of target creature cards with total mana value X or less from graveyards onto the battlefield under your control, where X is the result."
+  },
+  {
+   "name": "Archon of Cruelty",
+   "cost": "{6}{B}{B}",
+   "type_line": "Creature — Archon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever this creature enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life."
+  },
+  {
+   "name": "Archpriest of Shadows",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Human Warlock",
+   "keywords": "[\"Backup\",\"Deathtouch\"]",
+   "text": "Backup 1 (When this creature enters, put a +1/+1 counter on target creature. If that's another creature, it gains the following abilities until end of turn.)\nDeathtouch\nWhenever this creature deals combat damage to a player or battle, return target creature card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Atsushi, the Blazing Sky",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Creature — Dragon Spirit",
+   "keywords": "[\"Flying\",\"Treasure\",\"Trample\"]",
+   "text": "Flying, trample\nWhen Atsushi dies, choose one —\n• Exile the top two cards of your library. Until the end of your next turn, you may play those cards.\n• Create three Treasure tokens."
+  },
+  {
+   "name": "Bane of Progress",
+   "cost": "{4}{G}{G}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[]",
+   "text": "When this creature enters, destroy all artifacts and enchantments. Put a +1/+1 counter on this creature for each permanent destroyed this way."
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature — Bird",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Bringer of the Last Gift",
+   "cost": "{6}{B}{B}",
+   "type_line": "Creature — Vampire Demon",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen this creature enters, if you cast it, each player sacrifices all other creatures they control. Then each player returns all creature cards from their graveyard that weren't put there this way to the battlefield."
+  },
+  {
+   "name": "Chainer, Nightmare Adept",
+   "cost": "{2}{B}{R}",
+   "type_line": "Legendary Creature — Human Minion",
+   "keywords": "[]",
+   "text": "Discard a card: You may cast a creature spell from your graveyard this turn. Activate only once each turn.\nWhenever a nontoken creature you control enters, if you didn't cast it from your hand, it gains haste until your next turn."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature — Halfling Citizen",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Disciple of Bolas",
+   "cost": "{3}{B}",
+   "type_line": "Creature — Human Wizard",
+   "keywords": "[]",
+   "text": "When this creature enters, sacrifice another creature. You gain X life and draw X cards, where X is that creature's power."
+  },
+  {
+   "name": "Druid of Purification",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Human Druid",
+   "keywords": "[]",
+   "text": "When this creature enters, starting with you, each player may choose an artifact or enchantment you don't control. Destroy each permanent chosen this way."
+  },
+  {
+   "name": "Elves of Deep Shadow",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {B}. This creature deals 1 damage to you."
+  },
+  {
+   "name": "Etali, Primal Conqueror // Etali, Primal Sickness",
+   "cost": "{5}{R}{R} // ",
+   "type_line": "Legendary Creature — Elder Dinosaur // Legendary Creature — Phyrexian Elder Dinosaur",
+   "keywords": "[\"Indestructible\",\"Transform\",\"Trample\"]",
+   "text": "Trample\nWhen Etali enters, each player exiles cards from the top of their library until they exile a nonland card. You may cast any number of spells from among the nonland cards exiled this way without paying their mana costs.\n{9}{G/P}: Transform Etali. Activate only as a sorcery.\n// Trample, indestructible\nWhenever Etali deals combat damage to a player, they get that many poison counters. (A player with ten or more poison counters loses the game.)"
+  },
+  {
+   "name": "Etali, Primal Storm",
+   "cost": "{4}{R}{R}",
+   "type_line": "Legendary Creature — Elder Dinosaur",
+   "keywords": "[]",
+   "text": "Whenever Etali attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs."
+  },
+  {
+   "name": "Giant Adephage",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Insect",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nWhenever this creature deals combat damage to a player, create a token that's a copy of this creature."
+  },
+  {
+   "name": "Goreclaw, Terror of Qal Sisma",
+   "cost": "{3}{G}",
+   "type_line": "Legendary Creature — Bear",
+   "keywords": "[]",
+   "text": "Creature spells you cast with power 4 or greater cost {2} less to cast.\nWhenever Goreclaw attacks, each creature you control with power 4 or greater gets +1/+1 and gains trample until end of turn."
+  },
+  {
+   "name": "Greenwarden of Murasa",
+   "cost": "{4}{G}{G}",
+   "type_line": "Creature — Elemental",
+   "keywords": "[]",
+   "text": "When this creature enters, you may return target card from your graveyard to your hand.\nWhen this creature dies, you may exile it. If you do, return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Honest Rutstein",
+   "cost": "{1}{B}{G}",
+   "type_line": "Legendary Creature — Human Warlock",
+   "keywords": "[]",
+   "text": "When Honest Rutstein enters, return target creature card from your graveyard to your hand.\nCreature spells you cast cost {1} less to cast."
+  },
+  {
+   "name": "Ignoble Hierarch",
+   "cost": "{G}",
+   "type_line": "Creature — Goblin Shaman",
+   "keywords": "[\"Exalted\"]",
+   "text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\n{T}: Add {B}, {R}, or {G}."
+  },
+  {
+   "name": "Ilharg, the Raze-Boar",
+   "cost": "{3}{R}{R}",
+   "type_line": "Legendary Creature — Boar God",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample\nWhenever Ilharg attacks, you may put a creature card from your hand onto the battlefield tapped and attacking. Return that creature to your hand at the beginning of the next end step.\nWhen Ilharg dies or is put into exile from the battlefield, you may put it into its owner's library third from the top."
+  },
+  {
+   "name": "Junji, the Midnight Sky",
+   "cost": "{3}{B}{B}",
+   "type_line": "Legendary Creature — Dragon Spirit",
+   "keywords": "[\"Flying\",\"Menace\"]",
+   "text": "Flying, menace\nWhen Junji dies, choose one —\n• Each opponent discards two cards and loses 2 life.\n• Put target non-Dragon creature card from a graveyard onto the battlefield under your control. You lose 2 life."
+  },
+  {
+   "name": "Kokusho, the Evening Star",
+   "cost": "{4}{B}{B}",
+   "type_line": "Legendary Creature — Dragon Spirit",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhen Kokusho dies, each opponent loses 5 life. You gain life equal to the life lost this way."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature — Elf Druid",
+   "keywords": "[]",
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Massacre Wurm",
+   "cost": "{3}{B}{B}{B}",
+   "type_line": "Creature — Phyrexian Wurm",
+   "keywords": "[]",
+   "text": "When this creature enters, creatures your opponents control get -2/-2 until end of turn.\nWhenever a creature an opponent controls dies, that player loses 2 life."
+  },
+  {
+   "name": "Mikaeus, the Unhallowed",
+   "cost": "{3}{B}{B}{B}",
+   "type_line": "Legendary Creature — Zombie Cleric",
+   "keywords": "[\"Intimidate\"]",
+   "text": "Intimidate (This creature can't be blocked except by artifact creatures and/or creatures that share a color with it.)\nWhenever a Human deals damage to you, destroy it.\nOther non-Human creatures you control get +1/+1 and have undying. (When a creature with undying dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Noxious Gearhulk",
+   "cost": "{4}{B}{B}",
+   "type_line": "Artifact Creature — Construct",
+   "keywords": "[\"Menace\"]",
+   "text": "Menace\nWhen this creature enters, you may destroy another target creature. If a creature is destroyed this way, you gain life equal to its toughness."
+  },
+  {
+   "name": "Ojer Kaslem, Deepest Growth // Temple of Cultivation",
+   "cost": "{3}{G}{G} // ",
+   "type_line": "Legendary Creature — God // Land",
+   "keywords": "[\"Transform\",\"Trample\"]",
+   "text": "Trample\nWhenever Ojer Kaslem deals combat damage to a player, reveal that many cards from the top of your library. You may put a creature card and/or a land card from among them onto the battlefield. Put the rest on the bottom in a random order.\nWhen Ojer Kaslem dies, return it to the battlefield tapped and transformed under its owner's control.\n// (Transforms from Ojer Kaslem, Deepest Growth.)\n{T}: Add {G}.\n{2}{G}, {T}: Transform this land. Activate only if you control ten or more permanents and only as a sorcery."
+  },
+  {
+   "name": "Phyrexian Delver",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature — Phyrexian Zombie",
+   "keywords": "[]",
+   "text": "When this creature enters, return target creature card from your graveyard to the battlefield. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Primeval Herald",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Elf Scout",
+   "keywords": "[\"Trample\"]",
+   "text": "Trample (This creature can deal excess combat damage to the player or planeswalker it's attacking.)\nWhenever this creature enters or attacks, you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Protean Hulk",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Beast",
+   "keywords": "[]",
+   "text": "When this creature dies, search your library for any number of creature cards with total mana value 6 or less, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Rampant Rejuvenator",
+   "cost": "{3}{G}",
+   "type_line": "Creature — Plant Hydra",
+   "keywords": "[]",
+   "text": "This creature enters with two +1/+1 counters on it.\nWhen this creature dies, search your library for up to X basic land cards, where X is this creature's power, put them onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Ravenous Chupacabra",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature — Beast Horror",
+   "keywords": "[]",
+   "text": "When this creature enters, destroy target creature an opponent controls."
+  },
+  {
+   "name": "Roxanne, Starfall Savant",
+   "cost": "{3}{R}{G}",
+   "type_line": "Legendary Creature — Cat Druid",
+   "keywords": "[]",
+   "text": "Whenever Roxanne enters or attacks, create a tapped colorless artifact token named Meteorite with \"When this token enters, it deals 2 damage to any target\" and \"{T}: Add one mana of any color.\"\nWhenever you tap an artifact token for mana, add one mana of any type that artifact token produced."
+  },
+  {
+   "name": "Sakura-Tribe Elder",
+   "cost": "{1}{G}",
+   "type_line": "Creature — Snake Shaman",
+   "keywords": "[]",
+   "text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Seedguide Ash",
+   "cost": "{4}{G}",
+   "type_line": "Creature — Treefolk Druid",
+   "keywords": "[]",
+   "text": "When this creature dies, you may search your library for up to three Forest cards, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Solemn Simulacrum",
+   "cost": "{4}",
+   "type_line": "Artifact Creature — Golem",
+   "keywords": "[]",
+   "text": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.\nWhen this creature dies, you may draw a card."
+  },
+  {
+   "name": "Timeless Witness",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature — Human Shaman",
+   "keywords": "[\"Eternalize\"]",
+   "text": "When this creature enters, return target card from your graveyard to your hand.\nEternalize {5}{G}{G} ({5}{G}{G}, Exile this card from your graveyard: Create a token that's a copy of it, except it's a 4/4 black Zombie Human Shaman with no mana cost. Eternalize only as a sorcery.)"
+  },
+  {
+   "name": "Treeshaker Chimera",
+   "cost": "{5}{G}{G}",
+   "type_line": "Creature — Chimera",
+   "keywords": "[]",
+   "text": "All creatures able to block this creature do so.\nWhen this creature dies, draw three cards."
+  },
+  {
+   "name": "Woodfall Primus",
+   "cost": "{5}{G}{G}{G}",
+   "type_line": "Creature — Treefolk Shaman",
+   "keywords": "[\"Persist\",\"Trample\"]",
+   "text": "Trample\nWhen this creature enters, destroy target noncreature permanent.\nPersist (When this creature dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)"
+  },
+  {
+   "name": "Ziatora, the Incinerator",
+   "cost": "{3}{B}{R}{G}",
+   "type_line": "Legendary Creature — Demon Dragon",
+   "keywords": "[\"Flying\",\"Treasure\"]",
+   "text": "Flying\nAt the beginning of your end step, you may sacrifice another creature. When you do, Ziatora deals damage equal to that creature's power to any target and you create three Treasure tokens."
+  },
+  {
+   "name": "Assassin's Trophy",
+   "cost": "{B}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Beast Within",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token."
+  },
+  {
+   "name": "Chaos Warp",
+   "cost": "{2}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto the battlefield."
+  },
+  {
+   "name": "Deadly Rollick",
+   "cost": "{3}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nExile target creature."
+  },
+  {
+   "name": "Malakir Rebirth // Malakir Mire",
+   "cost": "{B} // ",
+   "type_line": "Instant // Land",
+   "keywords": "[]",
+   "text": "Choose target creature. You lose 2 life. Until end of turn, that creature gains \"When this creature dies, return it to the battlefield tapped under its owner's control.\"\n// This land enters tapped.\n{T}: Add {B}."
+  },
+  {
+   "name": "Terminate",
+   "cost": "{B}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature. It can't be regenerated."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Life's Legacy",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nDraw cards equal to the sacrificed creature's power."
+  },
+  {
+   "name": "Living Death",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Each player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield."
+  },
+  {
+   "name": "Nature's Lore",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a Forest card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Rampant Growth",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Reanimate",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Victimize",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Birthing Pod",
+   "cost": "{3}{G/P}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "({G/P} can be paid with either {G} or 2 life.)\n{1}{G/P}, {T}, Sacrifice a creature: Search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card onto the battlefield, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Birthing Ritual",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your end step, if you control a creature, look at the top seven cards of your library. Then you may sacrifice a creature. If you do, you may put a creature card with mana value X or less from among those cards onto the battlefield, where X is 1 plus the sacrificed creature's mana value. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Evolutionary Leap",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "{G}, Sacrifice a creature: Reveal cards from the top of your library until you reveal a creature card. Put that card into your hand and the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Garruk's Uprising",
+   "cost": "{2}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "When this enchantment enters, if you control a creature with power 4 or greater, draw a card.\nCreatures you control have trample. (Each of those creatures can deal excess combat damage to the player or planeswalker it's attacking.)\nWhenever a creature you control with power 4 or greater enters, draw a card."
+  },
+  {
+   "name": "Greater Good",
+   "cost": "{2}{G}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: Draw cards equal to the sacrificed creature's power, then discard three cards."
+  },
+  {
+   "name": "Industrial Advancement",
+   "cost": "{3}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your end step, you may sacrifice a creature. If you do, look at the top X cards of your library, where X is that creature's mana value. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Riveteers Ascendancy",
+   "cost": "{B}{R}{G}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever you sacrifice a creature, you may return target creature card with lesser mana value from your graveyard to the battlefield tapped. Do this only once each turn."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cinder Glade",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Dragonskull Summit",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land — Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Karplusan Forest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {G}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Llanowar Wastes",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {B} or {G}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Luxury Suite",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land — Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land — Swamp Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Savage Lands",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {B}, {R}, or {G}."
+  },
+  {
+   "name": "Smoldering Marsh",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Spire Garden",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Stomping Ground",
+   "cost": "",
+   "type_line": "Land — Mountain Forest",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sulfurous Springs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {B} or {R}. This land deals 1 damage to you."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Twilight Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{B/G}, {T}: Add {B}{B}, {B}{G}, or {G}{G}."
+  },
+  {
+   "name": "Undergrowth Stadium",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Woodland Cemetery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Forest.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Ziatora's Proving Ground",
+   "cost": "",
+   "type_line": "Land — Swamp Mountain Forest",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {B}, {R}, or {G}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  }
+ ],
+ "list": [
+  [
+   "Ancient Brass Dragon",
+   1
+  ],
+  [
+   "Archon of Cruelty",
+   1
+  ],
+  [
+   "Archpriest of Shadows",
+   1
+  ],
+  [
+   "Atsushi, the Blazing Sky",
+   1
+  ],
+  [
+   "Bane of Progress",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Bringer of the Last Gift",
+   1
+  ],
+  [
+   "Chainer, Nightmare Adept",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Disciple of Bolas",
+   1
+  ],
+  [
+   "Druid of Purification",
+   1
+  ],
+  [
+   "Elves of Deep Shadow",
+   1
+  ],
+  [
+   "Etali, Primal Conqueror // Etali, Primal Sickness",
+   1
+  ],
+  [
+   "Etali, Primal Storm",
+   1
+  ],
+  [
+   "Giant Adephage",
+   1
+  ],
+  [
+   "Goreclaw, Terror of Qal Sisma",
+   1
+  ],
+  [
+   "Greenwarden of Murasa",
+   1
+  ],
+  [
+   "Honest Rutstein",
+   1
+  ],
+  [
+   "Ignoble Hierarch",
+   1
+  ],
+  [
+   "Ilharg, the Raze-Boar",
+   1
+  ],
+  [
+   "Junji, the Midnight Sky",
+   1
+  ],
+  [
+   "Kokusho, the Evening Star",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Massacre Wurm",
+   1
+  ],
+  [
+   "Mikaeus, the Unhallowed",
+   1
+  ],
+  [
+   "Noxious Gearhulk",
+   1
+  ],
+  [
+   "Ojer Kaslem, Deepest Growth // Temple of Cultivation",
+   1
+  ],
+  [
+   "Phyrexian Delver",
+   1
+  ],
+  [
+   "Primeval Herald",
+   1
+  ],
+  [
+   "Protean Hulk",
+   1
+  ],
+  [
+   "Rampant Rejuvenator",
+   1
+  ],
+  [
+   "Ravenous Chupacabra",
+   1
+  ],
+  [
+   "Roxanne, Starfall Savant",
+   1
+  ],
+  [
+   "Sakura-Tribe Elder",
+   1
+  ],
+  [
+   "Seedguide Ash",
+   1
+  ],
+  [
+   "Solemn Simulacrum",
+   1
+  ],
+  [
+   "Timeless Witness",
+   1
+  ],
+  [
+   "Treeshaker Chimera",
+   1
+  ],
+  [
+   "Woodfall Primus",
+   1
+  ],
+  [
+   "Ziatora, the Incinerator",
+   1
+  ],
+  [
+   "Assassin's Trophy",
+   1
+  ],
+  [
+   "Beast Within",
+   1
+  ],
+  [
+   "Chaos Warp",
+   1
+  ],
+  [
+   "Deadly Rollick",
+   1
+  ],
+  [
+   "Malakir Rebirth // Malakir Mire",
+   1
+  ],
+  [
+   "Terminate",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Life's Legacy",
+   1
+  ],
+  [
+   "Living Death",
+   1
+  ],
+  [
+   "Nature's Lore",
+   1
+  ],
+  [
+   "Rampant Growth",
+   1
+  ],
+  [
+   "Reanimate",
+   1
+  ],
+  [
+   "Victimize",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Birthing Pod",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Birthing Ritual",
+   1
+  ],
+  [
+   "Evolutionary Leap",
+   1
+  ],
+  [
+   "Garruk's Uprising",
+   1
+  ],
+  [
+   "Greater Good",
+   1
+  ],
+  [
+   "Industrial Advancement",
+   1
+  ],
+  [
+   "Riveteers Ascendancy",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   1
+  ],
+  [
+   "Cinder Glade",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Dragonskull Summit",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Forest",
+   6
+  ],
+  [
+   "Karplusan Forest",
+   1
+  ],
+  [
+   "Llanowar Wastes",
+   1
+  ],
+  [
+   "Luxury Suite",
+   1
+  ],
+  [
+   "Mountain",
+   3
+  ],
+  [
+   "Overgrown Tomb",
+   1
+  ],
+  [
+   "Savage Lands",
+   1
+  ],
+  [
+   "Smoldering Marsh",
+   1
+  ],
+  [
+   "Spire Garden",
+   1
+  ],
+  [
+   "Stomping Ground",
+   1
+  ],
+  [
+   "Sulfurous Springs",
+   1
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Twilight Mire",
+   1
+  ],
+  [
+   "Undergrowth Stadium",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ],
+  [
+   "Woodland Cemetery",
+   1
+  ],
+  [
+   "Ziatora's Proving Ground",
+   1
+  ]
+ ]
+}

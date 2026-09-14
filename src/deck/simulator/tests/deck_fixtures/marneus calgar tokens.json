@@ -1,0 +1,996 @@
+{
+ "name": "marneus calgar tokens",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Marneus Calgar",
+   "cost": "{2}{W}{U}{B}",
+   "type_line": "Legendary Creature — Astartes Warrior",
+   "keywords": "[\"Double strike\",\"Master Tactician\",\"Chapter Master\"]",
+   "text": "Double strike\nMaster Tactician — Whenever one or more tokens you control enter, draw a card.\nChapter Master — {6}: Create two 2/2 white Astartes Warrior creature tokens with vigilance."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Adeline, Resplendent Cathar",
+   "cost": "{1}{W}{W}",
+   "type_line": "Legendary Creature — Human Knight",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nAdeline's power is equal to the number of creatures you control.\nWhenever you attack, for each opponent, create a 1/1 white Human creature token that's tapped and attacking that player or a planeswalker they control."
+  },
+  {
+   "name": "Bastion Protector",
+   "cost": "{2}{W}",
+   "type_line": "Creature — Human Soldier",
+   "keywords": "[]",
+   "text": "Commander creatures you control get +2/+2 and have indestructible."
+  },
+  {
+   "name": "Charismatic Conqueror",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Vampire Soldier",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nWhenever an artifact or creature an opponent controls enters untapped, they may tap that permanent. If they don't, you create a 1/1 white Vampire creature token with lifelink."
+  },
+  {
+   "name": "Commissar Severina Raine",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature — Human Soldier",
+   "keywords": "[\"Summary Execution\",\"Leading from the Front\"]",
+   "text": "Leading from the Front — Whenever Commissar Severina Raine attacks, each opponent loses X life, where X is the number of other attacking creatures.\nSummary Execution — {2}, Sacrifice another creature: You gain 2 life and draw a card."
+  },
+  {
+   "name": "Company Commander",
+   "cost": "{2}{W}{B}",
+   "type_line": "Creature — Human Soldier",
+   "keywords": "[\"Command Section\",\"Bring it Down!\"]",
+   "text": "Command Section — When this creature enters, create a number of 1/1 white Soldier creature tokens equal to the number of opponents you have.\nBring it Down! — Whenever this creature attacks, creatures you control gain deathtouch until end of turn."
+  },
+  {
+   "name": "Elas il-Kor, Sadistic Pilgrim",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature — Phyrexian Kor Cleric",
+   "keywords": "[\"Deathtouch\"]",
+   "text": "Deathtouch\nWhenever another creature you control enters, you gain 1 life.\nWhenever another creature you control dies, each opponent loses 1 life."
+  },
+  {
+   "name": "Esper Sentinel",
+   "cost": "{W}",
+   "type_line": "Artifact Creature — Human Soldier",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is this creature's power."
+  },
+  {
+   "name": "Grim Hireling",
+   "cost": "{3}{B}",
+   "type_line": "Creature — Tiefling Rogue",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever one or more creatures you control deal combat damage to a player, create two Treasure tokens.\n{B}, Sacrifice X Treasures: Target creature gets -X/-X until end of turn. Activate only as a sorcery."
+  },
+  {
+   "name": "Inquisitor Greyfax",
+   "cost": "{1}{W}{U}{B}",
+   "type_line": "Legendary Creature — Human Inquisitor",
+   "keywords": "[\"Investigate\",\"Vigilance\",\"Unquestionable Wisdom\",\"Hunt for Heresy\"]",
+   "text": "Vigilance\nUnquestionable Wisdom — Other creatures you control get +1/+0 and have vigilance.\nHunt for Heresy — {1}, {T}: Tap target creature an opponent controls. Investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")"
+  },
+  {
+   "name": "Kambal, Profiteering Mayor",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature — Human Advisor",
+   "keywords": "[]",
+   "text": "Whenever one or more tokens your opponents control enter, for each of them, create a tapped token that's a copy of it. This ability triggers only once each turn.\nWhenever one or more tokens you control enter, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Lotho, Corrupt Shirriff",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature — Halfling Rogue",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever a player casts their second spell each turn, you lose 1 life and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Mirkwood Bats",
+   "cost": "{3}{B}",
+   "type_line": "Creature — Bat",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever you create or sacrifice a token, each opponent loses 1 life."
+  },
+  {
+   "name": "Mondrak, Glory Dominus",
+   "cost": "{2}{W}{W}",
+   "type_line": "Legendary Creature — Phyrexian Horror",
+   "keywords": "[]",
+   "text": "If one or more tokens would be created under your control, twice that many of those tokens are created instead.\n{1}{W/P}{W/P}, Sacrifice two other artifacts and/or creatures: Put an indestructible counter on Mondrak. ({W/P} can be paid with either {W} or 2 life.)"
+  },
+  {
+   "name": "Nadir Kraken",
+   "cost": "{1}{U}{U}",
+   "type_line": "Creature — Kraken",
+   "keywords": "[]",
+   "text": "Whenever you draw a card, you may pay {1}. If you do, put a +1/+1 counter on this creature and create a 1/1 blue Tentacle creature token."
+  },
+  {
+   "name": "Pitiless Plunderer",
+   "cost": "{3}{B}",
+   "type_line": "Creature — Human Pirate",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever another creature you control dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Prince Imrahil the Fair",
+   "cost": "{W}{U}",
+   "type_line": "Legendary Creature — Human Noble",
+   "keywords": "[]",
+   "text": "Whenever you draw your second card each turn, create a 1/1 white Human Soldier creature token."
+  },
+  {
+   "name": "Sicarian Infiltrator",
+   "cost": "{2}{U}",
+   "type_line": "Artifact Creature — Human Soldier",
+   "keywords": "[\"Benediction of the Omnissiah\",\"Flash\",\"Squad\"]",
+   "text": "Flash\nSquad {2} (As an additional cost to cast this spell, you may pay {2} any number of times. When this creature enters, create that many tokens that are copies of it.)\nBenediction of the Omnissiah — When this creature enters, draw a card."
+  },
+  {
+   "name": "Space Marine Devastator",
+   "cost": "{3}{W}",
+   "type_line": "Creature — Astartes Warrior",
+   "keywords": "[\"Grav-cannon\",\"Squad\"]",
+   "text": "Squad {2} (As an additional cost to cast this spell, you may pay {2} any number of times. When this creature enters, create that many tokens that are copies of it.)\nGrav-cannon — When this creature enters, destroy up to one target artifact or enchantment."
+  },
+  {
+   "name": "The Queen of Dale",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature — Human Noble",
+   "keywords": "[\"Recruit\"]",
+   "text": "Whenever an opponent casts their first noncreature spell each turn, you recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)"
+  },
+  {
+   "name": "Ultramarines Honour Guard",
+   "cost": "{3}{W}",
+   "type_line": "Creature — Astartes Warrior",
+   "keywords": "[\"Squad\"]",
+   "text": "Squad {2} (As an additional cost to cast this spell, you may pay {2} any number of times. When this creature enters, create that many tokens that are copies of it.)\nOther creatures you control get +1/+1."
+  },
+  {
+   "name": "Vanguard Suppressor",
+   "cost": "{3}{U}",
+   "type_line": "Creature — Astartes Warrior",
+   "keywords": "[\"Flying\",\"Suppressing Fire\",\"Squad\"]",
+   "text": "Squad {2} (As an additional cost to cast this spell, you may pay {2} any number of times. When this creature enters, create that many tokens that are copies of it.)\nFlying\nSuppressing Fire — Whenever this creature deals combat damage to a player, draw a card."
+  },
+  {
+   "name": "Vexilus Praetor",
+   "cost": "{3}{W}",
+   "type_line": "Creature — Custodes Warrior",
+   "keywords": "[\"Aegis of the Emperor\",\"Vigilance\",\"Flash\"]",
+   "text": "Flash\nVigilance\nAegis of the Emperor — Commanders you control have protection from everything."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature — Human Bard",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Warren Soultrader",
+   "cost": "{2}{B}",
+   "type_line": "Creature — Zombie Goblin Wizard",
+   "keywords": "[\"Treasure\"]",
+   "text": "Pay 1 life, Sacrifice another creature: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "An Offer You Can't Refuse",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Treasure\"]",
+   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "And They Shall Know No Fear",
+   "cost": "{1}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose a creature type. Creatures you control of the chosen type get +1/+0 and gain indestructible until end of turn."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Overload\"]",
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Dark Ritual",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Add {B}{B}{B}."
+  },
+  {
+   "name": "Deny the Witch",
+   "cost": "{1}{W}{U}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell, activated ability, or triggered ability. Its controller loses life equal to the number of creatures you control."
+  },
+  {
+   "name": "Dovin's Veto",
+   "cost": "{W}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "This spell can't be countered.\nCounter target noncreature spell."
+  },
+  {
+   "name": "Enlightened Tutor",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for an artifact or enchantment card, reveal it, then shuffle and put that card on top."
+  },
+  {
+   "name": "Fierce Guardianship",
+   "cost": "{2}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "If you control a commander, you may cast this spell without paying its mana cost.\nCounter target noncreature spell."
+  },
+  {
+   "name": "Mortify",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature or enchantment."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Vampiric Tutor",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life."
+  },
+  {
+   "name": "Collective Effort",
+   "cost": "{1}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Escalate\"]",
+   "text": "Escalate—Tap an untapped creature you control. (Pay this cost for each mode chosen beyond the first.)\nChoose one or more —\n• Destroy target creature with power 4 or greater.\n• Destroy target enchantment.\n• Put a +1/+1 counter on each creature target player controls."
+  },
+  {
+   "name": "Demonic Tutor",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for a card, put that card into your hand, then shuffle."
+  },
+  {
+   "name": "For the Emperor!",
+   "cost": "{3}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Creatures you control get +2/+2 and gain vigilance and lifelink until end of turn."
+  },
+  {
+   "name": "Hour of Reckoning",
+   "cost": "{4}{W}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Convoke\"]",
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nDestroy all nontoken creatures."
+  },
+  {
+   "name": "Martial Coup",
+   "cost": "{X}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Ashnod's Altar",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "Sacrifice a creature: Add {C}{C}."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Inquisitorial Rosette",
+   "cost": "{2}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\",\"Inquisition Agents\"]",
+   "text": "Inquisition Agents — Whenever equipped creature attacks, create a 2/2 white Astartes Warrior creature token with vigilance that's attacking. Then attacking creatures gain menace until end of turn.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Shorikai, Genesis Engine",
+   "cost": "{2}{W}{U}",
+   "type_line": "Legendary Artifact — Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{1}, {T}: Draw two cards, then discard a card. Create a 1/1 colorless Pilot creature token with \"This token crews Vehicles as though its power were 2 greater.\"\nCrew 8 (Tap any number of creatures you control with total power 8 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact — Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Talisman of Dominance",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Talisman of Hierarchy",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {B}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Talisman of Progress",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {U}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "The Golden Throne",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact",
+   "keywords": "[\"Arcane Life-support\",\"A Thousand Souls Die Every Day\"]",
+   "text": "Arcane Life-support — If you would lose the game, instead exile The Golden Throne and your life total becomes 1.\nA Thousand Souls Die Every Day — {T}, Sacrifice a creature: Add three mana in any combination of colors."
+  },
+  {
+   "name": "Thought Vessel",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Thunderhawk Gunship",
+   "cost": "{6}",
+   "type_line": "Artifact — Vehicle",
+   "keywords": "[\"Flying\",\"Crew\"]",
+   "text": "Flying\nWhen this Vehicle enters, create two 2/2 white Astartes Warrior creature tokens with vigilance.\nWhenever this Vehicle attacks, attacking creatures you control gain flying until end of turn.\nCrew 2"
+  },
+  {
+   "name": "Anointed Procession",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead."
+  },
+  {
+   "name": "Birth of the Imperium",
+   "cost": "{2}{W}{U}{B}",
+   "type_line": "Enchantment — Saga",
+   "keywords": "[]",
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI — Create a 2/2 white Astartes Warrior creature token with vigilance for each opponent you have.\nII — Each opponent sacrifices a creature of their choice.\nIII — Draw two cards for each opponent who controls fewer creatures than you."
+  },
+  {
+   "name": "Black Market Connections",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Hire a Mercenary\",\"Treasure\",\"Sell Contraband\",\"Buy Information\"]",
+   "text": "At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Create a Treasure token. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life. (It is every creature type.)"
+  },
+  {
+   "name": "Gleaming Splendor",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws their second card each turn, you create a Treasure token.\n{2}{W}: Two target players each draw a card."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cumulative upkeep\"]",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Elspeth, Storm Slayer",
+   "cost": "{3}{W}{W}",
+   "type_line": "Legendary Planeswalker — Elspeth",
+   "keywords": "[]",
+   "text": "If one or more tokens would be created under your control, twice that many of those tokens are created instead.\n+1: Create a 1/1 white Soldier creature token.\n0: Put a +1/+1 counter on each creature you control. Those creatures gain flying until your next turn.\n−3: Destroy target creature an opponent controls with mana value 3 or greater."
+  },
+  {
+   "name": "Arcane Sanctum",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped.\n{T}: Add {W}, {U}, or {B}."
+  },
+  {
+   "name": "Choked Estuary",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal an Island or Swamp card from your hand. If you don't, this land enters tapped.\n{T}: Add {U} or {B}."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Exotic Orchard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land — Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land — Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Isolated Chapel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Morphic Pool",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {U} or {B}."
+  },
+  {
+   "name": "Otawara, Soaring City",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[\"Channel\"]",
+   "text": "{T}: Add {U}.\nChannel — {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Path of Ancestry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[\"Scry\"]",
+   "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land — Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Port Town",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal a Plains or Island card from your hand. If you don't, this land enters tapped.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Prairie Stream",
+   "cost": "",
+   "type_line": "Land — Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Raffine's Tower",
+   "cost": "",
+   "type_line": "Land — Plains Island Swamp",
+   "keywords": "[\"Cycling\"]",
+   "text": "({T}: Add {W}, {U}, or {B}.)\nThis land enters tapped.\nCycling {3} ({3}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Reliquary Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Sea of Clouds",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Skycloud Expanse",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {W}{U}."
+  },
+  {
+   "name": "Sunken Hollow",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land — Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Vault of Champions",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you have two or more opponents.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land — Island Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  }
+ ],
+ "list": [
+  [
+   "Adeline, Resplendent Cathar",
+   1
+  ],
+  [
+   "Bastion Protector",
+   1
+  ],
+  [
+   "Charismatic Conqueror",
+   1
+  ],
+  [
+   "Commissar Severina Raine",
+   1
+  ],
+  [
+   "Company Commander",
+   1
+  ],
+  [
+   "Elas il-Kor, Sadistic Pilgrim",
+   1
+  ],
+  [
+   "Esper Sentinel",
+   1
+  ],
+  [
+   "Grim Hireling",
+   1
+  ],
+  [
+   "Inquisitor Greyfax",
+   1
+  ],
+  [
+   "Kambal, Profiteering Mayor",
+   1
+  ],
+  [
+   "Lotho, Corrupt Shirriff",
+   1
+  ],
+  [
+   "Mirkwood Bats",
+   1
+  ],
+  [
+   "Mondrak, Glory Dominus",
+   1
+  ],
+  [
+   "Nadir Kraken",
+   1
+  ],
+  [
+   "Pitiless Plunderer",
+   1
+  ],
+  [
+   "Prince Imrahil the Fair",
+   1
+  ],
+  [
+   "Sicarian Infiltrator",
+   1
+  ],
+  [
+   "Space Marine Devastator",
+   1
+  ],
+  [
+   "The Queen of Dale",
+   1
+  ],
+  [
+   "Ultramarines Honour Guard",
+   1
+  ],
+  [
+   "Vanguard Suppressor",
+   1
+  ],
+  [
+   "Vexilus Praetor",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Warren Soultrader",
+   1
+  ],
+  [
+   "An Offer You Can't Refuse",
+   1
+  ],
+  [
+   "And They Shall Know No Fear",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Dark Ritual",
+   1
+  ],
+  [
+   "Deny the Witch",
+   1
+  ],
+  [
+   "Dovin's Veto",
+   1
+  ],
+  [
+   "Enlightened Tutor",
+   1
+  ],
+  [
+   "Fierce Guardianship",
+   1
+  ],
+  [
+   "Mortify",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Vampiric Tutor",
+   1
+  ],
+  [
+   "Collective Effort",
+   1
+  ],
+  [
+   "Demonic Tutor",
+   1
+  ],
+  [
+   "For the Emperor!",
+   1
+  ],
+  [
+   "Hour of Reckoning",
+   1
+  ],
+  [
+   "Martial Coup",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Ashnod's Altar",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Inquisitorial Rosette",
+   1
+  ],
+  [
+   "Shorikai, Genesis Engine",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Talisman of Dominance",
+   1
+  ],
+  [
+   "Talisman of Hierarchy",
+   1
+  ],
+  [
+   "Talisman of Progress",
+   1
+  ],
+  [
+   "The Golden Throne",
+   1
+  ],
+  [
+   "Thought Vessel",
+   1
+  ],
+  [
+   "Thunderhawk Gunship",
+   1
+  ],
+  [
+   "Anointed Procession",
+   1
+  ],
+  [
+   "Birth of the Imperium",
+   1
+  ],
+  [
+   "Black Market Connections",
+   1
+  ],
+  [
+   "Gleaming Splendor",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Elspeth, Storm Slayer",
+   1
+  ],
+  [
+   "Arcane Sanctum",
+   1
+  ],
+  [
+   "Choked Estuary",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Exotic Orchard",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Hallowed Fountain",
+   1
+  ],
+  [
+   "Island",
+   4
+  ],
+  [
+   "Isolated Chapel",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Morphic Pool",
+   1
+  ],
+  [
+   "Otawara, Soaring City",
+   1
+  ],
+  [
+   "Path of Ancestry",
+   1
+  ],
+  [
+   "Plains",
+   5
+  ],
+  [
+   "Polluted Delta",
+   1
+  ],
+  [
+   "Port Town",
+   1
+  ],
+  [
+   "Prairie Stream",
+   1
+  ],
+  [
+   "Raffine's Tower",
+   1
+  ],
+  [
+   "Reliquary Tower",
+   1
+  ],
+  [
+   "Sea of Clouds",
+   1
+  ],
+  [
+   "Skycloud Expanse",
+   1
+  ],
+  [
+   "Sunken Hollow",
+   1
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Vault of Champions",
+   1
+  ],
+  [
+   "Watery Grave",
+   1
+  ]
+ ]
+}
