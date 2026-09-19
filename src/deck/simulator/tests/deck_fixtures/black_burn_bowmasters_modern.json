@@ -1,0 +1,243 @@
+{
+ "name": "black burn bowmasters modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bone Shredder",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Phyrexian Minion",
+   "keywords": "Echo Flying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying\nEcho {2}{B} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters, destroy target nonartifact, nonblack creature."
+  },
+  {
+   "name": "Castle Locthwain",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Swamp.\n{T}: Add {B}.\n{1}{B}{B}, {T}: Draw a card, then you lose life equal to the number of cards in your hand."
+  },
+  {
+   "name": "Chancellor of the Dross",
+   "cost": "{4}{B}{B}{B}",
+   "type_line": "Creature \u2014 Phyrexian Vampire",
+   "keywords": "Flying Lifelink",
+   "power": "6",
+   "loyalty": null,
+   "text": "You may reveal this card from your opening hand. If you do, at the beginning of the first upkeep, each opponent loses 3 life, then you gain life equal to the life lost this way.\nFlying, lifelink"
+  },
+  {
+   "name": "Collective Brutality",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Escalate",
+   "power": null,
+   "loyalty": null,
+   "text": "Escalate\u2014Discard a card. (Pay this cost for each mode chosen beyond the first.)\nChoose one or more \u2014\n\u2022 Target opponent reveals their hand. You choose an instant or sorcery card from it. That player discards that card.\n\u2022 Target creature gets -2/-2 until end of turn.\n\u2022 Target opponent loses 2 life and you gain 2 life."
+  },
+  {
+   "name": "Crumbling Vestige",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)"
+  },
+  {
+   "name": "Dauthi Voidwalker",
+   "cost": "{B}{B}",
+   "type_line": "Creature \u2014 Dauthi Rogue",
+   "keywords": "Shadow",
+   "power": "3",
+   "loyalty": null,
+   "text": "Shadow (This creature can block or be blocked by only creatures with shadow.)\nIf a card would be put into an opponent's graveyard from anywhere, instead exile it with a void counter on it.\n{T}, Sacrifice this creature: Choose an exiled card an opponent owns with a void counter on it. You may play it this turn without paying its mana cost."
+  },
+  {
+   "name": "Drown in the Loch",
+   "cost": "{U}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose one \u2014\n\u2022 Counter target spell with mana value less than or equal to the number of cards in its controller's graveyard.\n\u2022 Destroy target creature with mana value less than or equal to the number of cards in its controller's graveyard."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Gix, Yawgmoth Praetor",
+   "cost": "{1}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Phyrexian Praetor",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "Whenever a creature deals combat damage to one of your opponents, its controller may pay 1 life. If they do, they draw a card.\n{4}{B}{B}{B}, Discard X cards: Exile the top X cards of target opponent's library. You may play lands and cast spells from among cards exiled this way without paying their mana costs."
+  },
+  {
+   "name": "Inquisition of Kozilek",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it with mana value 3 or less. That player discards that card."
+  },
+  {
+   "name": "Necrogen Mists",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "At the beginning of each player's upkeep, that player discards a card."
+  },
+  {
+   "name": "Orcish Bowmasters",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Orc Archer",
+   "keywords": "Amass Flash",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1."
+  },
+  {
+   "name": "Sheoldred, the Apocalypse",
+   "cost": "{2}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Phyrexian Praetor",
+   "keywords": "Deathtouch",
+   "power": "4",
+   "loyalty": null,
+   "text": "Deathtouch\nWhenever you draw a card, you gain 2 life.\nWhenever an opponent draws a card, they lose 2 life."
+  },
+  {
+   "name": "Soul Spike",
+   "cost": "{5}{B}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You may exile two black cards from your hand rather than pay this spell's mana cost.\nSoul Spike deals 4 damage to any target and you gain 4 life."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land \u2014 Island Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  }
+ ],
+ "list": [
+  [
+   "Swamp",
+   13
+  ],
+  [
+   "Bloodstained Mire",
+   4
+  ],
+  [
+   "Watery Grave",
+   2
+  ],
+  [
+   "Crumbling Vestige",
+   2
+  ],
+  [
+   "Orcish Bowmasters",
+   4
+  ],
+  [
+   "Soul Spike",
+   3
+  ],
+  [
+   "Chancellor of the Dross",
+   3
+  ],
+  [
+   "Collective Brutality",
+   3
+  ],
+  [
+   "Dauthi Voidwalker",
+   3
+  ],
+  [
+   "Gix, Yawgmoth Praetor",
+   2
+  ],
+  [
+   "Inquisition of Kozilek",
+   3
+  ],
+  [
+   "Thoughtseize",
+   4
+  ],
+  [
+   "Fatal Push",
+   3
+  ],
+  [
+   "Drown in the Loch",
+   2
+  ],
+  [
+   "Sheoldred, the Apocalypse",
+   3
+  ],
+  [
+   "Bone Shredder",
+   2
+  ],
+  [
+   "Necrogen Mists",
+   2
+  ],
+  [
+   "Castle Locthwain",
+   2
+  ]
+ ]
+}

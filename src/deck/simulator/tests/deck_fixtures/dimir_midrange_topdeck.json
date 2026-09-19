@@ -1,0 +1,256 @@
+{
+ "name": "dimir midrange topdeck",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Blazemire Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {B}.\n{T}: Add {R}. Activate only if you control a Swamp or a Mountain."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodghast",
+   "cost": "{B}{B}",
+   "type_line": "Creature \u2014 Vampire Spirit",
+   "keywords": "Landfall",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature can't block.\nThis creature has haste as long as an opponent has 10 or less life.\nLandfall \u2014 Whenever a land you control enters, you may return this card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Boros Charm",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose one \u2014\n\u2022 Boros Charm deals 4 damage to target player or planeswalker.\n\u2022 Permanents you control gain indestructible until end of turn.\n\u2022 Target creature gains double strike until end of turn."
+  },
+  {
+   "name": "Concealed Courtyard",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Cool but Rude",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment \u2014 Class",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "(Gain the next level as a sorcery to add its ability.)\nWhenever you attack, you may discard a card. If you do, draw a card.\n{1}{R}: Level 2\nWhenever you discard a card, this Class deals 2 damage to each opponent.\n{1}{R}: Level 3\nWhen this Class becomes level 3, search your library for a card, put it into your hand, shuffle, then discard a card at random."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Hardened Academic",
+   "cost": "{R}{W}",
+   "type_line": "Creature \u2014 Bird Cleric",
+   "keywords": "Flying Haste",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flying, haste\nDiscard a card: This creature gains lifelink until end of turn.\nWhenever one or more cards leave your graveyard, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Inspiring Vantage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Iron-Shield Elf",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Elf Warrior",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "Discard a card: This creature gains indestructible until end of turn. Tap it. (Damage and effects that say \"destroy\" don't destroy it. If its toughness is 0 or less, it still dies.)"
+  },
+  {
+   "name": "Marauding Mako",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Shark Pirate",
+   "keywords": "Cycling",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Moonshadow",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Elemental",
+   "keywords": "Menace",
+   "power": "7",
+   "loyalty": null,
+   "text": "Menace\nThis creature enters with six -1/-1 counters on it.\nWhenever one or more permanent cards are put into your graveyard from anywhere while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature."
+  },
+  {
+   "name": "Practiced Offense",
+   "cost": "{2}{W}",
+   "type_line": "Sorcery",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Put a +1/+1 counter on each creature target player controls. Target creature gains your choice of double strike or lifelink until end of turn.\nFlashback {1}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Blight",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land \u2014 Mountain Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Sheltered by Ghosts",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment \u2014 Aura",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant creature you control\nWhen this Aura enters, exile target nonland permanent an opponent controls until this Aura leaves the battlefield.\nEnchanted creature gets +1/+0 and has lifelink and ward {2}."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land \u2014 Town",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Sunbillow Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {W}.\n{T}: Add {R}. Activate only if you control a Mountain or a Plains."
+  },
+  {
+   "name": "Tersa Lightshatter",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature \u2014 Orc Wizard",
+   "keywords": "Haste",
+   "power": "3",
+   "loyalty": null,
+   "text": "Haste\nWhen Tersa Lightshatter enters, discard up to two cards, then draw that many cards.\nWhenever Tersa Lightshatter attacks, if there are seven or more cards in your graveyard, exile a card at random from your graveyard. You may play that card this turn."
+  }
+ ],
+ "list": [
+  [
+   "Blazemire Verge",
+   3
+  ],
+  [
+   "Blood Crypt",
+   4
+  ],
+  [
+   "Bloodghast",
+   4
+  ],
+  [
+   "Boros Charm",
+   2
+  ],
+  [
+   "Concealed Courtyard",
+   1
+  ],
+  [
+   "Cool but Rude",
+   4
+  ],
+  [
+   "Godless Shrine",
+   4
+  ],
+  [
+   "Hardened Academic",
+   4
+  ],
+  [
+   "Inspiring Vantage",
+   2
+  ],
+  [
+   "Iron-Shield Elf",
+   4
+  ],
+  [
+   "Marauding Mako",
+   4
+  ],
+  [
+   "Moonshadow",
+   4
+  ],
+  [
+   "Practiced Offense",
+   4
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Sacred Foundry",
+   3
+  ],
+  [
+   "Sheltered by Ghosts",
+   3
+  ],
+  [
+   "Starting Town",
+   4
+  ],
+  [
+   "Sunbillow Verge",
+   2
+  ],
+  [
+   "Tersa Lightshatter",
+   2
+  ]
+ ]
+}

@@ -136,6 +136,9 @@ pub struct SimStats {
     /// Instant-speed interaction copies in the deck (readiness
     /// denominator).
     pub interaction_instant_count: usize,
+    /// Share of games where a zero-cost mana activation looped past the
+    /// cap (Basalt Monolith-class infinite engine suspected).
+    pub infinite_mana_pct: f64,
 }
 
 /// Aggregate many game logs into the report values.
@@ -188,7 +191,9 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     for log in logs {
         for k in 1..=5.min(turns) {
             let made: u32 = log.land_drops[..k].iter().map(|d| u32::from(*d)).sum();
-            if made == k as u32 {
+            // Extra-land decks can overshoot (Aesi plays two a turn);
+            // hitting every drop through turn k means at least k drops.
+            if made >= k as u32 {
                 stats.hit_all_drops_by[k] += 1.0 / n;
             }
         }
@@ -324,6 +329,7 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
         / n;
     stats.ultimate_online_pct =
         logs.iter().filter(|l| l.ultimate_online.is_some()).count() as f64 / n;
+    stats.infinite_mana_pct = logs.iter().filter(|l| l.infinite_mana_suspected).count() as f64 / n;
     if turns >= 6 {
         stats.floated_pct = logs
             .iter()

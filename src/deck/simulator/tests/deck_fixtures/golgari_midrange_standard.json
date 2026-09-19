@@ -1,0 +1,282 @@
+{
+ "name": "golgari midrange standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bitter Reunion",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "When this enchantment enters, you may discard a card. If you do, draw two cards.\n{1}, Sacrifice this enchantment: Creatures you control gain haste until end of turn."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Case of the Crimson Pulse",
+   "cost": "{2}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, discard a card, then draw two cards.\nTo solve \u2014 You have no cards in hand. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 At the beginning of your upkeep, discard your hand, then draw two cards."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Go for the Throat",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target nonartifact creature."
+  },
+  {
+   "name": "Grabby Giant // That's Mine",
+   "cost": "{3}{R} // {1}{R}",
+   "type_line": "Creature \u2014 Giant // Instant \u2014 Adventure",
+   "keywords": "Reach Treasure",
+   "power": "4",
+   "loyalty": null,
+   "text": "Reach\n{2}{R}, Sacrifice an artifact or land: Draw a card.\n// Create a Treasure token. (Then exile this card. You may cast the creature later from exile.)"
+  },
+  {
+   "name": "Hopeless Nightmare",
+   "cost": "{B}",
+   "type_line": "Enchantment",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "When this enchantment enters, each opponent discards a card and loses 2 life.\nWhen this enchantment is put into a graveyard from the battlefield, scry 2.\n{2}{B}: Sacrifice this enchantment."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Lush Portico",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Plains",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Mosswood Dreadknight // Dread Whispers",
+   "cost": "{1}{G} // {1}{B}",
+   "type_line": "Creature \u2014 Human Knight // Sorcery \u2014 Adventure",
+   "keywords": "Trample",
+   "power": "3",
+   "loyalty": null,
+   "text": "Trample\nWhen this creature dies, you may cast it from your graveyard as an Adventure until the end of your next turn.\n// You draw a card and you lose 1 life. (Then exile this card. You may cast the creature later from exile.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Professor Dellian Fel",
+   "cost": "{2}{B}{G}",
+   "type_line": "Legendary Planeswalker \u2014 Dellian",
+   "keywords": "",
+   "power": null,
+   "loyalty": "5",
+   "text": "+2: You gain 3 life.\n0: You draw a card and lose 1 life.\n\u22123: Destroy target creature.\n\u22126: You get an emblem with \"Whenever you gain life, target opponent loses that much life.\""
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Blight",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Restless Cottage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Food",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {B} or {G}.\n{2}{B}{G}: This land becomes a 4/4 black and green Horror creature until end of turn. It's still a land.\nWhenever this land attacks, create a Food token and exile up to one target card from a graveyard."
+  },
+  {
+   "name": "Shatter the Oath",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Role token",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature or enchantment. Create a Wicked Role token attached to up to one target creature you control. (If you control another Role on it, put that one into the graveyard. Enchanted creature gets +1/+1. When this token is put into a graveyard, each opponent loses 1 life.)"
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Territorial Witchstalker",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Wolf",
+   "keywords": "Defender",
+   "power": "2",
+   "loyalty": null,
+   "text": "Defender\nAt the beginning of combat on your turn, if you control a creature with power 4 or greater, this creature gets +1/+0 until end of turn and can attack this turn as though it didn't have defender."
+  },
+  {
+   "name": "Vraska, the Silencer",
+   "cost": "{1}{B}{G}",
+   "type_line": "Legendary Creature \u2014 Gorgon Assassin",
+   "keywords": "Deathtouch",
+   "power": "3",
+   "loyalty": null,
+   "text": "Deathtouch\nWhenever a nontoken creature an opponent controls dies, you may pay {1}. If you do, return that card to the battlefield tapped under your control. It's a Treasure artifact with \"{T}, Sacrifice this artifact: Add one mana of any color,\" and it loses all other card types."
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   8
+  ],
+  [
+   "Swamp",
+   6
+  ],
+  [
+   "Llanowar Elves",
+   4
+  ],
+  [
+   "Lush Portico",
+   4
+  ],
+  [
+   "Restless Cottage",
+   3
+  ],
+  [
+   "Professor Dellian Fel",
+   3
+  ],
+  [
+   "Mosswood Dreadknight",
+   3
+  ],
+  [
+   "Hopeless Nightmare",
+   4
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Nowhere to Run",
+   3
+  ],
+  [
+   "Fatal Push",
+   2
+  ],
+  [
+   "Go for the Throat",
+   3
+  ],
+  [
+   "Vraska, the Silencer",
+   2
+  ],
+  [
+   "Case of the Crimson Pulse",
+   2
+  ],
+  [
+   "Bitter Reunion",
+   2
+  ],
+  [
+   "Shatter the Oath",
+   2
+  ],
+  [
+   "Grabby Giant",
+   2
+  ],
+  [
+   "Territorial Witchstalker",
+   2
+  ],
+  [
+   "Burst Lightning",
+   1
+  ],
+  [
+   "Slick Sequence",
+   1
+  ],
+  [
+   "Stocking the Pantry",
+   1
+  ]
+ ]
+}

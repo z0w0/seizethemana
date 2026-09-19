@@ -1,0 +1,425 @@
+{
+ "name": "rhinos cascade modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Archfiend of Ifnir",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature \u2014 Demon",
+   "keywords": "Flying Cycling",
+   "power": "5",
+   "loyalty": null,
+   "text": "Flying\nWhenever you cycle or discard another card, put a -1/-1 counter on each creature your opponents control.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Bala Ged Recovery // Bala Ged Sanctuary",
+   "cost": "{2}{G} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target card from your graveyard to your hand.\n// This land enters tapped.\n{T}: Add {G}."
+  },
+  {
+   "name": "Bitter Ordeal",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Gravestorm",
+   "power": null,
+   "loyalty": null,
+   "text": "Search target player's library for a card and exile it. Then that player shuffles.\nGravestorm (When you cast this spell, copy it for each permanent put into a graveyard this turn. You may choose new targets for the copies.)"
+  },
+  {
+   "name": "Bloodbraid Elf",
+   "cost": "{2}{R}{G}",
+   "type_line": "Creature \u2014 Elf Berserker",
+   "keywords": "Haste Cascade",
+   "power": "3",
+   "loyalty": null,
+   "text": "Haste (This creature can attack and {T} as soon as it comes under your control.)\nCascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)"
+  },
+  {
+   "name": "Crashing Footfalls",
+   "cost": "",
+   "type_line": "Sorcery",
+   "keywords": "Suspend",
+   "power": null,
+   "loyalty": null,
+   "text": "Suspend 4\u2014{G} (Rather than cast this card from your hand, pay {G} and exile it with four time counters on it. At the beginning of your upkeep, remove a time counter. When the last is removed, you may cast it without paying its mana cost.)\nCreate two 4/4 green Rhino creature tokens with trample."
+  },
+  {
+   "name": "Crumbling Vestige",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)"
+  },
+  {
+   "name": "Den Protector",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Human Warrior",
+   "keywords": "Megamorph",
+   "power": "2",
+   "loyalty": null,
+   "text": "Creatures with power less than this creature's power can't block it.\nMegamorph {1}{G} (You may cast this card face down as a 2/2 creature for {3}. Turn it face up any time for its megamorph cost and put a +1/+1 counter on it.)\nWhen this creature is turned face up, return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Dismember",
+   "cost": "{1}{B/P}{B/P}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nTarget creature gets -5/-5 until end of turn."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Force of Negation",
+   "cost": "{1}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "If it's not your turn, you may exile a blue card from your hand rather than pay this spell's mana cost.\nCounter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Fulminator Mage",
+   "cost": "{1}{B/R}{B/R}",
+   "type_line": "Creature \u2014 Elemental Shaman",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Sacrifice this creature: Destroy target nonbasic land."
+  },
+  {
+   "name": "Inquisition of Kozilek",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it with mana value 3 or less. That player discards that card."
+  },
+  {
+   "name": "Kozilek's Command",
+   "cost": "{X}{C}{C}",
+   "type_line": "Kindred Instant \u2014 Eldrazi",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose two \u2014\n\u2022 Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n\u2022 Target player scries X, then draws a card.\n\u2022 Exile target creature with mana value X or less.\n\u2022 Exile up to X target cards from graveyards."
+  },
+  {
+   "name": "Leyline of the Void",
+   "cost": "{2}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nIf a card would be put into an opponent's graveyard from anywhere, exile it instead."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Living End",
+   "cost": "",
+   "type_line": "Sorcery",
+   "keywords": "Suspend",
+   "power": null,
+   "loyalty": null,
+   "text": "Suspend 3\u2014{2}{B}{B}\nEach player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield."
+  },
+  {
+   "name": "Maelstrom Wanderer",
+   "cost": "{5}{G}{U}{R}",
+   "type_line": "Legendary Creature \u2014 Elemental",
+   "keywords": "Cascade",
+   "power": "7",
+   "loyalty": null,
+   "text": "Creatures you control have haste.\nCascade, cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order. Then do it again.)"
+  },
+  {
+   "name": "Mardu Scout",
+   "cost": "{R}{R}",
+   "type_line": "Creature \u2014 Goblin Scout",
+   "keywords": "Dash",
+   "power": "3",
+   "loyalty": null,
+   "text": "Dash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+  },
+  {
+   "name": "Mishra's Bauble",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Nissa, Vastwood Seer // Nissa, Sage Animist",
+   "cost": "{2}{G} // ",
+   "type_line": "Legendary Creature \u2014 Elf Scout // Legendary Planeswalker \u2014 Nissa",
+   "keywords": "Transform",
+   "power": "2",
+   "loyalty": "3",
+   "text": "When Nissa enters, you may search your library for a basic Forest card, reveal it, put it into your hand, then shuffle.\nWhenever a land you control enters, if you control seven or more lands, exile Nissa, then return her to the battlefield transformed under her owner's control.\n// +1: Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put it into your hand.\n\u22122: Create Ashaya, the Awoken World, a legendary 4/4 green Elemental creature token.\n\u22127: Untap up to six target lands. They become 6/6 Elemental creatures. They're still lands."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Rugged Prairie",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{R/W}, {T}: Add {R}{R}, {R}{W}, or {W}{W}."
+  },
+  {
+   "name": "Shardless Agent",
+   "cost": "{1}{G}{U}",
+   "type_line": "Artifact Creature \u2014 Human Rogue",
+   "keywords": "Cascade",
+   "power": "2",
+   "loyalty": null,
+   "text": "Cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)"
+  },
+  {
+   "name": "Street Wraith",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature \u2014 Wraith",
+   "keywords": "Landwalk Swampwalk Cycling",
+   "power": "3",
+   "loyalty": null,
+   "text": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\nCycling\u2014Pay 2 life. (Pay 2 life, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Tormod's Crypt",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Sacrifice this artifact: Exile target player's graveyard."
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Violent Outburst",
+   "cost": "{1}{R}{G}",
+   "type_line": "Instant",
+   "keywords": "Cascade",
+   "power": null,
+   "loyalty": null,
+   "text": "Cascade (When you cast this spell, exile cards from the top of your library until you exile a nonland card that costs less. You may cast it without paying its mana cost. Put the exiled cards on the bottom in a random order.)\nCreatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Warping Wail",
+   "cost": "{1}{C}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({C} represents colorless mana.)\nChoose one \u2014\n\u2022 Exile target creature with power or toughness 1 or less.\n\u2022 Counter target sorcery spell.\n\u2022 Create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Windbrisk Heights",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Hideaway",
+   "power": null,
+   "loyalty": null,
+   "text": "Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {W}.\n{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn."
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   6
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Plains",
+   2
+  ],
+  [
+   "Rugged Prairie",
+   3
+  ],
+  [
+   "Crumbling Vestige",
+   2
+  ],
+  [
+   "Windbrisk Heights",
+   2
+  ],
+  [
+   "Violent Outburst",
+   4
+  ],
+  [
+   "Living End",
+   2
+  ],
+  [
+   "Crashing Footfalls",
+   3
+  ],
+  [
+   "Mardu Scout",
+   2
+  ],
+  [
+   "Bitter Ordeal",
+   1
+  ],
+  [
+   "Archfiend of Ifnir",
+   2
+  ],
+  [
+   "Shardless Agent",
+   3
+  ],
+  [
+   "Bloodbraid Elf",
+   3
+  ],
+  [
+   "Maelstrom Wanderer",
+   1
+  ],
+  [
+   "Den Protector",
+   1
+  ],
+  [
+   "Fulminator Mage",
+   2
+  ],
+  [
+   "Nissa, Vastwood Seer",
+   1
+  ],
+  [
+   "Bala Ged Recovery",
+   2
+  ],
+  [
+   "Leyline of the Void",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ],
+  [
+   "Unholy Heat",
+   1
+  ],
+  [
+   "Thoughtseize",
+   1
+  ],
+  [
+   "Inquisition of Kozilek",
+   1
+  ],
+  [
+   "Dismember",
+   1
+  ],
+  [
+   "Force of Negation",
+   1
+  ],
+  [
+   "Street Wraith",
+   1
+  ],
+  [
+   "Mishra's Bauble",
+   1
+  ],
+  [
+   "Tormod's Crypt",
+   1
+  ],
+  [
+   "Warping Wail",
+   1
+  ],
+  [
+   "Kozilek's Command",
+   1
+  ]
+ ]
+}

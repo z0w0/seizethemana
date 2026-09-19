@@ -56,6 +56,8 @@ fn test_perm(card_idx: usize) -> super::game::InPlay {
         commander_slot: 0,
         blink_pending: false,
         loyalty: 0,
+        equipped: false,
+        equip_host: None,
     }
 }
 
@@ -223,9 +225,11 @@ fn improvise_discount_grows_with_artifacts() {
     assert!(sim.board_discount);
     assert_eq!(sim.min_cost.generic, 4);
 
+    let rock = card("Iron Lump", "{2}", "Artifact", "{T}: Add {C}.");
+    let rock_sim = parse_sim_card(&rock);
     let mut battlefield: Vec<super::game::InPlay> = Vec::new();
     let deck = SimDeck {
-        cards: vec![sim.clone()],
+        cards: vec![sim.clone(), rock_sim],
         commanders: vec![],
         format: Format::Constructed,
         rules: super::format::rules_for("constructed"),
@@ -235,22 +239,39 @@ fn improvise_discount_grows_with_artifacts() {
         super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
         4
     );
-    // 4 artifacts: one extra discount step (generic 5→3? no: 4+? see below).
+    // 4 artifacts: one extra discount step (generic grows toward printed).
     for _ in 0..4 {
-        battlefield.push(test_perm(0));
+        battlefield.push(test_perm(1));
     }
     assert_eq!(
         super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
         5
     );
-    // 8 artifacts: two extra steps (generic 6 → but floor printed generic
-    // is 6+2 pips; generic caps at the printed 6).
+    // 8 artifacts: two extra steps (generic caps at the printed 6).
     for _ in 0..4 {
-        battlefield.push(test_perm(0));
+        battlefield.push(test_perm(1));
     }
     assert_eq!(
         super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
         6
+    );
+    // Creatures do not count toward the discount even in bulk.
+    let body = card("Bear Cub", "{1}{G}", "Creature — Bear", "");
+    let body_sim = parse_sim_card(&body);
+    let deck_bodies = SimDeck {
+        cards: vec![sim.clone(), body_sim],
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut creature_board: Vec<super::game::InPlay> = Vec::new();
+    for _ in 0..8 {
+        creature_board.push(test_perm(1));
+    }
+    assert_eq!(
+        super::game_mana::effective_min_cost(&deck_bodies, &deck_bodies.cards[0], &creature_board)
+            .generic,
+        4
     );
 }
 

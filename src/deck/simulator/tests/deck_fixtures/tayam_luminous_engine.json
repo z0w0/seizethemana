@@ -1,0 +1,1315 @@
+{
+ "name": "tayam luminous engine",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Tayam, Luminous Enigma",
+   "cost": "{1}{W}{B}{G}",
+   "type_line": "Legendary Creature \u2014 Nightmare Beast",
+   "keywords": "Mill",
+   "power": "3",
+   "loyalty": null,
+   "text": "Each other creature you control enters with an additional vigilance counter on it.\n{3}, Remove three counters from among creatures you control: Mill three cards, then return a permanent card with mana value 3 or less from your graveyard to the battlefield."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Abigale, Eloquent First-Year",
+   "cost": "{W/B}{W/B}",
+   "type_line": "Legendary Creature \u2014 Bird Bard",
+   "keywords": "Flying Lifelink First strike",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying, first strike, lifelink\nWhen Abigale enters, up to one other target creature loses all abilities. Put a flying counter, a first strike counter, and a lifelink counter on that creature."
+  },
+  {
+   "name": "Agatha's Soul Cauldron",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You may spend mana as though it were mana of any color to activate abilities of creatures you control.\nCreatures you control with +1/+1 counters on them have all activated abilities of all creature cards exiled with Agatha's Soul Cauldron.\n{T}: Exile target card from a graveyard. When a creature card is exiled this way, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Ancient Tomb",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}{C}. This land deals 2 damage to you."
+  },
+  {
+   "name": "Archon of Emeria",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Archon",
+   "keywords": "Flying",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flying\nEach player can't cast more than one spell each turn.\nNonbasic lands your opponents control enter tapped."
+  },
+  {
+   "name": "Arid Mesa",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Ashnod's Altar",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Sacrifice a creature: Add {C}{C}."
+  },
+  {
+   "name": "Avacyn's Pilgrim",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {W}."
+  },
+  {
+   "name": "Aven Interrupter",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature \u2014 Bird Rogue",
+   "keywords": "Flying Plot Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nFlying\nWhen this creature enters, exile target spell. It becomes plotted. (Its owner may cast it as a sorcery on a later turn without paying its mana cost.)\nSpells your opponents cast from graveyards or from exile cost {2} more to cast."
+  },
+  {
+   "name": "Aven Mindcensor",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Bird Wizard",
+   "keywords": "Flying Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nFlying\nIf an opponent would search a library, that player searches the top four cards of that library instead."
+  },
+  {
+   "name": "Badgermole Cub",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Badger Mole",
+   "keywords": "Earthbend",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, earthbend 1. (Target land you control becomes a 0/0 creature with haste that's still a land. Put a +1/+1 counter on it. When it dies or is exiled, return it to the battlefield tapped.)\nWhenever you tap a creature for mana, add an additional {G}."
+  },
+  {
+   "name": "Bartolom\u00e9 del Presidio",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature \u2014 Vampire Knight",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Sacrifice another creature or artifact: Put a +1/+1 counter on Bartolom\u00e9 del Presidio."
+  },
+  {
+   "name": "Bayou",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {G}.)"
+  },
+  {
+   "name": "Birds of Paradise",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Bird",
+   "keywords": "Flying",
+   "power": "0",
+   "loyalty": null,
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Birthing Pod",
+   "cost": "{3}{G/P}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({G/P} can be paid with either {G} or 2 life.)\n{1}{G/P}, {T}, Sacrifice a creature: Search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card onto the battlefield, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Bloom Tender",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "Vivid",
+   "power": "1",
+   "loyalty": null,
+   "text": "Vivid \u2014 {T}: For each color among permanents you control, add one mana of that color."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "Channel",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {G}.\nChannel \u2014 {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Carpet of Flowers",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "At the beginning of each of your main phases, if you haven't added mana with this ability this turn, you may add X mana of any one color, where X is the number of Islands target opponent controls."
+  },
+  {
+   "name": "Carrion Feeder",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "This creature can't block.\nSacrifice a creature: Put a +1/+1 counter on this creature."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Centaur Garden",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Threshold",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {G}. This land deals 1 damage to you.\nThreshold \u2014 {G}, {T}, Sacrifice this land: Target creature gets +3/+3 until end of turn. Activate only if there are seven or more cards in your graveyard."
+  },
+  {
+   "name": "Chord of Calling",
+   "cost": "{X}{G}{G}{G}",
+   "type_line": "Instant",
+   "keywords": "Convoke",
+   "power": null,
+   "loyalty": null,
+   "text": "Convoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nSearch your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Chrome Mox",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "Imprint",
+   "power": null,
+   "loyalty": null,
+   "text": "Imprint \u2014 When this artifact enters, you may exile a nonartifact, nonland card from your hand.\n{T}: Add one mana of any of the exiled card's colors."
+  },
+  {
+   "name": "Circle of Dreams Druid",
+   "cost": "{G}{G}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "City of Brass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Colonel Autumn",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Human Soldier",
+   "keywords": "Lifelink Exploit",
+   "power": "2",
+   "loyalty": null,
+   "text": "Lifelink\nExploit (When this creature enters, you may sacrifice a creature.)\nOther legendary creatures you control have exploit.\nWhenever a creature you control exploits a creature, put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Command Beacon",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Sacrifice this land: Put your commander into your hand from the command zone."
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Crop Rotation",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, sacrifice a land.\nSearch your library for a land card, put that card onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cryptolith Rite",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Creatures you control have \"{T}: Add one mana of any color.\""
+  },
+  {
+   "name": "Deafening Silence",
+   "cost": "{W}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each player can't cast more than one noncreature spell each turn."
+  },
+  {
+   "name": "Deathrite Shaman",
+   "cost": "{B/G}",
+   "type_line": "Creature \u2014 Elf Shaman",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Exile target land card from a graveyard. Add one mana of any color. (Activate only as an instant.)\n{B}, {T}: Exile target instant or sorcery card from a graveyard. Each opponent loses 2 life.\n{G}, {T}: Exile target creature card from a graveyard. You gain 2 life."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Halfling Citizen",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Devoted Druid",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "{T}: Add {G}.\nPut a -1/-1 counter on this creature: Untap this creature."
+  },
+  {
+   "name": "Drannith Magistrate",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Wizard",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Your opponents can't cast spells from anywhere other than their hands."
+  },
+  {
+   "name": "Dryad Arbor",
+   "cost": "",
+   "type_line": "Land Creature \u2014 Forest Dryad",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "(This land isn't a spell, it's affected by summoning sickness, and it has \"{T}: Add {G}.\")"
+  },
+  {
+   "name": "Earthcraft",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Tap an untapped creature you control: Untap target basic land."
+  },
+  {
+   "name": "Eidolon of Rhetoric",
+   "cost": "{2}{W}",
+   "type_line": "Enchantment Creature \u2014 Spirit",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Each player can't cast more than one spell each turn."
+  },
+  {
+   "name": "Elves of Deep Shadow",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {B}. This creature deals 1 damage to you."
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature \u2014 Elemental Incarnation",
+   "keywords": "Reach Evoke Flash",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke\u2014Exile a green card from your hand."
+  },
+  {
+   "name": "Enduring Vitality",
+   "cost": "{1}{G}{G}",
+   "type_line": "Enchantment Creature \u2014 Elk Glimmer",
+   "keywords": "Vigilance",
+   "power": "3",
+   "loyalty": null,
+   "text": "Vigilance\nCreatures you control have \"{T}: Add one mana of any color.\"\nWhen Enduring Vitality dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Esper Sentinel",
+   "cost": "{W}",
+   "type_line": "Artifact Creature \u2014 Human Soldier",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever an opponent casts their first noncreature spell each turn, draw a card unless that player pays {X}, where X is this creature's power."
+  },
+  {
+   "name": "Ethersworn Canonist",
+   "cost": "{1}{W}",
+   "type_line": "Artifact Creature \u2014 Human Cleric",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Each player who has cast a nonartifact spell this turn can't cast additional nonartifact spells."
+  },
+  {
+   "name": "Faeburrow Elder",
+   "cost": "{1}{G}{W}",
+   "type_line": "Creature \u2014 Treefolk Druid",
+   "keywords": "Vigilance",
+   "power": "0",
+   "loyalty": null,
+   "text": "Vigilance\nThis creature gets +1/+1 for each color among permanents you control.\n{T}: For each color among permanents you control, add one mana of that color."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Formidable Speaker",
+   "cost": "{2}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you may discard a card. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n{1}, {T}: Untap another target permanent."
+  },
+  {
+   "name": "Gaea's Cradle",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {G} for each creature you control."
+  },
+  {
+   "name": "Gavony Township",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{2}{G}{W}, {T}: Put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Gemstone Caverns",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "If this card is in your opening hand and you're not the starting player, you may begin the game with Gemstone Caverns on the battlefield with a luck counter on it. If you do, exile a card from your hand.\n{T}: Add {C}. If Gemstone Caverns has a luck counter on it, instead add one mana of any color."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Icatian Moneychanger",
+   "cost": "{W}",
+   "type_line": "Creature \u2014 Human",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "This creature enters with three credit counters on it.\nWhen this creature enters, it deals 3 damage to you.\nAt the beginning of your upkeep, put a credit counter on this creature.\nSacrifice this creature: You gain 1 life for each credit counter on this creature. Activate only during your upkeep."
+  },
+  {
+   "name": "Knight of the Reliquary",
+   "cost": "{1}{G}{W}",
+   "type_line": "Creature \u2014 Human Knight",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature gets +1/+1 for each land card in your graveyard.\n{T}, Sacrifice a Forest or Plains: Search your library for a land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Lion's Eye Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Discard your hand, Sacrifice this artifact: Add three mana of any one color. Activate only as an instant."
+  },
+  {
+   "name": "Mana Confluence",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Mana Vault",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."
+  },
+  {
+   "name": "Manglehorn",
+   "cost": "{2}{G}",
+   "type_line": "Creature \u2014 Beast",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you may destroy target artifact.\nArtifacts your opponents control enter tapped."
+  },
+  {
+   "name": "Marsh Flats",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Marvin, Murderous Mimic",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact Creature \u2014 Toy",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Marvin has all activated abilities of creatures you control that don't have the same name as this creature."
+  },
+  {
+   "name": "Misty Rainforest",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Moonshadow",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Elemental",
+   "keywords": "Menace",
+   "power": "7",
+   "loyalty": null,
+   "text": "Menace\nThis creature enters with six -1/-1 counters on it.\nWhenever one or more permanent cards are put into your graveyard from anywhere while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature."
+  },
+  {
+   "name": "Mox Diamond",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "If this artifact would enter, you may discard a land card instead. If you do, put this artifact onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Nature's Chosen",
+   "cost": "{G}",
+   "type_line": "Enchantment \u2014 Aura",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant creature you control\n{0}: Untap enchanted creature. Activate only during your turn and only once each turn.\nTap enchanted creature: Untap target artifact, creature, or land. Activate only if enchanted creature is white and untapped and only once each turn."
+  },
+  {
+   "name": "Nature's Rhythm",
+   "cost": "{X}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "Harmonize",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.\nHarmonize {X}{G}{G}{G}{G} (You may cast this card from your graveyard for its harmonize cost. You may tap a creature you control to reduce that cost by an amount of generic mana equal to its power. Then exile this spell.)"
+  },
+  {
+   "name": "Opposition Agent",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Human Rogue",
+   "keywords": "Flash",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flash\nYou control your opponents while they're searching their libraries.\nWhile an opponent is searching their library, they exile each card they find. You may play those cards for as long as they remain exiled, and you may spend mana as though it were mana of any color to cast them."
+  },
+  {
+   "name": "Orcish Bowmasters",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Orc Archer",
+   "keywords": "Amass Flash",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1."
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Patrol Signaler",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Kithkin Soldier",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{1}{W}, {Q}: Create a 1/1 white Kithkin Soldier creature token. ({Q} is the untap symbol.)"
+  },
+  {
+   "name": "Patrolling Peacemaker",
+   "cost": "{2}{W}",
+   "type_line": "Artifact Creature \u2014 Robot Soldier",
+   "keywords": "Proliferate",
+   "power": "0",
+   "loyalty": null,
+   "text": "This creature enters with two +1/+1 counters on it.\nWhenever an opponent commits a crime, proliferate. (They commit a crime if they target an opponent, anything an opponent controls, and/or cards in an opponent's graveyard. To proliferate, you choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Phyrexian Tower",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Sacrifice a creature: Add {B}{B}."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Quirion Ranger",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Ranger",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Return a Forest you control to its owner's hand: Untap target creature. Activate only once each turn."
+  },
+  {
+   "name": "Ranger-Captain of Eos",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature \u2014 Human Soldier Ranger",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "When this creature enters, you may search your library for a creature card with mana value 1 or less, reveal it, put it into your hand, then shuffle.\nSacrifice this creature: Your opponents can't cast noncreature spells this turn."
+  },
+  {
+   "name": "Recruiter of the Guard",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Human Soldier",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature enters, you may search your library for a creature card with toughness 2 or less, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Rishkar, Peema Renegade",
+   "cost": "{2}{G}",
+   "type_line": "Legendary Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When Rishkar enters, put a +1/+1 counter on each of up to two target creatures.\nEach creature you control with a counter on it has \"{T}: Add {G}.\""
+  },
+  {
+   "name": "Savannah",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {W}.)"
+  },
+  {
+   "name": "Scrubland",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {B}.)"
+  },
+  {
+   "name": "Seal of Primordium",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Sacrifice this enchantment: Destroy target artifact or enchantment."
+  },
+  {
+   "name": "Shang-Chi, Master of Kung Fu",
+   "cost": "{1}{G}",
+   "type_line": "Legendary Creature \u2014 Human Warrior Hero",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "You may activate abilities of creatures you control as though those creatures had haste.\n{T}: Add two mana of any one color. Spend this mana only to activate abilities of creature sources."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Strangleroot Geist",
+   "cost": "{G}{G}",
+   "type_line": "Creature \u2014 Spirit",
+   "keywords": "Undying Haste",
+   "power": "2",
+   "loyalty": null,
+   "text": "Haste\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Survival of the Fittest",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{G}, Discard a creature card: Search your library for a creature card, reveal that card, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Sylvan Safekeeper",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Human Wizard",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Sacrifice a land: Target creature you control gains shroud until end of turn. (It can't be the target of spells or abilities.)"
+  },
+  {
+   "name": "Talon Gates of Madara",
+   "cost": "",
+   "type_line": "Land \u2014 Gate",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "When this land enters, up to one target creature phases out.\n{T}: Add {C}.\n{1}, {T}: Add one mana of any color.\n{4}: Put this card from your hand onto the battlefield."
+  },
+  {
+   "name": "Tayam, Luminous Enigma",
+   "cost": "{1}{W}{B}{G}",
+   "type_line": "Legendary Creature \u2014 Nightmare Beast",
+   "keywords": "Mill",
+   "power": "3",
+   "loyalty": null,
+   "text": "Each other creature you control enters with an additional vigilance counter on it.\n{3}, Remove three counters from among creatures you control: Mill three cards, then return a permanent card with mana value 3 or less from your graveyard to the battlefield."
+  },
+  {
+   "name": "Temple Garden",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "The Queen of Dale",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Human Noble",
+   "keywords": "Recruit",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever an opponent casts their first noncreature spell each turn, you recruit. (Draw a card, then discard a card. If you discarded a nonland card, create a 1/1 white Human Soldier creature token.)"
+  },
+  {
+   "name": "Thousand-Year Elixir",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You may activate abilities of creatures you control as though those creatures had haste.\n{1}, {T}: Untap target creature."
+  },
+  {
+   "name": "Touch the Spirit Realm",
+   "cost": "{2}{W}",
+   "type_line": "Enchantment",
+   "keywords": "Channel",
+   "power": null,
+   "loyalty": null,
+   "text": "When this enchantment enters, exile up to one target artifact or creature until this enchantment leaves the battlefield.\nChannel \u2014 {1}{W}, Discard this card: Exile target artifact or creature. Return it to the battlefield under its owner's control at the beginning of the next end step."
+  },
+  {
+   "name": "Tyvar, Jubilant Brawler",
+   "cost": "{1}{B}{G}",
+   "type_line": "Legendary Planeswalker \u2014 Tyvar",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": "3",
+   "text": "You may activate abilities of creatures you control as though those creatures had haste.\n+1: Untap up to one target creature.\n\u22122: Mill three cards, then you may return a creature card with mana value 2 or less from your graveyard to the battlefield."
+  },
+  {
+   "name": "Urza's Saga",
+   "cost": "",
+   "type_line": "Enchantment Land \u2014 Urza's Saga",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 This Saga gains \"{T}: Add {C}.\"\nII \u2014 This Saga gains \"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control.'\"\nIII \u2014 Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Vampiric Tutor",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a card, then shuffle and put that card on top. You lose 2 life."
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wall of Roots",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Plant Wall",
+   "keywords": "Defender",
+   "power": "0",
+   "loyalty": null,
+   "text": "Defender\nPut a -0/-1 counter on this creature: Add {G}. Activate only once each turn."
+  },
+  {
+   "name": "Weathered Wayfarer",
+   "cost": "{W}",
+   "type_line": "Creature \u2014 Human Nomad Cleric",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{W}, {T}: Search your library for a land card, reveal it, put it into your hand, then shuffle. Activate only if an opponent controls more lands than you."
+  },
+  {
+   "name": "White Plume Adventurer",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Orc Cleric",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "When this creature enters, you take the initiative.\nAt the beginning of each opponent's upkeep, untap a creature you control. If you've completed a dungeon, untap all creatures you control instead."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Yavimaya, Cradle of Growth",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each land is a Forest in addition to its other land types."
+  },
+  {
+   "name": "Young Wolf",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Wolf",
+   "keywords": "Undying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Undying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  }
+ ],
+ "list": [
+  [
+   "Abigale, Eloquent First-Year",
+   1
+  ],
+  [
+   "Agatha's Soul Cauldron",
+   1
+  ],
+  [
+   "Ancient Tomb",
+   1
+  ],
+  [
+   "Archon of Emeria",
+   1
+  ],
+  [
+   "Arid Mesa",
+   1
+  ],
+  [
+   "Ashnod's Altar",
+   1
+  ],
+  [
+   "Avacyn's Pilgrim",
+   1
+  ],
+  [
+   "Aven Interrupter",
+   1
+  ],
+  [
+   "Aven Mindcensor",
+   1
+  ],
+  [
+   "Badgermole Cub",
+   1
+  ],
+  [
+   "Bartolom\u00e9 del Presidio",
+   1
+  ],
+  [
+   "Bayou",
+   1
+  ],
+  [
+   "Birds of Paradise",
+   1
+  ],
+  [
+   "Birthing Pod",
+   1
+  ],
+  [
+   "Bloom Tender",
+   1
+  ],
+  [
+   "Boseiju, Who Endures",
+   1
+  ],
+  [
+   "Carpet of Flowers",
+   1
+  ],
+  [
+   "Carrion Feeder",
+   1
+  ],
+  [
+   "Cavern of Souls",
+   1
+  ],
+  [
+   "Centaur Garden",
+   1
+  ],
+  [
+   "Chord of Calling",
+   1
+  ],
+  [
+   "Chrome Mox",
+   1
+  ],
+  [
+   "Circle of Dreams Druid",
+   1
+  ],
+  [
+   "City of Brass",
+   1
+  ],
+  [
+   "Colonel Autumn",
+   1
+  ],
+  [
+   "Command Beacon",
+   1
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Crop Rotation",
+   1
+  ],
+  [
+   "Cryptolith Rite",
+   1
+  ],
+  [
+   "Deafening Silence",
+   1
+  ],
+  [
+   "Deathrite Shaman",
+   1
+  ],
+  [
+   "Delighted Halfling",
+   1
+  ],
+  [
+   "Devoted Druid",
+   1
+  ],
+  [
+   "Drannith Magistrate",
+   1
+  ],
+  [
+   "Dryad Arbor",
+   1
+  ],
+  [
+   "Earthcraft",
+   1
+  ],
+  [
+   "Eidolon of Rhetoric",
+   1
+  ],
+  [
+   "Elves of Deep Shadow",
+   1
+  ],
+  [
+   "Elvish Mystic",
+   1
+  ],
+  [
+   "Endurance",
+   1
+  ],
+  [
+   "Enduring Vitality",
+   1
+  ],
+  [
+   "Esper Sentinel",
+   1
+  ],
+  [
+   "Ethersworn Canonist",
+   1
+  ],
+  [
+   "Faeburrow Elder",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Forest",
+   1
+  ],
+  [
+   "Formidable Speaker",
+   1
+  ],
+  [
+   "Gaea's Cradle",
+   1
+  ],
+  [
+   "Gavony Township",
+   1
+  ],
+  [
+   "Gemstone Caverns",
+   1
+  ],
+  [
+   "Green Sun's Zenith",
+   1
+  ],
+  [
+   "Icatian Moneychanger",
+   1
+  ],
+  [
+   "Knight of the Reliquary",
+   1
+  ],
+  [
+   "Lion's Eye Diamond",
+   1
+  ],
+  [
+   "Mana Confluence",
+   1
+  ],
+  [
+   "Mana Vault",
+   1
+  ],
+  [
+   "Manglehorn",
+   1
+  ],
+  [
+   "Marsh Flats",
+   1
+  ],
+  [
+   "Marvin, Murderous Mimic",
+   1
+  ],
+  [
+   "Misty Rainforest",
+   1
+  ],
+  [
+   "Moonshadow",
+   1
+  ],
+  [
+   "Mox Diamond",
+   1
+  ],
+  [
+   "Nature's Chosen",
+   1
+  ],
+  [
+   "Nature's Rhythm",
+   1
+  ],
+  [
+   "Opposition Agent",
+   1
+  ],
+  [
+   "Orcish Bowmasters",
+   1
+  ],
+  [
+   "Overgrown Tomb",
+   1
+  ],
+  [
+   "Patrol Signaler",
+   1
+  ],
+  [
+   "Patrolling Peacemaker",
+   1
+  ],
+  [
+   "Phyrexian Tower",
+   1
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Quirion Ranger",
+   1
+  ],
+  [
+   "Ranger-Captain of Eos",
+   1
+  ],
+  [
+   "Recruiter of the Guard",
+   1
+  ],
+  [
+   "Rishkar, Peema Renegade",
+   1
+  ],
+  [
+   "Savannah",
+   1
+  ],
+  [
+   "Scrubland",
+   1
+  ],
+  [
+   "Seal of Primordium",
+   1
+  ],
+  [
+   "Shang-Chi, Master of Kung Fu",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Strangleroot Geist",
+   1
+  ],
+  [
+   "Survival of the Fittest",
+   1
+  ],
+  [
+   "Sylvan Safekeeper",
+   1
+  ],
+  [
+   "Talon Gates of Madara",
+   1
+  ],
+  [
+   "Temple Garden",
+   1
+  ],
+  [
+   "The Queen of Dale",
+   1
+  ],
+  [
+   "Thousand-Year Elixir",
+   1
+  ],
+  [
+   "Touch the Spirit Realm",
+   1
+  ],
+  [
+   "Tyvar, Jubilant Brawler",
+   1
+  ],
+  [
+   "Urza's Saga",
+   1
+  ],
+  [
+   "Vampiric Tutor",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Wall of Roots",
+   1
+  ],
+  [
+   "Weathered Wayfarer",
+   1
+  ],
+  [
+   "White Plume Adventurer",
+   1
+  ],
+  [
+   "Windswept Heath",
+   1
+  ],
+  [
+   "Wooded Foothills",
+   1
+  ],
+  [
+   "Yavimaya, Cradle of Growth",
+   1
+  ],
+  [
+   "Young Wolf",
+   1
+  ]
+ ]
+}

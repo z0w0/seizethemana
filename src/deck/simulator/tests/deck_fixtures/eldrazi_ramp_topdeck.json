@@ -1,0 +1,282 @@
+{
+ "name": "eldrazi ramp topdeck",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "All Is Dust",
+   "cost": "{7}",
+   "type_line": "Kindred Sorcery \u2014 Eldrazi",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each player sacrifices all permanents they control that are one or more colors."
+  },
+  {
+   "name": "Chalice of the Void",
+   "cost": "{X}{X}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This artifact enters with X charge counters on it.\nWhenever a player casts a spell with mana value equal to the number of charge counters on this artifact, counter that spell."
+  },
+  {
+   "name": "Devourer of Destiny",
+   "cost": "{5}{C}{C}",
+   "type_line": "Creature \u2014 Eldrazi",
+   "keywords": "",
+   "power": "6",
+   "loyalty": null,
+   "text": "You may reveal this card from your opening hand. If you do, at the beginning of your first upkeep, look at the top four cards of your library. You may put one of those cards back on top of your library. Exile the rest.\nWhen you cast this spell, exile target permanent that's one or more colors."
+  },
+  {
+   "name": "Dismember",
+   "cost": "{1}{B/P}{B/P}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nTarget creature gets -5/-5 until end of turn."
+  },
+  {
+   "name": "Eldrazi Temple",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}: Add {C}{C}. Spend this mana only to cast colorless Eldrazi spells or activate abilities of colorless Eldrazi."
+  },
+  {
+   "name": "Expedition Map",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{2}, {T}, Sacrifice this artifact: Search your library for a land card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Glaring Fleshraker",
+   "cost": "{2}{C}",
+   "type_line": "Creature \u2014 Eldrazi Drone",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever you cast a colorless spell, create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\"\nWhenever another colorless creature you control enters, this creature deals 1 damage to each opponent."
+  },
+  {
+   "name": "Karn, the Great Creator",
+   "cost": "{4}",
+   "type_line": "Legendary Planeswalker \u2014 Karn",
+   "keywords": "",
+   "power": null,
+   "loyalty": "5",
+   "text": "Activated abilities of artifacts your opponents control can't be activated.\n+1: Until your next turn, up to one target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value.\n\u22122: You may reveal an artifact card you own from outside the game or choose a face-up artifact card you own in exile. Put that card into your hand."
+  },
+  {
+   "name": "Kozilek's Command",
+   "cost": "{X}{C}{C}",
+   "type_line": "Kindred Instant \u2014 Eldrazi",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose two \u2014\n\u2022 Target player creates X 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice this token: Add {C}.\"\n\u2022 Target player scries X, then draws a card.\n\u2022 Exile target creature with mana value X or less.\n\u2022 Exile up to X target cards from graveyards."
+  },
+  {
+   "name": "Mind Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Sire of Seven Deaths",
+   "cost": "{7}",
+   "type_line": "Creature \u2014 Eldrazi",
+   "keywords": "Lifelink Reach Vigilance First strike Trample Menace Ward",
+   "power": "7",
+   "loyalty": null,
+   "text": "Reach, first strike\nVigilance, menace\nTrample, lifelink\nWard\u2014Pay 7 life."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Thought-Knot Seer",
+   "cost": "{3}{C}",
+   "type_line": "Creature \u2014 Eldrazi",
+   "keywords": "",
+   "power": "4",
+   "loyalty": null,
+   "text": "({C} represents colorless mana.)\nWhen this creature enters, target opponent reveals their hand. You choose a nonland card from it and exile that card.\nWhen this creature leaves the battlefield, target opponent draws a card."
+  },
+  {
+   "name": "Ugin's Labyrinth",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Imprint",
+   "power": null,
+   "loyalty": null,
+   "text": "Imprint \u2014 When this land enters, you may exile a colorless card with mana value 7 or greater from your hand.\n{T}: Add {C}. If a card is exiled with this land, add {C}{C} instead.\n{T}: Return the exiled card to its owner's hand."
+  },
+  {
+   "name": "Ugin, Eye of the Storms",
+   "cost": "{7}",
+   "type_line": "Legendary Planeswalker \u2014 Ugin",
+   "keywords": "",
+   "power": null,
+   "loyalty": "7",
+   "text": "When you cast this spell, exile up to one target permanent that's one or more colors.\nWhenever you cast a colorless spell, exile up to one target permanent that's one or more colors.\n+2: You gain 3 life and draw a card.\n0: Add {C}{C}{C}.\n\u221211: Search your library for any number of colorless nonland cards, exile them, then shuffle. Until end of turn, you may cast those cards without paying their mana costs."
+  },
+  {
+   "name": "Ulamog, the Ceaseless Hunger",
+   "cost": "{10}",
+   "type_line": "Legendary Creature \u2014 Eldrazi",
+   "keywords": "Indestructible",
+   "power": "10",
+   "loyalty": null,
+   "text": "When you cast this spell, exile two target permanents.\nIndestructible\nWhenever Ulamog attacks, defending player exiles the top twenty cards of their library."
+  },
+  {
+   "name": "Urza's Mine",
+   "cost": "",
+   "type_line": "Land \u2014 Urza's Mine",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}. If you control an Urza's Power-Plant and an Urza's Tower, add {C}{C} instead."
+  },
+  {
+   "name": "Urza's Power Plant",
+   "cost": "",
+   "type_line": "Land \u2014 Urza's Power-Plant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Tower, add {C}{C} instead."
+  },
+  {
+   "name": "Urza's Tower",
+   "cost": "",
+   "type_line": "Land \u2014 Urza's Tower",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}. If you control an Urza's Mine and an Urza's Power-Plant, add {C}{C}{C} instead."
+  },
+  {
+   "name": "Warping Wail",
+   "cost": "{1}{C}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({C} represents colorless mana.)\nChoose one \u2014\n\u2022 Exile target creature with power or toughness 1 or less.\n\u2022 Counter target sorcery spell.\n\u2022 Create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Wastes",
+   "cost": "",
+   "type_line": "Basic Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}."
+  }
+ ],
+ "list": [
+  [
+   "All Is Dust",
+   1
+  ],
+  [
+   "Chalice of the Void",
+   1
+  ],
+  [
+   "Devourer of Destiny",
+   3
+  ],
+  [
+   "Dismember",
+   2
+  ],
+  [
+   "Eldrazi Temple",
+   4
+  ],
+  [
+   "Expedition Map",
+   4
+  ],
+  [
+   "Glaring Fleshraker",
+   3
+  ],
+  [
+   "Karn, the Great Creator",
+   4
+  ],
+  [
+   "Kozilek's Command",
+   4
+  ],
+  [
+   "Mind Stone",
+   4
+  ],
+  [
+   "Sire of Seven Deaths",
+   1
+  ],
+  [
+   "Swamp",
+   1
+  ],
+  [
+   "Thought-Knot Seer",
+   4
+  ],
+  [
+   "Ugin's Labyrinth",
+   4
+  ],
+  [
+   "Ugin, Eye of the Storms",
+   4
+  ],
+  [
+   "Ulamog, the Ceaseless Hunger",
+   1
+  ],
+  [
+   "Urza's Mine",
+   4
+  ],
+  [
+   "Urza's Power Plant",
+   4
+  ],
+  [
+   "Urza's Tower",
+   4
+  ],
+  [
+   "Warping Wail",
+   2
+  ],
+  [
+   "Wastes",
+   1
+  ]
+ ]
+}

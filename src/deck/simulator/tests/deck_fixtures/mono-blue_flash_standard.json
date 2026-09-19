@@ -1,0 +1,282 @@
+{
+ "name": "mono-blue flash standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   "cost": "{1}{W}{U} // ",
+   "type_line": "Legendary Creature \u2014 Human Avatar Ally // Legendary Creature \u2014 Avatar Spirit Ally",
+   "keywords": "Flying Reach Airbend Transform Trample Flash Waterbend",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nFlying\nWhen Aang enters, airbend up to one other target creature or spell. (Exile it. While it's exiled, its owner may cast it for {2} rather than its mana cost.)\nWaterbend {8}: Transform Aang.\n// Reach, trample\nWhenever Aang and La attack, put a +1/+1 counter on each tapped creature you control."
+  },
+  {
+   "name": "Aven Interrupter",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature \u2014 Bird Rogue",
+   "keywords": "Flying Plot Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nFlying\nWhen this creature enters, exile target spell. It becomes plotted. (Its owner may cast it as a sorcery on a later turn without paying its mana cost.)\nSpells your opponents cast from graveyards or from exile cost {2} more to cast."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Case of the Burning Masks",
+   "cost": "{1}{R}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve \u2014 Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+  },
+  {
+   "name": "Counterpoint",
+   "cost": "{3}{U}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target spell. You may cast a creature, instant, sorcery, or planeswalker spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost."
+  },
+  {
+   "name": "Eddymurk Crab",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature \u2014 Elemental Crab",
+   "keywords": "Flash",
+   "power": "5",
+   "loyalty": null,
+   "text": "Flash\nThis spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nThis creature enters tapped if it's not your turn.\nWhen this creature enters, tap up to two target creatures."
+  },
+  {
+   "name": "Enduring Curiosity",
+   "cost": "{2}{U}{U}",
+   "type_line": "Enchantment Creature \u2014 Cat Glimmer",
+   "keywords": "Flash",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flash\nWhenever a creature you control deals combat damage to a player, draw a card.\nWhen Enduring Curiosity dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. (It's not a creature.)"
+  },
+  {
+   "name": "Floodpits Drowner",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Merfolk",
+   "keywords": "Vigilance Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter on it.\n{1}{U}, {T}: Shuffle this creature and target creature with a stun counter on it into their owners' libraries."
+  },
+  {
+   "name": "Into the Flood Maw",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Gift",
+   "power": null,
+   "loyalty": null,
+   "text": "Gift a tapped Fish (You may promise an opponent a gift as you cast this spell. If you do, they create a tapped 1/1 blue Fish creature token before its other effects.)\nReturn target creature an opponent controls to its owner's hand. If the gift was promised, instead return target nonland permanent an opponent controls to its owner's hand."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Jeskai Revelation",
+   "cost": "{4}{U}{R}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target spell or permanent to its owner's hand. Jeskai Revelation deals 4 damage to any target. Create two 1/1 white Monk creature tokens with prowess. Draw two cards. You gain 4 life."
+  },
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker \u2014 Kaito",
+   "keywords": "Surveil Ninjutsu",
+   "power": null,
+   "loyalty": "4",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n\u22122: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Meticulous Archive",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Quantum Riddler",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature \u2014 Sphinx",
+   "keywords": "Flying Warp",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.\nWarp {1}{U}"
+  },
+  {
+   "name": "Restless Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {U} or {B}.\n{2}{U}{B}: Until end of turn, this land becomes a 4/4 blue and black Shark creature with deathtouch. It's still a land.\nWhenever this land attacks, target player mills four cards."
+  },
+  {
+   "name": "Sea Gate Restoration // Sea Gate, Reborn",
+   "cost": "{4}{U}{U}{U} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw cards equal to the number of cards in your hand plus one. You have no maximum hand size for the rest of the game.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Three Steps Ahead",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Spree",
+   "power": null,
+   "loyalty": null,
+   "text": "Spree (Choose one or more additional costs.)\n+ {1}{U} \u2014 Counter target spell.\n+ {3} \u2014 Create a token that's a copy of target artifact or creature you control.\n+ {2} \u2014 Draw two cards, then discard a card."
+  },
+  {
+   "name": "Waterbender Ascension",
+   "cost": "{1}{U}",
+   "type_line": "Enchantment",
+   "keywords": "Waterbend",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a creature you control deals combat damage to a player, put a quest counter on this enchantment. Then if it has four or more quest counters on it, draw a card.\nWaterbend {4}: Target creature can't be blocked this turn. (While paying a waterbend cost, you can tap your artifacts and creatures to help. Each one pays for {1}.)"
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   17
+  ],
+  [
+   "Restless Reef",
+   3
+  ],
+  [
+   "Meticulous Archive",
+   4
+  ],
+  [
+   "Floodpits Drowner",
+   2
+  ],
+  [
+   "Enduring Curiosity",
+   3
+  ],
+  [
+   "Into the Flood Maw",
+   4
+  ],
+  [
+   "Three Steps Ahead",
+   4
+  ],
+  [
+   "Eddymurk Crab",
+   2
+  ],
+  [
+   "Kaito, Bane of Nightmares",
+   2
+  ],
+  [
+   "Quantum Riddler",
+   2
+  ],
+  [
+   "Slick Sequence",
+   2
+  ],
+  [
+   "Counterpoint",
+   2
+  ],
+  [
+   "Aven Interrupter",
+   2
+  ],
+  [
+   "Aang, Swift Savior",
+   2
+  ],
+  [
+   "Waterbender Ascension",
+   2
+  ],
+  [
+   "Jeskai Revelation",
+   2
+  ],
+  [
+   "Sea Gate Restoration",
+   1
+  ],
+  [
+   "Burst Lightning",
+   1
+  ],
+  [
+   "Nowhere to Run",
+   1
+  ],
+  [
+   "Stocking the Pantry",
+   1
+  ],
+  [
+   "Case of the Burning Masks",
+   1
+  ]
+ ]
+}

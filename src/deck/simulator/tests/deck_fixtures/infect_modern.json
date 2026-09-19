@@ -1,0 +1,217 @@
+{
+ "name": "infect modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Apostle's Blessing",
+   "cost": "{1}{W/P}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({W/P} can be paid with either {W} or 2 life.)\nTarget artifact or creature you control gains protection from artifacts or from the color of your choice until end of turn."
+  },
+  {
+   "name": "Become Immense",
+   "cost": "{5}{G}",
+   "type_line": "Instant",
+   "keywords": "Delve",
+   "power": null,
+   "loyalty": null,
+   "text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nTarget creature gets +6/+6 until end of turn."
+  },
+  {
+   "name": "Blighted Agent",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Phyrexian Human Rogue",
+   "keywords": "Infect",
+   "power": "1",
+   "loyalty": null,
+   "text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nThis creature can't be blocked."
+  },
+  {
+   "name": "Blossoming Defense",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature you control gets +2/+2 and gains hexproof until end of turn. (It can't be the target of spells or abilities your opponents control.)"
+  },
+  {
+   "name": "Breeding Pool",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Dryad Arbor",
+   "cost": "",
+   "type_line": "Land Creature \u2014 Forest Dryad",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "(This land isn't a spell, it's affected by summoning sickness, and it has \"{T}: Add {G}.\")"
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Giant Growth",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets +3/+3 until end of turn."
+  },
+  {
+   "name": "Glistener Elf",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Phyrexian Elf Warrior",
+   "keywords": "Infect",
+   "power": "1",
+   "loyalty": null,
+   "text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)"
+  },
+  {
+   "name": "Ichorclaw Myr",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Phyrexian Myr",
+   "keywords": "Infect",
+   "power": "1",
+   "loyalty": null,
+   "text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\nWhenever this creature becomes blocked, it gets +2/+2 until end of turn."
+  },
+  {
+   "name": "Inkmoth Nexus",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{1}: This land becomes a 1/1 Phyrexian Blinkmoth artifact creature with flying and infect until end of turn. It's still a land. (It deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)"
+  },
+  {
+   "name": "Mutagenic Growth",
+   "cost": "{G/P}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({G/P} can be paid with either {G} or 2 life.)\nTarget creature gets +2/+2 until end of turn."
+  },
+  {
+   "name": "Noble Hierarch",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Human Druid",
+   "keywords": "Exalted",
+   "power": "0",
+   "loyalty": null,
+   "text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)\n{T}: Add {G}, {W}, or {U}."
+  },
+  {
+   "name": "Pendelhaven",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {G}.\n{T}: Target 1/1 creature gets +1/+2 until end of turn."
+  },
+  {
+   "name": "Spellskite",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Phyrexian Horror",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "{U/P}: Change a target of target spell or ability to this creature. ({U/P} can be paid with either {U} or 2 life.)"
+  },
+  {
+   "name": "Vines of Vastwood",
+   "cost": "{G}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {G} (You may pay an additional {G} as you cast this spell.)\nTarget creature can't be the target of spells or abilities your opponents control this turn. If this spell was kicked, that creature gets +4/+4 until end of turn."
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   12
+  ],
+  [
+   "Pendelhaven",
+   4
+  ],
+  [
+   "Breeding Pool",
+   2
+  ],
+  [
+   "Inkmoth Nexus",
+   4
+  ],
+  [
+   "Glistener Elf",
+   4
+  ],
+  [
+   "Blighted Agent",
+   4
+  ],
+  [
+   "Ichorclaw Myr",
+   2
+  ],
+  [
+   "Giant Growth",
+   4
+  ],
+  [
+   "Mutagenic Growth",
+   4
+  ],
+  [
+   "Vines of Vastwood",
+   4
+  ],
+  [
+   "Blossoming Defense",
+   3
+  ],
+  [
+   "Become Immense",
+   3
+  ],
+  [
+   "Apostle's Blessing",
+   3
+  ],
+  [
+   "Noble Hierarch",
+   3
+  ],
+  [
+   "Dryad Arbor",
+   2
+  ],
+  [
+   "Spellskite",
+   2
+  ]
+ ]
+}

@@ -16,6 +16,28 @@ wants an existing deck improved.
 
 ## Part 1 — Tooling reference
 
+### Command cheat-sheet
+
+| Command | Purpose |
+| --- | --- |
+| `stm query "<text>" [filters]` | whole-oracle semantic search (BM25 + vectors) |
+| `stm card <name> [--json]` | one card's full detail: price, rank, tags, legalities |
+| `stm card similar <name> [--owned]` | cards that play like the exemplar |
+| `stm card combos <name> --json` | Spellbook combos a card appears in |
+| `stm collection [--json]` | collection value, curve, rarity overview |
+| `stm collection query "<text>" [--json]` | search the owned pool |
+| `stm collection import <csv>` | load a collection CSV (ownership only) |
+| `stm deck create/import/show/export` | decklist lifecycle |
+| `stm deck update <name> [flags]` | edit a list (`--add --remove --set --move --from`) |
+| `stm deck suggest <name> [--role R | "q" | --commander] --json` | ranked fill candidates |
+| `stm deck legal <name> [--format F] [--bracket 1-5]` | legality + bracket checklist |
+| `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
+| `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
+| `stm deck primer <name> --set <file>` | replace the primer markdown |
+
+Every command also takes `--json`; the JSON shapes section below lists
+each. `--offline` skips the background refresh check.
+
 ### Contract (read first)
 
 - **stdout = results only.** Progress goes to stderr. `--json` on every
@@ -58,40 +80,21 @@ wants an existing deck improved.
 
 ### Prerequisites (do this first)
 
-Before any `stm` command, make sure the CLI exists and the index is built:
-
-1. Check for the binary:
-
-```sh
-command -v stm
-```
-
-2. If missing (or outdated), install or upgrade the latest version. Try in
-   order until one succeeds:
-
-```sh
-cargo binstall -y seizethemana        # prebuilt binary, fastest
-cargo install --locked seizethemana   # source build, ~1-2 min
-```
-
-If neither is available, download a prebuilt archive from
-https://github.com/z0w0/seizethemana/releases for the host platform and put
-the `seizethemana` binary on `$PATH`.
-
-3. If `stm` says "card index not built yet" (or errors with exit 1 on read
-   commands), run the one-time setup:
-
-```sh
-stm setup    # ~25MB download + 2-3 min local CPU embedding
-```
+1. Check for the binary (`command -v stm`). Missing or outdated: install
+   with `cargo binstall -y seizethemana` (prebuilt, fastest), else
+   `cargo install --locked seizethemana`, else fetch a prebuilt archive
+   from https://github.com/z0w0/seizethemana/releases and put the
+   `seizethemana` binary on `$PATH`.
+2. If `stm` says "card index not built yet" (or errors with exit 1 on read
+   commands), run the one-time setup: `stm setup` (~25MB download + 2-3
+   min local CPU embedding). `stm setup --force` rebuilds from scratch
+   (after an `stm` upgrade or a corrupt store).
 
 Data refreshes on its own when older than 24h; `stm sync [--force]` forces
 it. `--offline` skips the refresh check. The refresh also pulls Commander
 Spellbook combo variants (~28 MB, feeds `deck simulate` combo assembly and
 bare `deck suggest` completions); a failed combo download warns and
 continues.
-`stm setup --force` rebuilds from
-scratch (use when `stm` itself was upgraded, or the store looks corrupt).
 
 ### Find cards (whole oracle)
 
@@ -215,6 +218,7 @@ by editing the file.
 
 ```sh
 stm deck list                        # decklists + collection decks with no list
+stm deck create Froggy               # new empty deck (enough for suggest --commander)
 stm deck show Stationz               # contents with (own N/M) per line + To-buy block
 stm deck Stationz --json             # sugar; JSON sections + covered_by per line
 stm deck update Froggy --add "1 Phyrexian Vault" --add "sideboard:2 Bolt"
@@ -232,16 +236,11 @@ stm deck buylist Froggy --store cardkingdom  # CK CSV (Name,Edition,Foil,Qty)
 stm deck legal Froggy                          # format legality
 stm deck legal Froggy --format commander --bracket 3
 stm deck suggest Froggy --role draw --json     # role fills: owned first, then by fit
-# --role names: draw, cantrip, wheel, discard, mill, ramp, mana-rock,
-# mana-dork, land, removal, board-wipe, counterspell, theft, protection,
-# hate, stax, sacrifice, reanimate, recursion, token, anthem, equipment,
-# evasion, combat-trick, burn, lifegain, tutor, wincon, combo, storm,
-# extra-turn, blink, landfall, artifact, planeswalker, voltron,
-# spellslinger, typal, group-hug, politics, interaction, ...
 stm deck suggest Froggy "frog payoff" --json   # semantic query for theme cards
 stm deck suggest Froggy --commander --json     # commander candidates for the deck
 stm deck suggest Froggy                        # combo completions: one card away from a Spellbook combo
 stm deck suggest Froggy --bracket 2            # completions filtered to no Game Changers
+# --limit N widens the candidate pool beyond the default 10 (max 50)
 ```
 
 **Two concepts, one name.** The *decklist* (txt file) and the *ownership*
@@ -269,7 +268,12 @@ Update specs: `[section:]qty Name [(SET) [cn]] [*F*]`. `--add` increments,
 `--remove` decrements (line deleted at 0), `--set` pins exact. The `(SET)
 cn` part is optional and descriptive only (which copy to sleeve); matching
 is by card name, so any set version you own fills a deck line — keep
-reprints in mind when pricing buys.
+reprints in mind when pricing buys. Section qualifiers drive format
+inference: `commander:1 Breya` puts the legend in the COMMANDER section
+(do this first — it drives color identity, format rules, and the sim's
+command zone), `sideboard:2 Bolt` to the sideboard, no qualifier for the
+maindeck. `--from` batch files also accept `move 1 Name to:sideboard`
+lines.
 
 **Card names in `--add`/`--set` are validated against the oracle.** An
 unknown name exits 3 naming it (with "did you mean" candidates when close);
@@ -346,13 +350,15 @@ stm deck legal <name> --format commander --bracket 3
   exactly the GC cap as a violation; everything else ships as advisory.
 - **`notes` carries the bracket verdicts.** With `--bracket`, the human
   view shows `bracket checks:` with `✓` PASS, `!` CHECK (genuine
-  conflicts: mass land destruction in brackets 1–3, extra turns), or `ℹ`
-  advisory lines. Tutors are advisory in every bracket ("tutors should be
-  sparse" in 1–2; in 3 the cap is Game Changers, which includes the best
-  tutors). The scan splits `note hard tutors:` (one-shot search spells)
-  from `note soft searchers:` (ETB/activated/restricted searchers). Mass
-  land destruction stays a hard CHECK in brackets 1–3. JSON `advisories`
-  carries the `ℹ` lines separately from `violations`; `notes` carry the
+  conflicts: mass land destruction and extra turns in brackets 1–2,
+  tutors in 1–2), or `ℹ` advisory lines. Tutor verdicts follow the
+  bracket: brackets 1–2 produce a CHECK (`!`), bracket 3 produces an
+  advisory (`ℹ` — the cap is Game Changers, which includes the best
+  tutors), brackets 4–5 stay silent. The scan splits `note hard tutors:`
+  (one-shot search spells) from `note soft searchers:`
+  (ETB/activated/restricted searchers). Mass land destruction stays a
+  hard CHECK in brackets 1–3. JSON `advisories` carries the `ℹ` lines
+  separately from `violations`; `notes` carry the
   raw strings. When no bracket was given, use the Game Changers list in
   `notes` to ask the user which bracket they want.
 - **Land-search ramp is not a tutor.** Cards whose library search targets
@@ -370,76 +376,69 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
 ```
 
 - Monte Carlo goldfish: shuffles the deck, plays best-case turns (play an
-  untapped land when possible, cast the cheapest pip-payable spells, fire
-  ETB triggers, spend leftover mana on activated engines, then spend
-  remaining creature taps on mana → station → crew), and aggregates over
-  `--runs` games (default 10000, range 100–1,000,000; ±0.5pp on
-  percentages). `--turns` default 10 (commander) / 8 (60-card).
+  untapped land when possible — twice on "additional land" boards, cast
+  the cheapest pip-payable spells, fire ETB triggers, spend leftover mana
+  on activated engines incl. planeswalker loyalty abilities, then spend
+  remaining creature taps on mana → station → crew → equip), and
+  aggregates over `--runs` games (default 10000, range 100–1,000,000;
+  ±0.5pp on percentages). `--turns` default 10 (commander) / 8 (60-card).
 - Formats: inferred like `deck legal` (a `// COMMANDER` section means
   commander). Commander rules in the model: commander starts in the command
   zone with the full pip check (a {W}{U}{B}{R}{G} commander needs one of
   each), one free mulligan when the opener has <2 or >6 lands (commander
   only; constructed redraws a zero-land opener). Pass `--format <60-card
-  format>` to simulate a commander list as a flat library instead.
-- Card model: oracle-text driven. Tap yields are source-correct ("Add {G}
-  or {U}" is one choice tap; Jegantha's fixed five pips produce all at
-  once; a permanent with multiple tap abilities taps once; "add N mana
-  of any color" counts N pips; "for each color among permanents you
-  control" scales with the board; "any color an opponent's land could
-  produce" yields from turn 2). Spend-restricted mana (Secluded
-  Courtyard, Plaza of Heroes) pays matching casts only. Charge-counter
-  banks (Pentad Prism) fire untapped once per turn while counters last;
-  Treasure creators bank one flexible pip per token. Static grants
-  (Enduring Vitality, Chromatic Lantern) add one flexible pip per
-  matching permanent, capped at 2 per grant. Station cards
-  (Spacecraft/Planets) get charge counters from creature taps and unlock
-  `{N+}` tiers (only the P/T tier animates); station and crew use
-  printed power when known. Vehicles crew with bodies and revert at end
-  of turn. Mill fills a graveyard census (self vs opponent direction)
-  and counts as cards seen; graveyard return (hand or battlefield) fires
-  once per card; wheels reset the hand; loot is draw-n discard-n;
-  sacrifice outlets consume real bodies and fire death triggers;
-  planeswalker loyalty is tracked and gates loyalty activations. Cost
-  cuts (warp, improvise, affinity) approximate to flat discounts.
-  Enters-tapped lands follow their oracle text (shock-dual life payments
-  are always paid).
-- **Wincon and keyword signals (goldfish-aligned only).** Attack power
-  per turn + p90 by t8 (a power curve, never a kill estimate) with
-  static "+N/+N" buffs, equipment, double strike, prowess, and landfall
-  counted in; trample/flying/menace show as an evasion census.
-  Combat-damage triggers fire per connecting attacker (proliferate,
-  draw, drain). Burn/drain accumulate into `drain_total_by_turn`
-  (×3 for "each opponent"). Extra turns each grant one land drop and
-  one draw. Win-threshold engines (Darksteel Reactor class) and
-  planeswalker ultimates report a first-online share. Scry/surveil give
-  zero draw credit — they feed `library_awareness_by_turn` instead
-  (share of the library evaluated; surveil puts the cards in the
-  graveyard). Imprint and blocking are not modeled.
+  format>` (e.g. `--format modern`) to simulate a commander list as a
+  flat library instead.
+- Card model: oracle-text driven — the full mechanic inventory lives in
+  `docs/simulator.md` and the runtime `assumptions` array; the sim is
+  best-case and drops what it cannot parse as a passive card. Key
+  shapes: source-correct tap yields (choice vs fixed vs scaling), spend
+  restrictions, charge-counter banks, Treasure pips, static grants,
+  station tiers + crew, mill/wheel/loot/sacrifice outlets, and
+  planeswalker loyalty activations (one per turn; ultimates only flag
+  online). "Create N tokens" sorceries and additional costs
+  (sacrifice a creature / pay N life) execute on cast.
+- **Keyword and effect signals (goldfish-aligned).** Haste attacks the
+  entry turn. Landfall triggers run as real engines (draw/token/mana/ramp;
+  "+1/+1 counter" shapes join attack power). Attack power per turn + p90
+  by t8 counts static buffs, paid-equipment buffs (one body each),
+  double strike, prowess, and landfall; trample/flying/menace show as an
+  evasion census; combat-damage triggers fire per connecting attacker.
+  Burn/drain accumulate into `drain_total_by_turn` (×3 commander, ×1
+  60-card). X-cost drain/draw/mill/token spells pay the leftover pool as
+  X. Kicker pays from spare mana and bumps the rider. Per-cast mana
+  engines (Vivi) fire once per spell cast (their own tap clause does not
+  double count). "Additional land" grants a second drop. Sagas fire
+  parsed chapters (combined "I, II, III —" lines fill every chapter;
+  the saga leaves the board after its final chapter). Extra turns replay
+  a land drop, a draw, and upkeep engines. Zero-cost untapped mana
+  engines cap out and flag `wincons.infinite_mana_pct`; "Activate only
+  once each turn" engines do not. Win-threshold engines (Darksteel
+  Reactor, Helix Pinnacle's {X} sink) and planeswalker ultimates report
+  a first-online share. Scry/surveil give zero draw credit — they feed
+  `library_awareness_by_turn`; surveil puts the cards in the graveyard.
+  Imprint and blocking are not modeled.
 - **Interaction readiness is capacity, not events.** The goldfish never
-  fires a counterspell or removal spell. It measures whether instant-
-  speed interaction is in hand **and** affordable with spare mana
-  (`interaction.ready_pct_by_turn`), plus the spare amount while ready
-  (`interaction.mana_held_avg`). Three terms: **access** = seen in hand
-  (`role_access`), **ready** = in hand + affordable, **mana held** =
-  spare mana while ready. Report readiness as capacity; never claim a
-  counter or removal resolved.
+  fires answers; it measures instant-speed interaction in hand **and**
+  affordable with spare mana (`interaction.ready_pct_by_turn` +
+  `mana_held_avg`). Access (seen in hand, `role_access`), ready (in hand
+  + affordable), mana held (spare while ready). Never claim a counter or
+  removal resolved.
 - **Exit 1 means the simulation found problems** (the result, not a crash).
   Problem kinds: `mana_screw`, `mana_flood`, `color_screw` (enough mana,
   wrong colors), `commander_late`, `draw_starvation`, `mana_unused`,
-  `dead_cards` (3+ distinct non-reactive spells cast on-time under 60%),
-  `category_starved` (removal, wincons), `interaction_unready` (answers
-  seen but rarely affordable with spare mana → "add cheaper
-  instant-speed answers"). Each problem carries a category +
-  magnitude suggestion ("add 2-3 draw engines") — never card names.
-  Reactive spells (removal, fogs, protection) are exempt from `dead_cards`;
-  judge them by `role_access` — a castability flag on them is noise.
+  `dead_cards` (3+ distinct non-reactive spells cast on-time under 60% in
+  commander, under 55% in 60-card formats), `category_starved`
+  (removal, wincons), `interaction_unready` (answers seen but rarely
+  affordable with spare mana → "add cheaper instant-speed answers").
+  Each problem carries a category + magnitude suggestion ("add 2-3 draw
+  engines") — never card names. Cards exempt from `dead_cards`: reactive
+  removal (including fogs and protection — they classify as Removal) and
+  improvise/affinity discount cards. Stax Locks are NOT exempt: judge
+  them by `role_access` too, but a castability flag on a lock piece can
+  be real signal (a dead stax piece is a real finding).
 - Human output = aggregates + worst-3 slow-to-cast cards + pip-block
-  offenders + problems. `--json` is the full contract: `deck_shape
-  opening_hand land_drops commander station bodies_by_turn
-  engines_online_by_turn mana draw role_access velocity
-  library_awareness_by_turn self_milled_by_turn opp_milled_by_turn
-  library_remaining_by_turn combat wincons interaction color_screw
-  pip_blocks graveyard card_castability problems assumptions summary`.
+  offenders + problems. `--json` contract: see the JSON shapes section.
   `--combo "A + B"` (repeatable) adds `combo_access` (share of games with
   both pieces in hand by the target turn). A synced combo store adds
   `combos` (Spellbook variants joined to the deck: complete combos with
@@ -451,17 +450,11 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   sim's castability is draw-agnostic and naturally sits above its
   ceiling — the two answer different questions, not one scale).
   `station` is null for non-spacecraft commanders.
-- The model is a **consistency diagnostic, not a win-rate predictor**. Its
-  limits are listed in the JSON `assumptions` array: enters-tapped
-  honored, no opponents or interaction, draw engines fire once per turn on
-  a fixed delay, opponent-dependent mana sources (Fellwar Stone) produce
-  from turn 2 on, no
-  commander recast tax, attack-gated commander draws wait for animation
-  (no synthetic engine), improvise/affinity discounts grow with the
-  artifact count, printed power (else flat 2) for stationing and crewing,
-  X-costs pay for one, energy/metalcraft/converge/proliferate/replay
-  mechanics not modeled, role classification is heuristic (audit via
-  `deck_shape` counts). `draw.pct_seen_by_turn` and `role_access` are
+- The model is a **consistency diagnostic, not a win-rate predictor**.
+  The JSON `assumptions` array ships the full limit list at runtime
+  (best-case agent, no opponents, fixed engine delay, artifact-count
+  discounts, token caps, unmodeled mechanics) — quote it instead of
+  restating it. `draw.pct_seen_by_turn` and `role_access` are
   hand-visibility (share of games with the role in hand), not engines
   online — use `engines_online_by_turn` for online counts. Seed baselines
   are version-local: regenerate the baseline JSON after upgrading `stm`.
@@ -489,16 +482,15 @@ deck change. For full-detail comparison keep the `--json` diff form.
   English printing per finish; the `max_price_usd*` fields the most
   expensive. All null when no print is priced. Use `price_usd` for budget
   math instead of parsing human output.
-- `card similar <name> --json` → array of hits: card fields (including
-  `oracle_id`) + `score` (hybrid 0–1; `null` when the seed had no stored
-  vector) + `shared_count shared_tags`.
+- `card similar <name> --json` → array of hits: full card fields +
+  `score shared_count shared_tags` (score semantics above; `null` score
+  when the seed had no stored vector).
 - `card combos <name> --json` → array of hits: `{id, produces,
   mana_value_needed, bracket_tag, popularity, legalities,
   requires_commander, pieces: [{name, zones, must_be_commander}]}`.
 - `query --json` → array of hits: the same full card object as
-  `card <name> --json` (all fields, `tags`, four price fields) plus
-  `score` (hybrid 0–1: reciprocal-rank fusion of full-text and vector
-  matches). Empty result prints `[]` with exit 3.
+  `card <name> --json` plus `score` (0–1, semantics above). Empty result
+  prints `[]` with exit 3.
 - `collection --json` → `unique_cards total_cards foils total_value
   purchase_total color_identity curve rarity top_sets locations`.
   `total_value` prices every owned copy by its exact printing.
@@ -530,23 +522,39 @@ deck change. For full-detail comparison keep the `--json` diff form.
   deck_shape, assumptions, opening_hand, land_drops, commander, station,
   bodies_by_turn, engines_online_by_turn, mana, draw, role_access,
   velocity, combat, wincons, interaction, color_screw, color_sources,
-  card_castability, problems, summary, win_paths?}`.
+  pip_blocks, graveyard, card_castability, problems, summary,
+  combo_access?, combos?, win_paths?, hypgeo?}`.
   `deck_shape.total_cards` is the simulated library
   plus commander (sideboard excluded; `deck_shape.sideboard_cards` counts
   it). `commander` is null for non-commander decks; `station` is null for
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
   `bodies_by_turn` counts creatures, animated spacecraft, and ETB tokens
-  per turn; `engines_online_by_turn` counts repeatable draw engines.
+  per turn; `engines_online_by_turn` counts repeatable engines.
+  `combat` carries `attack_power_avg_by_turn`, `attack_power_p90_by_t8`,
+  `attackers_by_turn`, `evasive_by_turn`. `wincons` carries
+  `drain_total_by_turn`, `extra_turns_pct`, `win_threshold_p50_turn`,
+  `win_threshold_pct`, `ultimate_online_pct`, `infinite_mana_pct`.
+  `interaction` carries `ready_pct_by_turn`, `mana_held_avg`,
+  `instant_speed_count`, and the note "capacity, not events".
   `color_sources` is a static census of land tap yields per color
   (`fixed_source_lands` dedicated single-color, `choice_source_lands`
-  multi-color pickers) — read it next to `color_screw` to pick fixes.
+  multi-color pickers, `flexible_nonland_sources` rocks/dorks,
+  `scaling_sources` per-color/per-counter growers) — read it
+  next to `color_screw` to pick fixes. `pip_blocks` names the worst
+  card×color offenders (which card's cast got pip-blocked).
   `problems` is an array of `{kind, severity, pct_games, color, detail,
   suggestion}`; severity is `high` (≥20% games), `medium` (10–20%), or
-  `low`. Every `pct_*` field in the report is 0–100 percent at two
-  decimals. Color-screw details name the dedicated source count and shape.
+  `low` for game-share problems; `dead_cards` and `mana_unused` severity
+  scales with their counts instead (and their `pct_games` is null).
+  Every `pct_*` field in the report is 0–100 percent at two decimals.
+  Color-screw details name the dedicated source count and shape.
   `card_castability` rows are `{name, cmc, target_turn,
-  pct_castable_by_target, avg_first_castable_turn}` (one row per distinct
-  card name).
+  pct_castable_by_target, avg_first_castable_turn}` (one row per card
+  copy: a 4-of reports four rows; the `dead_cards` problem dedups
+  distinct names). `land_drops` is an object keyed `"1".."N"` with the
+  share of games that hit every drop through that turn.
+  `commander` is `{name, cmc, pct_castable_by_turn, avg_first_cast_turn,
+  p50_cast_turn, p95_cast_turn, on_curve_pct}`.
 - `deck simulate <name> --baseline prior.json` (human output) diffs the
   fresh run against that JSON and prints deltas only — shape counts,
   metric lines (`path: old → new`), and problems (`+` new, `-` resolved).
@@ -623,20 +631,16 @@ question rounds in either mode. No jumping to a finished list.
 - **Small batches.** Propose at most 3–5 cards at a time. Present them as a
   table: card, role, price, own/buy, one line on why it fits. Wait for the
   user's confirmation before applying anything with `deck update`.
-- **Cost every batch before presenting it.** For each to-buy card in a
-  proposed batch: `stm card <name> --json` → `price_usd` (or
-  `price_usd_foil` for a foil entry). Sum the to-buy prices, compare
-  against the remaining budget, and only present the batch if it fits;
-  otherwise present cheaper alternatives in the same table. The batch
-  table's price column and the running budget line both come from this
-  step, never from memory or guesses.
+- **Budget rules everything; cost every batch before presenting it.** For
+  each to-buy card: `stm card <name> --json` → `price_usd` (or
+  `price_usd_foil` for a foil entry). Sum the to-buy prices, present the
+  batch only when it fits the remaining budget (otherwise show cheaper
+  alternatives in the same table), and track the running spend after
+  every batch ("$34 of $50 used"). Cards the user own cost $0; pull
+  `owned` and `price_usd` from `deck show --json`, never from memory.
 - **One question minimum per batch.** After each confirmed batch, ask at
   least one question: which direction to push next, whether a choice felt
   right, what to cut. Build the deck with the user, not for them.
-- **Budget rules everything.** Track the running spend against the user's
-  budget after every batch and state it ("$34 of $50 budget used"). Cards
-  the user owns cost $0. Pull from `deck show --json`'s `owned` and
-  `price_usd` fields.
 - **Collection first.** Before proposing a purchase, search what the user
   owns (`stm collection query`) for a card that fills the same role. "Good
   enough" beats "strictly better" when the owned card is playable in the
@@ -655,15 +659,14 @@ question rounds in either mode. No jumping to a finished list.
 (ask only what the user hasn't already said):
 
 1. **Format.** Commander, Modern, Standard, Pioneer, Pauper, other?
-2. **Budget.** Run `stm collection --json` first and anchor the question in
-   what they already have: "Your collection holds about $X of cards; how
-   much are you looking to add on top for this deck?" If they say "use what
-   I own", set budget to $0 for purchases and confirm. If they give no
-   number, ask again; the whole workflow is budget-driven.
-3. **Strength target.** For commander: **which bracket** (1–5; describe 2 =
-   casual core, 3 = optimized, 4 = high-power ultra, 5 = cEDH, and mention
+2. **Budget.** Anchor the question in what they already have
+   (`stm collection --json` first): "Your collection holds about $X; how
+   much to add on top for this deck?" "Use what I own" = budget $0,
+   confirmed. No number = ask again; the whole workflow is budget-driven.
+3. **Strength target.** For commander: **which bracket** (1–5; official
+   terms: 1 exhibition, 2 core, 3 upgraded, 4 optimized, 5 cEDH — mention
    the Game Changer limits). For other formats: how competitive (FNM-level,
-   RCQ-level, spike-max? This decides how many compromises are OK and how
+   RCQ-level, spike-max)? This decides how many compromises are OK and how
    much opponents will hate it.
 4. **Theme or commander.** A commander, a mechanic ("life drain"), an
    aesthetic, or "suggest options".
@@ -706,13 +709,12 @@ a curve that lets the deck do its thing by turns 3–4 (aggro) or 4–6
 interaction and fewer creatures; a go-wide deck counts its payoffs as win
 conditions. Say when you are deviating and why.
 
-**Simulation is the verification step for these counts.** Static counts
-say the deck *contains* 10 ramp pieces; `stm deck simulate` says whether
-the deck *draws* them early enough (`role_access`), whether the commander
-actually comes down on curve (`commander.on_curve_pct`), and whether the
-curve is playable (`card_castability`). Run it after the skeleton and
-after every confirmed batch (same `--seed` each time), and let the
-`problems[]` findings drive the next batch. Exit 1 = problems found.
+**Simulation verifies these counts** (see Part 1's fix loop): static
+counts say the deck *contains* 10 ramp pieces; the sim says whether the
+deck *draws* them early enough (`role_access`), whether the commander
+comes down on curve (`commander.on_curve_pct`), and whether the curve is
+playable (`card_castability`). Run it after the skeleton and after every
+confirmed batch, and let `problems[]` drive the next batch.
 
 **Round 2 — skeleton (get confirmation).** Once round 1 is answered:
 
@@ -734,16 +736,25 @@ batch per round, confirming between each: ramp → card draw → removal/board
 wipe → win conditions → flexible slots/theme pieces → mana base finish. For
 each card:
 
-- **`stm deck suggest <name> --role <draw|removal|ramp|wincon|
-  counterspell|land> --json` is the one-call fill tool**: it searches owned
-  first, matches Scryfall Tagger labels, filters to the commander's color
-  identity, and ranks by EDHREC playability — no separate price/GC calls
-  needed (both ride on the same JSON). Pass a free-text query for theme
-  fills (`"frog payoff"`). `stm collection query "<role>" --color-identity
-  <CI> --format commander --json` and `stm query` remain the fallbacks for
-  deep browsing. When a candidate card fits the role but costs too much,
-  `stm card similar <candidate> --owned --json` surfaces owned cards with
-  the same functional profile.
+- **`stm deck suggest <name> --role <name> --json` is the one-call fill
+  tool**: it searches owned first, matches Scryfall Tagger labels,
+  filters to the deck's legality, and ranks by fused fit (semantic +
+  tag match, EDHREC rank tiebreak). Any of the 69 known role names works
+  — the CLI prints the full list on an unknown role (draw, cantrip,
+  wheel, mill, ramp, mana-rock, mana-dork, removal, board-wipe,
+  counterspell, stax, sacrifice, reanimate, token, anthem, equipment,
+  evasion, burn, lifegain, tutor, wincon, combo, storm, extra-turn,
+  blink, landfall, voltron, spellslinger, typal, politics, interaction,
+  mana-sink, tax, drain, pinger, flicker, tribal, wrath, loot,
+  sac-outlet, aristocrats, pillow-fort, graveyard-hate, mana-fixing,
+  go-wide, pump, tapper, lands-matter, card-selection, and more). Pass a
+  free-text query for theme fills (`"frog payoff"`). `stm collection
+  query "<role>"
+  --color-identity <CI> --format commander --json` and `stm query` remain
+  the fallbacks for deep browsing. When a
+  candidate card fits the role but costs too much, `stm card similar
+  <candidate> --owned --json` surfaces owned cards with the same
+  functional profile.
 - Check `stm card <name> --json` for price, `game_changer`, and
   `legalities` before proposing (suggest already carries most of it).
   Respect the bracket's Game Changer limit.
@@ -789,15 +800,27 @@ exceed it.
    targets, and the simulation findings (screw/flood, commander timing,
    starved categories, dead cards).
 2. **Ask what's wrong.** "How did it feel to play? Where did it lose?"
-   Common answers map to fixes: ran out of gas → draw; died to creatures →
-   removal/wipes; clunky → curve/ramp; never closed games → wincons; lost
-   to X specifically → answers for X. If the user doesn't know, use the
-   simulate output as the diagnosis: `problems[]` kinds map to the same
-   fixes, and `card_castability` names the cards that sit dead in hand.
-   Propose the diagnosis (sim data + curve numbers) and ask if it matches
-   their experience. For a card the user calls out as underperforming,
+   If the user doesn't know, use the simulate output as the diagnosis:
+   the problem-kind table below maps each finding to a fix, and
+   `card_castability` names the cards that sit dead in hand. Propose the
+   diagnosis (sim data + curve numbers) and ask if it matches their
+   experience. For a card the user calls out as underperforming,
    `stm card similar <that card> --owned --json` proposes owned
    replacements with the same role profile.
+
+   **Problem-kind → fix mapping** (drives the swap batches):
+
+   | Problem kind | What it means | First fix |
+   | --- | --- | --- |
+   | `mana_screw` | too few early lands | add 2-3 land slots |
+   | `mana_flood` | too many early lands | trim ~2 land slots toward the curve |
+   | `commander_late` | commander rarely on curve | add 2-3 ramp sources or lower the early curve |
+   | `color_screw` | enough mana, wrong colors | read `color_sources` + `pip_blocks`; add/fix sources for the named color |
+   | `draw_starvation` | no draw source seen by t6 | add 2-3 draw engines |
+   | `mana_unused` | mana floats unspent | add cheaper spells or more draw |
+   | `dead_cards` | 3+ spells cast late | cut/discount late cards, or add ramp (check `card_castability`) |
+   | `category_starved` | removal/wincons rarely in hand | fill the starved role (`deck suggest --role`) |
+   | `interaction_unready` | answers seen but unaffordable | add cheaper instant-speed answers |
 3. **Optional research.** If the user asks or the problems are unclear,
    search online (EDHREC primer for the commander, bracket guides) and
    summarize findings with sources before proposing anything.
@@ -811,7 +834,10 @@ exceed it.
    and no new `problems[]` appeared. Then a final `stm deck show` +
    `stm deck legal` + primer update (current state, not build history).
    Present spend vs budget and what
-   changed per problem the user named.
+   changed per problem the user named. **Keep commander decks at exactly
+   100 cards** (60-card formats at 60): after a trim, backfill to the
+   required size with basics or cheap fillers, then re-run
+   `deck legal` — the legality check enforces the exact count.
 
 ### Output style during deckbuilding
 

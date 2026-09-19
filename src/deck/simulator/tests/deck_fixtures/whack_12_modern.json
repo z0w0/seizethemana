@@ -1,0 +1,243 @@
+{
+ "name": "whack 12 modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Brightstone Ritual",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Add {R} for each Goblin on the battlefield."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Foundry Street Denizen",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin Warrior",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever another red creature you control enters, this creature gets +1/+0 until end of turn."
+  },
+  {
+   "name": "Gleeful Demolition",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target artifact. If you controlled that artifact, create three 1/1 red Phyrexian Goblin creature tokens."
+  },
+  {
+   "name": "Goblin Bombardment",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+  },
+  {
+   "name": "Goblin Bushwhacker",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin Warrior",
+   "keywords": "Kicker",
+   "power": "1",
+   "loyalty": null,
+   "text": "Kicker {R} (You may pay an additional {R} as you cast this spell.)\nWhen this creature enters, if it was kicked, creatures you control get +1/+0 and gain haste until end of turn."
+  },
+  {
+   "name": "Goblin Guide",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin Scout",
+   "keywords": "Haste",
+   "power": "2",
+   "loyalty": null,
+   "text": "Haste\nWhenever this creature attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand."
+  },
+  {
+   "name": "Kuldotha Rebirth",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, sacrifice an artifact.\nCreate three 1/1 red Goblin creature tokens."
+  },
+  {
+   "name": "Legion Loyalist",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin Soldier",
+   "keywords": "Battalion Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nBattalion \u2014 Whenever this creature and at least two other creatures attack, creatures you control gain first strike and trample until end of turn and can't be blocked by creature tokens this turn."
+  },
+  {
+   "name": "Legion Warboss",
+   "cost": "{2}{R}",
+   "type_line": "Creature \u2014 Goblin Soldier",
+   "keywords": "Mentor",
+   "power": "2",
+   "loyalty": null,
+   "text": "Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)\nAt the beginning of combat on your turn, create a 1/1 red Goblin creature token. That token gains haste until end of turn and attacks this combat if able."
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Memnite",
+   "cost": "{0}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": ""
+  },
+  {
+   "name": "Mogg War Marshal",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Goblin Warrior",
+   "keywords": "Echo",
+   "power": "1",
+   "loyalty": null,
+   "text": "Echo {1}{R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature enters or dies, create a 1/1 red Goblin creature token."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Ramunap Ruins",
+   "cost": "",
+   "type_line": "Land \u2014 Desert",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add {R}.\n{2}{R}{R}, {T}, Sacrifice a Desert: This land deals 2 damage to each opponent."
+  },
+  {
+   "name": "Rundvelt Hordemaster",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Goblin Warrior",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Other Goblins you control get +1/+1.\nWhenever this creature or another Goblin you control dies, exile the top card of your library. If it's a Goblin creature card, you may cast that card until the end of your next turn."
+  },
+  {
+   "name": "Skirk Prospector",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Sacrifice a Goblin: Add {R}."
+  },
+  {
+   "name": "Sling-Gang Lieutenant",
+   "cost": "{3}{B}",
+   "type_line": "Creature \u2014 Goblin",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature enters, create two 1/1 red Goblin creature tokens.\nSacrifice a Goblin: Target player loses 1 life and you gain 1 life."
+  }
+ ],
+ "list": [
+  [
+   "Mountain",
+   15
+  ],
+  [
+   "Ramunap Ruins",
+   2
+  ],
+  [
+   "Goblin Guide",
+   4
+  ],
+  [
+   "Memnite",
+   4
+  ],
+  [
+   "Kuldotha Rebirth",
+   4
+  ],
+  [
+   "Gleeful Demolition",
+   3
+  ],
+  [
+   "Legion Loyalist",
+   2
+  ],
+  [
+   "Rundvelt Hordemaster",
+   3
+  ],
+  [
+   "Goblin Bombardment",
+   1
+  ],
+  [
+   "Sling-Gang Lieutenant",
+   2
+  ],
+  [
+   "Mogg War Marshal",
+   3
+  ],
+  [
+   "Foundry Street Denizen",
+   3
+  ],
+  [
+   "Goblin Bushwhacker",
+   3
+  ],
+  [
+   "Legion Warboss",
+   2
+  ],
+  [
+   "Brightstone Ritual",
+   2
+  ],
+  [
+   "Skirk Prospector",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   4
+  ],
+  [
+   "Fatal Push",
+   1
+  ]
+ ]
+}

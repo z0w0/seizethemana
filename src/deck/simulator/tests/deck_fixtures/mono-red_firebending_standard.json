@@ -1,0 +1,217 @@
+{
+ "name": "mono-red firebending standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bulk Up",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "Flashback Double",
+   "power": null,
+   "loyalty": null,
+   "text": "Double target creature's power until end of turn.\nFlashback {4}{R}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Case of the Burning Masks",
+   "cost": "{1}{R}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve \u2014 Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+  },
+  {
+   "name": "Castle Embereth",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{1}{R}{R}, {T}: Creatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Emberheart Challenger",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Mouse Warrior",
+   "keywords": "Prowess Valiant Haste",
+   "power": "2",
+   "loyalty": null,
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nValiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, exile the top card of your library. Until end of turn, you may play that card."
+  },
+  {
+   "name": "Firebending Student",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "Prowess Firebending",
+   "power": "1",
+   "loyalty": null,
+   "text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)\nFirebending X, where X is this creature's power. (Whenever this creature attacks, add X {R}. This mana lasts until end of combat.)"
+  },
+  {
+   "name": "Heartfire Hero",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Mouse Soldier",
+   "keywords": "Valiant",
+   "power": "1",
+   "loyalty": null,
+   "text": "Valiant \u2014 Whenever this creature becomes the target of a spell or ability you control for the first time each turn, put a +1/+1 counter on it.\nWhen this creature dies, it deals damage equal to its power to each opponent."
+  },
+  {
+   "name": "Kaito, Dancing Shadow",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker \u2014 Kaito",
+   "keywords": "",
+   "power": null,
+   "loyalty": "3",
+   "text": "Whenever one or more creatures you control deal combat damage to a player, you may return one of them to its owner's hand. If you do, you may activate loyalty abilities of Kaito twice this turn rather than only once.\n+1: Up to one target creature can't attack or block until your next turn.\n0: Draw a card.\n\u22122: Create a 2/2 colorless Drone artifact creature token with deathtouch and \"When this token leaves the battlefield, each opponent loses 2 life and you gain 2 life.\""
+  },
+  {
+   "name": "Monument to Endurance",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "Treasure",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you discard a card, choose one that hasn't been chosen this turn \u2014\n\u2022 Draw a card.\n\u2022 Create a Treasure token.\n\u2022 Each opponent loses 3 life."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Slickshot Show-Off",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Bird Wizard",
+   "keywords": "Flying Plot Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying, haste\nWhenever you cast a noncreature spell, this creature gets +2/+0 until end of turn.\nPlot {1}{R} (You may pay {1}{R} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)"
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land \u2014 Town",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Sunset Strikemaster",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "{T}: Add {R}.\n{2}{R}, {T}, Sacrifice this creature: It deals 6 damage to target creature with flying."
+  }
+ ],
+ "list": [
+  [
+   "Mountain",
+   23
+  ],
+  [
+   "Starting Town",
+   2
+  ],
+  [
+   "Castle Embereth",
+   2
+  ],
+  [
+   "Slickshot Show-Off",
+   4
+  ],
+  [
+   "Firebending Student",
+   4
+  ],
+  [
+   "Bulk Up",
+   4
+  ],
+  [
+   "Emberheart Challenger",
+   3
+  ],
+  [
+   "Heartfire Hero",
+   3
+  ],
+  [
+   "Monument to Endurance",
+   2
+  ],
+  [
+   "Burst Lightning",
+   4
+  ],
+  [
+   "Case of the Burning Masks",
+   2
+  ],
+  [
+   "Kaito, Dancing Shadow",
+   2
+  ],
+  [
+   "Sunset Strikemaster",
+   2
+  ],
+  [
+   "Nowhere to Run",
+   1
+  ],
+  [
+   "Slick Sequence",
+   1
+  ],
+  [
+   "Stocking the Pantry",
+   1
+  ]
+ ]
+}

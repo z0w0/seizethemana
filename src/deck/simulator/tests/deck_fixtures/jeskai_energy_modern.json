@@ -1,0 +1,321 @@
+{
+ "name": "jeskai energy modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Aether Hub",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "When this land enters, you get {E} (an energy counter).\n{T}: Add {C}.\n{T}, Pay {E}: Add one mana of any color."
+  },
+  {
+   "name": "Attune with Aether",
+   "cost": "{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a basic land card, reveal it, put it into your hand, then shuffle. You get {E}{E} (two energy counters)."
+  },
+  {
+   "name": "Bomat Courier",
+   "cost": "{1}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nWhenever this creature attacks, exile the top card of your library face down. (You can't look at it.)\n{R}, Discard your hand, Sacrifice this creature: Put all cards exiled with this creature into their owners' hands."
+  },
+  {
+   "name": "Chandra, Torch of Defiance",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Planeswalker \u2014 Chandra",
+   "keywords": "",
+   "power": null,
+   "loyalty": "4",
+   "text": "+1: Exile the top card of your library. You may cast that card. If you don't, Chandra deals 2 damage to each opponent.\n+1: Add {R}{R}.\n\u22123: Chandra deals 4 damage to target creature.\n\u22127: You get an emblem with \"Whenever you cast a spell, this emblem deals 5 damage to any target.\""
+  },
+  {
+   "name": "Consult the Star Charts",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)\nLook at the top X cards of your library, where X is the number of lands you control. Put one of those cards into your hand. If this spell was kicked, put two of those cards into your hand instead. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Dynavolt Tower",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you cast an instant or sorcery spell, you get {E}{E} (two energy counters).\n{T}, Pay {E}{E}{E}{E}{E}: This artifact deals 3 damage to any target."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Galvanic Discharge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
+  },
+  {
+   "name": "Glint-Sleeve Artisan",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Dwarf Artificer",
+   "keywords": "Fabricate",
+   "power": "2",
+   "loyalty": null,
+   "text": "Fabricate 1 (When this creature enters, put a +1/+1 counter on it or create a 1/1 colorless Servo artifact creature token.)"
+  },
+  {
+   "name": "Harnessed Lightning",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose target creature. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Harnessed Lightning deals that much damage to that creature."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Narset, Parter of Veils",
+   "cost": "{1}{U}{U}",
+   "type_line": "Legendary Planeswalker \u2014 Narset",
+   "keywords": "",
+   "power": null,
+   "loyalty": "5",
+   "text": "Each opponent can't draw more than one card each turn.\n\u22122: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Orim's Chant",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {W} (You may pay an additional {W} as you cast this spell.)\nTarget player can't cast spells this turn. If this spell was kicked, creatures can't attack this turn."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Prairie Stream",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Servo Exhibition",
+   "cost": "{1}{W}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Create two 1/1 colorless Servo artifact creature tokens."
+  },
+  {
+   "name": "Spirebluff Canal",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Torrential Gearhulk",
+   "cost": "{4}{U}{U}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "Flash",
+   "power": "5",
+   "loyalty": null,
+   "text": "Flash\nWhen this creature enters, you may cast target instant card from your graveyard without paying its mana cost. If that spell would be put into your graveyard, exile it instead."
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Whirler Virtuoso",
+   "cost": "{1}{U}{R}",
+   "type_line": "Creature \u2014 Vedalken Artificer",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you get {E}{E}{E} (three energy counters).\nPay {E}{E}{E}: Create a 1/1 colorless Thopter artifact creature token with flying."
+  },
+  {
+   "name": "Wrangle",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Gain control of target creature with power 4 or less until end of turn. Untap that creature. It gains haste until end of turn."
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   4
+  ],
+  [
+   "Mountain",
+   3
+  ],
+  [
+   "Plains",
+   3
+  ],
+  [
+   "Spirebluff Canal",
+   4
+  ],
+  [
+   "Prairie Stream",
+   2
+  ],
+  [
+   "Aether Hub",
+   4
+  ],
+  [
+   "Orim's Chant",
+   2
+  ],
+  [
+   "Consult the Star Charts",
+   3
+  ],
+  [
+   "Narset, Parter of Veils",
+   3
+  ],
+  [
+   "Attune with Aether",
+   4
+  ],
+  [
+   "Harnessed Lightning",
+   3
+  ],
+  [
+   "Servo Exhibition",
+   3
+  ],
+  [
+   "Bomat Courier",
+   3
+  ],
+  [
+   "Whirler Virtuoso",
+   2
+  ],
+  [
+   "Glint-Sleeve Artisan",
+   2
+  ],
+  [
+   "Galvanic Discharge",
+   3
+  ],
+  [
+   "Wrangle",
+   2
+  ],
+  [
+   "Dynavolt Tower",
+   2
+  ],
+  [
+   "Torrential Gearhulk",
+   2
+  ],
+  [
+   "Chandra, Torch of Defiance",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ],
+  [
+   "Unholy Heat",
+   1
+  ],
+  [
+   "Thoughtseize",
+   1
+  ]
+ ]
+}

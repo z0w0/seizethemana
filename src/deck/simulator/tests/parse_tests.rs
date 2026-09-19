@@ -750,3 +750,284 @@ fn helix_pinnacle_threshold_is_100_not_10() {
         .expect("threshold parsed");
     assert_eq!(threshold, 100);
 }
+
+// New-mechanics parse tests: whenever-ETB, landfall family, haste,
+// tokens, X-costs, per-cast mana, kicker, sagas, loyalty activations.
+
+#[test]
+fn whenever_etb_parses() {
+    let sim = parse_sim_card(&card(
+        "Chulane-class Plant",
+        "{2}{G}{U}",
+        "Creature — Human Druid",
+        "Whenever another creature you control enters, draw a card.",
+    ));
+    let etb = sim
+        .abilities()
+        .find(|a| a.trigger == Trigger::OnEnter)
+        .expect("whenever-ETB parses");
+    assert!(matches!(etb.effect, Effect::Draw(1)));
+}
+
+#[test]
+fn etb_scry_is_awareness_not_draw() {
+    let sim = parse_sim_card(&card(
+        "Prescient",
+        "{1}{U}",
+        "Creature — Bird Wizard",
+        "When this creature enters, scry 2.",
+    ));
+    let etb = sim
+        .abilities()
+        .find(|a| a.trigger == Trigger::OnEnter)
+        .expect("scry ETB parsed");
+    assert!(matches!(etb.effect, Effect::Scry(2)));
+}
+
+#[test]
+fn landfall_engine_parses_draw_and_tokens() {
+    let draw = parse_sim_card(&card(
+        "Tatyova's Kite",
+        "{2}{G}",
+        "Creature — Elemental",
+        "Landfall — Whenever a land you control enters, you gain 1 life and draw a card.",
+    ));
+    assert!(
+        draw.abilities()
+            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Draw(_))),
+        "landfall draw parses"
+    );
+    let tokens = parse_sim_card(&card(
+        "Lotus Cobra",
+        "{1}{G}{U}",
+        "Creature — Snake",
+        "Landfall — Whenever a land you control enters, create a 2/2 green Beast creature token.",
+    ));
+    assert!(
+        tokens
+            .abilities()
+            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Tokens(_))),
+        "landfall tokens parse"
+    );
+    let mana = parse_sim_card(&card(
+        "Cobra Mana",
+        "{1}{G}{U}",
+        "Creature — Snake",
+        "Landfall — Whenever a land you control enters, add one mana of any color.",
+    ));
+    assert!(
+        mana.abilities()
+            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::ExtraLand)),
+        "landfall mana reads as ramp"
+    );
+}
+
+#[test]
+fn haste_skips_sickness_in_game() {
+    let hasted = parse_sim_card(&card_kw(
+        "Swift Body",
+        "{R}",
+        "Creature — Human",
+        "Haste",
+        "Haste",
+    ));
+    assert!(hasted.has_haste);
+    let plain = parse_sim_card(&card("Slow Body", "{R}", "Creature — Human", ""));
+    assert!(!plain.has_haste);
+}
+
+#[test]
+fn token_counts_parse() {
+    let two = parse_sim_card(&card(
+        "Breya",
+        "{W}{U}{B}{R}",
+        "Legendary Artifact Creature",
+        "When Breya enters, create two 1/1 blue Thopter artifact creature tokens with flying.",
+    ));
+    let t = two
+        .abilities()
+        .find(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Tokens(n) if n == 2))
+        .expect("two-token ETB");
+    assert!(matches!(t.effect, Effect::Tokens(2)));
+    let scaled = parse_sim_card(&card(
+        "Swarm Host",
+        "{3}{G}",
+        "Creature — Insect",
+        "Whenever a land you control enters, create a 1/1 Insect creature token for each land you control.",
+    ));
+    assert!(
+        scaled
+            .abilities()
+            .any(|a| matches!(a.effect, Effect::Tokens(8))),
+        "for-each tokens cap at 8"
+    );
+    let one = parse_sim_card(&card(
+        "Solo Maker",
+        "{1}{W}",
+        "Creature — Soldier",
+        "When Solo Maker enters, create a 1/1 Soldier creature token.",
+    ));
+    assert!(
+        one.abilities()
+            .any(|a| matches!(a.effect, Effect::Tokens(1))),
+        "bare 'a token' counts 1"
+    );
+}
+
+#[test]
+fn x_cost_class_parses() {
+    let drain = parse_sim_card(&card(
+        "Torment of Hailfire",
+        "{X}{B}{B}",
+        "Sorcery",
+        "Target player loses X life for each artifact and creature you control...",
+    ));
+    assert_eq!(drain.x_class, Some(XClass::Drain));
+    let draw = parse_sim_card(&card(
+        "Blue Sun's Zenith",
+        "{X}{U}{U}",
+        "Instant",
+        "Draw X cards.",
+    ));
+    assert_eq!(draw.x_class, Some(XClass::Draw));
+    let tokens = parse_sim_card(&card(
+        "March of Woe",
+        "{X}{W}{W}",
+        "Sorcery",
+        "Create X 1/1 white Soldier creature tokens.",
+    ));
+    assert_eq!(tokens.x_class, Some(XClass::Tokens));
+    let none = parse_sim_card(&card(
+        "Bonfire Lite",
+        "{X}{R}",
+        "Sorcery",
+        "Exile the top card.",
+    ));
+    assert_eq!(none.x_class, None);
+}
+
+#[test]
+fn per_cast_mana_engine_parses() {
+    let vivi = parse_sim_card(&card(
+        "Vivi Ornitier",
+        "{1}{U}{R}",
+        "Legendary Creature — Wizard",
+        "{T}: Add one mana of any color for each instant or sorcery spell you've cast this turn.",
+    ));
+    assert!(vivi.mana_per_cast.is_some(), "per-cast mana parses");
+    let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
+    assert!(plain.mana_per_cast.is_none());
+}
+
+#[test]
+fn kicker_parses() {
+    let kicked = parse_sim_card(&card(
+        "Kicked Bolt",
+        "{1}{R}",
+        "Sorcery",
+        "Kicker {2}\nKicked Bolt deals 3 damage to target player.",
+    ));
+    assert_eq!(kicked.kicker, Some(2));
+    let plain = parse_sim_card(&card("Bolt", "{1}{R}", "Sorcery", "Bolt deals 3."));
+    assert_eq!(plain.kicker, None);
+}
+
+#[test]
+fn saga_chapters_parse_into_abilities() {
+    let saga = parse_sim_card(&card(
+        "Tales of Master",
+        "{1}{U}",
+        "Enchantment — Saga",
+        "Read ahead (Choose a chapter and start with that many lore counters.)\nI — Draw a card.\nII — Draw two cards.\nIII — Mill three cards.",
+    ));
+    assert!(saga.is_saga);
+    let chapter_effects: Vec<&Effect> = saga
+        .abilities()
+        .filter(|a| a.trigger == Trigger::Activated)
+        .map(|a| &a.effect)
+        .collect();
+    assert_eq!(chapter_effects.len(), 3, "three chapters parse");
+    assert!(matches!(chapter_effects[0], Effect::Draw(1)));
+    assert!(matches!(chapter_effects[1], Effect::Draw(2)));
+    assert!(matches!(chapter_effects[2], Effect::Mill(3)));
+}
+
+#[test]
+fn loyalty_minus_and_plus_costs_parse() {
+    let mut row = card(
+        "Test Walker",
+        "{2}{W}",
+        "Legendary Planeswalker — Test",
+        "+1: Draw a card.\n−3: Draw two cards.\n−7: Draw five cards.",
+    );
+    row.loyalty = Some("4".into());
+    let sim = parse_sim_card(&row);
+    let abilities: Vec<_> = sim
+        .abilities()
+        .filter(|a| a.trigger == Trigger::Activated)
+        .collect();
+    assert!(
+        abilities.iter().any(|a| a.loyalty_gain == 1),
+        "plus ability gains loyalty"
+    );
+    assert!(
+        abilities.iter().any(|a| a.loyalty_cost == 3),
+        "minus ability spends loyalty"
+    );
+    assert!(
+        abilities.iter().any(|a| a.loyalty_cost == 7),
+        "ultimate parses as minus"
+    );
+}
+
+#[test]
+fn text_flying_joins_evasion_and_flashback_not_flash() {
+    let flier = parse_sim_card(&card(
+        "Sky Body",
+        "{2}{U}",
+        "Creature — Bird",
+        "This creature has flying.",
+    ));
+    assert!(flier.evasion, "text flying counts as evasion");
+    let flashback = parse_sim_card(&card(
+        "Past Spell",
+        "{1}{R}",
+        "Sorcery",
+        "Deal 1 damage to any target.\nFlashback {3}{R}",
+    ));
+    assert!(
+        !flashback.is_instant_speed,
+        "flashback text does not read as flash"
+    );
+    let flash = parse_sim_card(&card(
+        "Quick Spell",
+        "{1}{U}",
+        "Instant",
+        "Counter target spell.",
+    ));
+    assert!(flash.is_instant_speed);
+}
+
+#[test]
+fn extra_land_drops_flag_parses() {
+    let aesi = parse_sim_card(&card(
+        "Aesi",
+        "{4}{G}{U}",
+        "Legendary Creature — Merfolk",
+        "You may play an additional land on each of your turns.",
+    ));
+    assert!(aesi.extra_land_drops);
+    let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
+    assert!(!plain.extra_land_drops);
+}
+
+#[test]
+fn removal_beats_draw_when_both_match() {
+    let both = parse_sim_card(&card(
+        "Murky Looting",
+        "{1}{B}",
+        "Instant",
+        "Destroy target creature. Draw a card.",
+    ));
+    assert_eq!(both.role, Role::Removal, "removal wins over the draw rider");
+}

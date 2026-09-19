@@ -22,7 +22,9 @@ pub(super) struct CombatOutcome {
 /// Run the combat phase: bodies attack, attack triggers fire, combat-
 /// damage triggers resolve per connecting attacker (best case: every
 /// attacker is unblocked). Buffs (static + equipment + landfall) and
-/// double strike join the power sum.
+/// double strike join the power sum. Player-targeted combat drains
+/// resolve at the format's opponent multiplier (three opponents in the
+/// commander family).
 pub(super) fn combat_phase(
     deck: &SimDeck,
     st: &mut GameState,
@@ -30,33 +32,42 @@ pub(super) fn combat_phase(
     turns: usize,
     land_drops: &[u8],
 ) -> CombatOutcome {
+    let drain_mult = if deck.format == super::model::Format::Commander {
+        3
+    } else {
+        1
+    };
     let static_buff_power: i32 = st
         .battlefield
         .iter()
         .filter(|p| p.card < usize::MAX - 1)
         .map(|p| card_of(deck, p).buff.map(|(p_, _)| p_.max(0)).unwrap_or(0))
         .sum();
-    let equipped_buff_power: i32 = st
+    // Equipped gear buffs its own host only: (host position, buff power).
+    let equip_buffs: Vec<(usize, i32)> = st
         .battlefield
         .iter()
-        .filter(|p| p.card < usize::MAX - 1)
-        .filter_map(|p| card_of(deck, p).equipment)
-        .map(|e| e.buff.0.max(0))
-        .sum();
+        .enumerate()
+        .filter(|(_, p)| p.equipped && p.card < usize::MAX - 1)
+        .filter_map(|(_, p)| {
+            let host = p.equip_host?;
+            card_of(deck, p).equipment.map(|e| (host, e.buff.0.max(0)))
+        })
+        .collect();
     let mut token_bodies = 0u32;
     let mut power_total: u32 = 0;
     let mut attackers: u32 = 0;
     let mut evasive: u32 = 0;
     // Spells cast this turn feed prowess (the cast path counts them).
     let prowess_bumps = st.prowess_casts;
-    for perm in st.battlefield.clone() {
+    for (pi, perm) in st.battlefield.clone().iter().enumerate() {
         let attacks = perm.animated
             || perm.crewed
-            || (card_of(deck, &perm).is_creature && !perm.tapped && !perm.sick);
+            || (card_of(deck, perm).is_creature && !perm.tapped && !perm.sick);
         if !attacks {
             continue;
         }
-        let card = card_of(deck, &perm);
+        let card = card_of(deck, perm);
         attackers += 1;
         if card.evasion {
             evasive += 1;
@@ -66,7 +77,13 @@ pub(super) fn combat_phase(
             power = 0;
         }
         power += static_buff_power;
-        power += equipped_buff_power;
+        // Equipment buffs only their equipped host: the gear's power
+        // joins this attacker when THIS permanent paid the equip cost.
+        power += equip_buffs
+            .iter()
+            .filter(|(host, _)| *host == pi)
+            .map(|(_, buff)| *buff)
+            .sum::<i32>();
         if card.landfall {
             // +1 per land drop made after the permanent entered.
             let start = perm.entered_turn.min(turns - 1);
@@ -111,7 +128,7 @@ pub(super) fn combat_phase(
                         }
                     }
                     Effect::Drain(n) => {
-                        st.drained += n;
+                        st.drained += n * drain_mult;
                     }
                     _ => {}
                 },

@@ -1,0 +1,243 @@
+{
+ "name": "hollow one modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Asmoranomardicadaistinaculdacar",
+   "cost": "",
+   "type_line": "Legendary Creature \u2014 Human Wizard",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "As long as you've discarded a card this turn, you may pay {B/R} to cast this spell.\nWhen Asmoranomardicadaistinaculdacar enters, you may search your library for a card named The Underworld Cookbook, reveal it, put it into your hand, then shuffle.\nSacrifice two Foods: Target creature deals 6 damage to itself."
+  },
+  {
+   "name": "Bloodghast",
+   "cost": "{B}{B}",
+   "type_line": "Creature \u2014 Vampire Spirit",
+   "keywords": "Landfall",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature can't block.\nThis creature has haste as long as an opponent has 10 or less life.\nLandfall \u2014 Whenever a land you control enters, you may return this card from your graveyard to the battlefield."
+  },
+  {
+   "name": "Burning Inquiry",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each player draws three cards, then discards three cards at random."
+  },
+  {
+   "name": "Cathartic Reunion",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, discard two cards.\nDraw three cards."
+  },
+  {
+   "name": "Copperline Gorge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Goblin Lore",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw four cards, then discard three cards at random."
+  },
+  {
+   "name": "Hollow One",
+   "cost": "{5}",
+   "type_line": "Artifact Creature \u2014 Golem",
+   "keywords": "Cycling",
+   "power": "4",
+   "loyalty": null,
+   "text": "This spell costs {2} less to cast for each card you've cycled or discarded this turn.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Insolent Neonate",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Vampire",
+   "keywords": "Menace",
+   "power": "1",
+   "loyalty": null,
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nDiscard a card, Sacrifice this creature: Draw a card."
+  },
+  {
+   "name": "Light Up the Stage",
+   "cost": "{2}{R}",
+   "type_line": "Sorcery",
+   "keywords": "Spectacle",
+   "power": null,
+   "loyalty": null,
+   "text": "Spectacle {R} (You may cast this spell for its spectacle cost rather than its mana cost if an opponent lost life this turn.)\nExile the top two cards of your library. Until the end of your next turn, you may play those cards."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Orcish Hellraiser",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Orc Warrior",
+   "keywords": "Echo",
+   "power": "3",
+   "loyalty": null,
+   "text": "Echo {R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)\nWhen this creature dies, it deals 2 damage to target player or planeswalker."
+  },
+  {
+   "name": "Prized Amalgam",
+   "cost": "{1}{U}{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "Whenever a creature enters, if it entered from your graveyard or you cast it from your graveyard, return this card from your graveyard to the battlefield tapped at the beginning of the next end step."
+  },
+  {
+   "name": "Ramunap Ruins",
+   "cost": "",
+   "type_line": "Land \u2014 Desert",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add {R}.\n{2}{R}{R}, {T}, Sacrifice a Desert: This land deals 2 damage to each opponent."
+  },
+  {
+   "name": "Soul-Scar Mage",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Human Wizard",
+   "keywords": "Prowess",
+   "power": "1",
+   "loyalty": null,
+   "text": "Prowess\nIf a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead."
+  },
+  {
+   "name": "Street Wraith",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature \u2014 Wraith",
+   "keywords": "Landwalk Swampwalk Cycling",
+   "power": "3",
+   "loyalty": null,
+   "text": "Swampwalk (This creature can't be blocked as long as defending player controls a Swamp.)\nCycling\u2014Pay 2 life. (Pay 2 life, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Vengevine",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature \u2014 Elemental",
+   "keywords": "Haste",
+   "power": "4",
+   "loyalty": null,
+   "text": "Haste\nWhenever you cast a spell, if it's the second creature spell you cast this turn, you may return this card from your graveyard to the battlefield."
+  }
+ ],
+ "list": [
+  [
+   "Mountain",
+   10
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Copperline Gorge",
+   3
+  ],
+  [
+   "Ramunap Ruins",
+   2
+  ],
+  [
+   "Hollow One",
+   4
+  ],
+  [
+   "Burning Inquiry",
+   4
+  ],
+  [
+   "Goblin Lore",
+   4
+  ],
+  [
+   "Cathartic Reunion",
+   4
+  ],
+  [
+   "Faithless Looting",
+   4
+  ],
+  [
+   "Insolent Neonate",
+   4
+  ],
+  [
+   "Street Wraith",
+   3
+  ],
+  [
+   "Asmoranomardicadaistinaculdacar",
+   2
+  ],
+  [
+   "Orcish Hellraiser",
+   2
+  ],
+  [
+   "Vengevine",
+   2
+  ],
+  [
+   "Bloodghast",
+   2
+  ],
+  [
+   "Prized Amalgam",
+   2
+  ],
+  [
+   "Soul-Scar Mage",
+   2
+  ],
+  [
+   "Light Up the Stage",
+   2
+  ]
+ ]
+}

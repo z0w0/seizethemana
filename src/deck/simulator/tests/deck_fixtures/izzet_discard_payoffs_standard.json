@@ -1,0 +1,347 @@
+{
+ "name": "izzet discard payoffs standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Belladonna Took",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Halfling Citizen",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Brass's Tunnel-Grinder // Tecutlan, the Searing Rift",
+   "cost": "{2}{R} // ",
+   "type_line": "Legendary Artifact // Legendary Land \u2014 Cave",
+   "keywords": "Transform Discover",
+   "power": null,
+   "loyalty": null,
+   "text": "When Brass's Tunnel-Grinder enters, discard any number of cards, then draw that many cards plus one.\nAt the beginning of your end step, if you descended this turn, put a bore counter on Brass's Tunnel-Grinder. Then if there are three or more bore counters on it, remove those counters and transform it. (You descended if a permanent card was put into your graveyard from anywhere.)\n// (Transforms from Brass's Tunnel-Grinder.)\n{T}: Add {R}.\nWhenever you cast a permanent spell using mana produced by Tecutlan, discover X, where X is that spell's mana value."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Case of the Burning Masks",
+   "cost": "{1}{R}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve \u2014 Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+  },
+  {
+   "name": "Clarion Conqueror",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Dragon",
+   "keywords": "Flying",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flying\nActivated abilities of artifacts, creatures, and planeswalkers can't be activated."
+  },
+  {
+   "name": "Floodpits Drowner",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Merfolk",
+   "keywords": "Vigilance Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter on it.\n{1}{U}, {T}: Shuffle this creature and target creature with a stun counter on it into their owners' libraries."
+  },
+  {
+   "name": "Hare Apparent",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Rabbit Noble",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, create a number of 1/1 white Rabbit creature tokens equal to the number of other creatures you control named Hare Apparent.\nA deck can have any number of cards named Hare Apparent."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Kaito, Dancing Shadow",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker \u2014 Kaito",
+   "keywords": "",
+   "power": null,
+   "loyalty": "3",
+   "text": "Whenever one or more creatures you control deal combat damage to a player, you may return one of them to its owner's hand. If you do, you may activate loyalty abilities of Kaito twice this turn rather than only once.\n+1: Up to one target creature can't attack or block until your next turn.\n0: Draw a card.\n\u22122: Create a 2/2 colorless Drone artifact creature token with deathtouch and \"When this token leaves the battlefield, each opponent loses 2 life and you gain 2 life.\""
+  },
+  {
+   "name": "Kellan, the Fae-Blooded // Birthright Boon",
+   "cost": "{2}{R} // {1}{W}",
+   "type_line": "Legendary Creature \u2014 Human Faerie // Sorcery \u2014 Adventure",
+   "keywords": "Double strike",
+   "power": "2",
+   "loyalty": null,
+   "text": "Double strike\nOther creatures you control get +1/+0 for each Aura and Equipment attached to Kellan.\n// Search your library for an Aura or Equipment card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Leyline Axe",
+   "cost": "{4}",
+   "type_line": "Artifact \u2014 Equipment",
+   "keywords": "Equip",
+   "power": null,
+   "loyalty": null,
+   "text": "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEquipped creature gets +1/+1 and has double strike and trample.\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery.)"
+  },
+  {
+   "name": "Marauding Mako",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Shark Pirate",
+   "keywords": "Cycling",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever you discard one or more cards, put that many +1/+1 counters on this creature.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Monument to Endurance",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "Treasure",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you discard a card, choose one that hasn't been chosen this turn \u2014\n\u2022 Draw a card.\n\u2022 Create a Treasure token.\n\u2022 Each opponent loses 3 life."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Quantum Riddler",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature \u2014 Sphinx",
+   "keywords": "Flying Warp",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.\nWarp {1}{U}"
+  },
+  {
+   "name": "Restless Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {U} or {B}.\n{2}{U}{B}: Until end of turn, this land becomes a 4/4 blue and black Shark creature with deathtouch. It's still a land.\nWhenever this land attacks, target player mills four cards."
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Smaug the Magnificent",
+   "cost": "{2}{R}{R}",
+   "type_line": "Legendary Creature \u2014 Dragon",
+   "keywords": "Flying Treasure Haste",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flying, haste\nWhenever Smaug attacks, he deals damage equal to the number of Treasures you control to any target.\nAt the beginning of your upkeep, create a Treasure token."
+  },
+  {
+   "name": "Starting Town",
+   "cost": "",
+   "type_line": "Land \u2014 Town",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless it's your first, second, or third turn of the game.\n{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Stormsplitter",
+   "cost": "{3}{R}",
+   "type_line": "Creature \u2014 Otter Wizard",
+   "keywords": "Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nWhenever you cast an instant or sorcery spell, create a token that's a copy of this creature. Exile that token at the beginning of the next end step."
+  },
+  {
+   "name": "Sulfur Falls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Sunset Strikemaster",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "{T}: Add {R}.\n{2}{R}, {T}, Sacrifice this creature: It deals 6 damage to target creature with flying."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Bard",
+   "keywords": "Mobilize",
+   "power": "1",
+   "loyalty": null,
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Warleader's Call",
+   "cost": "{1}{R}{W}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Creatures you control get +1/+1.\nWhenever a creature you control enters, this enchantment deals 1 damage to each opponent."
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   8
+  ],
+  [
+   "Mountain",
+   6
+  ],
+  [
+   "Sulfur Falls",
+   3
+  ],
+  [
+   "Restless Reef",
+   2
+  ],
+  [
+   "Starting Town",
+   2
+  ],
+  [
+   "Monument to Endurance",
+   3
+  ],
+  [
+   "Brass's Tunnel-Grinder",
+   3
+  ],
+  [
+   "Marauding Mako",
+   3
+  ],
+  [
+   "Slick Sequence",
+   4
+  ],
+  [
+   "Stocking the Pantry",
+   3
+  ],
+  [
+   "Quantum Riddler",
+   3
+  ],
+  [
+   "Stormsplitter",
+   3
+  ],
+  [
+   "Kaito, Dancing Shadow",
+   2
+  ],
+  [
+   "Smaug the Magnificent",
+   2
+  ],
+  [
+   "Clarion Conqueror",
+   2
+  ],
+  [
+   "Burst Lightning",
+   1
+  ],
+  [
+   "Nowhere to Run",
+   1
+  ],
+  [
+   "Case of the Burning Masks",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Belladonna Took",
+   1
+  ],
+  [
+   "Leyline Axe",
+   1
+  ],
+  [
+   "Kellan, the Fae-Blooded",
+   1
+  ],
+  [
+   "Sunset Strikemaster",
+   1
+  ],
+  [
+   "Warleader's Call",
+   1
+  ],
+  [
+   "Hare Apparent",
+   1
+  ],
+  [
+   "Floodpits Drowner",
+   1
+  ]
+ ]
+}

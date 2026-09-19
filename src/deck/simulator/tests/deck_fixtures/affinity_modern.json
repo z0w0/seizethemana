@@ -1,0 +1,321 @@
+{
+ "name": "affinity modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Aether Spellbomb",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{U}, Sacrifice this artifact: Return target creature to its owner's hand.\n{1}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Arcbound Ravager",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Beast",
+   "keywords": "Modular",
+   "power": "0",
+   "loyalty": null,
+   "text": "Sacrifice an artifact: Put a +1/+1 counter on this creature.\nModular 1 (This creature enters with a +1/+1 counter on it. When it dies, you may put its +1/+1 counters on target artifact creature.)"
+  },
+  {
+   "name": "Cranial Plating",
+   "cost": "{2}",
+   "type_line": "Artifact \u2014 Equipment",
+   "keywords": "Equip",
+   "power": null,
+   "loyalty": null,
+   "text": "Equipped creature gets +1/+0 for each artifact you control.\n{B}{B}: Attach this Equipment to target creature you control.\nEquip {1}"
+  },
+  {
+   "name": "Darksteel Citadel",
+   "cost": "",
+   "type_line": "Artifact Land",
+   "keywords": "Indestructible",
+   "power": null,
+   "loyalty": null,
+   "text": "Indestructible\n{T}: Add {C}."
+  },
+  {
+   "name": "Engineered Explosives",
+   "cost": "{X}",
+   "type_line": "Artifact",
+   "keywords": "Sunburst",
+   "power": null,
+   "loyalty": null,
+   "text": "Sunburst (This artifact enters with a charge counter on it for each color of mana spent to cast it.)\n{2}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact."
+  },
+  {
+   "name": "Ensoul Artifact",
+   "cost": "{1}{U}",
+   "type_line": "Enchantment \u2014 Aura",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant artifact\nEnchanted artifact is a creature with base power and toughness 5/5 in addition to its other types."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Frogmite",
+   "cost": "{4}",
+   "type_line": "Artifact Creature \u2014 Frog",
+   "keywords": "Affinity",
+   "power": "2",
+   "loyalty": null,
+   "text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)"
+  },
+  {
+   "name": "Galvanic Blast",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Metalcraft",
+   "power": null,
+   "loyalty": null,
+   "text": "Galvanic Blast deals 2 damage to any target.\nMetalcraft \u2014 Galvanic Blast deals 4 damage instead if you control three or more artifacts."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Memnite",
+   "cost": "{0}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": ""
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Mox Opal",
+   "cost": "{0}",
+   "type_line": "Legendary Artifact",
+   "keywords": "Metalcraft",
+   "power": null,
+   "loyalty": null,
+   "text": "Metalcraft \u2014 {T}: Add one mana of any color. Activate only if you control three or more artifacts."
+  },
+  {
+   "name": "Myr Enforcer",
+   "cost": "{7}",
+   "type_line": "Artifact Creature \u2014 Myr",
+   "keywords": "Affinity",
+   "power": "4",
+   "loyalty": null,
+   "text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)"
+  },
+  {
+   "name": "Ornithopter",
+   "cost": "{0}",
+   "type_line": "Artifact Creature \u2014 Thopter",
+   "keywords": "Flying",
+   "power": "0",
+   "loyalty": null,
+   "text": "Flying"
+  },
+  {
+   "name": "Shrapnel Blast",
+   "cost": "{1}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, sacrifice an artifact.\nShrapnel Blast deals 5 damage to any target."
+  },
+  {
+   "name": "Spire of Industry",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Activate only if you control an artifact."
+  },
+  {
+   "name": "Springleaf Drum",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Steel Overseer",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Put a +1/+1 counter on each artifact creature you control."
+  },
+  {
+   "name": "Thought Monitor",
+   "cost": "{6}{U}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "Flying Affinity",
+   "power": "2",
+   "loyalty": null,
+   "text": "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)\nFlying\nWhen this creature enters, draw two cards."
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Welding Jar",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "Regenerate",
+   "power": null,
+   "loyalty": null,
+   "text": "Sacrifice this artifact: Regenerate target artifact."
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   3
+  ],
+  [
+   "Mountain",
+   2
+  ],
+  [
+   "Darksteel Citadel",
+   4
+  ],
+  [
+   "Spire of Industry",
+   4
+  ],
+  [
+   "Mox Opal",
+   2
+  ],
+  [
+   "Memnite",
+   4
+  ],
+  [
+   "Ornithopter",
+   4
+  ],
+  [
+   "Springleaf Drum",
+   4
+  ],
+  [
+   "Thought Monitor",
+   3
+  ],
+  [
+   "Shrapnel Blast",
+   3
+  ],
+  [
+   "Galvanic Blast",
+   3
+  ],
+  [
+   "Cranial Plating",
+   3
+  ],
+  [
+   "Arcbound Ravager",
+   2
+  ],
+  [
+   "Steel Overseer",
+   2
+  ],
+  [
+   "Ensoul Artifact",
+   2
+  ],
+  [
+   "Welding Jar",
+   3
+  ],
+  [
+   "Aether Spellbomb",
+   2
+  ],
+  [
+   "Engineered Explosives",
+   2
+  ],
+  [
+   "Frogmite",
+   2
+  ],
+  [
+   "Myr Enforcer",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ],
+  [
+   "Unholy Heat",
+   1
+  ],
+  [
+   "Thoughtseize",
+   1
+  ]
+ ]
+}

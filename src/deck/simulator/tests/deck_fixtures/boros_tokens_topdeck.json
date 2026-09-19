@@ -1,0 +1,256 @@
+{
+ "name": "boros tokens topdeck",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bitterbloom Bearer",
+   "cost": "{B}{B}",
+   "type_line": "Creature \u2014 Faerie Rogue",
+   "keywords": "Flying Flash",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flash\nFlying\nAt the beginning of your upkeep, you lose 1 life and create a 1/1 blue and black Faerie creature token with flying."
+  },
+  {
+   "name": "Dalkovan Encampment",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {W}.\n{2}{W}, {T}: Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and attacking. Sacrifice them at the beginning of the next end step."
+  },
+  {
+   "name": "Dream Beavers",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Beaver Nightmare",
+   "keywords": "Scry Flying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying\nWhen this creature enters, each opponent loses 1 life and you gain 1 life. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Elspeth, Storm Slayer",
+   "cost": "{3}{W}{W}",
+   "type_line": "Legendary Planeswalker \u2014 Elspeth",
+   "keywords": "",
+   "power": null,
+   "loyalty": "5",
+   "text": "If one or more tokens would be created under your control, twice that many of those tokens are created instead.\n+1: Create a 1/1 white Soldier creature token.\n0: Put a +1/+1 counter on each creature you control. Those creatures gain flying until your next turn.\n\u22123: Destroy target creature an opponent controls with mana value 3 or greater."
+  },
+  {
+   "name": "Exalted Sunborn",
+   "cost": "{3}{W}{W}",
+   "type_line": "Creature \u2014 Angel Wizard",
+   "keywords": "Flying Lifelink Warp",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flying, lifelink\nIf one or more tokens would be created under your control, twice that many of those tokens are created instead.\nWarp {1}{W} (You may cast this card from your hand for its warp cost. Exile this creature at the beginning of the next end step, then you may cast it from exile on a later turn.)"
+  },
+  {
+   "name": "Faller's Faithful",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Human Wizard",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "When this creature enters, destroy up to one other target creature. If that creature wasn't dealt damage this turn, its controller draws two cards."
+  },
+  {
+   "name": "Get Lost",
+   "cost": "{1}{W}",
+   "type_line": "Instant",
+   "keywords": "Explore",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature, enchantment, or planeswalker. Its controller creates two Map tokens. (They're artifacts with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")"
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Great Arashin City",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Forest or a Plains.\n{T}: Add {B}.\n{1}{B}, {T}, Exile a creature card from your graveyard: Create a 1/1 white Spirit creature token."
+  },
+  {
+   "name": "Lightstall Inquisitor",
+   "cost": "{W}",
+   "type_line": "Creature \u2014 Angel Wizard",
+   "keywords": "Vigilance",
+   "power": "2",
+   "loyalty": null,
+   "text": "Vigilance\nWhen this creature enters, each opponent exiles a card from their hand and may play that card for as long as it remains exiled. Each spell cast this way costs {1} more to cast. Each land played this way enters tapped."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Rhys, the Evermore",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Elf Warrior",
+   "keywords": "Flash",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nWhen Rhys enters, another target creature you control gains persist until end of turn. (When it dies, if it had no -1/-1 counters on it, return it to the battlefield under its owner's control with a -1/-1 counter on it.)\n{W}, {T}: Remove any number of counters from target creature you control. Activate only as a sorcery."
+  },
+  {
+   "name": "Sage of the Skies",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "Flying Lifelink",
+   "power": "2",
+   "loyalty": null,
+   "text": "When you cast this spell, if you've cast another spell this turn, copy this spell. (The copy becomes a token.)\nFlying, lifelink"
+  },
+  {
+   "name": "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+   "cost": "{2}{B} // ",
+   "type_line": "Legendary Creature \u2014 Human Avatar Soldier // Legendary Creature \u2014 Angel Nightmare Avatar",
+   "keywords": "Flying Transform Super Nova",
+   "power": "3",
+   "loyalty": null,
+   "text": "Whenever Sephiroth enters or attacks, you may sacrifice another creature. If you do, draw a card.\nWhenever another creature dies, target opponent loses 1 life and you gain 1 life. If this is the fourth time this ability has resolved this turn, transform Sephiroth.\n// Flying\nSuper Nova \u2014 As this creature transforms into Sephiroth, One-Winged Angel, you get an emblem with \"Whenever a creature dies, target opponent loses 1 life and you gain 1 life.\"\nWhenever Sephiroth attacks, you may sacrifice any number of other creatures. If you do, draw that many cards."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Syr Vondam, Sunstar Exemplar",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature \u2014 Human Knight",
+   "keywords": "Vigilance Menace",
+   "power": "2",
+   "loyalty": null,
+   "text": "Vigilance, menace\nWhenever another creature you control dies or is put into exile, put a +1/+1 counter on Syr Vondam and you gain 1 life.\nWhen Syr Vondam dies or is put into exile while its power is 4 or greater, destroy up to one target nonland permanent."
+  },
+  {
+   "name": "Tragic Trajectory",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "Void",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets -2/-2 until end of turn.\nVoid \u2014 That creature gets -10/-10 until end of turn instead if a nonland permanent left the battlefield this turn or a spell was warped this turn."
+  },
+  {
+   "name": "Umbral Collar Zealot",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Human Cleric",
+   "keywords": "Surveil",
+   "power": "3",
+   "loyalty": null,
+   "text": "Sacrifice another creature or artifact: Surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Bard",
+   "keywords": "Mobilize",
+   "power": "1",
+   "loyalty": null,
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  }
+ ],
+ "list": [
+  [
+   "Bitterbloom Bearer",
+   1
+  ],
+  [
+   "Dalkovan Encampment",
+   1
+  ],
+  [
+   "Dream Beavers",
+   4
+  ],
+  [
+   "Elspeth, Storm Slayer",
+   1
+  ],
+  [
+   "Exalted Sunborn",
+   1
+  ],
+  [
+   "Faller's Faithful",
+   2
+  ],
+  [
+   "Get Lost",
+   4
+  ],
+  [
+   "Godless Shrine",
+   4
+  ],
+  [
+   "Great Arashin City",
+   1
+  ],
+  [
+   "Lightstall Inquisitor",
+   2
+  ],
+  [
+   "Plains",
+   9
+  ],
+  [
+   "Rhys, the Evermore",
+   2
+  ],
+  [
+   "Sage of the Skies",
+   4
+  ],
+  [
+   "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel",
+   2
+  ],
+  [
+   "Swamp",
+   8
+  ],
+  [
+   "Syr Vondam, Sunstar Exemplar",
+   2
+  ],
+  [
+   "Tragic Trajectory",
+   4
+  ],
+  [
+   "Umbral Collar Zealot",
+   4
+  ],
+  [
+   "Voice of Victory",
+   4
+  ]
+ ]
+}

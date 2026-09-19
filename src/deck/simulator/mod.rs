@@ -15,6 +15,7 @@
 // This is a consistency diagnostic, not a win-rate predictor.
 
 mod aggregate;
+mod cast_phase;
 mod combos;
 mod deck;
 mod format;
@@ -26,8 +27,12 @@ mod game_run;
 mod hypgeo;
 mod model;
 mod parse;
+mod parse_cost;
 mod parse_keywords;
+mod parse_land;
 mod report;
+mod trigger_activated;
+mod trigger_landfall;
 mod triggers;
 
 #[cfg(test)]
@@ -48,6 +53,9 @@ mod deck_tests;
 #[cfg(test)]
 #[path = "tests/game_tests.rs"]
 mod game_tests;
+#[cfg(test)]
+#[path = "tests/mechanic_tests.rs"]
+mod mechanic_tests;
 #[cfg(test)]
 #[path = "tests/model_tests.rs"]
 mod model_tests;

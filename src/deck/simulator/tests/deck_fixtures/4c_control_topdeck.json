@@ -1,0 +1,373 @@
+{
+ "name": "4c control topdeck",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Consult the Star Charts",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)\nLook at the top X cards of your library, where X is the number of lands you control. Put one of those cards into your hand. If this spell was kicked, put two of those cards into your hand instead. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Cori Mountain Monastery",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {R}.\n{3}{R}, {T}: Exile the top card of your library. Until the end of your next turn, you may play that card."
+  },
+  {
+   "name": "Day of Judgment",
+   "cost": "{2}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy all creatures."
+  },
+  {
+   "name": "Erode",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature or planeswalker. Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Flashback",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target instant or sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost. (You may cast that card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Get Lost",
+   "cost": "{1}{W}",
+   "type_line": "Instant",
+   "keywords": "Explore",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature, enchantment, or planeswalker. Its controller creates two Map tokens. (They're artifacts with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")"
+  },
+  {
+   "name": "Gloomlake Verge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {U}.\n{T}: Add {B}. Activate only if you control an Island or a Swamp."
+  },
+  {
+   "name": "Great Hall of the Biblioplex",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Spend this mana only to cast an instant or sorcery spell.\n{5}: If this land isn't a creature, it becomes a 2/4 Wizard creature with \"Whenever you cast an instant or sorcery spell, this creature gets +1/+0 until end of turn.\" It's still a land."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Ill-Timed Explosion",
+   "cost": "{2}{U}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw two cards. Then you may discard two cards. When you do, Ill-Timed Explosion deals X damage to each creature, where X is the greatest mana value among cards discarded this way."
+  },
+  {
+   "name": "Improvisation Capstone",
+   "cost": "{5}{R}{R}",
+   "type_line": "Sorcery \u2014 Lesson",
+   "keywords": "Paradigm",
+   "power": null,
+   "loyalty": null,
+   "text": "Exile cards from the top of your library until you exile cards with total mana value 4 or greater. You may cast any number of spells from among them without paying their mana costs.\nParadigm (Then exile this spell. After you first resolve a spell with this name, you may cast a copy of it from exile without paying its mana cost at the beginning of each of your first main phases.)"
+  },
+  {
+   "name": "Inevitable Defeat",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This spell can't be countered.\nExile target nonland permanent. Its controller loses 3 life and you gain 3 life."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Jeskai Revelation",
+   "cost": "{4}{U}{R}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target spell or permanent to its owner's hand. Jeskai Revelation deals 4 damage to any target. Create two 1/1 white Monk creature tokens with prowess. Draw two cards. You gain 4 life."
+  },
+  {
+   "name": "Lightning Helix",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Helix deals 3 damage to any target and you gain 3 life."
+  },
+  {
+   "name": "Meticulous Archive",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Mistrise Village",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Mountain or a Forest.\n{T}: Add {U}.\n{U}, {T}: The next spell you cast this turn can't be countered."
+  },
+  {
+   "name": "Mystical Teachings",
+   "cost": "{3}{U}",
+   "type_line": "Instant",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for an instant card or a card with flash, reveal it, put it into your hand, then shuffle.\nFlashback {5}{B} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Negate",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target noncreature spell."
+  },
+  {
+   "name": "No More Lies",
+   "cost": "{W}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target spell unless its controller pays {3}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Resonating Lute",
+   "cost": "{2}{U}{R}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lands you control have \"{T}: Add two mana of any one color. Spend this mana only to cast instant and sorcery spells.\"\n{T}: Draw a card. Activate only if you have seven or more cards in your hand."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land \u2014 Mountain Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Shattered Sanctum",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {W} or {B}."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land \u2014 Island Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Stock Up",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Look at the top five cards of your library. Put two of them into your hand and the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Stormcarved Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {R}."
+  },
+  {
+   "name": "Traumatic Critique",
+   "cost": "{X}{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Traumatic Critique deals X damage to any target. Draw two cards, then discard a card."
+  }
+ ],
+ "list": [
+  [
+   "Consult the Star Charts",
+   4
+  ],
+  [
+   "Cori Mountain Monastery",
+   1
+  ],
+  [
+   "Day of Judgment",
+   1
+  ],
+  [
+   "Erode",
+   1
+  ],
+  [
+   "Flashback",
+   1
+  ],
+  [
+   "Get Lost",
+   1
+  ],
+  [
+   "Gloomlake Verge",
+   2
+  ],
+  [
+   "Great Hall of the Biblioplex",
+   4
+  ],
+  [
+   "Hallowed Fountain",
+   3
+  ],
+  [
+   "Ill-Timed Explosion",
+   2
+  ],
+  [
+   "Improvisation Capstone",
+   2
+  ],
+  [
+   "Inevitable Defeat",
+   3
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Jeskai Revelation",
+   3
+  ],
+  [
+   "Lightning Helix",
+   2
+  ],
+  [
+   "Meticulous Archive",
+   1
+  ],
+  [
+   "Mistrise Village",
+   2
+  ],
+  [
+   "Mystical Teachings",
+   1
+  ],
+  [
+   "Negate",
+   2
+  ],
+  [
+   "No More Lies",
+   2
+  ],
+  [
+   "Plains",
+   1
+  ],
+  [
+   "Resonating Lute",
+   4
+  ],
+  [
+   "Sacred Foundry",
+   3
+  ],
+  [
+   "Shattered Sanctum",
+   3
+  ],
+  [
+   "Steam Vents",
+   3
+  ],
+  [
+   "Stock Up",
+   3
+  ],
+  [
+   "Stormcarved Coast",
+   3
+  ],
+  [
+   "Traumatic Critique",
+   1
+  ]
+ ]
+}

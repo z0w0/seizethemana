@@ -186,6 +186,9 @@ pub enum Effect {
     /// Discard the hand into the graveyard, then draw that many (a
     /// wheel). Cards seen jump by the hand size; the graveyard log fills.
     Wheel,
+    /// A wheel resolving mid-cast: skip one hand index (the cast spell
+    /// itself, whose removal is deferred) so it is not double-zoned.
+    WheelSkip(usize),
     /// Draw N, then discard N (loot). Net velocity +N; the graveyard
     /// log fills with the discards.
     Loot(u32),
@@ -204,7 +207,8 @@ pub enum Effect {
     },
     /// Lose N life (drain, burn at a player). Opponent-scoped phrasing
     /// ("target player", "each opponent") maps here; creature-target
-    /// burn does not.
+    /// burn does not. Commander family resolves at ×3 (three
+    /// opponents); constructed resolves at ×1.
     Drain(u32),
 }
 
@@ -227,9 +231,16 @@ pub struct Ability {
     /// activation consumes an untapped body and fires its OnDeath
     /// triggers.
     pub sacrifice_bodies: u32,
-    /// Loyalty spent to activate (planeswalker abilities). 0 = not a
-    /// loyalty activation.
+    /// True when the card's text limits the activation ("Activate only
+    /// once each turn"): free untapped activations fire once per turn
+    /// instead of looping (no infinite-mana census flag).
+    pub once_per_turn: bool,
+    /// Loyalty spent to activate (planeswalker minus abilities). 0 = not
+    /// a loyalty activation.
     pub loyalty_cost: u32,
+    /// Loyalty gained by activation (planeswalker plus abilities). 0 =
+    /// not a loyalty-gaining activation.
+    pub loyalty_gain: u32,
 }
 
 /// A station tier: abilities unlocked at a charge-counter threshold.
@@ -267,6 +278,8 @@ pub struct SimCard {
     pub crew: Option<u32>,
     /// Creature-ness for body counting and dork timing.
     pub is_creature: bool,
+    /// Artifact-ness for improvise/affinity discount math.
+    pub is_artifact: bool,
     /// True when the card is a Spacecraft or Planet (stationable type).
     pub is_station_card: bool,
     /// Charge counters gained on entering (Reckoner Bankbuster).
@@ -285,10 +298,17 @@ pub struct SimCard {
     pub counters_on_cast: u32,
     /// One-shot mana on cast (rituals), never joining the tap pool.
     pub mana_on_cast: Option<TapYield>,
+    /// Repeatable mana on cast: "add {N} for each spell you've cast this
+    /// turn" (Vivi class). Joins the pool per spell cast, every turn the
+    /// host is on the battlefield.
+    pub mana_per_cast: Option<TapYield>,
     /// One-shot draw on cast (cantrips, Divination).
     pub draws_on_cast: u32,
     /// One-shot mill on cast or on entering ("mill N").
     pub mills_on_enter: u32,
+    /// One-shot token creation on cast ("Create N 1/1 Soldier tokens").
+    /// The count feeds the token-body path (Treasure cards bank).
+    pub tokens_on_cast: u32,
     /// One-shot scry/surveil on cast. Awareness credit, not draw.
     pub scry_on_cast: u32,
     /// True when the one-shot look effect is surveil (the scry'd cards
@@ -301,6 +321,20 @@ pub struct SimCard {
     pub extra_turns_on_cast: bool,
     /// One-shot life loss at a player on cast (burn, drain).
     pub drain_on_cast: u32,
+    /// Bodies the cast consumes ("as an additional cost to cast this
+    /// spell, sacrifice a creature"). The cast consumes a body.
+    pub additional_cost_bodies: u32,
+    /// Life the cast costs on top of mana ("as an additional cost …
+    /// pay N life"). Best case: the agent pays it.
+    pub additional_cost_life: u32,
+    /// One-shot wheel on cast ("each player discards their hand, then
+    /// draws seven"): the cast resolves a full wheel.
+    pub wheel_on_cast: bool,
+    /// X-cost effect class: the spell pays the leftover pool as X and
+    /// scales its effect (drain X, draw X, mill X, tokens X). None when
+    /// not an X spell. `Effect::Drain(0)` carries the class; the game
+    /// loop substitutes the paid X.
+    pub x_class: Option<XClass>,
     /// Printed power (creatures); crew and station use it instead of the
     /// flat body power. Tokens and unknowns stay flat.
     pub printed_power: Option<u32>,
@@ -346,6 +380,15 @@ pub struct SimCard {
     pub is_instant_speed: bool,
     /// Interaction role (removal or counterspells): feeds readiness.
     pub is_interaction: bool,
+    /// True when the creature ignores summoning sickness (haste):
+    /// attacks, taps, and crews the turn it enters.
+    pub has_haste: bool,
+    /// Extra land drop each turn ("you may play an additional land").
+    /// Feeds `land_drops[]` as one extra drop per turn while in play.
+    pub extra_land_drops: bool,
+    /// Optional kicker cost (generic part); paid from spare mana when
+    /// affordable. The kicker rider bumps drain/damage amounts.
+    pub kicker: Option<u32>,
 }
 
 /// One Equipment: the suit-up cost, the buff, and the Skullclamp-style
@@ -369,10 +412,37 @@ pub enum Grant {
     Creatures,
 }
 
+/// The effect class of an X-cost spell: what scales with the paid X.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum XClass {
+    /// "Target player loses X life" / "deals X damage".
+    Drain,
+    /// "Draw X cards".
+    Draw,
+    /// "Mill X cards".
+    Mill,
+    /// "Create X 1/1 tokens".
+    Tokens,
+}
+
 impl SimCard {
     /// Abilities from the base card (tier 0) plus unlocked tiers.
     pub fn abilities(&self) -> impl Iterator<Item = &Ability> {
         self.station_tiers.iter().flat_map(|t| t.abilities.iter())
+    }
+
+    /// Chapter count of a saga (the tier-0 Activated abilities). Sagas
+    /// without parsed chapters read as three chapters (the common shape).
+    pub fn chapter_count(&self) -> usize {
+        if !self.is_saga {
+            return 0;
+        }
+        let parsed = self
+            .station_tiers
+            .first()
+            .map(|t| t.abilities.len())
+            .unwrap_or(0);
+        parsed.max(3)
     }
 
     /// The station tier this card animates at, when any (spacecraft only).

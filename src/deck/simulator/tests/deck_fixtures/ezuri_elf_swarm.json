@@ -1,0 +1,964 @@
+{
+ "name": "ezuri elf swarm",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Ezuri, Renegade Leader",
+   "cost": "{1}{G}{G}",
+   "type_line": "Legendary Creature \u2014 Elf Warrior",
+   "keywords": "Regenerate",
+   "power": "2",
+   "loyalty": null,
+   "text": "{G}: Regenerate another target Elf.\n{2}{G}{G}{G}: Elf creatures you control get +3/+3 and gain trample until end of turn."
+  }
+ ],
+ "cards": [
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Arch of Orazca",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Ascend",
+   "power": null,
+   "loyalty": null,
+   "text": "Ascend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\n{T}: Add {C}.\n{5}, {T}: Draw a card. Activate only if you have the city's blessing."
+  },
+  {
+   "name": "Assassin's Trophy",
+   "cost": "{B}{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Beast Whisperer",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever you cast a creature spell, draw a card."
+  },
+  {
+   "name": "Beast Within",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Beast creature token."
+  },
+  {
+   "name": "Brainstorm",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw three cards, then put two cards from your hand on top of your library in any order."
+  },
+  {
+   "name": "Coat of Arms",
+   "cost": "{5}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it. (For example, if two Goblin Warriors and a Goblin Shaman are on the battlefield, each gets +2/+2.)"
+  },
+  {
+   "name": "Commander's Sphere",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color in your commander's color identity.\nSacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Crawling Barrens",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{4}: Put two +1/+1 counters on this land. Then you may have it become a 0/0 Elemental creature until end of turn. It's still a land."
+  },
+  {
+   "name": "Cruel Reality",
+   "cost": "{5}{B}{B}",
+   "type_line": "Enchantment \u2014 Aura Curse",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant player\nAt the beginning of enchanted player's upkeep, that player sacrifices a creature or planeswalker of their choice. If the player can't, they lose 5 life."
+  },
+  {
+   "name": "Cultivate",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Curate",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "Surveil 2. (Look at the top two cards of your library, then put any number of them into your graveyard and the rest on top of your library in any order.)\nDraw a card."
+  },
+  {
+   "name": "Curse of Verbosity",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment \u2014 Aura Curse",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant player\nWhenever enchanted player is attacked, you draw a card. Each opponent attacking that player does the same."
+  },
+  {
+   "name": "Custodi Lich",
+   "cost": "{3}{B}{B}",
+   "type_line": "Creature \u2014 Zombie Cleric",
+   "keywords": "",
+   "power": "4",
+   "loyalty": null,
+   "text": "When this creature enters, you become the monarch.\nWhenever you become the monarch, target player sacrifices a creature of their choice."
+  },
+  {
+   "name": "Cyclonic Rift",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "Overload",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Drown in the Loch",
+   "cost": "{U}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose one \u2014\n\u2022 Counter target spell with mana value less than or equal to the number of cards in its controller's graveyard.\n\u2022 Destroy target creature with mana value less than or equal to the number of cards in its controller's graveyard."
+  },
+  {
+   "name": "Elvish Archdruid",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Other Elf creatures you control get +1/+1.\n{T}: Add {G} for each Elf you control."
+  },
+  {
+   "name": "Elvish Clancaller",
+   "cost": "{G}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Other Elves you control get +1/+1.\n{4}{G}{G}, {T}: Search your library for a card named Elvish Clancaller, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Elvish Mystic",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Elvish Visionary",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Elf Shaman",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature enters, draw a card."
+  },
+  {
+   "name": "Eternal Witness",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature \u2014 Human Shaman",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you may return target card from your graveyard to your hand."
+  },
+  {
+   "name": "Everflowing Chalice",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "Multikicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Multikicker {2} (You may pay an additional {2} any number of times as you cast this spell.)\nThis artifact enters with a charge counter on it for each time it was kicked.\n{T}: Add {C} for each charge counter on this artifact."
+  },
+  {
+   "name": "Ezuri's Predation",
+   "cost": "{5}{G}{G}{G}",
+   "type_line": "Sorcery",
+   "keywords": "Fight",
+   "power": null,
+   "loyalty": null,
+   "text": "For each creature your opponents control, create a 4/4 green Phyrexian Beast creature token. Each of those tokens fights a different one of those creatures."
+  },
+  {
+   "name": "Ezuri, Renegade Leader",
+   "cost": "{1}{G}{G}",
+   "type_line": "Legendary Creature \u2014 Elf Warrior",
+   "keywords": "Regenerate",
+   "power": "2",
+   "loyalty": null,
+   "text": "{G}: Regenerate another target Elf.\n{2}{G}{G}{G}: Elf creatures you control get +3/+3 and gain trample until end of turn."
+  },
+  {
+   "name": "Farseek",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Fractured Sanity",
+   "cost": "{U}{U}{U}",
+   "type_line": "Sorcery",
+   "keywords": "Mill Cycling",
+   "power": null,
+   "loyalty": null,
+   "text": "Each opponent mills fourteen cards.\nCycling {1}{U} ({1}{U}, Discard this card: Draw a card.)\nWhen you cycle this card, each opponent mills four cards."
+  },
+  {
+   "name": "Fyndhorn Elves",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Generous Gift",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Elephant creature token."
+  },
+  {
+   "name": "Gilt-Leaf Palace",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As this land enters, you may reveal an Elf card from your hand. If you don't, this land enters tapped.\n{T}: Add {B} or {G}."
+  },
+  {
+   "name": "Guardian Project",
+   "cost": "{3}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a nontoken creature you control enters, if it doesn't have the same name as another creature you control or a creature card in your graveyard, draw a card."
+  },
+  {
+   "name": "Hedge Maze",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Island",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Heraldic Banner",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As this artifact enters, choose a color.\nCreatures you control of the chosen color get +1/+0.\n{T}: Add one mana of the chosen color."
+  },
+  {
+   "name": "Heritage Druid",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Tap three untapped Elves you control: Add {G}{G}{G}."
+  },
+  {
+   "name": "Imperious Perfect",
+   "cost": "{2}{G}",
+   "type_line": "Creature \u2014 Elf Warrior",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Other Elves you control get +1/+1.\n{G}, {T}: Create a 1/1 green Elf Warrior creature token."
+  },
+  {
+   "name": "Joraga Warcaller",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Warrior",
+   "keywords": "Multikicker",
+   "power": "1",
+   "loyalty": null,
+   "text": "Multikicker {1}{G} (You may pay an additional {1}{G} any number of times as you cast this spell.)\nThis creature enters with a +1/+1 counter on it for each time it was kicked.\nOther Elf creatures you control get +1/+1 for each +1/+1 counter on this creature."
+  },
+  {
+   "name": "Kodama's Reach",
+   "cost": "{2}{G}",
+   "type_line": "Sorcery \u2014 Arcane",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+  },
+  {
+   "name": "Llanowar Elves",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G}."
+  },
+  {
+   "name": "Mind Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Mulldrifter",
+   "cost": "{4}{U}",
+   "type_line": "Creature \u2014 Elemental",
+   "keywords": "Flying Evoke",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flying\nWhen this creature enters, draw two cards.\nEvoke {2}{U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"
+  },
+  {
+   "name": "Myriad Landscape",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Search your library for up to two basic land cards that share a land type, put them onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "Cumulative upkeep",
+   "power": null,
+   "loyalty": null,
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Nettle Sentinel",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Elf Warrior",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature doesn't untap during your untap step.\nWhenever you cast a green spell, you may untap this creature."
+  },
+  {
+   "name": "Opt",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nDraw a card."
+  },
+  {
+   "name": "Oran-Rief, the Vastwood",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {G}.\n{T}: Put a +1/+1 counter on each green creature that entered this turn."
+  },
+  {
+   "name": "Pernicious Deed",
+   "cost": "{1}{B}{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{X}, Sacrifice this enchantment: Destroy each artifact, creature, and enchantment with mana value X or less."
+  },
+  {
+   "name": "Ponder",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card."
+  },
+  {
+   "name": "Pongify",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Priest of Titania",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {G} for each Elf on the battlefield."
+  },
+  {
+   "name": "Rampant Growth",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Reliquary Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Rogue's Passage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{4}, {T}: Target creature can't be blocked this turn."
+  },
+  {
+   "name": "Salvage Scuttler",
+   "cost": "{4}{U}",
+   "type_line": "Creature \u2014 Crab",
+   "keywords": "",
+   "power": "4",
+   "loyalty": null,
+   "text": "Whenever this creature attacks, return an artifact you control to its owner's hand."
+  },
+  {
+   "name": "Sea Gate Oracle",
+   "cost": "{2}{U}",
+   "type_line": "Creature \u2014 Human Wizard",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature enters, look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library."
+  },
+  {
+   "name": "Sift",
+   "cost": "{3}{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw three cards, then discard a card."
+  },
+  {
+   "name": "Skyclave Apparition",
+   "cost": "{1}{W}{W}",
+   "type_line": "Creature \u2014 Kor Spirit",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, exile up to one target nonland, nontoken permanent you don't control with mana value 4 or less.\nWhen this creature leaves the battlefield, the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Solemn Simulacrum",
+   "cost": "{4}",
+   "type_line": "Artifact Creature \u2014 Golem",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.\nWhen this creature dies, you may draw a card."
+  },
+  {
+   "name": "Sudden Spoiling",
+   "cost": "{1}{B}{B}",
+   "type_line": "Instant",
+   "keywords": "Split second",
+   "power": null,
+   "loyalty": null,
+   "text": "Split second (As long as this spell is on the stack, players can't cast spells or activate abilities that aren't mana abilities.)\nUntil end of turn, creatures target player controls lose all abilities and have base power and toughness 0/2."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "The Great Henge",
+   "cost": "{7}{G}{G}",
+   "type_line": "Legendary Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This spell costs {X} less to cast, where X is the greatest power among creatures you control.\n{T}: Add {G}{G}. You gain 2 life.\nWhenever a nontoken creature you control enters, put a +1/+1 counter on it and draw a card."
+  },
+  {
+   "name": "Thespian's Stage",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{2}, {T}: This land becomes a copy of target land, except it has this ability."
+  },
+  {
+   "name": "Vandalblast",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "Overload",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target artifact you don't control.\nOverload {4}{R} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Wall of Omens",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Wall",
+   "keywords": "Defender",
+   "power": "0",
+   "loyalty": null,
+   "text": "Defender\nWhen this creature enters, draw a card."
+  },
+  {
+   "name": "Wayfarer's Bauble",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{2}, {T}, Sacrifice this artifact: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Windfall",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way."
+  },
+  {
+   "name": "Worn Powerstone",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This artifact enters tapped.\n{T}: Add {C}{C}."
+  }
+ ],
+ "list": [
+  [
+   "Forest",
+   28
+  ],
+  [
+   "Gilt-Leaf Palace",
+   1
+  ],
+  [
+   "Hedge Maze",
+   1
+  ],
+  [
+   "Oran-Rief, the Vastwood",
+   1
+  ],
+  [
+   "Llanowar Elves",
+   1
+  ],
+  [
+   "Fyndhorn Elves",
+   1
+  ],
+  [
+   "Elvish Mystic",
+   1
+  ],
+  [
+   "Heritage Druid",
+   1
+  ],
+  [
+   "Nettle Sentinel",
+   1
+  ],
+  [
+   "Elvish Visionary",
+   1
+  ],
+  [
+   "Elvish Archdruid",
+   1
+  ],
+  [
+   "Priest of Titania",
+   1
+  ],
+  [
+   "Elvish Clancaller",
+   1
+  ],
+  [
+   "Beast Whisperer",
+   1
+  ],
+  [
+   "The Great Henge",
+   1
+  ],
+  [
+   "Coat of Arms",
+   1
+  ],
+  [
+   "Ezuri's Predation",
+   1
+  ],
+  [
+   "Imperious Perfect",
+   1
+  ],
+  [
+   "Joraga Warcaller",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Cultivate",
+   1
+  ],
+  [
+   "Kodama's Reach",
+   1
+  ],
+  [
+   "Farseek",
+   1
+  ],
+  [
+   "Rampant Growth",
+   1
+  ],
+  [
+   "Commander's Sphere",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Mind Stone",
+   1
+  ],
+  [
+   "Worn Powerstone",
+   1
+  ],
+  [
+   "Heraldic Banner",
+   1
+  ],
+  [
+   "Everflowing Chalice",
+   1
+  ],
+  [
+   "Solemn Simulacrum",
+   1
+  ],
+  [
+   "Wayfarer's Bauble",
+   1
+  ],
+  [
+   "Myriad Landscape",
+   1
+  ],
+  [
+   "Crawling Barrens",
+   1
+  ],
+  [
+   "Arch of Orazca",
+   1
+  ],
+  [
+   "Rogue's Passage",
+   1
+  ],
+  [
+   "Thespian's Stage",
+   1
+  ],
+  [
+   "Reliquary Tower",
+   1
+  ],
+  [
+   "Ponder",
+   1
+  ],
+  [
+   "Brainstorm",
+   1
+  ],
+  [
+   "Preordain",
+   1
+  ],
+  [
+   "Opt",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Curate",
+   1
+  ],
+  [
+   "Cruel Reality",
+   1
+  ],
+  [
+   "Fractured Sanity",
+   1
+  ],
+  [
+   "Windfall",
+   1
+  ],
+  [
+   "Mulldrifter",
+   1
+  ],
+  [
+   "Wall of Omens",
+   1
+  ],
+  [
+   "Sift",
+   1
+  ],
+  [
+   "Sea Gate Oracle",
+   1
+  ],
+  [
+   "Guardian Project",
+   1
+  ],
+  [
+   "Curse of Verbosity",
+   1
+  ],
+  [
+   "Eternal Witness",
+   1
+  ],
+  [
+   "Skyclave Apparition",
+   1
+  ],
+  [
+   "Custodi Lich",
+   1
+  ],
+  [
+   "Salvage Scuttler",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Generous Gift",
+   1
+  ],
+  [
+   "Cyclonic Rift",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Pongify",
+   1
+  ],
+  [
+   "Beast Within",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ],
+  [
+   "Drown in the Loch",
+   1
+  ],
+  [
+   "Sudden Spoiling",
+   1
+  ],
+  [
+   "Assassin's Trophy",
+   1
+  ],
+  [
+   "Pernicious Deed",
+   1
+  ],
+  [
+   "Vandalblast",
+   1
+  ]
+ ]
+}

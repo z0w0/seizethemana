@@ -79,6 +79,12 @@ pub fn build_sim_deck(
         let mut sim = make_sim_card(&entry, cards);
         sim.role = Role::Wincon;
         if let Some(card) = cards.get(name)
+            // The synthetic draw tier only fills the gap when the real
+            // parse produced no OnUpkeep draw already (otherwise both
+            // fire and upkeep draws double).
+            && sim.abilities().all(|a| {
+                !(a.trigger == Trigger::OnUpkeep && matches!(a.effect, Effect::Draw(_)))
+            })
             && let Some(tier) = commander_engine_tier(card)
         {
             sim.station_tiers.insert(0, tier);

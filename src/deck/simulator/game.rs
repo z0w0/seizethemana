@@ -15,7 +15,7 @@
 //  10 END       hand-limit discard
 
 use super::game_effects::apply_effect;
-use super::model::{Effect, Role, SimDeck, TapYield, Trigger};
+use super::model::{Ability, Effect, Role, SimDeck, TapYield, Trigger};
 use std::collections::HashMap;
 
 /// One permanent on the battlefield.
@@ -44,6 +44,12 @@ pub struct InPlay {
     pub blink_pending: bool,
     /// Current planeswalker loyalty (cast commanders and walkers).
     pub loyalty: u32,
+    /// True once this Equipment has paid an equip cost this game (the
+    /// buff joins combat only while equipped).
+    pub equipped: bool,
+    /// Battlefield index of the creature this Equipment suits up
+    /// (equipped gear only). The buff joins that host's attack alone.
+    pub equip_host: Option<usize>,
     /// True when this is the cast commander on the battlefield.
     pub is_commander: bool,
     /// Commander slot (index into `SimDeck.commanders`); 0 otherwise.
@@ -128,12 +134,17 @@ pub struct GameLog {
     pub interaction_ready: Vec<bool>,
     /// Spare mana while interaction was ready, per turn.
     pub interaction_mana_held: Vec<f64>,
+    /// True when a zero-cost mana activation looped past the cap
+    /// (Basalt Monolith-class infinite engine).
+    pub infinite_mana_suspected: bool,
 }
 
 /// One chosen activation in the spend-leftover-mana pass.
 pub(super) struct Activation {
     /// Battlefield position of the source.
     pub(super) pos: usize,
+    /// The ability that fired (cloned so re-lookup is exact).
+    pub(super) ability: Ability,
     /// Total activation cost.
     pub(super) cost: u32,
     /// Cards drawn when it resolves.
@@ -142,8 +153,8 @@ pub(super) struct Activation {
     pub(super) mana_yield: Option<TapYield>,
     /// Charge counters added to the host (counter engines).
     pub(super) counters: u32,
-    /// Bodies the activation sacrifices (aristocrat outlets).
-    pub(super) sacrifice_bodies: u32,
+    /// Life drained when it resolves (drain activations).
+    pub(super) drain: u32,
 }
 
 /// One turn's spendable mana pool.
@@ -194,6 +205,10 @@ pub(super) struct GameState {
     /// Noncreature spells cast this turn (prowess power bumps), reset
     /// at the start of each turn.
     pub(super) prowess_casts: u32,
+    /// True when a repeated zero-cost activation produced more mana than
+    /// it cost this game (Basalt Monolith-class engine loop). A census
+    /// flag, not a resolution: the sim caps the loop.
+    pub(super) infinite_mana_suspected: bool,
 }
 
 impl Pool {
@@ -309,7 +324,7 @@ pub(super) fn new_perm(deck: &SimDeck, card: usize, turn: u32, tapped: bool) -> 
     InPlay {
         card,
         tapped,
-        sick: deck.cards[card].is_creature,
+        sick: deck.cards[card].is_creature && !deck.cards[card].has_haste,
         counters: deck.cards[card].enter_counters,
         animated: false,
         crewed: false,
@@ -318,6 +333,8 @@ pub(super) fn new_perm(deck: &SimDeck, card: usize, turn: u32, tapped: bool) -> 
         fired: false,
         blink_pending: false,
         loyalty: deck.cards[card].starting_loyalty.unwrap_or(0),
+        equipped: false,
+        equip_host: None,
         is_commander: false,
         commander_slot: 0,
     }

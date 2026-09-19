@@ -18,8 +18,12 @@ fn sweep_standard_invariants() {
             "{name} openers hold {:.2} lands",
             stats.avg_opener_lands
         );
-        // Every fixture deck has at least one land and one spell with a cost.
-        assert!(stats.land_count > 0, "{name} has no lands");
+        // Every fixture deck holds a real land base.
+        assert!(
+            stats.land_count >= 17,
+            "{name} has {} lands",
+            stats.land_count
+        );
     }
 }
 
@@ -105,5 +109,179 @@ fn sweep_standard_color_screw_bounded() {
         let stats = sim(&deck, &cards, 200, 8);
         let tripped = stats.color_screw.iter().filter(|p| **p >= 0.10).count();
         assert!(tripped <= 2, "{name} trips {} colors", tripped);
+    }
+}
+
+// Topdeck.gg tournament lists (real Standard competitive results): shared
+// invariants plus aggro-curve sanity where the archetype makes it checkable.
+
+#[test]
+fn sweep_standard_topdeck_fixtures_hold_invariants() {
+    for name in [
+        "4c control topdeck",
+        "boros tokens topdeck",
+        "dimir midrange topdeck",
+        "izzet spellingentals topdeck",
+    ] {
+        let cards = fixture_cards(name);
+        let deck = fixture_deck(name);
+        let stats = sim(&deck, &cards, 200, 8);
+        assert_land_drops_sane(&stats, 8);
+        assert_velocity_monotone(&stats);
+        assert_castability_not_before_cost(&stats, &cards);
+        assert!(stats.land_count > 0, "{name} has no lands");
+    }
+}
+
+#[test]
+fn topdeck_boros_tokens_emerges_bodies() {
+    // Go-wide Standard tokens: bodies by t6 must clear a board-swarm bar.
+    let cards = fixture_cards("boros tokens topdeck");
+    let deck = fixture_deck("boros tokens topdeck");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.bodies_by_turn[5] > 2.5,
+        "boros tokens bodies by t6: {:.2}",
+        stats.bodies_by_turn[5]
+    );
+}
+
+// Archetype-specific dedicated tests for the previously invariants-only
+// standard fixtures: each asserts the archetype's defining mechanic.
+
+#[test]
+fn azorius_control_interacts_early() {
+    // Control shells hold real removal access by t5 (the plan is
+    // answers, not early bodies).
+    let cards = fixture_cards("azorius control standard");
+    let deck = fixture_deck("azorius control standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.removal_access_5 >= 0.4,
+        "azorius removal access by t5: {:.2}",
+        stats.removal_access_5
+    );
+    assert!(
+        stats.draw_access_6 >= 0.4,
+        "azorius draw access by t6: {:.2}",
+        stats.draw_access_6
+    );
+}
+
+#[test]
+fn boros_dragons_swings_big_late() {
+    // Dragons ramp into fliers: attack power by t8 clears the small
+    // board the early turns built.
+    let cards = fixture_cards("boros dragons standard");
+    let deck = fixture_deck("boros dragons standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.attack_power_by_turn[7] > 3.0,
+        "boros dragons attack power by t8: {:.2}",
+        stats.attack_power_by_turn[7]
+    );
+    assert!(
+        stats.land_count >= 20,
+        "boros dragons land base: {}",
+        stats.land_count
+    );
+}
+
+#[test]
+fn reanimator_4c_fills_graveyard() {
+    // Reanimator: the graveyard fills (self-mill + discards) and the
+    // deck reuses it — the census must grow across the window.
+    let cards = fixture_cards("reanimator 4c standard");
+    let deck = fixture_deck("reanimator 4c standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.graveyard_by_turn[7] > 3.0,
+        "reanimator graveyard by t8: {:.1}",
+        stats.graveyard_by_turn[7]
+    );
+}
+
+#[test]
+fn izzet_discard_engines_draw() {
+    // Discard-payoff shells draw constantly (the discard engines and
+    // payoffs refill the hand).
+    let cards = fixture_cards("izzet discard payoffs standard");
+    let deck = fixture_deck("izzet discard payoffs standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.draw_access_6 > 0.5,
+        "izzet discard draw access by t6: {:.2}",
+        stats.draw_access_6
+    );
+}
+
+#[test]
+fn mono_blue_flash_holds_instant_speed() {
+    // Flash shells keep instant-speed interaction in hand with spare
+    // mana: the readiness metric is the plan.
+    let cards = fixture_cards("mono-blue flash standard");
+    let deck = fixture_deck("mono-blue flash standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.interaction_ready_by_turn[4] > 0.08,
+        "mono-blue flash interaction ready by t5: {:.2}",
+        stats.interaction_ready_by_turn[4]
+    );
+    assert!(
+        stats.interaction_instant_count >= 3,
+        "mono-blue instant count: {}",
+        stats.interaction_instant_count
+    );
+}
+
+#[test]
+fn amalia_lifegain_combo_gains_life_drains() {
+    // Amalia lifegain: exploration + drain effects push the drain
+    // census (the combo plan converts life gain into burn).
+    let cards = fixture_cards("amalia lifegain combo standard");
+    let deck = fixture_deck("amalia lifegain combo standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.drain_total_by_turn[7] > 0.3,
+        "amalia drain by t8: {:.1}",
+        stats.drain_total_by_turn[7]
+    );
+}
+
+#[test]
+fn golgari_midrange_sees_creatures_early() {
+    // Midrange: a creature is in hand by t3 in most games.
+    let cards = fixture_cards("golgari midrange standard");
+    let deck = fixture_deck("golgari midrange standard");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.creature_access_3 > 0.6,
+        "golgari creature access by t3: {:.2}",
+        stats.creature_access_3
+    );
+}
+
+// Degradation fixtures: known simulator limits on unusual mechanics. The
+// problems report must still fire on the degraded shape (documented in
+// assumptions).
+
+#[test]
+fn degradation_fixtures_report_known_problems() {
+    for name in [
+        "mono-red firebending standard",
+        "jeskai energy modern",
+        "infect modern",
+        "rhinos cascade modern",
+    ] {
+        let cards = fixture_cards(name);
+        let deck = fixture_deck(name);
+        let sim_deck = build_sim_deck(&deck, &cards, None);
+        let stats = sim(&deck, &cards, 200, 8);
+        let problems = super::aggregate::find_problems(&stats, &sim_deck);
+        let kinds: Vec<&str> = problems.iter().map(|p| p.kind).collect();
+        assert!(
+            !kinds.is_empty(),
+            "{name} reports no problems: the degraded shape went undetected"
+        );
     }
 }

@@ -1,23 +1,47 @@
 // Trigger-family parsers for the simulator's oracle text: ETB, upkeep,
-// attack, death, cast, wheel, and plain activated abilities. Split from
-// parse.rs to keep files small.
+// attack, death, cast, and wheel shapes. Landfall, token counts, and
+// activated abilities live in sibling modules.
 
 use super::model::{Ability, Effect, TapYield, draw_amount};
-use super::parse::parse_ability;
+pub use super::trigger_activated::mill_amount;
+use super::trigger_activated::{activated_trigger, etb_shape, trigger_for};
+use super::trigger_landfall::landfall_trigger;
+pub use super::trigger_landfall::token_amount;
 
-/// ETB triggers: "When this …enters", "When Cardname enters",
-/// "When you cast this…". Opponent-facing triggers stay ignored.
+/// ETB triggers: "When this …enters", "Whenever …enters",
+/// "When Cardname enters", "When you cast this…". Opponent-facing
+/// triggers stay ignored. Landfall ETBs ("Whenever a land you control
+/// enters") route to the landfall family instead.
 fn etb_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
-    let etb = (lower.starts_with("when ") || lower.starts_with("when you cast this"))
+    if lower.contains("whenever a land") && lower.contains("enters") && lower.contains("landfall") {
+        return false;
+    }
+    let etb = (lower.starts_with("when ")
+        || lower.starts_with("whenever ")
+        || lower.starts_with("when you cast this"))
         && lower.contains("enters")
         && !lower.contains("opponent");
     if !etb {
         return false;
     }
-    if lower.contains("draw") || lower.contains("investigate") || lower.contains("scry") {
+    if lower.contains("draw") || lower.contains("investigate") {
         out.push(Ability {
             trigger: super::model::Trigger::OnEnter,
             effect: Effect::Draw(draw_amount(lower).max(1)),
+            ..Ability::default()
+        });
+        return true;
+    }
+    if lower.contains("scry") || lower.contains("surveil") {
+        // Scry/surveil ETBs feed awareness, not draw credit.
+        let amount = if lower.contains("surveil") {
+            super::model::amount_after(lower, "surveil")
+        } else {
+            super::model::amount_after(lower, "scry")
+        };
+        out.push(Ability {
+            trigger: super::model::Trigger::OnEnter,
+            effect: Effect::Scry(amount.max(1)),
             ..Ability::default()
         });
         return true;
@@ -33,7 +57,7 @@ fn etb_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
     if lower.contains("create") && lower.contains("token") {
         out.push(Ability {
             trigger: super::model::Trigger::OnEnter,
-            effect: Effect::Tokens(2),
+            effect: Effect::Tokens(token_amount(lower)),
             ..Ability::default()
         });
         return true;
@@ -111,18 +135,6 @@ fn upkeep_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         });
         return true;
     }
-    // Upkeep monarch draw: the Monarch draws at upkeep once taken.
-    if lower.starts_with("at the beginning of your upkeep")
-        && lower.contains("draw a card")
-        && lower.contains("monarch")
-    {
-        out.push(Ability {
-            trigger: super::model::Trigger::OnUpkeep,
-            effect: Effect::Draw(1),
-            ..Ability::default()
-        });
-        return true;
-    }
     // Banked-mana engines: "At the beginning of your [first main]
     // phase, remove all charge counters … add one mana of any color
     // for each" (Coalition Relic). Releases counters × N at upkeep.
@@ -194,7 +206,7 @@ fn attack_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         } else if lower.contains("create") && lower.contains("token") {
             out.push(Ability {
                 trigger: super::model::Trigger::OnAttack,
-                effect: Effect::Tokens(2),
+                effect: Effect::Tokens(token_amount(lower)),
                 ..Ability::default()
             });
         } else if lower.contains("search") || lower.contains("return target") {
@@ -267,7 +279,7 @@ fn death_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         if lower.contains("create") && lower.contains("token") {
             out.push(Ability {
                 trigger: super::model::Trigger::OnDeath,
-                effect: Effect::Tokens(2),
+                effect: Effect::Tokens(token_amount(lower)),
                 ..Ability::default()
             });
             return true;
@@ -295,18 +307,31 @@ fn death_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
     false
 }
 
-/// Cast-spell engines: "Whenever you cast a …spell…draw".
+/// Cast-spell engines: "Whenever you cast a …spell…draw" (loot shape
+/// included so the wheel family does not double-push one segment).
+/// Self-referential shapes ("When you cast this spell, …") are one-shot
+/// riders on the spell itself, not repeatable engines; they stay
+/// unclaimed (the cast path reads them as one-shot draws).
 fn cast_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
-    // Cast-spell engines ("Whenever you cast a …spell…draw").
-    if lower.starts_with("whenever you cast")
-        && !lower.contains("enters")
-        && (lower.contains("draw") || lower.contains("investigate"))
-    {
+    if !(lower.starts_with("whenever you cast") || lower.starts_with("when you cast")) {
+        return false;
+    }
+    if lower.contains("enters") || lower.contains("this spell") {
+        return false;
+    }
+    if lower.contains("draw") || lower.contains("investigate") {
+        // Draw+discard cast triggers parse as Loot, plain draws as Draw.
+        let effect = if lower.contains("discard") {
+            Effect::Loot(draw_amount(lower).max(1))
+        } else {
+            Effect::Draw(draw_amount(lower).max(1))
+        };
         out.push(Ability {
             trigger: super::model::Trigger::OnCastSpell,
-            effect: Effect::Draw(draw_amount(lower).max(1)),
+            effect,
             ..Ability::default()
         });
+        return true;
     }
     false
 }
@@ -332,63 +357,24 @@ fn wheel_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         });
         return true;
     }
-    // Wheels: "each player discards … then draws".
-    if lower.contains("discards") && lower.contains("draws") && lower.contains("each player") {
+    // Wheels: "each player discards … then draws" — only on a
+    // trigger-prefixed segment (an upkeep wheel engine). Plain wheel
+    // spells resolve on cast (`wheel_on_cast`).
+    if (lower.starts_with("at the beginning")
+        || lower.starts_with("whenever ")
+        || lower.starts_with("when "))
+        && lower.contains("discards")
+        && lower.contains("draws")
+        && lower.contains("each player")
+    {
         out.push(Ability {
             trigger: trigger_for(lower),
             effect: Effect::Wheel,
             ..Ability::default()
         });
-    }
-    false
-}
-
-/// Activated abilities on plain cards ("{T}: Draw a card",
-/// "{1}, {T}: …", "−3: …", "{2}, Sacrifice a creature: …"). The
-/// station-tier path handles tiered activations; this covers the rest.
-fn activated_trigger(seg: &str, lower: &str, out: &mut Vec<Ability>) -> bool {
-    // Activated abilities on plain cards ("{T}: Draw a card",
-    // "{1}, {T}: …", "−3: …", "{2}, Sacrifice a creature: …"). The
-    // station-tier path handles tiered activations; this covers the
-    // rest. Loyalty activations start with a minus sign. Banked
-    // activations ("Remove a charge counter …: Add …") start with a
-    // remove clause and consume a counter per fire.
-    if (seg.starts_with('{')
-        || lower.starts_with("tap:")
-        || lower.starts_with('−')
-        || lower.starts_with('-')
-        || lower.starts_with("remove a charge counter"))
-        && let Some(ab) = parse_ability(seg.trim())
-    {
-        out.push(ab);
         return true;
     }
     false
-}
-
-/// True when the segment reads as an enters-the-battlefield shape even
-/// without the strict "when … enters" prefix (sagas, cast triggers).
-pub(super) fn etb_shape(lower: &str) -> bool {
-    lower.starts_with("at the beginning of your end step") || lower.starts_with("when you cast")
-}
-
-/// The best trigger guess for a segment by its opening words.
-fn trigger_for(lower: &str) -> super::model::Trigger {
-    if lower.starts_with("whenever ") && lower.contains("attack") {
-        super::model::Trigger::OnAttack
-    } else if lower.contains("deals combat damage") {
-        super::model::Trigger::OnCombatDamage
-    } else if lower.starts_with("at the beginning of your upkeep")
-        || lower.starts_with("at the beginning of your end step")
-    {
-        super::model::Trigger::OnUpkeep
-    } else if lower.starts_with("whenever you cast") || lower.starts_with("when you cast") {
-        super::model::Trigger::OnCastSpell
-    } else if lower.contains("enters") {
-        super::model::Trigger::OnEnter
-    } else {
-        super::model::Trigger::OnUpkeep
-    }
 }
 
 /// The trigger parser the oracle scan calls: segments the text, then runs
@@ -413,6 +399,9 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
             && !next.contains('|')
             && !next.starts_with('{')
             && !next.starts_with("remove a charge counter")
+            // Loyalty abilities (+N/−N:) are separate segments; merging
+            // them glues every planeswalker ability into one blob.
+            && !(next.starts_with('+') || next.starts_with('−') || next.starts_with('-'))
         {
             i += 1;
             seg.push(' ');
@@ -425,6 +414,7 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
         }
         if etb_trigger(&lower, &mut out)
             || upkeep_trigger(&lower, &mut out)
+            || landfall_trigger(&lower, &mut out)
             || attack_trigger(&lower, &mut out)
             || combat_damage_trigger(&lower, &mut out)
             || death_trigger(&lower, &mut out)
@@ -436,40 +426,4 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
         }
     }
     out
-}
-
-/// Mill amount from text ("mill three cards", "mill 10"). Scans every
-/// "mill " occurrence so card names ("Mill Fiend") do not swallow the
-/// real clause.
-pub fn mill_amount(text: &str) -> u32 {
-    let mut best = 0;
-    let mut from = 0;
-    while let Some(rel) = text[from..].find("mill ") {
-        let start = from + rel + 5;
-        let tail = &text[start..];
-        let digits: String = tail.chars().take_while(|c| c.is_ascii_digit()).collect();
-        let found = if !digits.is_empty() {
-            digits.parse::<u32>().unwrap_or(0)
-        } else {
-            let mut hit = 0;
-            for (word, n) in [
-                ("seven", 7u32),
-                ("six", 6),
-                ("five", 5),
-                ("four", 4),
-                ("three", 3),
-                ("two", 2),
-                ("one", 1),
-            ] {
-                if tail.starts_with(word) {
-                    hit = n;
-                    break;
-                }
-            }
-            hit
-        };
-        best = best.max(found);
-        from = start;
-    }
-    best
 }

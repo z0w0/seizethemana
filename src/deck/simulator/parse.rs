@@ -11,166 +11,12 @@
 // beyond the one cheaper cost).
 
 use super::super::stats::{is_dork, is_land, is_rock};
-use super::model::{
-    Ability, Cost, Effect, Restriction, Scale, SimCard, TapYield, Tier, draw_amount,
-};
+use super::model::{Ability, Cost, Effect, SimCard, TapYield, Tier, draw_amount};
+pub use super::parse_cost::{parse_activation_cost, parse_cost, parse_cost_faces};
+use super::parse_land::{charge_counters_on_cast, enters_tapped, parse_enter_counters};
+pub use super::parse_land::{parse_gates, parse_tap, parse_tap_filtered, parse_tap_yield};
 use super::triggers::{mill_amount, parse_triggers};
 use crate::db::CardRow;
-
-/// Parse a Scryfall mana-cost string (`{2}{W}{W}`, `{W/U}`, `{1}{B/P}`,
-/// multi-face `{2}{B} // {B}`) into a cost. Multi-face costs union the
-/// faces; hybrid pips become flexible pips.
-pub fn parse_cost(mana_cost: &str) -> Cost {
-    let mut cost = Cost::default();
-    for symbol in mana_cost.split(['{', '}']).filter(|s| !s.is_empty()) {
-        if symbol == "//" {
-            continue;
-        }
-        let upper = symbol.to_ascii_uppercase();
-        if upper.chars().all(|c| c.is_ascii_digit()) {
-            cost.generic += upper.parse::<u32>().unwrap_or(0);
-            continue;
-        }
-        if upper == "X" || upper == "S" {
-            cost.generic += 1;
-            continue;
-        }
-        let colored: Vec<usize> = upper
-            .chars()
-            .filter(|c| *c != '/' && *c != 'P')
-            .filter_map(|c| super::model::COLORS.iter().position(|w| *w == c))
-            .collect();
-        if colored.len() == 1 {
-            cost.pips[colored[0]] += 1;
-        } else if colored.len() > 1 {
-            cost.flex_pips += 1;
-        }
-    }
-    cost
-}
-
-/// The cheapest castable cost across a card's faces: split cards
-/// ("Dusk // Dawn", "Bramble Familiar // Fetch Quest") are one card the
-/// deck casts by choosing a face, so the model pays the cheaper face, not
-/// the face sum. MDFC spell faces ("Bramble Familiar // Fetch Quest" again:
-/// one face is a land) and modal faces follow the same rule. Empty faces
-/// (MDFC land side) cost nothing as a land and never gate a cast.
-pub fn parse_cost_faces(mana_cost: &str) -> Cost {
-    let faces: Vec<&str> = mana_cost.split(" // ").collect();
-    if faces.len() <= 1 {
-        return parse_cost(mana_cost);
-    }
-    let nonempty: Vec<Cost> = faces
-        .iter()
-        .filter(|face| !face.trim().is_empty())
-        .map(|face| parse_cost(face))
-        .collect();
-    if nonempty.len() <= 1 {
-        return nonempty.first().cloned().unwrap_or_default();
-    }
-    nonempty
-        .into_iter()
-        .min_by_key(|cost| cost.total())
-        .unwrap_or_default()
-}
-
-/// Parse one "add" clause into a tap yield. Juxtaposed symbols with no
-/// "or" produce fixed simultaneous pips (Jegantha's `{W}{U}{B}{R}{G}`);
-/// "or" between symbols and "one mana of any color" prose are choices.
-pub fn parse_tap_yield(text: &str) -> Option<TapYield> {
-    let lower = text.to_ascii_lowercase();
-    // Opponent-dependent production ("any color that a land an opponent
-    // controls could produce") reads as best-case any-color from turn 2:
-    // the goldfish has no opponents, but a real table does, and the sim
-    // is best-case everywhere else.
-    let opponent = lower.contains("opponent");
-    let mut yield_ = TapYield {
-        opponent_any: opponent,
-        ..TapYield::default()
-    };
-    // Any-color amounts: "one mana of any color" (1), "N mana of any one
-    // color" (N), "N mana in any combination of colors" (N).
-    let number_words: &[(&str, u32)] = &[
-        ("one", 1),
-        ("two", 2),
-        ("three", 3),
-        ("four", 4),
-        ("five", 5),
-    ];
-    if lower.contains("any combination of colors") || lower.contains("mana of any one color") {
-        // The amount precedes "mana": "Add three mana of any one color".
-        let mut amount = 1u32;
-        for (word, n) in number_words {
-            if lower.contains(&format!("add {word} mana"))
-                || lower.contains(&format!(", {word} mana"))
-                || lower.contains(&format!(" {word} mana"))
-            {
-                amount = *n;
-                break;
-            }
-        }
-        yield_.any_pips = amount.max(1);
-        yield_.choice = [false; 5];
-        return Some(yield_);
-    }
-    // Conditional any-color: "one mana of any color among X you control"
-    // (Mox Amber, Plaza of Heroes). Parsed as ColorsPresent scaling: the
-    // output grows with the matching permanents on the battlefield.
-    if lower.contains("one mana of any color among") && lower.contains("you control") {
-        yield_.scaling = Some(Scale::ColorsPresent);
-        return Some(yield_);
-    }
-    if lower.contains("one mana of any color") {
-        yield_.any_pips = 1;
-        yield_.choice = [false; 5];
-        return Some(yield_);
-    }
-    // Scaling producers: "for each color among permanents you control".
-    if lower.contains("for each color among permanents you control") {
-        yield_.scaling = Some(Scale::ColorsPresent);
-        return Some(yield_);
-    }
-    // Per-counter producers: "Add one mana of that color for each charge
-    // counter on this" (Astral Cornucopia). One activation = one
-    // any-color pip per counter, resolved at activation.
-    if lower.contains("for each charge counter") && lower.contains("mana") {
-        yield_.scaling = Some(Scale::PerChargeCounter);
-        yield_.any_pips = 1;
-        return Some(yield_);
-    }
-    if lower.contains(" or ") {
-        for clause in lower.split(" or ") {
-            for symbol in clause.split(['{', '}']).filter(|s| !s.is_empty()) {
-                let upper = symbol.to_ascii_uppercase();
-                if upper.len() == 1 {
-                    let ch = upper.chars().next().unwrap_or(' ');
-                    if let Some(idx) = super::model::COLORS.iter().position(|c| *c == ch) {
-                        yield_.choice[idx] = true;
-                    } else if ch == 'C' {
-                        yield_.colorless += 1;
-                    }
-                }
-            }
-        }
-    } else {
-        // No "or": juxtaposed symbols are one simultaneous set.
-        for symbol in lower.split(['{', '}']).filter(|s| !s.is_empty()) {
-            let upper = symbol.to_ascii_uppercase();
-            if upper.len() == 1 {
-                let ch = upper.chars().next().unwrap_or(' ');
-                if let Some(idx) = super::model::COLORS.iter().position(|c| *c == ch) {
-                    yield_.fixed[idx] += 1;
-                } else if ch == 'C' {
-                    yield_.colorless += 1;
-                }
-            }
-        }
-    }
-    if yield_.total() == 0 {
-        return None;
-    }
-    Some(yield_)
-}
 
 /// Parse station tiers and the station-card flag from oracle text.
 ///
@@ -233,12 +79,18 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
     // Activated/loyalty shape: "{1}, {T}: Draw two cards", "−3: Search…".
     let (cost_part, effect_part) = segment.split_once(':')?;
     let cost = parse_activation_cost(cost_part.trim());
-    // Loyalty cost: a leading minus ("−3", "-2") spends loyalty.
+    // Loyalty cost: a leading minus ("−3", "-2") spends loyalty. A plus
+    // ("+1") gains it.
     let cleaned = cost_part.replace(['−', '–'], "-").trim().to_string();
     let loyalty_cost = cleaned
         .strip_prefix('-')
         .and_then(|d| d.parse::<u32>().ok())
         .filter(|_| cleaned.chars().all(|c| c.is_ascii_digit() || c == '-'))
+        .unwrap_or(0);
+    let loyalty_gain = cleaned
+        .strip_prefix('+')
+        .and_then(|d| d.parse::<u32>().ok())
+        .filter(|_| cleaned.chars().all(|c| c.is_ascii_digit() || c == '+'))
         .unwrap_or(0);
     let lower_effect = effect_part.to_ascii_lowercase();
     let effect = if lower_effect.contains("add ") || lower_effect.contains("add {") {
@@ -261,7 +113,7 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
     {
         Effect::Tutor
     } else if lower_effect.contains("create") && lower_effect.contains("token") {
-        Effect::Tokens(2)
+        Effect::Tokens(super::triggers::token_amount(&lower_effect))
     } else if lower_effect.contains("put a charge counter") {
         // "Put a charge counter": one counter per activation (Coalition
         // Relic). The Drill Too Deep shape ("put five charge counters") is
@@ -283,6 +135,15 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
     } else if lower_effect.contains("remove a charge counter") && lower_effect.contains("add") {
         // Banked activation (Pentad Prism): one counter buys one pip.
         parse_tap_yield(effect_part).map_or(Effect::None, Effect::Mana)
+    } else if lower_effect.contains("put x")
+        && (lower_effect.contains("counter") || lower_effect.contains("tower"))
+        && cost.total() == 1
+    {
+        // Mana-sink counters ("{X}: Put X tower counters on Helix
+        // Pinnacle"): the leftover pool converts to counters so the
+        // win threshold can be reached. Modeled as Counters(0): the
+        // game loop substitutes the paid amount ({X} parses as 1).
+        Effect::Counters(0)
     } else {
         return None;
     };
@@ -300,23 +161,25 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
             cost_part.to_ascii_lowercase().contains("sacrifice")
                 && cost_part.to_ascii_lowercase().contains("creature"),
         ),
+        // "Activate only once each turn" on the card bounds the free
+        // activation: no looping, no infinite-mana census flag.
+        once_per_turn: segment.to_ascii_lowercase().contains("only once each turn")
+            || segment
+                .to_ascii_lowercase()
+                .contains("only once each of your turns"),
         loyalty_cost,
+        loyalty_gain,
     })
 }
 
-/// Parse an activation cost prefix ("{1}, {T}", "−3", "{0}").
-fn parse_activation_cost(text: &str) -> Cost {
-    // Planeswalker loyalty costs ("-3", "0", "−7") cost no mana.
-    let cleaned = text.replace(['−', '–'], "-");
-    if cleaned.trim_start().starts_with('-')
-        || cleaned
-            .trim()
-            .chars()
-            .all(|c| c.is_ascii_digit() || c == '-')
-    {
-        return Cost::default();
+/// Token count from a "create N …tokens" tail. Delegates to the
+/// trigger-family counter; 0 when the text creates nothing.
+fn token_amount_after(text: &str) -> u32 {
+    let lower = text.to_ascii_lowercase();
+    if !lower.contains("token") {
+        return 0;
     }
-    parse_cost(&cleaned)
+    super::triggers::token_amount(&lower)
 }
 
 /// Parse a card row into the simulator's data model.
@@ -377,7 +240,29 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     // Abilities outside station tiers: triggers from oracle text.
     let abilities = parse_triggers(&row.oracle_text);
     let mut station_tiers = tiers;
-    if !abilities.is_empty() {
+    // Saga chapters parse into tier-0 Activated abilities, one per
+    // chapter, consumed by the saga staging in the turn loop.
+    let is_saga = type_line.contains("Saga") && !land;
+    if is_saga {
+        let chapters = parse_saga_chapters(&row.oracle_text);
+        if !chapters.is_empty() {
+            station_tiers.insert(
+                0,
+                Tier {
+                    at: 0,
+                    animate: false,
+                    abilities: chapters
+                        .into_iter()
+                        .map(|effect| Ability {
+                            trigger: super::model::Trigger::Activated,
+                            effect,
+                            ..Ability::default()
+                        })
+                        .collect(),
+                },
+            );
+        }
+    } else if !abilities.is_empty() {
         station_tiers.insert(
             0,
             Tier {
@@ -419,7 +304,6 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         board_discount = true;
     }
 
-    let is_saga = type_line.contains("Saga") && !land;
     let enter_counters = parse_enter_counters(&text);
 
     // One-shot effects on cast.
@@ -442,13 +326,17 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
             .map(str::trim)
             .find_map(|seg| {
                 let lower = seg.to_ascii_lowercase();
-                let draws = (lower.starts_with("draw ")
+                // "When you cast this spell, draw a card" self-shapes are
+                // one-shot riders: the cast itself resolves them.
+                let self_cast = lower.starts_with("when you cast this spell");
+                let draws = ((lower.starts_with("draw ")
                     || lower.contains(", draw ")
                     || lower.starts_with("investigate")
                     || lower.contains("then draw"))
                     && !lower.contains("whenever")
                     && !lower.contains("at the beginning")
-                    && !lower.contains(": ");
+                    && !lower.contains(": "))
+                    || self_cast;
                 if draws {
                     Some(draw_amount(&lower))
                 } else {
@@ -518,6 +406,76 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         0
     };
 
+    // X-cost effect class: "target player loses X life" (Drain), "draw X
+    // cards" (Draw), "mill X" (Mill), "create X … creature tokens"
+    // (Tokens). Oracle text writes the X bare ("loses X life"), so the
+    // check is the mana cost carrying {X} plus the effect word.
+    let has_x_cost = row.mana_cost.to_ascii_uppercase().contains("{X}");
+    let x_class = if !land && has_x_cost {
+        if (text.contains("loses x life")
+            || text.contains("each opponent loses x")
+            || text.contains("deals x damage"))
+            && (text.contains("target player") || text.contains("opponent"))
+        {
+            Some(super::model::XClass::Drain)
+        } else if text.contains("draw x") {
+            Some(super::model::XClass::Draw)
+        } else if text.contains("mill x") {
+            Some(super::model::XClass::Mill)
+        } else if text.contains("create x") && text.contains("token") {
+            Some(super::model::XClass::Tokens)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // Repeatable per-cast mana: "add {N} for each spell you've cast this
+    // turn" (Vivi Ornitier class). Fires per spell cast while the host
+    // is untapped, in the cast phase.
+    let mana_per_cast = if !land
+        && text.contains("add ")
+        && (text.contains("for each spell you've cast")
+            || text.contains("spell you've cast this turn"))
+    {
+        row.oracle_text
+            .split(['.', '\n'])
+            .map(str::trim)
+            .find_map(|seg| {
+                let lower = seg.to_ascii_lowercase();
+                (lower.contains("spell you've cast") && lower.contains("add "))
+                    .then(|| parse_tap_yield(seg))
+                    .flatten()
+            })
+    } else {
+        None
+    };
+    // The per-cast engine's own tap segment reads as a plain "{T}: add N"
+    // tap too; when the engine parsed, drop the plain tap so the two
+    // modes do not double count (the real card's tap yields the
+    // per-cast amount, not one plus it).
+    let tap = if mana_per_cast.is_some() {
+        parse_tap_filtered(row)
+    } else {
+        tap
+    };
+
+    // Kicker/multikicker: an optional extra cost ("Kicker {2}"). The
+    // game loop pays it from leftover mana when affordable; the drain
+    // rider bumps the amount.
+    let kicker = if text.contains("kicker ") {
+        text.split("kicker ")
+            .nth(1)
+            .and_then(|rest| rest.split(['(', '.', '\n', ',']).next())
+            .map(str::trim)
+            .map(parse_cost)
+            .map(|c| c.total())
+            .filter(|n| *n > 0)
+    } else {
+        None
+    };
+
     // Printed power for crew/station math; "*" and unknowns stay None
     // (flat body power). Tokens never carry a row.
     let printed_power = row
@@ -534,6 +492,49 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     // One-shot mill on entering ("mill N" ETB without a trigger segment).
     let mills_on_enter = if !land && parse_triggers(&row.oracle_text).is_empty() {
         mill_amount(&text).max(super::model::amount_after(&text, "mills "))
+    } else {
+        0
+    };
+
+    // One-shot token spells ("Create four 1/1 Soldier creature tokens"):
+    // no trigger prefix, so the trigger families skip them. The cast
+    // resolves the creation.
+    let tokens_on_cast =
+        if !land && parse_triggers(&row.oracle_text).is_empty() && text.contains("token") {
+            text.find("create ")
+                .map(|i| token_amount_after(&text[i..]))
+                .unwrap_or(0)
+        } else {
+            0
+        };
+
+    // One-shot wheel spells ("each player discards their hand, then
+    // draws seven"): the cast resolves a full wheel. Requires no
+    // trigger prefix (trigger wheels parse as OnUpkeep/Loot abilities).
+    let wheel_on_cast = !land
+        && text.contains("each player")
+        && text.contains("discard")
+        && text.contains("draw")
+        && !text.starts_with("whenever ")
+        && !text.starts_with("when ")
+        && !text.starts_with("at the beginning");
+
+    // Additional costs: "As an additional cost to cast this spell,
+    // sacrifice a creature / pay N life / discard a card". Best case:
+    // the agent pays the cost, so the cast consumes the resource.
+    let additional_cost_bodies = if text.contains("additional cost")
+        && (text.contains("sacrifice a creature") || text.contains("sacrifice any number"))
+    {
+        1
+    } else {
+        0
+    };
+    let additional_cost_life = if text.contains("additional cost") {
+        text.split("pay ")
+            .nth(1)
+            .and_then(|rest| rest.split([' ', '.', ',']).next().map(str::to_string))
+            .and_then(|n| n.parse::<u32>().ok())
+            .unwrap_or(0)
     } else {
         0
     };
@@ -573,16 +574,25 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     let double_strike = row.keywords.contains("Double strike") || text.contains("double strike");
     let prowess = row.keywords.contains("Prowess") || text.contains("prowess");
     let landfall = text.contains("landfall");
+    // Text "flying" joins the evasion census too ("has flying", "gains
+    // flying"); keyword-array Flying covered above.
     let evasion = row.keywords.contains("Trample")
         || row.keywords.contains("Flying")
         || row.keywords.contains("Menace")
         || text.contains("trample")
-        || text.contains("menace");
+        || text.contains("menace")
+        || text.contains("flying");
+    // Haste: keyword array, reminder text, or "has haste" grants.
+    let has_haste = row.keywords.contains("Haste") || text.contains("haste");
+    // "You may play an additional land" / "an additional land on each of
+    // your turns" (Aesi, Wayward Swordtooth, Burrowing Power).
+    let extra_land_drops = text.contains("additional land");
 
-    // Instant speed: Instant type or flash.
+    // Instant speed: Instant type or flash. "Flashback" contains
+    // "flash" as a substring; exclude it.
     let is_instant_speed = row.type_line.contains("Instant")
         || row.keywords.contains("Flash")
-        || text.contains("flash");
+        || (text.contains("flash") && !text.contains("flashback"));
 
     // Interaction: removal or counterspell shapes (readiness metric).
     let is_interaction = row.type_line.contains("Instant") || row.type_line.contains("Sorcery");
@@ -601,6 +611,7 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         station_tiers,
         crew,
         is_creature: type_line.contains("Creature"),
+        is_artifact: type_line.contains("Artifact"),
         is_station_card,
         enter_counters,
         role,
@@ -610,13 +621,19 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         is_saga,
         counters_on_cast,
         mana_on_cast,
+        mana_per_cast,
         draws_on_cast,
         mills_on_enter,
+        tokens_on_cast,
         scry_on_cast,
         surveils,
         mills_opponent,
         extra_turns_on_cast,
         drain_on_cast,
+        additional_cost_bodies,
+        additional_cost_life,
+        wheel_on_cast,
+        x_class,
         printed_power,
         starting_loyalty,
         board_discount,
@@ -631,274 +648,75 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         evasion,
         is_instant_speed,
         is_interaction,
+        has_haste,
+        extra_land_drops,
+        kicker,
     }
 }
 
-/// Tap yield from `{T}: Add …` segments, merged across abilities (a
-/// permanent taps once; later abilities merge as the union of colors).
-/// Lands whose oracle grants them a basic type ("This land is the chosen
-/// type") tap for that type's color without an explicit add clause.
-fn parse_tap(row: &CardRow) -> Option<TapYield> {
-    // Basic lands wrap the oracle text in parens: "({T}: Add {G}.)".
-    let oracle = row.oracle_text.trim_start_matches('(');
-    let segments: Vec<&str> = oracle.split(['\n', '.']).map(str::trim).collect();
-    // Type-granted lands ("This land is the chosen type"): no add clause,
-    // but the chosen basic type is the player's choice each game, so the
-    // tap reads as one mana of any color.
-    let lower_all = oracle.to_ascii_lowercase();
-    if segments.iter().all(|s| {
-        !(s.to_ascii_lowercase().starts_with("{t}")
-            || s.to_ascii_lowercase().contains(": add"))
-    } && (lower_all.contains("this land is the chosen type")
-        || lower_all.contains("this land is every basic land type")))
-    {
-        return Some(TapYield {
-            any_pips: 1,
-            ..TapYield::default()
-        });
-    }
-    // Station tier lines ("12+ | {U}, {T}: Add …") belong to a tier, not
-    // to the base card; parse_tap must not double-count them.
-    let tier_lines: Vec<usize> = segments
-        .iter()
-        .enumerate()
-        .filter(|(_, s)| {
-            s.split_once('|').is_some_and(|(head, _)| {
-                head.trim()
-                    .trim_end_matches('+')
-                    .trim()
-                    .parse::<u32>()
-                    .is_ok()
-            })
-        })
-        .map(|(i, _)| i)
-        .collect();
-    let mut merged: Option<TapYield> = None;
-    for (si, seg) in segments.iter().enumerate() {
-        // Skip tier segments and any segment a tier marker precedes.
-        if tier_lines.contains(&si)
-            || tier_lines
-                .iter()
-                .any(|t| *t > si && segments[si..*t].iter().all(|s| s.is_empty()))
-        {
+/// Saga chapter abilities: lines "I — Loot.", "II — Draw two cards."
+/// parse through the same effect shapes as triggers (the roman numeral
+/// prefix is stripped). Returns one effect per chapter in order.
+/// Combined numeral lines ("I, II, III — Create a 3/3 token") give every
+/// listed chapter the same effect.
+fn parse_saga_chapters(oracle_text: &str) -> Vec<Effect> {
+    let mut chapters = Vec::new();
+    for line in oracle_text.split('\n') {
+        let line = line.trim();
+        let Some((numeral, body)) = line.split_once('—').or_else(|| line.split_once(" - "))
+        else {
             continue;
-        }
-        let lower = seg.to_ascii_lowercase();
-        if !lower.starts_with("{t}") && !lower.contains(": add") {
-            // Scaling adds read as bare sentences after a "{T}: Choose a
-            // color" segment (Astral Cornucopia); accept an "add"-leading
-            // continuation only when the previous segment carried the tap.
-            let continuation = lower.starts_with("add ")
-                && si > 0
-                && segments[si - 1].to_ascii_lowercase().starts_with("{t}");
-            if !continuation {
-                continue;
-            }
-        }
-        let body = match seg.split_once(':') {
-            Some((_, body)) => body,
-            // A bare "Add …" continuation sentence has no colon; its whole
-            // text is the yield.
-            None if lower.starts_with("add ") => seg,
-            None => continue,
         };
-        if let Some(y) = parse_tap_yield(body) {
-            // A gated mode ("Activate only if you control …" in the
-            // segment itself or the next one) joins as a choice color,
-            // not a fixed pip: it does not produce every turn.
-            let gated = lower.contains("activate only if")
-                || segments.get(si + 1).is_some_and(|next| {
-                    tier_lines.contains(&(si + 1))
-                        || next.to_ascii_lowercase().contains("activate only if")
-                });
-            // Spend restriction: "spend this mana only to cast …" (creature
-            // spells: Secluded Courtyard; a legendary spell: Plaza of
-            // Heroes; artifact spells: Steelswarm Operator; instant and
-            // sorcery spells: Hydro-Channeler). The clause follows the add
-            // segment as its own sentence.
-            let restriction_window: String = segments[si..]
-                .iter()
-                .take(3)
-                .map(|s| s.to_ascii_lowercase())
-                .collect::<Vec<_>>()
-                .join(" ");
-            let restriction = spend_restriction(&restriction_window);
-            let y = if gated {
-                let mut choice_only = y.clone();
-                choice_only.choice = y.fixed.map(|p| p > 0);
-                choice_only.fixed = [0; 5];
-                choice_only
-            } else {
-                y
+        // The numeral part is one or more romans ("I", "II, III"), the
+        // effect body follows the em dash.
+        let numeral = numeral.trim().trim_end_matches('.');
+        let mut ordinals: Vec<u32> = Vec::new();
+        for piece in numeral.split([',', ' ']).filter(|p| !p.is_empty()) {
+            let ordinal = match piece {
+                "I" => 1,
+                "II" => 2,
+                "III" => 3,
+                "IV" => 4,
+                _ => continue,
             };
-            let mut y = y;
-            y.restriction = restriction;
-            merged = Some(match merged.take() {
-                None => y,
-                Some(prev) => {
-                    // Several tap abilities on one permanent: one tap
-                    // yields one mana of any reachable color. A restricted
-                    // mode restricts the merged tap (the unrestricted
-                    // colorless mode produces nothing of value).
-                    let mut m = TapYield {
-                        alternatives: true,
-                        restriction: prev.restriction.or(y.restriction),
-                        opponent_any: prev.opponent_any || y.opponent_any,
-                        ..TapYield::default()
-                    };
-                    m.any_pips = (prev.any_pips + y.any_pips).max(1);
-                    for i in 0..5 {
-                        m.choice[i] =
-                            prev.choice[i] || y.choice[i] || prev.fixed[i] > 0 || y.fixed[i] > 0;
-                    }
-                    m.colorless = u32::from(prev.colorless > 0 || y.colorless > 0);
-                    m
-                }
-            });
+            ordinals.push(ordinal);
         }
-    }
-    merged
-}
-
-/// Spend restriction from a "spend this mana only to cast …" window:
-/// creature, legendary, artifact, or instant-and-sorcery spells.
-fn spend_restriction(window: &str) -> Option<Restriction> {
-    if !window.contains("only to cast") {
-        return None;
-    }
-    if window.contains("creature") {
-        Some(Restriction::Creature)
-    } else if window.contains("legendary") {
-        Some(Restriction::Legendary)
-    } else if window.contains("artifact") {
-        Some(Restriction::Artifact)
-    } else if window.contains("instant and sorcery") || window.contains("instant or sorcery") {
-        Some(Restriction::InstantSorcery)
-    } else {
-        None
-    }
-}
-
-/// Gate colors of a verge-style land: the types listed after the second
-/// `{T}:` ability's "Activate only if you control …".
-fn parse_gates(oracle_text: &str) -> Vec<&'static str> {
-    let text = oracle_text.to_ascii_lowercase();
-    // The gate clause names basic types; any type mentioned after
-    // "Activate only if" is gated (the ungated mode is the first).
-    let Some(idx) = text.find("activate only if") else {
-        return Vec::new();
-    };
-    let gate_text = &text[idx..];
-    let mut gates = Vec::new();
-    for (word, kind) in [
-        ("plains", "Plains"),
-        ("island", "Island"),
-        ("swamp", "Swamp"),
-        ("mountain", "Mountain"),
-        ("forest", "Forest"),
-    ] {
-        if gate_text.contains(&format!("control a {word}"))
-            || gate_text.contains(&format!("control an {word}"))
-            // "control a Swamp or a Mountain": the second type follows an
-            // "or a" clause.
-            || gate_text.contains(&format!("or a {word}"))
-            || gate_text.contains(&format!("or an {word}"))
-        {
-            gates.push(kind);
+        let Some(top) = ordinals.pop() else {
+            continue;
+        };
+        let lower = body.to_ascii_lowercase();
+        let effect = if lower.contains("draw") && !lower.contains("discard") {
+            Effect::Draw(draw_amount(&lower).max(1))
+        } else if lower.contains("create") && lower.contains("token") {
+            Effect::Tokens(super::triggers::token_amount(&lower))
+        } else if lower.contains("mill ") {
+            Effect::Mill(mill_amount(&lower))
+        } else if lower.contains("from your graveyard") && lower.contains("return") {
+            Effect::ReturnFromGraveyard {
+                to_hand: lower.contains("to your hand"),
+                count: 1,
+            }
+        } else if lower.contains("add ") {
+            Effect::ExtraLand
+        } else if lower.contains("search") {
+            Effect::Tutor
+        } else if lower.contains("exile") && lower.contains("battlefield") {
+            Effect::ExtraLand
+        } else {
+            Effect::None
+        };
+        // Pad gaps: chapter II of a saga whose chapter I did not parse
+        // still lands at index 1. Combined numeral lines fill every
+        // listed chapter with the same effect.
+        while chapters.len() < top as usize {
+            chapters.push(Effect::None);
         }
-    }
-    gates
-}
-
-/// Enters-tapped oracle check for lands.
-/// Enters-tapped oracle check for lands. Best-case reading: the shock-dual
-/// life-payment clause ("you may pay 2 life") stays untapped; unconditional
-/// "enters tapped" texts are tapped.
-fn enters_tapped(text: &str) -> bool {
-    // Shock duals and MDFC "you may pay 3 life" lands: the sim's
-    // best-case agent pays any printed life.
-    if text.contains("you may pay 2 life")
-        || text.contains("unless you pay 2 life")
-        || text.contains("you may pay 3 life")
-        || text.contains("unless you pay 3 life")
-    {
-        return false;
-    }
-    // "Enters tapped unless …" conditions that self-solve early
-    // ("unless you control two or fewer other lands", first turns) are
-    // treated untapped; other unless-conditions as tapped.
-    if text.contains("enters tapped unless") {
-        return !text.contains("two or fewer other lands")
-            && !text.contains("it's your first, second, or third turn");
-    }
-    text.contains("enters tapped") || text.contains("enters the battlefield tapped")
-}
-
-/// Charge counters the card enters with ("enters with three charge
-/// counters on it" → 3).
-/// Charge counters the card enters with ("enters with three charge
-/// counters on it" → 3). The search stays inside the same sentence so a
-/// later "{2}, {T}" activation does not leak a number.
-fn parse_enter_counters(text: &str) -> u32 {
-    // Sunburst (best case): two colors paid on-curve → 2 counters.
-    if text.contains("sunburst") {
-        return 2;
-    }
-    if !text.contains("enters with") {
-        return 0;
-    }
-    let Some(idx) = text.find("enters with") else {
-        return 0;
-    };
-    let tail: &str = text[idx..].split(['.', '\n', ',']).next().unwrap_or("");
-    let digits: String = tail
-        .chars()
-        .skip_while(|c| !c.is_ascii_digit())
-        .take_while(|c| c.is_ascii_digit())
-        .collect();
-    if !digits.is_empty() {
-        return digits.parse::<u32>().unwrap_or(0);
-    }
-    for (word, n) in [
-        ("one", 1u32),
-        ("two", 2),
-        ("three", 3),
-        ("four", 4),
-        ("five", 5),
-        ("six", 6),
-    ] {
-        if tail.contains(&format!("{word} ")) {
-            return n;
+        for &o in &ordinals {
+            chapters[o as usize - 1] = effect.clone();
         }
+        chapters[top as usize - 1] = effect;
     }
-    0
-}
-
-/// "Put N charge counters" on cast (Drill Too Deep).
-fn charge_counters_on_cast(text: &str) -> u32 {
-    if !text.contains("charge counter") {
-        return 0;
-    }
-    let Some(idx) = text.find("put ") else {
-        return 0;
-    };
-    let tail = &text[idx + 4..];
-    let digits: String = tail.chars().take_while(|c| c.is_ascii_digit()).collect();
-    if !digits.is_empty() {
-        return digits.parse::<u32>().unwrap_or(0);
-    }
-    for (word, n) in [
-        ("five", 5u32),
-        ("four", 4),
-        ("three", 3),
-        ("two", 2),
-        ("one", 1),
-    ] {
-        if tail.starts_with(word) {
-            return n;
-        }
-    }
-    0
+    chapters
 }
 
 /// Functional role classification.
@@ -923,6 +741,25 @@ fn classify(
     if tap.is_some() || mana_on_cast.is_some() {
         return Role::RampSpell;
     }
+    // Removal first: "Destroy target creature. Draw a card." is a
+    // removal spell with a rider, not a draw engine. Draw-role counts
+    // would skew without this order.
+    let removal = text.contains("destroy target")
+        || text.contains("destroy all")
+        || text.contains("exile target")
+        || text.contains("counter target")
+        || text.contains("return target")
+            && (text.contains("to its owner's hand") || text.contains("to their owner's hand"))
+        || text.contains("prevent all combat damage")
+        || text.contains("prevent the next") && text.contains("damage")
+        || text.contains("creatures with power") && text.contains("can't attack")
+        || text.contains("can't attack or block")
+        || text.contains("regenerate target")
+        || text.contains("gains hexproof")
+        || text.contains("gains indestructible");
+    if removal {
+        return Role::Removal;
+    }
     // Draw: repeatable engines and one-shot draws; tutors and look-at-top
     // effects refuel the hand.
     let draws = text.contains("draw ")
@@ -940,22 +777,6 @@ fn classify(
             return Role::Wincon;
         }
         return Role::Other;
-    }
-    let removal = text.contains("destroy target")
-        || text.contains("destroy all")
-        || text.contains("exile target")
-        || text.contains("counter target")
-        || text.contains("return target")
-            && (text.contains("to its owner's hand") || text.contains("to their owner's hand"))
-        || text.contains("prevent all combat damage")
-        || text.contains("prevent the next") && text.contains("damage")
-        || text.contains("creatures with power") && text.contains("can't attack")
-        || text.contains("can't attack or block")
-        || text.contains("regenerate target")
-        || text.contains("gains hexproof")
-        || text.contains("gains indestructible");
-    if removal {
-        return Role::Removal;
     }
     // Static tax/restriction pieces (stax): their timing is the question.
     let lock = text.contains("cost") && text.contains("more to cast")

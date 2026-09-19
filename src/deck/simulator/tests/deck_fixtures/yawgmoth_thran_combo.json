@@ -1,0 +1,1003 @@
+{
+ "name": "yawgmoth thran combo",
+ "format": "commander",
+ "commanders": [
+  {
+   "name": "Yawgmoth, Thran Physician",
+   "cost": "{2}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Human Cleric",
+   "keywords": "Protection Proliferate",
+   "power": "2",
+   "loyalty": null,
+   "text": "Protection from Humans\nPay 1 life, Sacrifice another creature: Put a -1/-1 counter on up to one target creature and draw a card.\n{B}{B}, Discard a card: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  }
+ ],
+ "cards": [
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Asmodeus the Archfiend",
+   "cost": "{4}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Devil God",
+   "keywords": "",
+   "power": "6",
+   "loyalty": null,
+   "text": "Binding Contract \u2014 If you would draw a card, exile the top card of your library face down instead.\n{B}{B}{B}: Draw seven cards.\n{B}: Return all cards exiled with Asmodeus to their owner's hand and you lose that much life."
+  },
+  {
+   "name": "Ayara, First of Locthwain",
+   "cost": "{B}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Elf Noble",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever Ayara or another black creature you control enters, each opponent loses 1 life and you gain 1 life.\n{T}, Sacrifice another black creature: Draw a card."
+  },
+  {
+   "name": "Baleful Mastery",
+   "cost": "{3}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You may pay {1}{B} rather than pay this spell's mana cost.\nIf the {1}{B} cost was paid, an opponent draws a card.\nExile target creature or planeswalker."
+  },
+  {
+   "name": "Bastion of Remembrance",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "When this enchantment enters, create a 1/1 white Human Soldier creature token.\nWhenever a creature you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Beseech the Queen",
+   "cost": "{2/B}{2/B}{2/B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({2/B} can be paid with any two mana or with {B}. This card's mana value is 6.)\nSearch your library for a card with mana value less than or equal to the number of lands you control, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Blast Zone",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters with a charge counter on it.\n{T}: Add {C}.\n{X}{X}, {T}: Put X charge counters on this land.\n{3}, {T}, Sacrifice this land: Destroy each nonland permanent with mana value equal to the number of charge counters on this land."
+  },
+  {
+   "name": "Blight Mound",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Attacking Pests you control get +1/+0 and have menace.\nWhenever a nontoken creature you control dies, create a 1/1 black and green Pest creature token with \"When this token dies, you gain 1 life.\""
+  },
+  {
+   "name": "Blood Artist",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Vampire",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "Whenever this creature or another creature dies, target player loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Blood Pet",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Thrull",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Sacrifice this creature: Add {B}."
+  },
+  {
+   "name": "Bridge from Below",
+   "cost": "{B}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a nontoken creature is put into your graveyard from the battlefield, if this card is in your graveyard, create a 2/2 black Zombie creature token.\nWhen a creature is put into an opponent's graveyard from the battlefield, if this card is in your graveyard, exile this card."
+  },
+  {
+   "name": "Bubbling Muck",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Until end of turn, whenever a player taps a Swamp for mana, that player adds an additional {B}."
+  },
+  {
+   "name": "Buried Alive",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for up to three creature cards, put them into your graveyard, then shuffle."
+  },
+  {
+   "name": "Butcher Ghoul",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "Undying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Undying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Carnival of Souls",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a creature enters, you lose 1 life and add {B}."
+  },
+  {
+   "name": "Case of the Stashed Skeleton",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved Suspect",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, create a 2/1 black Skeleton creature token and suspect it. (It has menace and can't block.)\nTo solve \u2014 You control no suspected Skeletons. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 {1}{B}, Sacrifice this Case: Search your library for a card, put it into your hand, then shuffle. Activate only as a sorcery."
+  },
+  {
+   "name": "Castle Locthwain",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Swamp.\n{T}: Add {B}.\n{1}{B}{B}, {T}: Draw a card, then you lose life equal to the number of cards in your hand."
+  },
+  {
+   "name": "Culling the Weak",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, sacrifice a creature.\nAdd {B}{B}{B}{B}."
+  },
+  {
+   "name": "Dark Ritual",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Add {B}{B}{B}."
+  },
+  {
+   "name": "Dead of Winter",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "All nonsnow creatures get -X/-X until end of turn, where X is the number of snow permanents you control."
+  },
+  {
+   "name": "Deadly Dispute",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "Treasure",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards and create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Defile",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets -1/-1 until end of turn for each Swamp you control."
+  },
+  {
+   "name": "Evernight Shade",
+   "cost": "{3}{B}",
+   "type_line": "Creature \u2014 Shade",
+   "keywords": "Undying",
+   "power": "1",
+   "loyalty": null,
+   "text": "{B}: This creature gets +1/+1 until end of turn.\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Final Parting",
+   "cost": "{3}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for two cards. Put one into your hand and the other into your graveyard. Then shuffle."
+  },
+  {
+   "name": "Foggy Swamp Visions",
+   "cost": "{1}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Waterbend",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, waterbend {X}. (While paying a waterbend cost, you can tap your artifacts and creatures to help. Each one pays for {1}.)\nExile X target creature cards from graveyards. For each creature card exiled this way, create a token that's a copy of it. At the beginning of your next end step, sacrifice those tokens."
+  },
+  {
+   "name": "Forsaken Miner",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Skeleton Rogue",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature can't block.\nWhenever you commit a crime, you may pay {B}. If you do, return this card from your graveyard to the battlefield. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime.)"
+  },
+  {
+   "name": "Geier Reach Sanitarium",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{2}, {T}: Each player draws a card, then discards a card."
+  },
+  {
+   "name": "Genesis Chamber",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a nontoken creature enters, if this artifact is untapped, that creature's controller creates a 1/1 colorless Myr artifact creature token."
+  },
+  {
+   "name": "Geralf's Messenger",
+   "cost": "{B}{B}{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "Undying",
+   "power": "3",
+   "loyalty": null,
+   "text": "This creature enters tapped.\nWhen this creature enters, target opponent loses 2 life.\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Greedy Freebooter",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Human Pirate",
+   "keywords": "Treasure Scry",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature dies, scry 1 and create a Treasure token. (To scry 1, look at the top card of your library. You may put that card on the bottom. A Treasure token is an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Hancock, Ghoulish Mayor",
+   "cost": "{2}{B}",
+   "type_line": "Legendary Creature \u2014 Zombie Mutant Advisor",
+   "keywords": "Undying",
+   "power": "2",
+   "loyalty": null,
+   "text": "Each other creature you control that's a Zombie or Mutant gets +X/+X, where X is the number of counters on Hancock.\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Hedron Crawler",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "{T}: Add {C}. ({C} represents colorless mana.)"
+  },
+  {
+   "name": "Imp's Mischief",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Change the target of target spell with a single target. You lose life equal to that spell's mana value."
+  },
+  {
+   "name": "K'rrik, Son of Yawgmoth",
+   "cost": "{4}{B/P}{B/P}{B/P}",
+   "type_line": "Legendary Creature \u2014 Phyrexian Horror Minion",
+   "keywords": "Lifelink",
+   "power": "2",
+   "loyalty": null,
+   "text": "({B/P} can be paid with either {B} or 2 life.)\nLifelink\nFor each {B} in a cost, you may pay 2 life rather than pay that mana.\nWhenever you cast a black spell, put a +1/+1 counter on K'rrik."
+  },
+  {
+   "name": "Kaervek, the Punisher",
+   "cost": "{1}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Human Warlock",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "Whenever you commit a crime, exile up to one target black card from your graveyard and copy it. You may cast the copy. If you do, you lose 2 life. (Targeting opponents, anything they control, and/or cards in their graveyards is a crime. Copies of permanent spells become tokens.)"
+  },
+  {
+   "name": "Liliana's Triumph",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each opponent sacrifices a creature of their choice. If you control a Liliana planeswalker, each opponent also discards a card."
+  },
+  {
+   "name": "Lively Dirge",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "Spree",
+   "power": null,
+   "loyalty": null,
+   "text": "Spree (Choose one or more additional costs.)\n+ {1} \u2014 Search your library for a card, put it into your graveyard, then shuffle.\n+ {2} \u2014 Return up to two creature cards with total mana value 4 or less from your graveyard to the battlefield."
+  },
+  {
+   "name": "Marionette Apprentice",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Human Artificer",
+   "keywords": "Fabricate",
+   "power": "1",
+   "loyalty": null,
+   "text": "Fabricate 1 (When this creature enters, put a +1/+1 counter on it or create a 1/1 colorless Servo artifact creature token.)\nWhenever another creature or artifact you control is put into a graveyard from the battlefield, each opponent loses 1 life."
+  },
+  {
+   "name": "Mausoleum Secrets",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "Undergrowth",
+   "power": null,
+   "loyalty": null,
+   "text": "Undergrowth \u2014 Search your library for a black card with mana value less than or equal to the number of creature cards in your graveyard, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Mikokoro, Center of the Sea",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{2}, {T}: Each player draws a card."
+  },
+  {
+   "name": "Mind Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{1}, {T}, Sacrifice this artifact: Draw a card."
+  },
+  {
+   "name": "Necrotic Ooze",
+   "cost": "{2}{B}{B}",
+   "type_line": "Creature \u2014 Ooze",
+   "keywords": "",
+   "power": "4",
+   "loyalty": null,
+   "text": "As long as this creature is on the battlefield, it has all activated abilities of all creature cards in all graveyards."
+  },
+  {
+   "name": "Nest of Scarabs",
+   "cost": "{2}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more -1/-1 counters on a creature, create that many 1/1 black Insect creature tokens."
+  },
+  {
+   "name": "Nested Shambler",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "When this creature dies, create X tapped 1/1 green Squirrel creature tokens, where X is this creature's power."
+  },
+  {
+   "name": "Nine-Lives Familiar",
+   "cost": "{1}{B}{B}",
+   "type_line": "Creature \u2014 Cat",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "This creature enters with eight revival counters on it if you cast it.\nWhen this creature dies, if it had a revival counter on it, return it to the battlefield with one fewer revival counter on it at the beginning of the next end step."
+  },
+  {
+   "name": "Ophiomancer",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Human Shaman",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "At the beginning of each upkeep, if you control no Snakes, create a 1/1 black Snake creature token with deathtouch."
+  },
+  {
+   "name": "Ornithopter",
+   "cost": "{0}",
+   "type_line": "Artifact Creature \u2014 Thopter",
+   "keywords": "Flying",
+   "power": "0",
+   "loyalty": null,
+   "text": "Flying"
+  },
+  {
+   "name": "Ornithopter of Paradise",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Thopter",
+   "keywords": "Flying",
+   "power": "0",
+   "loyalty": null,
+   "text": "Flying\n{T}: Add one mana of any color."
+  },
+  {
+   "name": "Pawn of Ulamog",
+   "cost": "{1}{B}{B}",
+   "type_line": "Creature \u2014 Vampire Shaman",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever this creature or another nontoken creature you control dies, you may create a 0/1 colorless Eldrazi Spawn creature token. It has \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Pitiless Plunderer",
+   "cost": "{3}{B}",
+   "type_line": "Creature \u2014 Human Pirate",
+   "keywords": "Treasure",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever another creature you control dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Plague Myr",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Phyrexian Myr",
+   "keywords": "Infect",
+   "power": "1",
+   "loyalty": null,
+   "text": "Infect (This creature deals damage to creatures in the form of -1/-1 counters and to players in the form of poison counters.)\n{T}: Add {C}."
+  },
+  {
+   "name": "Rain of Filth",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Until end of turn, lands you control gain \"Sacrifice this land: Add {B}.\""
+  },
+  {
+   "name": "Reanimate",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+  },
+  {
+   "name": "Scheming Symmetry",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose two target players. Each of them searches their library for a card, then shuffles and puts that card on top."
+  },
+  {
+   "name": "Shred Memory",
+   "cost": "{1}{B}",
+   "type_line": "Instant",
+   "keywords": "Transmute",
+   "power": null,
+   "loyalty": null,
+   "text": "Exile up to four target cards from a single graveyard.\nTransmute {1}{B}{B} ({1}{B}{B}, Discard this card: Search your library for a card with the same mana value as this card, reveal it, put it into your hand, then shuffle. Transmute only as a sorcery.)"
+  },
+  {
+   "name": "Sightless Ghoul",
+   "cost": "{3}{B}",
+   "type_line": "Creature \u2014 Zombie Soldier",
+   "keywords": "Undying",
+   "power": "2",
+   "loyalty": null,
+   "text": "This creature can't block.\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Skirge Familiar",
+   "cost": "{4}{B}",
+   "type_line": "Creature \u2014 Phyrexian Imp",
+   "keywords": "Flying",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flying\nDiscard a card: Add {B}."
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Soldevi Adnate",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Human Cleric",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}, Sacrifice a black or artifact creature: Add an amount of {B} equal to the sacrificed creature's mana value."
+  },
+  {
+   "name": "Songs of the Damned",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Add {B} for each creature card in your graveyard."
+  },
+  {
+   "name": "Springleaf Drum",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Tap an untapped creature you control: Add one mana of any color."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "The Filigree Sylex",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Put an oil counter on The Filigree Sylex.\n{T}, Sacrifice The Filigree Sylex: Destroy each nonland permanent with mana value equal to the number of oil counters on The Filigree Sylex.\n{T}, Remove ten oil counters from among permanents you control and sacrifice The Filigree Sylex: It deals 10 damage to any target."
+  },
+  {
+   "name": "Tragic Slip",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Morbid",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets -1/-1 until end of turn.\nMorbid \u2014 That creature gets -13/-13 until end of turn instead if a creature died this turn."
+  },
+  {
+   "name": "Treacherous Pit-Dweller",
+   "cost": "{B}{B}",
+   "type_line": "Creature \u2014 Demon",
+   "keywords": "Undying",
+   "power": "4",
+   "loyalty": null,
+   "text": "When this creature enters from a graveyard, target opponent gains control of it.\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Ulcerate",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets -3/-3 until end of turn. You lose 3 life."
+  },
+  {
+   "name": "Unearth",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "Cycling",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Vengeful Bloodwitch",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Vampire Warlock",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever this creature or another creature you control dies, target opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Victimize",
+   "cost": "{2}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose two target creature cards in your graveyard. Sacrifice a creature. If you do, return the chosen cards to the battlefield tapped."
+  },
+  {
+   "name": "Viscera Seer",
+   "cost": "{B}",
+   "type_line": "Creature \u2014 Vampire Wizard",
+   "keywords": "Scry",
+   "power": "1",
+   "loyalty": null,
+   "text": "Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+  },
+  {
+   "name": "Vraska's Fall",
+   "cost": "{2}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each opponent sacrifices a creature or planeswalker of their choice and gets a poison counter."
+  },
+  {
+   "name": "Wishclaw Talisman",
+   "cost": "{1}{B}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This artifact enters with three wish counters on it.\n{1}, {T}, Remove a wish counter from this artifact: Search your library for a card, put it into your hand, then shuffle. An opponent gains control of this artifact. Activate only during your turn."
+  },
+  {
+   "name": "Yahenni's Expertise",
+   "cost": "{2}{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "All creatures get -3/-3 until end of turn.\nYou may cast a spell with mana value 3 or less from your hand without paying its mana cost."
+  },
+  {
+   "name": "Yawgmoth, Thran Physician",
+   "cost": "{2}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Human Cleric",
+   "keywords": "Protection Proliferate",
+   "power": "2",
+   "loyalty": null,
+   "text": "Protection from Humans\nPay 1 life, Sacrifice another creature: Put a -1/-1 counter on up to one target creature and draw a card.\n{B}{B}, Discard a card: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Zulaport Cutthroat",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Human Rogue Ally",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever this creature or another creature you control dies, each opponent loses 1 life and you gain 1 life."
+  }
+ ],
+ "list": [
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Asmodeus the Archfiend",
+   1
+  ],
+  [
+   "Ayara, First of Locthwain",
+   1
+  ],
+  [
+   "Baleful Mastery",
+   1
+  ],
+  [
+   "Bastion of Remembrance",
+   1
+  ],
+  [
+   "Beseech the Queen",
+   1
+  ],
+  [
+   "Blast Zone",
+   1
+  ],
+  [
+   "Blight Mound",
+   1
+  ],
+  [
+   "Blood Artist",
+   1
+  ],
+  [
+   "Blood Pet",
+   1
+  ],
+  [
+   "Bridge from Below",
+   1
+  ],
+  [
+   "Bubbling Muck",
+   1
+  ],
+  [
+   "Buried Alive",
+   1
+  ],
+  [
+   "Butcher Ghoul",
+   1
+  ],
+  [
+   "Carnival of Souls",
+   1
+  ],
+  [
+   "Case of the Stashed Skeleton",
+   1
+  ],
+  [
+   "Castle Locthwain",
+   1
+  ],
+  [
+   "Culling the Weak",
+   1
+  ],
+  [
+   "Dark Ritual",
+   1
+  ],
+  [
+   "Dead of Winter",
+   1
+  ],
+  [
+   "Deadly Dispute",
+   1
+  ],
+  [
+   "Defile",
+   1
+  ],
+  [
+   "Evernight Shade",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Final Parting",
+   1
+  ],
+  [
+   "Foggy Swamp Visions",
+   1
+  ],
+  [
+   "Forsaken Miner",
+   1
+  ],
+  [
+   "Geier Reach Sanitarium",
+   1
+  ],
+  [
+   "Genesis Chamber",
+   1
+  ],
+  [
+   "Geralf's Messenger",
+   1
+  ],
+  [
+   "Greedy Freebooter",
+   1
+  ],
+  [
+   "Hancock, Ghoulish Mayor",
+   1
+  ],
+  [
+   "Hedron Crawler",
+   1
+  ],
+  [
+   "Imp's Mischief",
+   1
+  ],
+  [
+   "K'rrik, Son of Yawgmoth",
+   1
+  ],
+  [
+   "Kaervek, the Punisher",
+   1
+  ],
+  [
+   "Liliana's Triumph",
+   1
+  ],
+  [
+   "Lively Dirge",
+   1
+  ],
+  [
+   "Marionette Apprentice",
+   1
+  ],
+  [
+   "Mausoleum Secrets",
+   1
+  ],
+  [
+   "Mikokoro, Center of the Sea",
+   1
+  ],
+  [
+   "Mind Stone",
+   1
+  ],
+  [
+   "Necrotic Ooze",
+   1
+  ],
+  [
+   "Nest of Scarabs",
+   1
+  ],
+  [
+   "Nested Shambler",
+   1
+  ],
+  [
+   "Nine-Lives Familiar",
+   1
+  ],
+  [
+   "Ophiomancer",
+   1
+  ],
+  [
+   "Ornithopter",
+   1
+  ],
+  [
+   "Ornithopter of Paradise",
+   1
+  ],
+  [
+   "Pawn of Ulamog",
+   1
+  ],
+  [
+   "Pitiless Plunderer",
+   1
+  ],
+  [
+   "Plague Myr",
+   1
+  ],
+  [
+   "Rain of Filth",
+   1
+  ],
+  [
+   "Reanimate",
+   1
+  ],
+  [
+   "Scheming Symmetry",
+   1
+  ],
+  [
+   "Shred Memory",
+   1
+  ],
+  [
+   "Sightless Ghoul",
+   1
+  ],
+  [
+   "Skirge Familiar",
+   1
+  ],
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Soldevi Adnate",
+   1
+  ],
+  [
+   "Songs of the Damned",
+   1
+  ],
+  [
+   "Springleaf Drum",
+   1
+  ],
+  [
+   "Swamp",
+   25
+  ],
+  [
+   "The Filigree Sylex",
+   1
+  ],
+  [
+   "Tragic Slip",
+   1
+  ],
+  [
+   "Treacherous Pit-Dweller",
+   1
+  ],
+  [
+   "Ulcerate",
+   1
+  ],
+  [
+   "Unearth",
+   1
+  ],
+  [
+   "Vengeful Bloodwitch",
+   1
+  ],
+  [
+   "Victimize",
+   1
+  ],
+  [
+   "Viscera Seer",
+   1
+  ],
+  [
+   "Vraska's Fall",
+   1
+  ],
+  [
+   "Wishclaw Talisman",
+   1
+  ],
+  [
+   "Yahenni's Expertise",
+   1
+  ],
+  [
+   "Zulaport Cutthroat",
+   1
+  ]
+ ]
+}

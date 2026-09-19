@@ -1,0 +1,256 @@
+{
+ "name": "merfolk modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Aether Vial",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "At the beginning of your upkeep, you may put a charge counter on this artifact.\n{T}: You may put a creature card with mana value equal to the number of charge counters on this artifact from your hand onto the battlefield."
+  },
+  {
+   "name": "Cavern of Souls",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be countered."
+  },
+  {
+   "name": "Coralhelm Commander",
+   "cost": "{U}{U}",
+   "type_line": "Creature \u2014 Merfolk Soldier",
+   "keywords": "Flying Level Up",
+   "power": "2",
+   "loyalty": null,
+   "text": "Level up {1} ({1}: Put a level counter on this. Level up only as a sorcery.)\nLEVEL 2-3\n3/3\nFlying\nLEVEL 4+\n4/4\nFlying\nOther Merfolk creatures you control get +1/+1."
+  },
+  {
+   "name": "Deeproot Pilgrimage",
+   "cost": "{1}{U}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever one or more nontoken Merfolk you control become tapped, create a 1/1 blue Merfolk creature token with hexproof."
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Harbinger of the Seas",
+   "cost": "{1}{U}{U}",
+   "type_line": "Creature \u2014 Merfolk Wizard",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Nonbasic lands are Islands."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Lord of Atlantis",
+   "cost": "{U}{U}",
+   "type_line": "Creature \u2014 Merfolk",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Other Merfolk get +1/+1 and have islandwalk. (They can't be blocked as long as defending player controls an Island.)"
+  },
+  {
+   "name": "Master of the Pearl Trident",
+   "cost": "{U}{U}",
+   "type_line": "Creature \u2014 Merfolk",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Other Merfolk creatures you control get +1/+1 and have islandwalk. (They can't be blocked as long as defending player controls an Island.)"
+  },
+  {
+   "name": "Merrow Reejerey",
+   "cost": "{2}{U}",
+   "type_line": "Creature \u2014 Merfolk Soldier",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Other Merfolk creatures you control get +1/+1.\nWhenever you cast a Merfolk spell, you may tap or untap target permanent."
+  },
+  {
+   "name": "Minamo, School at Water's Edge",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {U}.\n{U}, {T}: Untap target legendary permanent."
+  },
+  {
+   "name": "Mutavault",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{1}: This land becomes a 2/2 creature with all creature types until end of turn. It's still a land."
+  },
+  {
+   "name": "Sea Gate Restoration // Sea Gate, Reborn",
+   "cost": "{4}{U}{U}{U} // ",
+   "type_line": "Sorcery // Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw cards equal to the number of cards in your hand plus one. You have no maximum hand size for the rest of the game.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Silvergill Adept",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Merfolk Wizard",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, reveal a Merfolk card from your hand or pay {3}.\nWhen this creature enters, draw a card."
+  },
+  {
+   "name": "Spell Pierce",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target noncreature spell unless its controller pays {2}."
+  },
+  {
+   "name": "Tide Shaper",
+   "cost": "{U}",
+   "type_line": "Creature \u2014 Merfolk Wizard",
+   "keywords": "Kicker",
+   "power": "1",
+   "loyalty": null,
+   "text": "Kicker {1} (You may pay an additional {1} as you cast this spell.)\nWhen this creature enters, if it was kicked, target land becomes an Island for as long as this creature remains on the battlefield.\nThis creature gets +1/+1 as long as an opponent controls an Island."
+  },
+  {
+   "name": "Vodalian Hexcatcher",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Merfolk Wizard",
+   "keywords": "Flash",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flash\nOther Merfolk you control get +1/+1.\nSacrifice a Merfolk: Counter target noncreature spell unless its controller pays {1}."
+  },
+  {
+   "name": "Wanderwine Hub",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As this land enters, you may reveal a Merfolk card from your hand. If you don't, this land enters tapped.\n{T}: Add {W} or {U}."
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   18
+  ],
+  [
+   "Mutavault",
+   4
+  ],
+  [
+   "Cavern of Souls",
+   2
+  ],
+  [
+   "Wanderwine Hub",
+   2
+  ],
+  [
+   "Minamo, School at Water's Edge",
+   1
+  ],
+  [
+   "Silvergill Adept",
+   4
+  ],
+  [
+   "Master of the Pearl Trident",
+   2
+  ],
+  [
+   "Merrow Reejerey",
+   3
+  ],
+  [
+   "Lord of Atlantis",
+   2
+  ],
+  [
+   "Tide Shaper",
+   2
+  ],
+  [
+   "Aether Vial",
+   4
+  ],
+  [
+   "Spell Pierce",
+   3
+  ],
+  [
+   "Harbinger of the Seas",
+   3
+  ],
+  [
+   "Vodalian Hexcatcher",
+   2
+  ],
+  [
+   "Deeproot Pilgrimage",
+   2
+  ],
+  [
+   "Sea Gate Restoration",
+   2
+  ],
+  [
+   "Coralhelm Commander",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ]
+ ]
+}

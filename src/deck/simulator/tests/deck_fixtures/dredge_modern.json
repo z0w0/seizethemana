@@ -1,0 +1,295 @@
+{
+ "name": "dredge modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Bridge from Below",
+   "cost": "{B}{B}{B}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a nontoken creature is put into your graveyard from the battlefield, if this card is in your graveyard, create a 2/2 black Zombie creature token.\nWhen a creature is put into an opponent's graveyard from the battlefield, if this card is in your graveyard, exile this card."
+  },
+  {
+   "name": "Burning Inquiry",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Each player draws three cards, then discards three cards at random."
+  },
+  {
+   "name": "Cathartic Reunion",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, discard two cards.\nDraw three cards."
+  },
+  {
+   "name": "Conflagrate",
+   "cost": "{X}{X}{R}",
+   "type_line": "Sorcery",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Conflagrate deals X damage divided as you choose among any number of targets.\nFlashback\u2014{R}{R}, Discard X cards. (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Copperline Gorge",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Creeping Chill",
+   "cost": "{3}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Creeping Chill deals 3 damage to each opponent and you gain 3 life.\nWhen Creeping Chill is put into your graveyard from your library, you may exile it. If you do, Creeping Chill deals 3 damage to each opponent and you gain 3 life."
+  },
+  {
+   "name": "Darkblast",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Dredge Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets -1/-1 until end of turn.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)"
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Goblin Lore",
+   "cost": "{1}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw four cards, then discard three cards at random."
+  },
+  {
+   "name": "Hollow One",
+   "cost": "{5}",
+   "type_line": "Artifact Creature \u2014 Golem",
+   "keywords": "Cycling",
+   "power": "4",
+   "loyalty": null,
+   "text": "This spell costs {2} less to cast for each card you've cycled or discarded this turn.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Insolent Neonate",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Vampire",
+   "keywords": "Menace",
+   "power": "1",
+   "loyalty": null,
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nDiscard a card, Sacrifice this creature: Draw a card."
+  },
+  {
+   "name": "Life from the Loam",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "Dredge Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "Return up to three target land cards from your graveyard to your hand.\nDredge 3 (If you would draw a card, you may mill three cards instead. If you do, return this card from your graveyard to your hand.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Narcomoeba",
+   "cost": "{1}{U}",
+   "type_line": "Creature \u2014 Illusion",
+   "keywords": "Flying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying\nWhen this card is put into your graveyard from your library, you may put it onto the battlefield."
+  },
+  {
+   "name": "Ox of Agonas",
+   "cost": "{3}{R}{R}",
+   "type_line": "Creature \u2014 Ox",
+   "keywords": "Escape",
+   "power": "4",
+   "loyalty": null,
+   "text": "When this creature enters, discard your hand, then draw three cards.\nEscape\u2014{R}{R}, Exile eight other cards from your graveyard. (You may cast this card from your graveyard for its escape cost.)\nThis creature escapes with a +1/+1 counter on it."
+  },
+  {
+   "name": "Prized Amalgam",
+   "cost": "{1}{U}{B}",
+   "type_line": "Creature \u2014 Zombie",
+   "keywords": "",
+   "power": "3",
+   "loyalty": null,
+   "text": "Whenever a creature enters, if it entered from your graveyard or you cast it from your graveyard, return this card from your graveyard to the battlefield tapped at the beginning of the next end step."
+  },
+  {
+   "name": "Stinkweed Imp",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Imp",
+   "keywords": "Flying Dredge Mill",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying\nWhenever this creature deals combat damage to a creature, destroy that creature.\nDredge 5 (If you would draw a card, you may mill five cards instead. If you do, return this card from your graveyard to your hand.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Bloodstained Mire",
+   4
+  ],
+  [
+   "Wooded Foothills",
+   2
+  ],
+  [
+   "Copperline Gorge",
+   2
+  ],
+  [
+   "Stinkweed Imp",
+   4
+  ],
+  [
+   "Prized Amalgam",
+   4
+  ],
+  [
+   "Darkblast",
+   3
+  ],
+  [
+   "Bridge from Below",
+   2
+  ],
+  [
+   "Faithless Looting",
+   4
+  ],
+  [
+   "Cathartic Reunion",
+   4
+  ],
+  [
+   "Insolent Neonate",
+   4
+  ],
+  [
+   "Hollow One",
+   3
+  ],
+  [
+   "Burning Inquiry",
+   3
+  ],
+  [
+   "Goblin Lore",
+   2
+  ],
+  [
+   "Narcomoeba",
+   3
+  ],
+  [
+   "Creeping Chill",
+   3
+  ],
+  [
+   "Ox of Agonas",
+   2
+  ],
+  [
+   "Conflagrate",
+   2
+  ],
+  [
+   "Life from the Loam",
+   2
+  ],
+  [
+   "Lightning Bolt",
+   1
+  ],
+  [
+   "Fatal Push",
+   1
+  ],
+  [
+   "Unholy Heat",
+   1
+  ]
+ ]
+}

@@ -121,10 +121,11 @@ Two banked shapes:
   untapped, fires once per turn while counters last, and one counter
   buys one pip. Sunburst enters with one counter per color paid
   (best-case 2).
-- **Treasures.** "Create a Treasure token" effects bank one flexible
-  pip per token (sacrificed to use). When any deck card creates
-  treasures, token effects bank pips instead of bodies (goldfish
-  approximation). Smothering Tithe stays inert — it needs opponents.
+- **Treasures.** "Create a Treasure token" effects on the *acting card*
+  bank one flexible pip per token (sacrificed to use) instead of
+  creating a body. Only Treasure-labeled effects convert; other token
+  spells in the same deck still create bodies. Smothering Tithe stays
+  inert — it needs opponents.
 
 Static mana grants ("creatures you control have {T}: add one mana of
 any color" — Enduring Vitality; "lands you control have…" — Chromatic
@@ -174,15 +175,22 @@ Effects modeled: `Draw(n)`, `Tutor` (search/look-into-hand),
 `Mana(TapYield)` (unlocked mana activations feed the pool),
 `ManaPerCounter(TapYield)` (upkeep release of banked mana: Coalition
 Relic's "remove all charge counters, add that many mana"),
-`Tokens(n)` (become battlefield bodies), `Counters(n)` (charge the host),
+`Tokens(n)` (become battlefield bodies; "for each" shapes cap at 8),
+`Counters(n)` (charge the host),
 `ExtraLand`, `Mill(n)` (library top → graveyard census), 
 `ReturnFromGraveyard { to_hand, count }` (hand-return = draw credit;
 battlefield-return = a body once per card), `Wheel` (hand → graveyard,
-draw seven), `Loot(n)` (draw n, discard n).
+draw seven), `Loot(n)` (draw n, discard n), `Drain(n)` (life loss at a
+player: ×3 in commander, ×1 in 60-card formats).
 
 Activations carry optional costs beyond mana: `sacrifice_bodies` consumes
 an untapped body and fires its death triggers (aristocrats outlets);
-`loyalty_cost` spends planeswalker loyalty instead of mana.
+`loyalty_cost` spends planeswalker loyalty instead of mana;
+`loyalty_gain` adds loyalty (planeswalker plus abilities). Planeswalker
+abilities fire through the same activation pass: one loyalty ability per
+turn, gated on affordability, never on mana. Ultimates stay flags — they
+mark `ultimate_online` when loyalty covers the minus cost, they do not
+resolve.
 
 Commanders get one extra synthetic ability: when the commander's oracle
 shows an *unconditional* repeatable draw (upkeep or end-step triggers),
@@ -200,12 +208,56 @@ is the chosen type") tap for one mana of any color — the chosen type is
 the player's choice each game. Static type-granting on *other* lands (The
 World Tree's "lands you control have {T}: …") is not modeled.
 
-Sagas stage one chapter effect per turn for three turns.
+Sagas stage one chapter per turn. Chapter lines ("I — Draw a card.",
+"II — Mill three.") parse into per-chapter abilities through the same
+effect shapes as triggers; a chapter with no readable effect draws one
+card instead. Combined numeral lines ("I, II, III — Create a token")
+give every listed chapter the same effect. A four-chapter saga runs its
+fourth chapter; once the final chapter resolves, the permanent leaves
+the battlefield (it sacrificed in real Magic).
 
 Blink-shaped ETBs ("exile … return it to the battlefield") re-fire the
 host's OnEnter triggers once, the turn after (Skyskipper Duo, flicker
 engines). Monarch acquisition ("you become the Monarch") counts as an
 extra card per turn from acquisition (the Monarch draws at upkeep).
+
+### Keywords modeled (goldfish-aligned)
+
+A keyword models only when it moves a metric:
+
+| Keyword | Model |
+| --- | --- |
+| Haste | hasted creatures skip summoning sickness: they attack, tap, and crew the turn they enter |
+| Landfall | "+1/+1 counter" shapes feed the combat power sum; full trigger lines ("Whenever a land you control enters, draw/create/add") parse as real OnEnter engines |
+| Double strike | attack power ×2 (no blockers exist) |
+| Prowess | +1 power per noncreature spell cast that turn |
+| Flying / Trample / Menace | evasion census (no math) |
+| Flash | instant-speed flag (feeds interaction readiness); "flashback" does not count as flash |
+
+"Whenever … enters" ETBs parse like "When … enters". Landfall trigger
+lines form their own family (draw / tokens / mana-adds read as an
+extra-land-style ramp credit rather than a mana tap — the effect lands
+in `cards_seen`, not the turn's mana pool; search-for-land reads as
+extra land). "You may play an additional land" (Aesi class) grants one
+extra land drop per turn while on the battlefield, recorded in
+`land_drops[]`.
+
+### X-costs, kicker, and per-cast mana
+
+| Shape | Model |
+| --- | --- |
+| `{X}` spells with a scaling effect (drain/draw/mill/tokens) | the cast pays the whole leftover pool as X; the effect scales with it (drain ×N, draw ×N, mill ×N, up to 8 tokens) |
+| Kicker / multikicker | paid from spare mana when affordable; drain amounts scale with the kick; multikicker parses as one kick |
+| "Add one mana … for each spell you've cast this turn" (Vivi class) | the yield joins the pool once per spell cast every turn the host is on the battlefield; the same clause never also reads as a plain one-mana tap |
+| Additional costs ("as an additional cost …, sacrifice a creature / pay N life") | the cast consumes the resource (a real body leaves the battlefield; life is paid) |
+| "Create N …tokens" sorceries | the cast creates N token bodies (capped at 8) |
+
+### Free mana engines and the loop cap
+
+A zero-cost untapped non-tap activation ("{0}: Add {C}") repeats in real
+Magic. The sim lets it repeat but caps the pass at 24 activations per
+turn; crossing the cap flags `infinite_mana_pct` (share of games with a
+suspected infinite engine) and stops the loop. No engine runs away.
 
 ### Cost reductions
 
@@ -224,8 +276,8 @@ big improvise spells a few turns earlier than the flat floor, and such
 cards are exempt from the `dead_cards` finding (their real cast time is
 much earlier than the floor implies).
 
-Hybrid pips (`{W/U}`, `{B/P}`) pay from any of their colors. X-costs pay
-for one. {S} (snow) pays as colorless.
+Hybrid pips (`{W/U}`, `{B/P}`) pay from any of their colors. {S} (snow)
+pays as colorless. X-costs follow the X-cost section above.
 
 ## The turn pipeline
 
@@ -233,32 +285,39 @@ A best-case agent plays each turn in a fixed order:
 
 1. **Untap** — everything untaps; summoning sickness clears; once-per-turn
    flags reset.
-2. **Upkeep** — draw engines fire (one card each, per turn); saga chapters
-   advance.
-2. **Upkeep** — draw engines fire (one card each, per turn); saga
-   chapters advance; win-threshold engines check their counter stock;
+2. **Upkeep** — draw, mill, recursion, drain, and token engines fire (one
+   firing each, per turn); saga chapters advance through their parsed
+   abilities; win-threshold engines check their counter stock;
    planeswalker ultimates flag online when loyalty reaches the minus
    cost.
 3. **Draw** — draw 1.
 4. **Land** — play an untapped land when one is in hand, else any land
    (tapped lands wait for a better turn when possible). Fetch lands search
-   up a non-fetch land, which enters tapped.
+   up a non-fetch land, which enters tapped. An "additional land" board
+   (Aesi class) plays a second land the same turn.
 5. **Cast** — cheapest castable spells first, with the full pip check. A
    cast is blocked (and its color recorded for color-screw stats) when the
    pool has enough total mana but misses the pips. ETB triggers fire; ETB
    tokens join the battlefield as bodies. One-shot effects (ritual mana,
-   draws, mills, scry/surveil, burn, extra turns) apply on cast.
-6. **Activate** — spend leftover mana on unlocked tap-activated engines
-   (draw, tutor, mana, counters). Cheapest first, one activation per
-   permanent per turn. Banked activations (Pentad Prism) consume a
-   counter instead of tapping.
+   draws, mills, scry/surveil, burn, extra turns, X-scaling, kicker)
+   apply on cast. Per-cast mana engines (Vivi class) add their yield per
+   spell cast.
+6. **Activate** — spend leftover mana on unlocked activations (draw,
+   tutor, mana, counters, loot, sacrifice outlets, planeswalker loyalty
+   abilities, drain activations). Cheapest first, one activation per
+   permanent per turn (free zero-cost activations repeat until the cap).
+   Banked activations (Pentad Prism) consume a counter instead of
+   tapping.
 7. **Tap budget** — remaining untapped bodies, in priority order:
    a. tap for **mana** only while the cheapest uncast spell still needs
       mana;
    b. else tap to **station** the highest-threshold unfilled
       spacecraft/planet (counters = body power);
    c. else tap to **crew** untapped Vehicles (total body power ≥ crew
-      cost; crewed vehicles count as bodies for the turn).
+      cost; crewed vehicles count as bodies for the turn);
+   d. else pay **equip** costs once per Equipment — the gear suits up
+      its best untapped, unsick body and the buff joins only that
+      host's attack.
 7b. **Interaction readiness (measured, not forced)** — was instant-speed
    interaction in hand while spare mana covered its cost? The goldfish
    never spends it; the spare amount is the "mana held" census.
@@ -266,10 +325,12 @@ A best-case agent plays each turn in a fixed order:
    them; the commander spacecraft's online turn is recorded.
 9. **Combat** — bodies attack; attack triggers and combat-damage
    triggers fire per connecting attacker (best case: unblocked). Buffs,
-   equipment, double strike, prowess, and landfall join the power sum.
-   Token payoffs join next turn's bodies.
+   equipped gear, double strike, prowess, and landfall join the power
+   sum. Hasted creatures attack the turn they enter. Token payoffs join
+   next turn's bodies.
 10. **End** — crew animations expire; hand-limit discards from the end;
-    queued extra turns each grant one land drop and one draw.
+    queued extra turns replay a land drop (recorded in `land_drops[]`), a
+    draw, and one firing of each upkeep engine.
 
 The commander casts from the command zone with the full pip check. Its
 cost is deducted (it counts in `mana_spent`), it joins the battlefield as
@@ -298,7 +359,7 @@ carry ±0.5pp at 10k runs.
 | `self_milled_by_turn` / `opp_milled_by_turn` | mill split by direction: graveyard fuel vs deck-out pressure ("target player mills") |
 | `library_remaining_by_turn` | average library size (deck-out proximity) |
 | `combat` | attack power per turn + p90 by t8 (a power curve, never a kill estimate); attackers + evasion census (trample/flying/menace) |
-| `wincons` | life drained per turn (burn/drain engines, ×3 for "each opponent"), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct |
+| `wincons` | life drained per turn (burn/drain engines; ×3 for "each opponent" in commander, ×1 in 60-card formats), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct, infinite-mana suspicion pct |
 | `interaction` | P(interaction in hand AND affordable with spare mana) per turn — instant-speed copies, spare mana while ready ("mana held"), instant vs sorcery by copy count. **Capacity, not events**: no opponent event is claimed |
 | `color_screw` | per-color share of games with a pip-blocked cast (WUBRG) |
 | `pip_blocks` | top card×color offenders: which card's cast was pip-blocked, worst 5 |
@@ -351,29 +412,49 @@ simulated numbers, and `--combo "A + B"` to measure combo assembly
 
 ## Tests
 
-Two test modules cover the simulator:
+Two test layers cover the simulator:
 
-- `simulator/tests.rs` — unit tests per model shape: tap yields (choice vs
-  fixed vs any vs colorless vs creature-only), station tiers (single tier,
-  two tiers, planets never animate), crew (printed power), ability shapes
-  (ETB, upkeep, attack, cast, activations, planeswalker loyalty, mill,
-  graveyard return, wheel, loot, sacrifice, death triggers), roles
+- `simulator/tests/*.rs` — unit tests per model shape: tap yields (choice
+  vs fixed vs any vs colorless vs creature-only), station tiers (single
+  tier, two tiers, planets never animate), crew (printed power), ability
+  shapes (ETB, upkeep, attack, cast, activations, planeswalker loyalty,
+  mill, graveyard return, wheel, loot, sacrifice, death triggers), roles
   (including Lock and Booster; reactive spells classify as Removal),
   enters-tapped (shock duals), verge gates, Leyline openers, cost
   reductions, and game-loop behavior (land drops, screw, mulligan policy,
   commander pip gating, 5c commander with/without any-color rocks,
   crew→station chains, fetch smoothing, same-seed reproducibility, pip
   blocks, graveyard census, sacrifice→death-token flow, restricted mana
-  paying creature casts only).
-- `simulator/deck_tests.rs` + `simulator/deck_fixtures_tests.rs` — real
-  tournament lists (Mono-Green Landfall, Izzet Spellementals — Standard
-  2026; Stationz commander core) and one fixture per commander archetype
-  (aristocrats, mill/reanimator, wheels, tribal spend-restriction, loot,
-  cheat-in, stax, voltron, superfriends, combo pieces) built from real
-  oracle text, asserted on simulator consistency properties only (never
-  deck quality): land-drop sanity, color-screw ceilings, velocity
-  monotonicity, engine/body emergence, station gating, lock timing,
-  graveyard census, restricted-mana behavior.
+  paying creature casts only). New-mechanic tests cover: whenever-ETB
+  parsing, landfall trigger family, ETB scry → awareness, token counts
+  (bare / word / "for each" cap 8), X-cost classes, per-cast mana,
+  kicker, saga chapters, loyalty plus/minus costs, text flying,
+  flashback-not-flash, extra land drops, removal-beats-draw role order,
+  haste entry-turn attacks, planeswalker loyalty/ultimate flow, X drain
+  totals, extra-land-drop ramp, extra-turn replay drops, per-cast mana
+  velocity, the free-mana loop cap census, upkeep drain engines,
+  constructed ×1 drain, kicker payment, saga chapter payoffs, and token
+  body counts. `mechanic_tests.rs` pins the audit-remediation behavior:
+  wheel execution, cast-trigger dedupe, commander upkeep drain + no
+  double draw, combined-numeral sagas, chapter IV + leave-board, Helix
+  X-sink counters, token-count bodies, once-per-turn engines (no
+  infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
+  consumption, X-entry counters, and the Vivi no-double-count parse.
+  Dedicated archetype tests live in the per-format deck test files
+  (commander/standard/modern) for every fixture that was previously
+  invariants-only, plus degradation-fixture problem assertions.
+- `simulator/deck_tests.rs` + `simulator/tests/deck_fixtures/*.json` —
+  real tournament lists. Sources: mtggoldfish metagame, cEDH Decklist
+  Database, EDHREC, and topdeck.gg competitive tournament standings
+  (fetched through the TopDeck.gg API with attribution; commander lists
+  from cEDH/casual league events, 60-card lists from Standard/Modern
+  tournaments). Fixture filenames use underscores. The sweep tests assert
+  simulator consistency properties only, never deck quality: land-drop
+  sanity, velocity monotonicity, castability ≥ cost floor, opener
+  sanity, and archetype-specific checks (topdeck Murktide early threats,
+  Eldrazi ramp never curve-ready, Boros tokens body emergence, Yawgmoth
+  combo velocity, Aesi median drops > 4, superfriends walker cast rates,
+  graveyard growth for recursion decks).
 
 When you add a modeled mechanic, add both: a unit test for the parse shape
 and a game-level assertion that the behavior shows up in the metrics.
@@ -396,17 +477,22 @@ Everything the model cannot execute is dropped at parse time, and the
   Milled cards count as cards seen and fill the graveyard log; graveyard
   return fires once per card (no recursion chains).
 - **Wheels and loot reset the hand.** A wheel discards the hand into the
-  graveyard census, then draws seven; loot is draw-n discard-n.
+  graveyard census, then draws seven (trigger wheels fire from their
+  upkeep/cast trigger; plain wheel sorceries resolve on cast); loot is
+  draw-n discard-n.
 - **Spend-restricted mana pays creature casts only.** Secluded
   Courtyard-style lands park their mana in a separate bucket; noncreature
   spells cannot touch it.
-- **Sacrifice outlets consume real bodies.** The activation removes an
-  untapped non-token body and fires its death triggers.
+- **Sacrifice outlets consume real bodies.** "Sacrifice a creature:
+  Add {C}{C}" activations parse (Ashnod's Altar class); the activation
+  removes an untapped non-token body and fires its death triggers. With
+  no body available the activation does not fire (no phantom mana).
 - **Blink re-fires once.** "Exile … return it to the battlefield" ETBs
   re-fire the host's OnEnter triggers the turn after; no chains.
-- **Planeswalker loyalty is tracked.** Starting loyalty comes from the
-  card row; loyalty activations deduct it and are gated on affordable
-  loyalty; mana costs do not apply to them.
+- **Planeswalker loyalty is tracked and spent.** Starting loyalty comes
+  from the card row; one loyalty ability fires per turn, gated on
+  affordable loyalty — plus abilities gain loyalty, minus abilities spend
+  it. Ultimates only flag `ultimate_online`; they do not resolve.
 - **No commander recast tax.** A commander destroyed or countered stays
   cast; nothing re-casts it.
 - **Body power uses printed power when known.** Crew and station math use
@@ -427,8 +513,36 @@ Everything the model cannot execute is dropped at parse time, and the
 - **Type-granted lands read as any-color.** "This land is the chosen type"
   lands tap for one mana of any color (the choice is the player's). Static
   grants on other lands (The World Tree) do not model.
-- **X-costs pay for one.** Converge, kicker beyond the base, and scaling
-  effects (Vivi's power-mana, Alibou's damage) are not modeled.
+- **X-costs pay the leftover pool.** A `{X}` spell with a drain/draw/
+  mill/tokens scaling effect converts the whole floatable pool into X at
+  cast; the effect scales with it. Spells with unmodeled X effects
+  (damage at creatures, X-counters) pay X = 1 and do nothing extra.
+- **Kicker pays from spare mana.** Only drain amounts scale with the
+  kick; other kicker riders are inert.
+- **Per-cast mana engines fire per spell.** Vivi-class "add one mana for
+  each spell you've cast this turn" joins the pool once per cast while
+  the host is untapped.
+- **Free mana engines cap out.** A zero-cost untapped non-tap
+  activation repeats until the pass hits 24 activations, then flags
+  `infinite_mana_pct` and stops. No engine runs away.
+- **"For each" token counts cap at 8.** Go-wide boards stay bounded.
+- **Drain resolves ×3 in commander, ×1 in 60-card formats.** "Each
+  opponent" and "target player" both read through the format multiplier.
+- **Extra turns replay a land drop, a draw, and upkeep engines.** No
+  full-turn replay: the cast/attack phases do not run again.
+- **Sagas fire parsed chapter abilities.** Chapters with no readable
+  effect draw one card instead; the saga leaves the battlefield after
+  its final chapter.
+- **Once-per-turn activations stay once.** "Activate only once each
+  turn" engines fire once per turn and never trip the infinite-mana
+  census; unrestricted zero-cost engines cap and flag.
+- **Equipment suits one body.** The buff joins only the equipped host's
+  attack; two equipments stack on one host only when both are paid.
+  Aura buffs ("enchanted creature gets +N/+N") are not modeled.
+- **Commander upkeep engines fire real abilities.** Upkeep drain/mill/
+  token engines register like the draw engines (a synthetic draw tier
+  only fills the gap when the parse produced no upkeep draw — no
+  double draws).
 - **No energy, metalcraft, ascend, delirium.** Conditional producers and
   discounts keyed on game state do not fire (Mox Opal reads as dead
   colorless in the pool unless its text says otherwise).
@@ -438,26 +552,29 @@ Everything the model cannot execute is dropped at parse time, and the
 - **No replay mechanics.** Flashback, rebound, splice, ninjutsu, warp
   beyond the cheaper cost, and cast-from-graveyard chains fire once.
 - **Keyword support is goldfish-aligned only.** A keyword models only
-  when it moves an existing metric: combat-damage triggers fire per
-  connecting attacker (draw/proliferate/drain), static "+N/+N" board
-  buffs and equipment join the attack power (equip is a spend-leftover
-  activation; Skullclamp-class death-draws fire on sacrificed bodies),
+  when it moves an existing metric: haste skips summoning sickness,
+  combat-damage triggers fire per connecting attacker (draw/proliferate/
+  drain), static "+N/+N" board buffs join the attack power, equipment
+  buffs join only after the equip cost was paid (tap budget 7d),
   double strike doubles attack power, prowess adds +1 per noncreature
-  spell cast that turn, landfall adds +1 per later land drop, scry/
+  spell cast that turn, landfall counter-shapes add +1 per later land
+  drop while full landfall trigger lines parse as real engines, scry/
   surveil feed awareness only (surveil puts the cards in the graveyard),
-  and trample/flying/menace count as an evasion census with no math.
-  Vigilance is free (attackers never tap). Imprint is out of scope.
+  and trample/flying/menace (from keywords or text) count as an evasion
+  census with no math. Vigilance is free (attackers never tap). Imprint
+  is out of scope.
 - **Drain is a census, not a life total.** "Each opponent loses N" /
-  "deals N damage to target player" multiplies by 3 (three opponents).
-  No life totals, no racing.
-- **Extra turns are fixed-value.** A queued extra turn grants one land
-  drop and one draw; no full turn replay, no chaining.
+  "deals N damage to target player" multiplies by 3 in commander (three
+  opponents) and by 1 in 60-card formats. No life totals, no racing.
+- **Extra turns replay a land drop, a draw, and upkeep engines.** No
+  full-turn replay: cast and combat do not run again, no chaining beyond
+  the queued count.
 - **Win thresholds are checked at upkeep.** "N or more counters wins"
   engines record the first turn the stock reaches N; the sim does not
   declare a win.
-- **Once-per-turn activations are optimistic.** Planeswalker loyalty
-  activations fire once per turn from the turn after they are cast, with
-  no loyalty cost gating beyond affordability.
+- **Loyalty activations are once per turn.** One planeswalker ability
+  fires per walker per turn, cheapest first, with no loyalty cost gating
+  beyond affordability.
 - **Role classification is heuristic.** Counts come from oracle-text
   matching; audit them via `deck_shape` in `--json` before trusting a
   finding.

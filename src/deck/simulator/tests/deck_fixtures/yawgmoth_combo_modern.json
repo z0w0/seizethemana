@@ -1,0 +1,308 @@
+{
+ "name": "yawgmoth combo modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Agatha's Soul Cauldron",
+   "cost": "{2}",
+   "type_line": "Legendary Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "You may spend mana as though it were mana of any color to activate abilities of creatures you control.\nCreatures you control with +1/+1 counters on them have all activated abilities of all creature cards exiled with Agatha's Soul Cauldron.\n{T}: Exile target card from a graveyard. When a creature card is exiled this way, put a +1/+1 counter on target creature you control."
+  },
+  {
+   "name": "Badgermole Cub",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Badger Mole",
+   "keywords": "Earthbend",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, earthbend 1. (Target land you control becomes a 0/0 creature with haste that's still a land. Put a +1/+1 counter on it. When it dies or is exiled, return it to the battlefield tapped.)\nWhenever you tap a creature for mana, add an additional {G}."
+  },
+  {
+   "name": "Boseiju, Who Endures",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "Channel",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}: Add {G}.\nChannel \u2014 {1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control."
+  },
+  {
+   "name": "Delighted Halfling",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Halfling Citizen",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell, and that spell can't be countered."
+  },
+  {
+   "name": "Dredger's Insight",
+   "cost": "{1}{G}",
+   "type_line": "Enchantment",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever one or more artifact and/or creature cards leave your graveyard, you gain 1 life.\nWhen this enchantment enters, mill four cards. You may put an artifact, creature, or land card from among the milled cards into your hand. (To mill four cards, put the top four cards of your library into your graveyard.)"
+  },
+  {
+   "name": "Dryad Arbor",
+   "cost": "",
+   "type_line": "Land Creature \u2014 Forest Dryad",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "(This land isn't a spell, it's affected by summoning sickness, and it has \"{T}: Add {G}.\")"
+  },
+  {
+   "name": "Endurance",
+   "cost": "{1}{G}{G}",
+   "type_line": "Creature \u2014 Elemental Incarnation",
+   "keywords": "Reach Evoke Flash",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flash\nReach\nWhen this creature enters, up to one target player puts all the cards from their graveyard on the bottom of their library in a random order.\nEvoke\u2014Exile a green card from your hand."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Formidable Speaker",
+   "cost": "{2}{G}",
+   "type_line": "Creature \u2014 Elf Druid",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "When this creature enters, you may discard a card. If you do, search your library for a creature card, reveal it, put it into your hand, then shuffle.\n{1}, {T}: Untap another target permanent."
+  },
+  {
+   "name": "Green Sun's Zenith",
+   "cost": "{X}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Search your library for a green creature card with mana value X or less, put it onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's library."
+  },
+  {
+   "name": "Grist, the Hunger Tide",
+   "cost": "{1}{B}{G}",
+   "type_line": "Legendary Planeswalker \u2014 Grist",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": "3",
+   "text": "As long as Grist isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types.\n+1: Create a 1/1 black and green Insect creature token, then mill a card. If an Insect card was milled this way, put a loyalty counter on Grist and repeat this process.\n\u22122: You may sacrifice a creature. When you do, destroy target creature or planeswalker.\n\u22125: Each opponent loses life equal to the number of creature cards in your graveyard."
+  },
+  {
+   "name": "Malevolent Rumble",
+   "cost": "{1}{G}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Reveal the top four cards of your library. You may put a permanent card from among them into your hand. Put the rest into your graveyard. Create a 0/1 colorless Eldrazi Spawn creature token with \"Sacrifice this token: Add {C}.\""
+  },
+  {
+   "name": "Ouroboroid",
+   "cost": "{2}{G}{G}",
+   "type_line": "Creature \u2014 Plant Wurm",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "At the beginning of combat on your turn, put X +1/+1 counters on each creature you control, where X is this creature's power."
+  },
+  {
+   "name": "Overgrown Tomb",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {G}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Spymaster's Vault",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Connive",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control a Swamp.\n{T}: Add {B}.\n{B}, {T}: Target creature you control connives X, where X is the number of creatures that died this turn. (Draw X cards, then discard X cards. Put a +1/+1 counter on that creature for each nonland card discarded this way.)"
+  },
+  {
+   "name": "Strangleroot Geist",
+   "cost": "{G}{G}",
+   "type_line": "Creature \u2014 Spirit",
+   "keywords": "Undying Haste",
+   "power": "2",
+   "loyalty": null,
+   "text": "Haste\nUndying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Underground Mortuary",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Forest",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {G}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Walking Ballista",
+   "cost": "{X}{X}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "",
+   "power": "0",
+   "loyalty": null,
+   "text": "This creature enters with X +1/+1 counters on it.\n{4}: Put a +1/+1 counter on this creature.\nRemove a +1/+1 counter from this creature: It deals 1 damage to any target."
+  },
+  {
+   "name": "Windswept Heath",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Yawgmoth, Thran Physician",
+   "cost": "{2}{B}{B}",
+   "type_line": "Legendary Creature \u2014 Human Cleric",
+   "keywords": "Protection Proliferate",
+   "power": "2",
+   "loyalty": null,
+   "text": "Protection from Humans\nPay 1 life, Sacrifice another creature: Put a -1/-1 counter on up to one target creature and draw a card.\n{B}{B}, Discard a card: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)"
+  },
+  {
+   "name": "Young Wolf",
+   "cost": "{G}",
+   "type_line": "Creature \u2014 Wolf",
+   "keywords": "Undying",
+   "power": "1",
+   "loyalty": null,
+   "text": "Undying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.)"
+  }
+ ],
+ "list": [
+  [
+   "Agatha's Soul Cauldron",
+   4
+  ],
+  [
+   "Badgermole Cub",
+   4
+  ],
+  [
+   "Boseiju, Who Endures",
+   2
+  ],
+  [
+   "Delighted Halfling",
+   4
+  ],
+  [
+   "Dredger's Insight",
+   3
+  ],
+  [
+   "Dryad Arbor",
+   1
+  ],
+  [
+   "Endurance",
+   1
+  ],
+  [
+   "Forest",
+   2
+  ],
+  [
+   "Formidable Speaker",
+   1
+  ],
+  [
+   "Green Sun's Zenith",
+   3
+  ],
+  [
+   "Grist, the Hunger Tide",
+   1
+  ],
+  [
+   "Malevolent Rumble",
+   4
+  ],
+  [
+   "Ouroboroid",
+   1
+  ],
+  [
+   "Overgrown Tomb",
+   3
+  ],
+  [
+   "Spymaster's Vault",
+   3
+  ],
+  [
+   "Strangleroot Geist",
+   1
+  ],
+  [
+   "Swamp",
+   1
+  ],
+  [
+   "Underground Mortuary",
+   1
+  ],
+  [
+   "Verdant Catacombs",
+   4
+  ],
+  [
+   "Walking Ballista",
+   4
+  ],
+  [
+   "Windswept Heath",
+   4
+  ],
+  [
+   "Yawgmoth, Thran Physician",
+   4
+  ],
+  [
+   "Young Wolf",
+   4
+  ]
+ ]
+}

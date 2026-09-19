@@ -1,0 +1,256 @@
+{
+ "name": "dimir murktide topdeck",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Cori-Steel Cutter",
+   "cost": "{1}{R}",
+   "type_line": "Artifact \u2014 Equipment",
+   "keywords": "Flurry Equip",
+   "power": null,
+   "loyalty": null,
+   "text": "Equipped creature gets +1/+1 and has trample and haste.\nFlurry \u2014 Whenever you cast your second spell each turn, create a 1/1 white Monk creature token with prowess. You may attach this Equipment to it. (Whenever you cast a noncreature spell, the token gets +1/+1 until end of turn.)\nEquip {1}{R}"
+  },
+  {
+   "name": "Dragon's Rage Channeler",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Human Shaman",
+   "keywords": "Delirium Surveil",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever you cast a noncreature spell, surveil 1. (Look at the top card of your library. You may put that card into your graveyard.)\nDelirium \u2014 As long as there are four or more card types among cards in your graveyard, this creature gets +2/+2, has flying, and attacks each combat if able."
+  },
+  {
+   "name": "Expressive Iteration",
+   "cost": "{U}{R}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them. You may play the exiled card this turn."
+  },
+  {
+   "name": "Fiery Islet",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life: Add {U} or {R}.\n{1}, {T}, Sacrifice this land: Draw a card."
+  },
+  {
+   "name": "Lava Dart",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Lava Dart deals 1 damage to any target.\nFlashback\u2014Sacrifice a Mountain. (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Lightning Bolt",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Lightning Bolt deals 3 damage to any target."
+  },
+  {
+   "name": "Mishra's Bauble",
+   "cost": "{0}",
+   "type_line": "Artifact",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Sacrifice this artifact: Look at the top card of target player's library. Draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Monastery Swiftspear",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Human Monk",
+   "keywords": "Prowess Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)"
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Mutagenic Growth",
+   "cost": "{G/P}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({G/P} can be paid with either {G} or 2 life.)\nTarget creature gets +2/+2 until end of turn."
+  },
+  {
+   "name": "Preordain",
+   "cost": "{U}",
+   "type_line": "Sorcery",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)"
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Slickshot Show-Off",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Bird Wizard",
+   "keywords": "Flying Plot Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Flying, haste\nWhenever you cast a noncreature spell, this creature gets +2/+0 until end of turn.\nPlot {1}{R} (You may pay {1}{R} and exile this card from your hand. Cast it as a sorcery on a later turn without paying its mana cost. Plot only as a sorcery.)"
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land \u2014 Island Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Thundering Falls",
+   "cost": "",
+   "type_line": "Land \u2014 Island Mountain",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Unholy Heat",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium \u2014 Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard."
+  },
+  {
+   "name": "Violent Urge",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Delirium",
+   "power": null,
+   "loyalty": null,
+   "text": "Target creature gets +1/+0 and gains first strike until end of turn.\nDelirium \u2014 If there are four or more card types among cards in your graveyard, that creature gains double strike until end of turn."
+  },
+  {
+   "name": "Wooded Foothills",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle."
+  }
+ ],
+ "list": [
+  [
+   "Bloodstained Mire",
+   4
+  ],
+  [
+   "Cori-Steel Cutter",
+   4
+  ],
+  [
+   "Dragon's Rage Channeler",
+   4
+  ],
+  [
+   "Expressive Iteration",
+   4
+  ],
+  [
+   "Fiery Islet",
+   1
+  ],
+  [
+   "Lava Dart",
+   4
+  ],
+  [
+   "Lightning Bolt",
+   4
+  ],
+  [
+   "Mishra's Bauble",
+   4
+  ],
+  [
+   "Monastery Swiftspear",
+   4
+  ],
+  [
+   "Mountain",
+   3
+  ],
+  [
+   "Mutagenic Growth",
+   3
+  ],
+  [
+   "Preordain",
+   4
+  ],
+  [
+   "Scalding Tarn",
+   4
+  ],
+  [
+   "Slickshot Show-Off",
+   4
+  ],
+  [
+   "Steam Vents",
+   3
+  ],
+  [
+   "Thundering Falls",
+   1
+  ],
+  [
+   "Unholy Heat",
+   1
+  ],
+  [
+   "Violent Urge",
+   2
+  ],
+  [
+   "Wooded Foothills",
+   2
+  ]
+ ]
+}

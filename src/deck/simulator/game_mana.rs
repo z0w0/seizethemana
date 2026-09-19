@@ -220,9 +220,12 @@ pub(super) fn effective_min_cost(
     if !card.board_discount {
         return card.min_cost.clone();
     }
+    // Affinity for artifacts / improvise: only artifacts on the
+    // battlefield count (creatures and enchantments do not).
     let artifacts = battlefield
         .iter()
         .filter(|p| !p.is_commander && card_of(deck, p).role != Role::Land)
+        .filter(|p| card_of(deck, p).is_artifact)
         .count();
     let headroom = card.cost.generic.saturating_sub(card.min_cost.generic);
     let mut eff = card.min_cost.clone();

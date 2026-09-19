@@ -1,0 +1,347 @@
+{
+ "name": "amalia lifegain combo standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Agatha's Champion",
+   "cost": "{4}{G}",
+   "type_line": "Creature \u2014 Human Knight",
+   "keywords": "Trample Fight Bargain",
+   "power": "4",
+   "loyalty": null,
+   "text": "Bargain (You may sacrifice an artifact, enchantment, or token as you cast this spell.)\nTrample\nWhen this creature enters, if it was bargained, it fights up to one target creature you don't control. (Each deals damage equal to its power to the other.)"
+  },
+  {
+   "name": "Amalia Benavides Aguirre",
+   "cost": "{W}{B}",
+   "type_line": "Legendary Creature \u2014 Vampire Scout",
+   "keywords": "Explore Ward",
+   "power": "2",
+   "loyalty": null,
+   "text": "Ward\u2014Pay 3 life.\nWhenever you gain life, Amalia Benavides Aguirre explores. Then destroy all other creatures if its power is exactly 20. (To have this creature explore, reveal the top card of your library. Put that card into your hand if it's a land. Otherwise, put a +1/+1 counter on this creature, then put the card back or put it into your graveyard.)"
+  },
+  {
+   "name": "Beastrider Vanguard",
+   "cost": "{1}{G}",
+   "type_line": "Creature \u2014 Human Knight",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "{4}{G}: Look at the top three cards of your library. You may reveal a permanent card from among them and put it into your hand. Put the rest on the bottom of your library in any order."
+  },
+  {
+   "name": "Belladonna Took",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Halfling Citizen",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Bristling Backwoods",
+   "cost": "",
+   "type_line": "Land \u2014 Desert",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\nWhen this land enters, it deals 1 damage to target opponent.\n{T}: Add {R} or {G}."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Caretaker's Talent",
+   "cost": "{2}{W}",
+   "type_line": "Enchantment \u2014 Class",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "(Gain the next level as a sorcery to add its ability.)\nWhenever one or more tokens you control enter, draw a card. This ability triggers only once each turn.\n{W}: Level 2\nWhen this Class becomes level 2, create a token that's a copy of target token you control.\n{3}{W}: Level 3\nCreature tokens you control get +2/+2."
+  },
+  {
+   "name": "Case of the Burning Masks",
+   "cost": "{1}{R}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve \u2014 Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+  },
+  {
+   "name": "Case of the Uneaten Feast",
+   "cost": "{W}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a creature you control enters, you gain 1 life.\nTo solve \u2014 You've gained 5 or more life this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Creature cards in your graveyard gain \"You may cast this card from your graveyard\" until end of turn."
+  },
+  {
+   "name": "Clarion Conqueror",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Dragon",
+   "keywords": "Flying",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flying\nActivated abilities of artifacts, creatures, and planeswalkers can't be activated."
+  },
+  {
+   "name": "Colossification",
+   "cost": "{5}{G}{G}",
+   "type_line": "Enchantment \u2014 Aura",
+   "keywords": "Enchant",
+   "power": null,
+   "loyalty": null,
+   "text": "Enchant creature\nWhen this Aura enters, tap enchanted creature.\nEnchanted creature gets +20/+20."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Hinterland Sanctifier",
+   "cost": "{W}",
+   "type_line": "Creature \u2014 Rabbit Cleric",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever another creature you control enters, you gain 1 life."
+  },
+  {
+   "name": "Kutzil's Flanker",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Cat Warrior",
+   "keywords": "Flash Scry",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flash\nWhen this creature enters, choose one \u2014\n\u2022 Put a +1/+1 counter on this creature for each creature that left the battlefield under your control this turn.\n\u2022 You gain 2 life and scry 2.\n\u2022 Exile target player's graveyard."
+  },
+  {
+   "name": "Lush Portico",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Plains",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Monument to Endurance",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "Treasure",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you discard a card, choose one that hasn't been chosen this turn \u2014\n\u2022 Draw a card.\n\u2022 Create a Treasure token.\n\u2022 Each opponent loses 3 life."
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Restless Spire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {U} or {R}.\n{U}{R}: Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first strike.\" It's still a land.\nWhenever this land attacks, scry 1."
+  },
+  {
+   "name": "Season of Renewal",
+   "cost": "{2}{G}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Choose one or both \u2014\n\u2022 Return target creature card from your graveyard to your hand.\n\u2022 Return target enchantment card from your graveyard to your hand."
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Stormsplitter",
+   "cost": "{3}{R}",
+   "type_line": "Creature \u2014 Otter Wizard",
+   "keywords": "Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nWhenever you cast an instant or sorcery spell, create a token that's a copy of this creature. Exile that token at the beginning of the next end step."
+  },
+  {
+   "name": "Sundown Pass",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Bard",
+   "keywords": "Mobilize",
+   "power": "1",
+   "loyalty": null,
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  }
+ ],
+ "list": [
+  [
+   "Plains",
+   10
+  ],
+  [
+   "Forest",
+   4
+  ],
+  [
+   "Swamp",
+   4
+  ],
+  [
+   "Sundown Pass",
+   2
+  ],
+  [
+   "Lush Portico",
+   2
+  ],
+  [
+   "Restless Spire",
+   2
+  ],
+  [
+   "Amalia Benavides Aguirre",
+   4
+  ],
+  [
+   "Case of the Uneaten Feast",
+   3
+  ],
+  [
+   "Hinterland Sanctifier",
+   3
+  ],
+  [
+   "Caretaker's Talent",
+   3
+  ],
+  [
+   "Kutzil's Flanker",
+   2
+  ],
+  [
+   "Bristling Backwood",
+   2
+  ],
+  [
+   "Beastrider Vanguard",
+   3
+  ],
+  [
+   "Colossification",
+   2
+  ],
+  [
+   "Season of Renewal",
+   2
+  ],
+  [
+   "Agatha's Champion",
+   2
+  ],
+  [
+   "Burst Lightning",
+   1
+  ],
+  [
+   "Nowhere to Run",
+   1
+  ],
+  [
+   "Slick Sequence",
+   1
+  ],
+  [
+   "Stocking the Pantry",
+   1
+  ],
+  [
+   "Case of the Burning Masks",
+   1
+  ],
+  [
+   "Stormsplitter",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Clarion Conqueror",
+   1
+  ],
+  [
+   "Belladonna Took",
+   1
+  ],
+  [
+   "Monument to Endurance",
+   1
+  ]
+ ]
+}

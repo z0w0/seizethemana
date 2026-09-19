@@ -1,0 +1,399 @@
+{
+ "name": "reanimator 4c standard",
+ "format": "standard",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Aang, Swift Savior // Aang and La, Ocean's Fury",
+   "cost": "{1}{W}{U} // ",
+   "type_line": "Legendary Creature \u2014 Human Avatar Ally // Legendary Creature \u2014 Avatar Spirit Ally",
+   "keywords": "Flying Reach Airbend Transform Trample Flash Waterbend",
+   "power": "2",
+   "loyalty": null,
+   "text": "Flash\nFlying\nWhen Aang enters, airbend up to one other target creature or spell. (Exile it. While it's exiled, its owner may cast it for {2} rather than its mana cost.)\nWaterbend {8}: Transform Aang.\n// Reach, trample\nWhenever Aang and La attack, put a +1/+1 counter on each tapped creature you control."
+  },
+  {
+   "name": "Belladonna Took",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Halfling Citizen",
+   "keywords": "",
+   "power": "2",
+   "loyalty": null,
+   "text": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control."
+  },
+  {
+   "name": "Burst Lightning",
+   "cost": "{R}",
+   "type_line": "Instant",
+   "keywords": "Kicker",
+   "power": null,
+   "loyalty": null,
+   "text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nBurst Lightning deals 2 damage to any target. If this spell was kicked, it deals 4 damage instead."
+  },
+  {
+   "name": "Case of the Burning Masks",
+   "cost": "{1}{R}{R}",
+   "type_line": "Enchantment \u2014 Case",
+   "keywords": "Solved",
+   "power": null,
+   "loyalty": null,
+   "text": "When this Case enters, it deals 3 damage to target creature an opponent controls.\nTo solve \u2014 Three or more sources you controlled dealt damage this turn. (If unsolved, solve at the beginning of your end step.)\nSolved \u2014 Sacrifice this Case: Exile the top three cards of your library. Choose one of them. You may play that card this turn."
+  },
+  {
+   "name": "Clarion Conqueror",
+   "cost": "{2}{W}",
+   "type_line": "Creature \u2014 Dragon",
+   "keywords": "Flying",
+   "power": "3",
+   "loyalty": null,
+   "text": "Flying\nActivated abilities of artifacts, creatures, and planeswalkers can't be activated."
+  },
+  {
+   "name": "Counterpoint",
+   "cost": "{3}{U}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target spell. You may cast a creature, instant, sorcery, or planeswalker spell from your graveyard with mana value less than or equal to that spell's mana value without paying its mana cost."
+  },
+  {
+   "name": "Eddymurk Crab",
+   "cost": "{5}{U}{U}",
+   "type_line": "Creature \u2014 Elemental Crab",
+   "keywords": "Flash",
+   "power": "5",
+   "loyalty": null,
+   "text": "Flash\nThis spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nThis creature enters tapped if it's not your turn.\nWhen this creature enters, tap up to two target creatures."
+  },
+  {
+   "name": "Forest",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Forest",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G}.)"
+  },
+  {
+   "name": "Hopeless Nightmare",
+   "cost": "{B}",
+   "type_line": "Enchantment",
+   "keywords": "Scry",
+   "power": null,
+   "loyalty": null,
+   "text": "When this enchantment enters, each opponent discards a card and loses 2 life.\nWhen this enchantment is put into a graveyard from the battlefield, scry 2.\n{2}{B}: Sacrifice this enchantment."
+  },
+  {
+   "name": "Inevitable Defeat",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "This spell can't be countered.\nExile target nonland permanent. Its controller loses 3 life and you gain 3 life."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Jeskai Revelation",
+   "cost": "{4}{U}{R}{W}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target spell or permanent to its owner's hand. Jeskai Revelation deals 4 damage to any target. Create two 1/1 white Monk creature tokens with prowess. Draw two cards. You gain 4 life."
+  },
+  {
+   "name": "Kaito, Bane of Nightmares",
+   "cost": "{2}{U}{B}",
+   "type_line": "Legendary Planeswalker \u2014 Kaito",
+   "keywords": "Surveil Ninjutsu",
+   "power": null,
+   "loyalty": "4",
+   "text": "Ninjutsu {1}{U}{B} ({1}{U}{B}, Return an unblocked attacker you control to hand: Put this card onto the battlefield from your hand tapped and attacking.)\nDuring your turn, as long as Kaito has one or more loyalty counters on him, he's a 3/4 Ninja creature and has hexproof.\n+1: You get an emblem with \"Ninjas you control get +1/+1.\"\n0: Surveil 2. Then draw a card for each opponent who lost life this turn.\n\u22122: Tap target creature. Put two stun counters on it."
+  },
+  {
+   "name": "Lush Portico",
+   "cost": "",
+   "type_line": "Land \u2014 Forest Plains",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {G} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Meticulous Archive",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Monument to Endurance",
+   "cost": "{3}",
+   "type_line": "Artifact",
+   "keywords": "Treasure",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you discard a card, choose one that hasn't been chosen this turn \u2014\n\u2022 Draw a card.\n\u2022 Create a Treasure token.\n\u2022 Each opponent loses 3 life."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Nowhere to Run",
+   "cost": "{1}{B}",
+   "type_line": "Enchantment",
+   "keywords": "Flash",
+   "power": null,
+   "loyalty": null,
+   "text": "Flash\nWhen this enchantment enters, target creature an opponent controls gets -3/-3 until end of turn.\nCreatures your opponents control can be the targets of spells and abilities as though they didn't have hexproof. Ward abilities of those creatures don't trigger."
+  },
+  {
+   "name": "Overlord of the Balemurk",
+   "cost": "{3}{B}{B}",
+   "type_line": "Enchantment Creature \u2014 Avatar Horror",
+   "keywords": "Impending Mill",
+   "power": "5",
+   "loyalty": null,
+   "text": "Impending 5\u2014{1}{B} (If you cast this spell for its impending cost, it enters with five time counters and isn't a creature until the last is removed. At the beginning of your end step, remove a time counter from it.)\nWhenever this permanent enters or attacks, mill four cards, then you may return a non-Avatar creature card or a planeswalker card from your graveyard to your hand."
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Quantum Riddler",
+   "cost": "{3}{U}{U}",
+   "type_line": "Creature \u2014 Sphinx",
+   "keywords": "Flying Warp",
+   "power": "4",
+   "loyalty": null,
+   "text": "Flying\nWhen this creature enters, draw a card.\nAs long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.\nWarp {1}{U}"
+  },
+  {
+   "name": "Requiting Hex",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Blight",
+   "power": null,
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, you may blight 1. (You may put a -1/-1 counter on a creature you control.)\nDestroy target creature with mana value 2 or less. If this spell's additional cost was paid, you gain 2 life."
+  },
+  {
+   "name": "Restless Reef",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "This land enters tapped.\n{T}: Add {U} or {B}.\n{2}{U}{B}: Until end of turn, this land becomes a 4/4 blue and black Shark creature with deathtouch. It's still a land.\nWhenever this land attacks, target player mills four cards."
+  },
+  {
+   "name": "Slick Sequence",
+   "cost": "{U}{R}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Slick Sequence deals 2 damage to any target. If you've cast another spell this turn, draw a card."
+  },
+  {
+   "name": "Stocking the Pantry",
+   "cost": "{G}",
+   "type_line": "Enchantment",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever you put one or more +1/+1 counters on a creature you control, put a supply counter on this enchantment.\n{2}, Remove a supply counter from this enchantment: Draw a card."
+  },
+  {
+   "name": "Stormsplitter",
+   "cost": "{3}{R}",
+   "type_line": "Creature \u2014 Otter Wizard",
+   "keywords": "Haste",
+   "power": "1",
+   "loyalty": null,
+   "text": "Haste\nWhenever you cast an instant or sorcery spell, create a token that's a copy of this creature. Exile that token at the beginning of the next end step."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Three Steps Ahead",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Spree",
+   "power": null,
+   "loyalty": null,
+   "text": "Spree (Choose one or more additional costs.)\n+ {1}{U} \u2014 Counter target spell.\n+ {3} \u2014 Create a token that's a copy of target artifact or creature you control.\n+ {2} \u2014 Draw two cards, then discard a card."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Bard",
+   "keywords": "Mobilize",
+   "power": "1",
+   "loyalty": null,
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Waterbender Ascension",
+   "cost": "{1}{U}",
+   "type_line": "Enchantment",
+   "keywords": "Waterbend",
+   "power": null,
+   "loyalty": null,
+   "text": "Whenever a creature you control deals combat damage to a player, put a quest counter on this enchantment. Then if it has four or more quest counters on it, draw a card.\nWaterbend {4}: Target creature can't be blocked this turn. (While paying a waterbend cost, you can tap your artifacts and creatures to help. Each one pays for {1}.)"
+  }
+ ],
+ "list": [
+  [
+   "Island",
+   4
+  ],
+  [
+   "Swamp",
+   3
+  ],
+  [
+   "Forest",
+   2
+  ],
+  [
+   "Plains",
+   2
+  ],
+  [
+   "Mountain",
+   2
+  ],
+  [
+   "Lush Portico",
+   3
+  ],
+  [
+   "Meticulous Archive",
+   3
+  ],
+  [
+   "Restless Reef",
+   2
+  ],
+  [
+   "Overlord of the Balemurk",
+   4
+  ],
+  [
+   "Hopeless Nightmare",
+   4
+  ],
+  [
+   "Kaito, Bane of Nightmares",
+   3
+  ],
+  [
+   "Requiting Hex",
+   2
+  ],
+  [
+   "Nowhere to Run",
+   2
+  ],
+  [
+   "Three Steps Ahead",
+   2
+  ],
+  [
+   "Counterpoint",
+   2
+  ],
+  [
+   "Eddymurk Crab",
+   2
+  ],
+  [
+   "Jeskai Revelation",
+   2
+  ],
+  [
+   "Inevitable Defeat",
+   1
+  ],
+  [
+   "Quantum Riddler",
+   2
+  ],
+  [
+   "Aang, Swift Savior",
+   2
+  ],
+  [
+   "Waterbender Ascension",
+   2
+  ],
+  [
+   "Burst Lightning",
+   1
+  ],
+  [
+   "Slick Sequence",
+   1
+  ],
+  [
+   "Stocking the Pantry",
+   1
+  ],
+  [
+   "Case of the Burning Masks",
+   1
+  ],
+  [
+   "Stormsplitter",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Clarion Conqueror",
+   1
+  ],
+  [
+   "Belladonna Took",
+   1
+  ],
+  [
+   "Monument to Endurance",
+   1
+  ]
+ ]
+}

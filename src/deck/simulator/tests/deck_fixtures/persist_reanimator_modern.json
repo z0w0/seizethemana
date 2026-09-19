@@ -1,0 +1,321 @@
+{
+ "name": "persist reanimator modern",
+ "format": "modern",
+ "commanders": [],
+ "cards": [
+  {
+   "name": "Abhorrent Oculus",
+   "cost": "{2}{U}",
+   "type_line": "Creature \u2014 Eye",
+   "keywords": "Flying Manifest Manifest dread",
+   "power": "5",
+   "loyalty": null,
+   "text": "As an additional cost to cast this spell, exile six cards from your graveyard.\nFlying\nAt the beginning of each opponent's upkeep, manifest dread. (Look at the top two cards of your library. Put one onto the battlefield face down as a 2/2 creature and the other into your graveyard. Turn it face up any time for its mana cost if it's a creature card.)"
+  },
+  {
+   "name": "Archon of Cruelty",
+   "cost": "{6}{B}{B}",
+   "type_line": "Creature \u2014 Archon",
+   "keywords": "Flying",
+   "power": "6",
+   "loyalty": null,
+   "text": "Flying\nWhenever this creature enters or attacks, target opponent sacrifices a creature or planeswalker of their choice, discards a card, and loses 3 life. You draw a card and gain 3 life."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Bloodstained Mire",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Emperor of Bones",
+   "cost": "{1}{B}",
+   "type_line": "Creature \u2014 Skeleton Noble",
+   "keywords": "Adapt",
+   "power": "2",
+   "loyalty": null,
+   "text": "At the beginning of combat on your turn, exile up to one target card from a graveyard.\n{1}{B}: Adapt 2.\nWhenever one or more +1/+1 counters are put on this creature, put a creature card exiled with this creature onto the battlefield under your control with a finality counter on it. It gains haste. Sacrifice it at the beginning of the next end step."
+  },
+  {
+   "name": "Faithless Looting",
+   "cost": "{R}",
+   "type_line": "Sorcery",
+   "keywords": "Flashback",
+   "power": null,
+   "loyalty": null,
+   "text": "Draw two cards, then discard two cards.\nFlashback {2}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)"
+  },
+  {
+   "name": "Fatal Push",
+   "cost": "{B}",
+   "type_line": "Instant",
+   "keywords": "Revolt",
+   "power": null,
+   "loyalty": null,
+   "text": "Destroy target creature if it has mana value 2 or less.\nRevolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn."
+  },
+  {
+   "name": "Gran-Gran",
+   "cost": "{U}",
+   "type_line": "Legendary Creature \u2014 Human Peasant Ally",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever Gran-Gran becomes tapped, draw a card, then discard a card.\nNoncreature spells you cast cost {1} less to cast as long as there are three or more Lesson cards in your graveyard."
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Persist",
+   "cost": "{1}{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it."
+  },
+  {
+   "name": "Polluted Delta",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Psychic Frog",
+   "cost": "{U}{B}",
+   "type_line": "Creature \u2014 Frog",
+   "keywords": "",
+   "power": "1",
+   "loyalty": null,
+   "text": "Whenever this creature deals combat damage to a player or planeswalker, draw a card.\nDiscard a card: Put a +1/+1 counter on this creature.\nExile three cards from your graveyard: This creature gains flying until end of turn."
+  },
+  {
+   "name": "Raucous Theater",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Mountain",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B} or {R}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Scalding Tarn",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Sink into Stupor // Soporific Springs",
+   "cost": "{1}{U}{U} // ",
+   "type_line": "Instant // Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target spell or nonland permanent an opponent controls to its owner's hand.\n// As this land enters, you may pay 3 life. If you don't, it enters tapped.\n{T}: Add {U}."
+  },
+  {
+   "name": "Spell Pierce",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Counter target noncreature spell unless its controller pays {2}."
+  },
+  {
+   "name": "Steam Vents",
+   "cost": "",
+   "type_line": "Land \u2014 Island Mountain",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Thought Scour",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "Mill",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player mills two cards.\nDraw a card."
+  },
+  {
+   "name": "Thoughtseize",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life."
+  },
+  {
+   "name": "Undercity Sewers",
+   "cost": "",
+   "type_line": "Land \u2014 Island Swamp",
+   "keywords": "Surveil",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {B}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Unearth",
+   "cost": "{B}",
+   "type_line": "Sorcery",
+   "keywords": "Cycling",
+   "power": null,
+   "loyalty": null,
+   "text": "Return target creature card with mana value 3 or less from your graveyard to the battlefield.\nCycling {2} ({2}, Discard this card: Draw a card.)"
+  },
+  {
+   "name": "Verdant Catacombs",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Watery Grave",
+   "cost": "",
+   "type_line": "Land \u2014 Island Swamp",
+   "keywords": "",
+   "power": null,
+   "loyalty": null,
+   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  }
+ ],
+ "list": [
+  [
+   "Abhorrent Oculus",
+   4
+  ],
+  [
+   "Archon of Cruelty",
+   4
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Bloodstained Mire",
+   3
+  ],
+  [
+   "Emperor of Bones",
+   3
+  ],
+  [
+   "Faithless Looting",
+   4
+  ],
+  [
+   "Fatal Push",
+   4
+  ],
+  [
+   "Gran-Gran",
+   1
+  ],
+  [
+   "Island",
+   1
+  ],
+  [
+   "Persist",
+   4
+  ],
+  [
+   "Polluted Delta",
+   4
+  ],
+  [
+   "Psychic Frog",
+   4
+  ],
+  [
+   "Raucous Theater",
+   1
+  ],
+  [
+   "Scalding Tarn",
+   1
+  ],
+  [
+   "Sink into Stupor // Soporific Springs",
+   1
+  ],
+  [
+   "Spell Pierce",
+   2
+  ],
+  [
+   "Steam Vents",
+   1
+  ],
+  [
+   "Swamp",
+   2
+  ],
+  [
+   "Thought Scour",
+   4
+  ],
+  [
+   "Thoughtseize",
+   3
+  ],
+  [
+   "Undercity Sewers",
+   1
+  ],
+  [
+   "Unearth",
+   4
+  ],
+  [
+   "Verdant Catacombs",
+   1
+  ],
+  [
+   "Watery Grave",
+   2
+  ]
+ ]
+}
