@@ -87,11 +87,19 @@ search. The vector index handles semantic lookup (below).
 
 A SQLite FTS5 virtual table over `cards`, declared external-content
 (`content='cards', content_rowid='id'`) so the text is stored once. Columns:
-`name`, `type_line`, `oracle_text`; tokenizer `porter unicode61` (stemming,
-so "sacrifices" matches "sacrifice"). Three triggers on `cards`
+`name`, `tags_text`, `type_line`, `oracle_text`; tokenizer
+`porter unicode61` (stemming, so "sacrifices" matches "sacrifice").
+`tags_text` carries the card's Tagger labels (filled by `db::refresh_tags_text`
+after tag ingest in both setup and sync), so role words like "ramp" or
+"sweeper" resolve through the community vocabulary even when oracle text
+never uses them. Four triggers on `cards`
 (insert/update/delete) keep the index in sync with every write path, and
 migration v1 populates it with a final `rebuild`. Query building and BM25
-ranking live in `src/db.rs` (`fts_query`, `fts_search`).
+ranking live in `src/db.rs` (`fts_query`, `fts_search`; BM25 weights
+name 8 / tags 4 / type 2 / oracle 1, ties break toward lower EDHREC
+rank). Player shorthand expands before retrieval — `query::expanded_text`
+appends Tagger-vocabulary aliases (see `EXPANSIONS` in `src/query.rs`)
+to both the BM25 terms and the embedded query.
 
 ### `collection` — owned copies
 
@@ -127,7 +135,10 @@ default-cards bulk. Set codes are lowercase everywhere in this store.
 | `updated_at` | Refresh timestamp for the row |
 
 The index on `(name, set_code, collector_number)` serves cheapest-print
-picks and the collection-valuation join. The partial index on
+picks and the collection-valuation join. Price reads go through
+`prints::price_range` (one name) or `prints::price_ranges` (many names:
+two window-function statements per batch instead of two per name — deck
+views, suggest, and buylist all batch). The partial index on
 `flavor_name` (non-empty rows only) backs alias resolution: a flavor name
 like "Godzilla, King of the Monsters" resolves to its oracle card
 ("Zilortha, Strength Incarnate") for exact and unique-prefix lookups.
@@ -156,6 +167,36 @@ parsing (`TagRecord`), ingest, and the in-process [`TagIndex`] lookup, which
 also picks the embedding-document labels (below). Tag refreshes never
 trigger re-embedding: only card-content changes or a document-layout bump
 do.
+
+### `combos` and `combo_pieces` — Commander Spellbook variants
+
+One `combos` row per combo variant, harvested from Commander Spellbook's
+daily variants bulk (`json.commanderspellbook.com`, ~28 MB gzipped).
+
+| Column              | Notes                                                   |
+| ------------------- | ------------------------------------------------------- |
+| `id`                | Spellbook variant ID (PK)                               |
+| `produces`          | JSON array of feature names ("Win the game")            |
+| `mana_value_needed` | Total mana the combo needs                              |
+| `bracket_tag`       | Spellbook bracket letter (R/S/P/O/C/E; B = commander-banned) |
+| `legalities`        | JSON map, format name → legal (16 keys; the backend forces 60-card keys false when a piece must be the commander) |
+| `popularity`        | Spellbook popularity count                              |
+| `updated_at`        | Refresh stamp                                           |
+
+`combo_pieces` is one row per piece: `combo_id`, `name` (each face of a
+two-faced card is its own row), `ordinal`, `zones` (JSON array of Spellbook
+zone codes: B battlefield, H hand, G graveyard, C command, L library, E
+exile), and `must_be_commander` (the piece must be the commander; the combo
+cannot fire in a 60-card format). The bulk is a complete snapshot, so
+ingest replaces both tables in one transaction (`src/spellbook.rs`); a
+failed download warns and leaves the old tables in place.
+
+`src/combos.rs` owns every read: a set-based
+`load_variants_for` (candidate ids by name chunks of 500, then one bulk
+load, never per-variant queries), `requires_commander` (any piece flagged),
+`variant_legal_in` (legality-map lookup), and `filter_for_format` (legality
+plus the commander-required exclusion for 60-card formats). Consumers:
+`card combos`, `deck suggest` completions, and `deck simulate` assembly.
 
 ## Sync pipeline (setup and `stm sync` share it)
 
@@ -401,6 +442,8 @@ forward-only on every `db::open`:
 | `db.rs`         | Schema + migrations, connections, row types (`CardRow`), name resolution, FTS query/search, `Filterable` impl |
 | `scryfall.rs`   | Bulk download + streaming parse + ingest/update mapping (cards bulk; bulk index serves cards + tags files) |
 | `tags.rs`       | Oracle-tags bulk parsing + ingest (`tags`, `card_tags`), `TagIndex` lookups, embedding-label selection |
+| `spellbook.rs`  | Commander Spellbook variants bulk: download + stream parse + ingest (`combos`, `combo_pieces`) |
+| `combos.rs`     | Shared combo reads: set-based variant loading, format legality, commander-required filtering |
 | `embed.rs`      | Model loading, doc building, vector store save/load/search     |
 | `search.rs`     | Structured filters (`--type/--color/--cmc/...`), ranking       |
 | `query.rs`      | `stm query` orchestration + hybrid search pipeline (FTS + vector, RRF fusion) |
@@ -409,7 +452,7 @@ forward-only on every `db::open`:
 | `card.rs`       | `stm card` detail rendering (text + JSON)                      |
 | `release.rs`    | Release-date parsing/checking helpers for ingest gating        |
 | `collection.rs` | ManaBox CSV import (ownership only; deck rows are deck-assignment rows), collection stats, owned-only search |
-| `deck/`         | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, overview stats, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`simulator`) |
+| `deck/`         | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, format-aware suggestions, overview stats, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`simulator`) |
 | `prints.rs`     | `card_prints` reads: cheapest/priciest print, owned-print pricing |
 | `output.rs`     | Human/JSON output hub: color detection, style helpers (bars, framing, wrapping), progress plumbing |
 | `main.rs`       | Dispatch, exit codes, auto-refresh hook, error reporting       |

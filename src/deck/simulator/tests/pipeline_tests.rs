@@ -4,6 +4,7 @@
 use super::deck::build_sim_deck;
 use super::parse::*;
 use crate::db::CardRow;
+use rand::SeedableRng;
 use std::collections::HashMap;
 fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
     CardRow {
@@ -91,4 +92,170 @@ fn stationz_commander_full_pipeline() {
             .iter()
             .any(|t| t.at == 0)
     );
+}
+
+#[test]
+fn drain_burn_and_scry_register_in_game() {
+    let rows = vec![
+        card("Mountain", "", "Basic Land — Mountain", "({T}: Add {R}.)"),
+        card(
+            "Lava Spike",
+            "{R}",
+            "Sorcery",
+            "Lava Spike deals 3 damage to target player.",
+        ),
+        card("Opt", "{U}", "Instant", "Scry 1. Draw a card."),
+    ];
+    let cards = cards_map(rows);
+    let mut deck = deck_text("DECK", &[("Lava Spike", 10), ("Opt", 10)]);
+    deck.section_entries_mut("DECK")
+        .push(crate::deck::grammar::DeckEntry {
+            quantity: 40,
+            name: "Mountain".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(7);
+    let log = super::game::run_game(&sim_deck, &mut rng, 6);
+    // Burn drains players 3× its amount when cast.
+    assert!(log.drain_total[5] > 0, "burn spells drain over 6 turns");
+    // Scry gives awareness credit.
+    assert!(
+        log.awareness.iter().copied().fold(0.0_f64, f64::max) > 0.0,
+        "scry feeds library awareness"
+    );
+}
+
+#[test]
+fn extra_turn_spell_counts() {
+    let rows = vec![
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+        card(
+            "Time Walk",
+            "{2}{U}",
+            "Sorcery",
+            "Take an extra turn after this one.",
+        ),
+    ];
+    let cards = cards_map(rows);
+    let mut deck = deck_text("DECK", &[("Time Walk", 20)]);
+    deck.section_entries_mut("DECK")
+        .push(crate::deck::grammar::DeckEntry {
+            quantity: 40,
+            name: "Island".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(7);
+    let log = super::game::run_game(&sim_deck, &mut rng, 8);
+    assert!(
+        log.extra_turns.iter().any(|e| *e > 0),
+        "extra turn spell queues"
+    );
+}
+
+#[test]
+fn opponent_mill_routes_to_opp_census() {
+    let rows = vec![
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+        card("Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)"),
+        card(
+            "Sculpting Steel Mill",
+            "{2}{U}",
+            "Sorcery",
+            "Target player mills five cards.",
+        ),
+        card(
+            "Grave Dredge",
+            "{2}{B}",
+            "Sorcery",
+            "Mill five cards. Then return a creature card from your graveyard to your hand.",
+        ),
+    ];
+    let cards = cards_map(rows);
+    let mut deck = deck_text(
+        "DECK",
+        &[("Sculpting Steel Mill", 10), ("Grave Dredge", 10)],
+    );
+    {
+        let list = deck.section_entries_mut("DECK");
+        for (name, qty) in [("Island", 30), ("Swamp", 20)] {
+            list.push(crate::deck::grammar::DeckEntry {
+                quantity: qty,
+                name: name.into(),
+                set_code: None,
+                collector_number: None,
+                foil: false,
+            });
+        }
+    }
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(7);
+    let log = super::game::run_game(&sim_deck, &mut rng, 8);
+    assert!(log.opp_milled[7] > 0, "opponent-targeted mills count");
+    assert!(log.self_milled[7] > 0, "self mills count");
+    assert!(log.library_size[7] < 50, "library shrinks with mills");
+}
+
+#[test]
+fn combat_power_counts_buff_and_double_strike() {
+    let rows = vec![
+        card("Plains", "", "Basic Land — Plains", "({T}: Add {W}.)"),
+        card("Forest", "", "Basic Land — Forest", "({T}: Add {G}.)"),
+        card("Mountain", "", "Basic Land — Mountain", "({T}: Add {R}.)"),
+        card("Bear Cub", "{1}{G}", "Creature — Bear", "Trample"),
+        card(
+            "Battle Anthem",
+            "{3}{W}",
+            "Enchantment",
+            "Creatures you control get +2/+2.",
+        ),
+        card(
+            "Fervent Champion",
+            "{R}",
+            "Creature — Human Knight",
+            "Double strike",
+        ),
+    ];
+    let mut cards = cards_map(rows);
+    // Give the bear a printed power and evasion.
+    if let Some(bear) = cards.get_mut("Bear Cub") {
+        bear.power = Some("2".into());
+        bear.keywords = r#"["Trample"]"#.into();
+    }
+    if let Some(champ) = cards.get_mut("Fervent Champion") {
+        champ.power = Some("3".into());
+        champ.keywords = r#"["Double strike"]"#.into();
+    }
+    let mut deck = deck_text(
+        "DECK",
+        &[
+            ("Bear Cub", 10),
+            ("Battle Anthem", 10),
+            ("Fervent Champion", 10),
+        ],
+    );
+    {
+        let list = deck.section_entries_mut("DECK");
+        for (name, qty) in [("Plains", 20), ("Forest", 15), ("Mountain", 15)] {
+            list.push(crate::deck::grammar::DeckEntry {
+                quantity: qty,
+                name: name.into(),
+                set_code: None,
+                collector_number: None,
+                foil: false,
+            });
+        }
+    }
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(11);
+    let log = super::game::run_game(&sim_deck, &mut rng, 8);
+    // Late game: bears hit with the +2 anthem buff and champions ×2.
+    let late = log.attack_power[7];
+    assert!(late > 0, "bodies produce attack power");
+    assert!(log.evasive[7] > 0, "trample attackers count as evasive");
 }

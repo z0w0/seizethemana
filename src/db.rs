@@ -302,8 +302,8 @@ pub fn fts_query(text: &str) -> Option<String> {
 }
 
 /// Column weights for BM25 ranking, passed to `bm25()` as positional args:
-/// name hits dominate, type line second, oracle text last.
-pub const FTS_COLUMN_WEIGHTS: [f64; 3] = [8.0, 2.0, 1.0];
+/// name hits dominate, tag labels second, type line third, oracle text last.
+pub const FTS_COLUMN_WEIGHTS: [f64; 4] = [8.0, 4.0, 2.0, 1.0];
 
 /// True when `name` is a known non-card (token, art series, emblem) from the
 /// last bulk pass. Collection imports skip these silently.
@@ -332,12 +332,16 @@ pub fn fts_search(
     match_expr: &str,
     limit: usize,
 ) -> anyhow::Result<Vec<(i64, f64)>> {
+    // BM25 ties break toward lower EDHREC rank (more popular first), then
+    // row order for determinism.
     let mut stmt = conn.prepare(&format!(
         "SELECT cards.id, cards_fts.rank FROM cards_fts
          JOIN cards ON cards.id = cards_fts.rowid
          WHERE cards_fts MATCH ?1
-         ORDER BY bm25(cards_fts, {}, {}, {}) LIMIT ?2",
-        FTS_COLUMN_WEIGHTS[0], FTS_COLUMN_WEIGHTS[1], FTS_COLUMN_WEIGHTS[2],
+         ORDER BY bm25(cards_fts, {}, {}, {}, {}),
+             cards.edhrec_rank IS NULL, cards.edhrec_rank, cards.id
+         LIMIT ?2",
+        FTS_COLUMN_WEIGHTS[0], FTS_COLUMN_WEIGHTS[1], FTS_COLUMN_WEIGHTS[2], FTS_COLUMN_WEIGHTS[3],
     ))?;
     let rows = stmt
         .query_map(rusqlite::params![match_expr, limit as i64], |row| {
@@ -346,6 +350,39 @@ pub fn fts_search(
         .collect::<Result<Vec<_>, _>>()
         .context("running full-text search")?;
     Ok(rows)
+}
+
+/// Fill `cards.tags_text` for every card from the `card_tags` join, then
+/// rebuild the FTS rows touched.
+///
+/// Called after a tag ingest (setup and sync): the tag labels become
+/// searchable full-text content (weight second only to the card name), so
+/// role words like "ramp" or "sweeper" match the community vocabulary even
+/// when oracle text never uses them.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn refresh_tags_text(conn: &Connection) -> anyhow::Result<usize> {
+    // Restrict to rows whose tags_text would change: skips the FTS
+    // trigger for untouched rows and keeps the returned count honest.
+    let updated = conn.execute(
+        "UPDATE cards SET tags_text = COALESCE((
+            SELECT GROUP_CONCAT(label, ' ') FROM (
+                SELECT DISTINCT t.label AS label
+                FROM card_tags ct JOIN tags t ON t.id = ct.tag_id
+                WHERE ct.oracle_id = cards.oracle_id
+            )
+        ), '')
+        WHERE cards.tags_text IS DISTINCT FROM COALESCE((
+            SELECT GROUP_CONCAT(label, ' ') FROM (
+                SELECT DISTINCT t.label AS label
+                FROM card_tags ct JOIN tags t ON t.id = ct.tag_id
+                WHERE ct.oracle_id = cards.oracle_id
+            )
+        ), '')",
+        [],
+    )?;
+    Ok(updated)
 }
 
 /// Schema migrations, applied forward-only on every open.

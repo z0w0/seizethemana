@@ -596,7 +596,7 @@ fn print_stats(out: &crate::output::Output, stats: &Stats) {
     println!(
         "{}: {} unique cards, {} total, {} foils",
         styles.header("Collection"),
-        stats.unique_cards,
+        styles.thousands(stats.unique_cards as i64),
         styles.thousands(stats.total_cards),
         styles.thousands(stats.foils),
     );
@@ -604,7 +604,7 @@ fn print_stats(out: &crate::output::Output, stats: &Stats) {
         "{}{} now (paid {})",
         label("Value"),
         styles.money(stats.total_value),
-        styles.dim(&format!("${:.2}", stats.purchase_total)),
+        styles.dim(&styles.money(stats.purchase_total)),
     );
 
     // Colors: WUBRG order with per-color pip styling.
@@ -758,18 +758,22 @@ pub fn run_query(
         });
     }
     if out_hits.is_empty() {
+        if json {
+            println!("[]");
+        }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     if json {
         let tag_index = crate::tags::TagIndex::load(conn)?;
+        let names: Vec<String> = out_hits.iter().map(|h| h.card.name.clone()).collect();
+        // One batched query per finish kind instead of four per card name.
+        let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
         let items: Vec<serde_json::Value> = out_hits
             .iter()
             .map(|h| {
-                let range = crate::prints::price_range(conn, &h.card.name)
-                    .ok()
-                    .unwrap_or_default();
+                let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
                 let mut v = crate::card::card_json(&h.card, &tag_index, &range);
-                v["score"] = serde_json::json!((h.score * 10_000.0).round() / 10_000.0);
+                v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
                 v["owned"] = serde_json::json!(h.owned);
                 v["locations"] = serde_json::json!(
                     h.locations
@@ -797,8 +801,8 @@ pub fn run_query(
                 i + 1,
                 styles.card_name(&hit.card.name),
                 styles.mana_pips(&hit.card.mana_cost),
-                styles.dim(&hit.card.type_line),
                 styles.rarity(&hit.card.rarity),
+                styles.dim(&hit.card.type_line),
                 styles.dim(&format!("({:.3}) [{locs}]", hit.score)),
             );
         }
@@ -847,6 +851,35 @@ fn owned_names(
 /// Propagates SQLite failures.
 pub fn owned_names_all(conn: &Connection) -> anyhow::Result<std::collections::HashSet<String>> {
     owned_names(conn, &[], &[])
+}
+
+/// Owned copies per card name across all binders and deck assignments.
+///
+/// Deck suggest uses the counts so JSON `owned` reads as a number
+/// everywhere (0 = none). Unlike `owned_names` (binder rows only unless
+/// `--deck` names one), this scope is fixed: deck rows count, so a card
+/// held only as part of a deck reports its copies. The `HashSet` variant
+/// stays for membership checks that must exclude deck rows.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn owned_counts_all(
+    conn: &Connection,
+) -> anyhow::Result<std::collections::HashMap<String, i64>> {
+    let mut counts = std::collections::HashMap::new();
+    let mut stmt = conn.prepare(
+        "SELECT name, SUM(quantity) FROM collection
+         WHERE binder_type = 'binder' OR binder_type = 'deck'
+         GROUP BY name",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+    })?;
+    for row in rows {
+        let (name, qty) = row.context("reading owned counts")?;
+        counts.insert(name, qty);
+    }
+    Ok(counts)
 }
 
 /// Collection rows for one card within the queried scope:

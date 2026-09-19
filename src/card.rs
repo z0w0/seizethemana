@@ -38,9 +38,10 @@ pub fn run_card(
 
     if json {
         let tag_index = crate::tags::TagIndex::load(conn)?;
-        let range = crate::prints::price_range(conn, &card.name)
+        let ranges = crate::prints::price_ranges(conn, std::slice::from_ref(&card.name))
             .ok()
             .unwrap_or_default();
+        let range = ranges.get(&card.name).cloned().unwrap_or_default();
         print_json(&card, &tag_index, &range)?;
     } else {
         let range = crate::prints::price_range(conn, &card.name)
@@ -87,6 +88,7 @@ pub fn card_json(
     );
     serde_json::json!({
         "name": card.name,
+        "oracle_id": card.oracle_id,
         "mana_cost": card.mana_cost,
         "cmc": card.cmc,
         "type_line": card.type_line,
@@ -194,7 +196,7 @@ fn print_text(
             line(format!(
                 "{} {}",
                 styles.dim("EDHREC rank:"),
-                styles.dim(&rank.to_string())
+                styles.thousands(rank)
             ))
         );
     }
@@ -429,6 +431,9 @@ pub struct SimilarHit {
     pub card: crate::db::CardRow,
     pub shared_count: i64,
     pub shared_tags: Vec<String>,
+    /// Hybrid rank in `[0, 1]` (reciprocal-rank fusion of the tag leg and
+    /// the stored-vector cosine leg); `None` when only the tag leg ran.
+    pub score: Option<f32>,
 }
 
 /// Rank oracle cards by oracle-tag overlap with `seed`.
@@ -555,10 +560,54 @@ pub fn rank_similar(
             },
             shared_count: shared,
             shared_tags,
+            score: None,
         });
     }
     hits.truncate(limit);
     Ok(hits)
+}
+
+/// The seed's vector store row, when the store and the row both exist.
+/// Reading the stored row needs no model load: the seed was embedded at
+/// sync time.
+fn seed_vector(
+    paths: &crate::paths::Paths,
+    seed_name: &str,
+) -> Option<(crate::embed::VectorStore, usize, Vec<f32>)> {
+    let store = crate::embed::VectorStore::load(paths.root()).ok()?;
+    let idx = store.meta.index_of(seed_name)?;
+    let row = store.row(idx).to_vec();
+    Some((store, idx, row))
+}
+
+/// Cosine ranks against the seed's stored vector: `(name, score)` pairs,
+/// best first, excluding the seed row. Rows are unit-normalized, so dot
+/// product is cosine.
+fn vector_leg(
+    store: &crate::embed::VectorStore,
+    seed_row: usize,
+    seed: &[f32],
+    depth: usize,
+    restrict: Option<&std::collections::HashSet<String>>,
+) -> Vec<(String, f64)> {
+    let mut scored: Vec<(usize, f32)> = (0..store.meta.names.len())
+        .filter(|i| *i != seed_row)
+        .map(|i| {
+            let row = store.row(i);
+            let dot: f32 = seed.iter().zip(row).map(|(q, v)| q * v).sum();
+            (i, dot)
+        })
+        .collect();
+    scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
+    scored
+        .into_iter()
+        .filter(|(i, _)| {
+            let name = &store.meta.names[*i];
+            restrict.is_none_or(|set| set.contains(name))
+        })
+        .take(depth)
+        .map(|(i, score)| (store.meta.names[i].clone(), score as f64))
+        .collect()
 }
 
 /// Entry point for `stm card similar <name>`.
@@ -607,60 +656,368 @@ pub fn run_similar(
     } else {
         None
     };
-    let hits = rank_similar(conn, &seed.oracle_id, limit as usize, restrict.as_ref())?;
+    let tag_hits = rank_similar(
+        conn,
+        &seed.oracle_id,
+        (limit as usize).saturating_mul(2).max(30),
+        restrict.as_ref(),
+    )?;
+    // Fused hybrid when the seed has a stored vector: tag-overlap ranks and
+    // cosine-to-seed ranks fuse by reciprocal rank fusion, like `query`.
+    // No stored vector (unembedded card, absent store): tags only, with a
+    // note on the human view.
+    let (seed_store, seed_row, seed_vec) = match seed_vector(paths, &seed.name) {
+        Some(tuple) => tuple,
+        None => {
+            let mut hits = tag_hits;
+            hits.truncate(limit as usize);
+            return finish_similar(conn, out, &seed.name, hits, false, json);
+        }
+    };
+    let vector_hits = vector_leg(
+        &seed_store,
+        seed_row,
+        &seed_vec,
+        (limit as usize).saturating_mul(2).max(30),
+        restrict.as_ref(),
+    );
+    let tag_list: Vec<(String, f64)> = tag_hits
+        .iter()
+        .map(|h| (h.card.name.clone(), h.shared_count as f64))
+        .collect();
+    // EDHREC rank breaks fusion ties; the map covers both legs' names.
+    let mut ranks: std::collections::HashMap<&str, i64> = std::collections::HashMap::new();
+    for hit in &tag_hits {
+        if let Some(rank) = hit.card.edhrec_rank {
+            ranks.insert(hit.card.name.as_str(), rank);
+        }
+    }
+    let mut vector_names: Vec<&str> = vector_hits.iter().map(|(n, _)| n.as_str()).collect();
+    vector_names.sort_unstable();
+    vector_names.dedup();
+    let vector_rows: Vec<crate::db::CardRow> = vector_names
+        .iter()
+        .filter_map(|name| crate::db::get_card(conn, name).ok().flatten())
+        .collect();
+    for card in &vector_rows {
+        if let Some(rank) = card.edhrec_rank {
+            ranks.entry(card.name.as_str()).or_insert(rank);
+        }
+    }
+    let fused = crate::query::fuse_rrf(&tag_list, &vector_hits, limit as usize, |name| {
+        ranks.get(name).copied()
+    });
+    // Re-attach cards + tags to the fused ranking. Vector-only names
+    // (no shared tags) carry `shared_count: 0` / empty tags so the fused
+    // window never shrinks below `--limit`.
+    let mut hits: Vec<SimilarHit> = fused
+        .into_iter()
+        .filter_map(|(name, score)| {
+            if let Some(hit) = tag_hits.iter().find(|h| h.card.name == name) {
+                let mut hit = hit.clone();
+                hit.score = Some(score);
+                return Some(hit);
+            }
+            let card = vector_rows.iter().find(|c| c.name == name)?.clone();
+            Some(SimilarHit {
+                card,
+                shared_count: 0,
+                shared_tags: Vec::new(),
+                score: Some(score),
+            })
+        })
+        .collect();
+    hits.truncate(limit as usize);
+    finish_similar(conn, out, &seed.name, hits, true, json)
+}
+
+/// Print or emit the final similar list. `hybrid` says whether the vector
+/// leg ran (drives the header note and the empty-set hint).
+fn finish_similar(
+    conn: &mut rusqlite::Connection,
+    out: &mut crate::output::Output,
+    seed_name: &str,
+    hits: Vec<SimilarHit>,
+    hybrid: bool,
+    json: bool,
+) -> anyhow::Result<i32> {
     if hits.is_empty() {
-        out.error(&format!("no cards share tags with {}", seed.name));
-        out.hint("the card may be untagged, or the filters emptied the result set");
+        if json {
+            println!("[]");
+        } else {
+            out.error(&format!("no cards share tags with {seed_name}"));
+            out.hint("the card may be untagged, or the filters emptied the result set");
+        }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     if json {
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let names: Vec<String> = hits.iter().map(|hit| hit.card.name.clone()).collect();
-        let ranges = names
-            .iter()
-            .map(|n| crate::prints::price_range(conn, n).unwrap_or_default())
-            .collect::<Vec<_>>();
+        // One batched query per finish kind instead of four per card name.
+        let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
         let items: Vec<serde_json::Value> = hits
             .iter()
-            .zip(&ranges)
-            .map(|(hit, range)| {
+            .filter_map(|hit| {
+                let range = ranges.get(&hit.card.name)?;
                 let mut v = card_json(&hit.card, &tag_index, range);
+                // Null score when the seed had no stored vector (tags-only
+                // ranking); agents can tell "no score" from "unranked".
+                v["score"] = match hit.score {
+                    Some(score) => {
+                        serde_json::json!((f64::from(score) * 10_000.0).round() / 10_000.0)
+                    }
+                    None => serde_json::Value::Null,
+                };
                 v["shared_count"] = serde_json::json!(hit.shared_count);
                 v["shared_tags"] = serde_json::json!(hit.shared_tags);
-                v
+                Some(v)
             })
             .collect();
         println!("{}", serde_json::to_string_pretty(&items)?);
     } else {
-        let styles = out.styles();
-        println!(
-            "{} {}",
-            styles.dim("Similar to"),
-            styles.card_name(&seed.name)
-        );
-        for (i, hit) in hits.iter().enumerate() {
-            println!(
-                "{:>2}. {} {} {} {} {}",
-                i + 1,
-                styles.card_name(&hit.card.name),
-                styles.mana_pips(&hit.card.mana_cost),
-                styles.dim(&hit.card.type_line),
-                styles.dim(&format!(
-                    "({} common tag{})",
-                    hit.shared_count,
-                    if hit.shared_count == 1 { "" } else { "s" }
-                )),
-                styles.dim(&format!(
-                    "e.g. {}",
-                    hit.shared_tags
-                        .iter()
-                        .take(3)
-                        .cloned()
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                )),
-            );
-        }
+        print_similar_text(out, seed_name, &hits, hybrid);
     }
     Ok(crate::cli::codes::OK)
 }
+
+/// Human table for `card similar`: rank, name, cost, type, score, shared
+/// tags. Owned/price context joins via `--owned` runs.
+fn print_similar_text(
+    out: &crate::output::Output,
+    seed_name: &str,
+    hits: &[SimilarHit],
+    hybrid: bool,
+) {
+    let styles = out.styles();
+    let why = if hybrid {
+        "tag overlap + meaning"
+    } else {
+        "tag overlap"
+    };
+    println!(
+        "{} {} {}",
+        styles.header("Similar to"),
+        styles.card_name(seed_name),
+        styles.dim(&format!("({why})"))
+    );
+    for (i, hit) in hits.iter().enumerate() {
+        let score_note = match hit.score {
+            Some(score) => format!("({:.3})", score),
+            None => format!(
+                "({} common tag{})",
+                hit.shared_count,
+                if hit.shared_count == 1 { "" } else { "s" }
+            ),
+        };
+        let tags = if hit.shared_tags.is_empty() {
+            String::new()
+        } else {
+            format!(
+                " shares: {}",
+                hit.shared_tags
+                    .iter()
+                    .take(3)
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        };
+        println!(
+            "{:>2}. {} {} {} {}{}",
+            i + 1,
+            styles.card_name(&hit.card.name),
+            styles.mana_pips(&hit.card.mana_cost),
+            styles.dim(&hit.card.type_line),
+            styles.dim(&score_note),
+            styles.dim(&tags),
+        );
+    }
+}
+
+/// One Spellbook combo variant the card takes part in, pieces joined.
+pub struct CardCombo {
+    pub variant: crate::spellbook::ComboVariant,
+    pub pieces: Vec<crate::spellbook::ComboPieceRow>,
+    /// True when any piece must be the commander.
+    pub requires_commander: bool,
+}
+
+/// Entry point for `stm card combos <name>`.
+///
+/// Exits 3 when the card is unknown or takes part in no combo (after
+/// `--format` filtering). The list is sorted by Spellbook popularity, best
+/// first.
+#[allow(clippy::too_many_arguments)]
+pub fn run_combos(
+    paths: &crate::paths::Paths,
+    conn: &mut rusqlite::Connection,
+    out: &mut crate::output::Output,
+    typed: &str,
+    format: Option<&str>,
+    limit: u32,
+    json: bool,
+) -> anyhow::Result<i32> {
+    if !paths.is_setup() {
+        out.error("card index not built yet");
+        out.hint("run 'stm setup' first");
+        return Ok(crate::cli::codes::ERROR);
+    }
+    let seed = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
+        crate::db::NameMatch::Found(card) => card,
+        crate::db::NameMatch::Ambiguous(candidates) => {
+            out.error(&format!(
+                "{typed:?} matches {} cards; be more specific",
+                candidates.len()
+            ));
+            out.hint(&format!("did you mean: {}", candidates.join(", ")));
+            return Ok(crate::cli::codes::NO_RESULTS);
+        }
+        crate::db::NameMatch::NotFound => {
+            out.error(&format!("no card named {typed:?}"));
+            out.hint("names resolve by exact match, case, or unique prefix");
+            return Ok(crate::cli::codes::NO_RESULTS);
+        }
+    };
+    let mut names = std::collections::HashSet::new();
+    names.insert(seed.name.clone());
+    let variants = crate::combos::load_variants_for(conn, &names)?;
+    let combos = match format {
+        Some(format) => crate::combos::filter_for_format(variants, format),
+        None => variants,
+    };
+    if combos.is_empty() {
+        if json {
+            println!("[]");
+        } else {
+            match format {
+                Some(format) => {
+                    out.error(&format!(
+                        "no combos with {} are legal in {format}",
+                        seed.name
+                    ));
+                    out.hint("drop --format to see every combo the card appears in");
+                }
+                None => {
+                    out.error(&format!("no combos include {}", seed.name));
+                    out.hint("run 'stm sync' online first; the combo list needs a sync");
+                }
+            }
+        }
+        return Ok(crate::cli::codes::NO_RESULTS);
+    }
+    let mut sorted = combos;
+    sorted.sort_by(|a, b| {
+        b.0.popularity
+            .unwrap_or(0)
+            .cmp(&a.0.popularity.unwrap_or(0))
+            .then_with(|| a.0.id.cmp(&b.0.id))
+    });
+    sorted.truncate(limit as usize);
+    let rows: Vec<CardCombo> = sorted
+        .into_iter()
+        .map(|(variant, pieces)| CardCombo {
+            requires_commander: crate::combos::requires_commander(&pieces),
+            variant,
+            pieces,
+        })
+        .collect();
+    if json {
+        print_combos_json(&rows)?;
+    } else {
+        print_combos_text(out, &seed.name, &rows);
+    }
+    Ok(crate::cli::codes::OK)
+}
+
+/// JSON rows for `card combos`: one object per variant.
+fn print_combos_json(rows: &[CardCombo]) -> anyhow::Result<()> {
+    let items: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|combo| {
+            serde_json::json!({
+                "id": combo.variant.id,
+                "produces": combo.variant.produces,
+                "mana_value_needed": combo.variant.mana_value_needed,
+                "bracket_tag": combo.variant.bracket_tag,
+                "popularity": combo.variant.popularity,
+                "legalities": combo.variant.legalities,
+                "requires_commander": combo.requires_commander,
+                "pieces": combo.pieces.iter().map(|p| serde_json::json!({
+                    "name": p.name,
+                    "zones": p.zones,
+                    "must_be_commander": p.must_be_commander,
+                })).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+    println!("{}", serde_json::to_string_pretty(&items)?);
+    Ok(())
+}
+
+/// Human table for `card combos`, popularity first.
+fn print_combos_text(out: &crate::output::Output, seed_name: &str, rows: &[CardCombo]) {
+    let styles = out.styles();
+    println!(
+        "{} {}",
+        styles.header("Combos with"),
+        styles.card_name(seed_name)
+    );
+    for (i, combo) in rows.iter().enumerate() {
+        let mut names: Vec<String> = combo.pieces.iter().map(|p| p.name.clone()).collect();
+        names.sort();
+        names.dedup();
+        let pieces = names.join(" + ");
+        let cmdr = if combo.requires_commander {
+            " (commander)"
+        } else {
+            ""
+        };
+        let produces = combo.variant.produces.first().cloned().unwrap_or_default();
+        let bracket = combo
+            .variant
+            .bracket_tag
+            .as_deref()
+            .map(|t| format!(" [{t}]"))
+            .unwrap_or_default();
+        let pop = match combo.variant.popularity {
+            Some(n) => format!(" pop {}", styles.thousands(n)),
+            None => String::new(),
+        };
+        let legal: Vec<&str> = COMBO_NOTE_FORMATS
+            .iter()
+            .copied()
+            .filter(|f| combo.variant.legalities.get(*f).copied().unwrap_or(false))
+            .collect();
+        let legal_note = if legal.is_empty() {
+            String::new()
+        } else {
+            format!("  legal: {}", legal.join(", "))
+        };
+        println!(
+            "{:>2}. {}{} → {}{}{}{}",
+            i + 1,
+            styles.card_name(&pieces),
+            styles.dim(cmdr),
+            styles.dim(&produces),
+            styles.dim(&bracket),
+            styles.dim(&pop),
+            styles.dim(&legal_note),
+        );
+    }
+}
+
+/// Formats shown in the human `legal:` note, most-played first.
+const COMBO_NOTE_FORMATS: &[&str] = &[
+    "standard",
+    "pioneer",
+    "modern",
+    "legacy",
+    "vintage",
+    "pauper",
+    "commander",
+    "brawl",
+    "oathbreaker",
+    "premodern",
+    "alchemy",
+    "predh",
+];

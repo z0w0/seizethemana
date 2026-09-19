@@ -2,20 +2,51 @@
 // and cost payment split from game.rs to keep files small.
 
 use super::game::{InPlay, Pool, card_of};
-use super::model::{Role, SimDeck};
+use super::model::{Restriction, Role, Scale, SimDeck, TapYield};
 
-pub(super) fn add_yield(y: &super::model::TapYield, pool: &mut Pool) {
-    if y.creature_only {
-        let reachable = y.any || y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0);
-        if reachable {
-            pool.creature_only += 1;
-        } else if y.colorless > 0 {
-            pool.creature_only += y.colorless;
+/// Distinct colors among permanents on the battlefield (printed card
+/// colors). Powers `ColorsPresent` scaling (Faeburrow Elder).
+fn colors_present(deck: &SimDeck, board: &[InPlay]) -> u32 {
+    let mut found = [false; 5];
+    for p in board {
+        for (i, has) in card_of(deck, p).colors.iter().enumerate() {
+            if *has {
+                found[i] = true;
+            }
+        }
+    }
+    found.iter().filter(|c| **c).count() as u32
+}
+
+/// Add one tap's yield to the pool (no turn/board context: best-case
+/// turn, empty board for scaling).
+pub(super) fn add_yield(y: &TapYield, pool: &mut Pool) {
+    add_yield_turns_empty_board(y, pool, u32::MAX);
+}
+
+/// Turn-aware variant with an empty board (no deck context: scaling
+/// resolves to nothing).
+pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u32) {
+    let any_pips = if y.opponent_any {
+        if turn < 2 { 0 } else { y.any_pips }
+    } else {
+        y.any_pips
+    };
+    if let Some(restriction) = y.restriction {
+        let pips =
+            any_pips + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
+        if pips > 0 {
+            match restriction {
+                Restriction::Creature => pool.creature_only += pips,
+                _ => pool.flexible += pips,
+            }
+        } else {
+            pool.colorless += y.colorless;
         }
         return;
     }
     if y.alternatives {
-        let reachable = y.any || y.choice.iter().any(|c| *c);
+        let reachable = any_pips > 0 || y.choice.iter().any(|c| *c);
         if reachable {
             pool.flexible += 1;
         } else if y.colorless > 0 {
@@ -27,13 +58,76 @@ pub(super) fn add_yield(y: &super::model::TapYield, pool: &mut Pool) {
         pool.fixed[i] += u32::from(*p);
     }
     let choice_colors = y.choice.iter().filter(|c| **c).count();
-    if y.any || choice_colors > 1 {
-        pool.flexible += 1;
+    if any_pips > 0 || choice_colors > 1 {
+        pool.flexible += any_pips.max(1);
     } else if choice_colors == 1
         && let Some(i) = y.choice.iter().position(|c| *c)
     {
         pool.fixed[i] += 1;
     }
+    pool.colorless += y.colorless;
+}
+
+/// Turn- and board-aware variant. `opponent` any-color sources (Fellwar
+/// Stone) read as best-case from turn 2 (an opponent has lands by then)
+/// and nothing on turn 1; the sim is best-case everywhere else. Scaling
+/// yields resolve against the battlefield.
+pub(super) fn add_yield_turns(
+    deck: &SimDeck,
+    y: &TapYield,
+    pool: &mut Pool,
+    turn: u32,
+    board: &[InPlay],
+) {
+    let any_pips = if y.opponent_any {
+        if turn < 2 { 0 } else { y.any_pips }
+    } else {
+        y.any_pips
+    };
+    let scale_pips = match y.scaling {
+        Some(Scale::ColorsPresent) => colors_present(deck, board),
+        Some(Scale::PerChargeCounter) => 0, // resolved at activation
+        None => 0,
+    };
+    if let Some(restriction) = y.restriction {
+        // Restricted buckets pay their own cast class; each pip still
+        // picks any color the source could produce. The sim honors only
+        // the creature split in payment; other restrictions land in the
+        // flexible pool (their casts go through the normal pool).
+        let pips = any_pips
+            + scale_pips
+            + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
+        if pips > 0 {
+            match restriction {
+                Restriction::Creature => pool.creature_only += pips,
+                _ => pool.flexible += pips,
+            }
+        } else {
+            pool.colorless += y.colorless;
+        }
+        return;
+    }
+    if y.alternatives {
+        let reachable = any_pips > 0 || y.choice.iter().any(|c| *c);
+        if reachable {
+            pool.flexible += 1;
+        } else if y.colorless > 0 {
+            pool.colorless += 1;
+        }
+        return;
+    }
+    for (i, p) in y.fixed.iter().enumerate() {
+        pool.fixed[i] += u32::from(*p);
+    }
+    let choice_colors = y.choice.iter().filter(|c| **c).count();
+    if any_pips > 0 || choice_colors > 1 {
+        pool.flexible += any_pips.max(1);
+    } else if choice_colors == 1
+        && let Some(i) = y.choice.iter().position(|c| *c)
+    {
+        pool.fixed[i] += 1;
+    }
+    pool.flexible += scale_pips;
     pool.colorless += y.colorless;
 }
 

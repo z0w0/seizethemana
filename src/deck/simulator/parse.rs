@@ -11,7 +11,9 @@
 // beyond the one cheaper cost).
 
 use super::super::stats::{is_dork, is_land, is_rock};
-use super::model::{Ability, Cost, Effect, SimCard, TapYield, Tier, draw_amount};
+use super::model::{
+    Ability, Cost, Effect, Restriction, Scale, SimCard, TapYield, Tier, draw_amount,
+};
 use super::triggers::{mill_amount, parse_triggers};
 use crate::db::CardRow;
 
@@ -78,14 +80,62 @@ pub fn parse_cost_faces(mana_cost: &str) -> Cost {
 pub fn parse_tap_yield(text: &str) -> Option<TapYield> {
     let lower = text.to_ascii_lowercase();
     // Opponent-dependent production ("any color that a land an opponent
-    // controls could produce") yields nothing in a goldfish sim.
-    if lower.contains("opponent") {
-        return None;
-    }
-    let mut yield_ = TapYield::default();
-    if lower.contains("one mana of any color") || lower.contains("mana of any one color") {
-        yield_.any = true;
+    // controls could produce") reads as best-case any-color from turn 2:
+    // the goldfish has no opponents, but a real table does, and the sim
+    // is best-case everywhere else.
+    let opponent = lower.contains("opponent");
+    let mut yield_ = TapYield {
+        opponent_any: opponent,
+        ..TapYield::default()
+    };
+    // Any-color amounts: "one mana of any color" (1), "N mana of any one
+    // color" (N), "N mana in any combination of colors" (N).
+    let number_words: &[(&str, u32)] = &[
+        ("one", 1),
+        ("two", 2),
+        ("three", 3),
+        ("four", 4),
+        ("five", 5),
+    ];
+    if lower.contains("any combination of colors") || lower.contains("mana of any one color") {
+        // The amount precedes "mana": "Add three mana of any one color".
+        let mut amount = 1u32;
+        for (word, n) in number_words {
+            if lower.contains(&format!("add {word} mana"))
+                || lower.contains(&format!(", {word} mana"))
+                || lower.contains(&format!(" {word} mana"))
+            {
+                amount = *n;
+                break;
+            }
+        }
+        yield_.any_pips = amount.max(1);
         yield_.choice = [false; 5];
+        return Some(yield_);
+    }
+    // Conditional any-color: "one mana of any color among X you control"
+    // (Mox Amber, Plaza of Heroes). Parsed as ColorsPresent scaling: the
+    // output grows with the matching permanents on the battlefield.
+    if lower.contains("one mana of any color among") && lower.contains("you control") {
+        yield_.scaling = Some(Scale::ColorsPresent);
+        return Some(yield_);
+    }
+    if lower.contains("one mana of any color") {
+        yield_.any_pips = 1;
+        yield_.choice = [false; 5];
+        return Some(yield_);
+    }
+    // Scaling producers: "for each color among permanents you control".
+    if lower.contains("for each color among permanents you control") {
+        yield_.scaling = Some(Scale::ColorsPresent);
+        return Some(yield_);
+    }
+    // Per-counter producers: "Add one mana of that color for each charge
+    // counter on this" (Astral Cornucopia). One activation = one
+    // any-color pip per counter, resolved at activation.
+    if lower.contains("for each charge counter") && lower.contains("mana") {
+        yield_.scaling = Some(Scale::PerChargeCounter);
+        yield_.any_pips = 1;
         return Some(yield_);
     }
     if lower.contains(" or ") {
@@ -217,6 +267,22 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
         // Relic). The Drill Too Deep shape ("put five charge counters") is
         // a spell, handled by `charge_counters_on_cast`.
         Effect::Counters(1)
+    } else if lower_effect.contains("take an extra turn") {
+        Effect::ExtraTurn
+    } else if lower_effect.contains("scry") {
+        // Activated scry ("{T}: Scry 2"). Awareness credit, not draw.
+        Effect::Scry(super::model::amount_after(&lower_effect, "scry"))
+    } else if lower_effect.contains("surveil") {
+        Effect::Scry(super::model::amount_after(&lower_effect, "surveil"))
+    } else if (lower_effect.contains("target player loses")
+        || lower_effect.contains("each opponent loses")
+        || lower_effect.contains("opponent loses"))
+        && lower_effect.contains("life")
+    {
+        Effect::Drain(super::model::amount_after(&lower_effect, "loses").max(1))
+    } else if lower_effect.contains("remove a charge counter") && lower_effect.contains("add") {
+        // Banked activation (Pentad Prism): one counter buys one pip.
+        parse_tap_yield(effect_part).map_or(Effect::None, Effect::Mana)
     } else {
         return None;
     };
@@ -225,6 +291,9 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
         cost,
         effect,
         taps: cost_part.to_ascii_lowercase().contains("{t}"),
+        uses_counters: cost_part
+            .to_ascii_lowercase()
+            .contains("remove a charge counter"),
         // "Sacrifice a creature" / "sacrifice this creature" in the cost
         // consumes a body (aristocrats outlets).
         sacrifice_bodies: u32::from(
@@ -392,6 +461,63 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     };
     let counters_on_cast = charge_counters_on_cast(&text);
 
+    // One-shot scry/surveil on cast ("Scry 2", "Surveil 1") — awareness
+    // credit, not draw.
+    let scry_on_cast = if !land {
+        row.oracle_text
+            .split(['.', '\n'])
+            .map(str::trim)
+            .find_map(|seg| {
+                let lower = seg.to_ascii_lowercase();
+                if lower.contains("surveil") && !lower.contains("whenever") {
+                    return Some(super::model::amount_after(&lower, "surveil").max(1));
+                }
+                if lower.starts_with("scry ") && !lower.contains("whenever") {
+                    return Some(super::model::amount_after(&lower, "scry"));
+                }
+                None
+            })
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    let surveils = !land && text.contains("surveil");
+
+    // One-shot extra-turn spells ("Take an extra turn after this one").
+    let extra_turns_on_cast = !land && text.contains("take an extra turn");
+
+    // Mill direction: opponent mills name a target player ("target
+    // player mills N", "each opponent mills N").
+    let mills_opponent = text.contains("target player mills")
+        || text.contains("target opponent") && text.contains("mill")
+        || text.contains("each opponent mills");
+
+    // One-shot drain spells ("Deals N damage to target player/opponent",
+    // "each opponent loses N life"). Creature-target burn stays removal.
+    let drain_on_cast = if !land {
+        row.oracle_text
+            .split(['.', '\n'])
+            .map(str::trim)
+            .find_map(|seg| {
+                let lower = seg.to_ascii_lowercase();
+                let player_scope = lower.contains("target player")
+                    || lower.contains("target opponent")
+                    || lower.contains("each opponent");
+                let loses = (lower.contains("loses") && lower.contains("life"))
+                    || lower.contains("deals") && lower.contains("damage to");
+                if player_scope && loses {
+                    let from_loses = super::model::amount_after(&lower, "loses ");
+                    let from_deals = super::model::amount_after(&lower, "deals ");
+                    Some(from_loses.max(from_deals).max(1))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    } else {
+        0
+    };
+
     // Printed power for crew/station math; "*" and unknowns stay None
     // (flat body power). Tokens never carry a row.
     let printed_power = row
@@ -407,12 +533,65 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
 
     // One-shot mill on entering ("mill N" ETB without a trigger segment).
     let mills_on_enter = if !land && parse_triggers(&row.oracle_text).is_empty() {
-        mill_amount(&text)
+        mill_amount(&text).max(super::model::amount_after(&text, "mills "))
     } else {
         0
     };
 
     let role = classify(row, &text, &tap, &mana_on_cast, land, is_station_card);
+
+    // Printed colors for "per color among permanents" scaling.
+    let mut colors = [false; 5];
+    for (i, ch) in super::model::COLORS.iter().enumerate() {
+        colors[i] = row.colors.contains(*ch);
+    }
+
+    // Treasure creation: "create a Treasure token" / "create N Treasure
+    // tokens". Each treasure is a banked flexible pip.
+    let treasures_on_token = text.contains("treasure token");
+
+    // Static mana grants (Enduring Vitality, Chromatic Lantern).
+    let grant = if text.contains("lands you control have \"") {
+        Some(super::model::Grant::Lands)
+    } else if text.contains("creatures you control have \"") {
+        Some(super::model::Grant::Creatures)
+    } else {
+        None
+    };
+
+    // Static creature buff ("creatures you control get +2/+2").
+    let buff = super::parse_keywords::parse_creature_buff(&text);
+
+    // Equipment: equip cost, equipped buff, Skullclamp death-draws.
+    let equipment = if row.type_line.contains("Equipment") {
+        super::parse_keywords::parse_equipment(&text)
+    } else {
+        None
+    };
+
+    // Keywords that read from either the keywords array or the text.
+    let double_strike = row.keywords.contains("Double strike") || text.contains("double strike");
+    let prowess = row.keywords.contains("Prowess") || text.contains("prowess");
+    let landfall = text.contains("landfall");
+    let evasion = row.keywords.contains("Trample")
+        || row.keywords.contains("Flying")
+        || row.keywords.contains("Menace")
+        || text.contains("trample")
+        || text.contains("menace");
+
+    // Instant speed: Instant type or flash.
+    let is_instant_speed = row.type_line.contains("Instant")
+        || row.keywords.contains("Flash")
+        || text.contains("flash");
+
+    // Interaction: removal or counterspell shapes (readiness metric).
+    let is_interaction = row.type_line.contains("Instant") || row.type_line.contains("Sorcery");
+    let is_interaction = is_interaction
+        && (text.contains("destroy target")
+            || text.contains("exile target")
+            || text.contains("counter target")
+            || text.contains("deals 3 damage")
+            || text.contains("deals 4 damage"));
 
     SimCard {
         name: row.name.clone(),
@@ -433,9 +612,25 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         mana_on_cast,
         draws_on_cast,
         mills_on_enter,
+        scry_on_cast,
+        surveils,
+        mills_opponent,
+        extra_turns_on_cast,
+        drain_on_cast,
         printed_power,
         starting_loyalty,
         board_discount,
+        colors,
+        treasures_on_token,
+        grant,
+        buff,
+        equipment,
+        double_strike,
+        prowess,
+        landfall,
+        evasion,
+        is_instant_speed,
+        is_interaction,
     }
 }
 
@@ -458,7 +653,7 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
         || lower_all.contains("this land is every basic land type")))
     {
         return Some(TapYield {
-            any: true,
+            any_pips: 1,
             ..TapYield::default()
         });
     }
@@ -490,10 +685,22 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
         }
         let lower = seg.to_ascii_lowercase();
         if !lower.starts_with("{t}") && !lower.contains(": add") {
-            continue;
+            // Scaling adds read as bare sentences after a "{T}: Choose a
+            // color" segment (Astral Cornucopia); accept an "add"-leading
+            // continuation only when the previous segment carried the tap.
+            let continuation = lower.starts_with("add ")
+                && si > 0
+                && segments[si - 1].to_ascii_lowercase().starts_with("{t}");
+            if !continuation {
+                continue;
+            }
         }
-        let Some((_, body)) = seg.split_once(':') else {
-            continue;
+        let body = match seg.split_once(':') {
+            Some((_, body)) => body,
+            // A bare "Add …" continuation sentence has no colon; its whole
+            // text is the yield.
+            None if lower.starts_with("add ") => seg,
+            None => continue,
         };
         if let Some(y) = parse_tap_yield(body) {
             // A gated mode ("Activate only if you control …" in the
@@ -504,17 +711,18 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
                     tier_lines.contains(&(si + 1))
                         || next.to_ascii_lowercase().contains("activate only if")
                 });
-            // Spend restriction: "spend this mana only to cast … creature
-            // spells" (Secluded Courtyard, Unclaimed Territory). The clause
-            // follows the add segment as its own sentence.
+            // Spend restriction: "spend this mana only to cast …" (creature
+            // spells: Secluded Courtyard; a legendary spell: Plaza of
+            // Heroes; artifact spells: Steelswarm Operator; instant and
+            // sorcery spells: Hydro-Channeler). The clause follows the add
+            // segment as its own sentence.
             let restriction_window: String = segments[si..]
                 .iter()
                 .take(3)
                 .map(|s| s.to_ascii_lowercase())
                 .collect::<Vec<_>>()
                 .join(" ");
-            let creature_only = restriction_window.contains("only to cast")
-                && restriction_window.contains("creature");
+            let restriction = spend_restriction(&restriction_window);
             let y = if gated {
                 let mut choice_only = y.clone();
                 choice_only.choice = y.fixed.map(|p| p > 0);
@@ -524,7 +732,7 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
                 y
             };
             let mut y = y;
-            y.creature_only = creature_only;
+            y.restriction = restriction;
             merged = Some(match merged.take() {
                 None => y,
                 Some(prev) => {
@@ -534,10 +742,11 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
                     // colorless mode produces nothing of value).
                     let mut m = TapYield {
                         alternatives: true,
-                        creature_only: prev.creature_only || y.creature_only,
+                        restriction: prev.restriction.or(y.restriction),
+                        opponent_any: prev.opponent_any || y.opponent_any,
                         ..TapYield::default()
                     };
-                    m.any = prev.any || y.any;
+                    m.any_pips = (prev.any_pips + y.any_pips).max(1);
                     for i in 0..5 {
                         m.choice[i] =
                             prev.choice[i] || y.choice[i] || prev.fixed[i] > 0 || y.fixed[i] > 0;
@@ -549,6 +758,25 @@ fn parse_tap(row: &CardRow) -> Option<TapYield> {
         }
     }
     merged
+}
+
+/// Spend restriction from a "spend this mana only to cast …" window:
+/// creature, legendary, artifact, or instant-and-sorcery spells.
+fn spend_restriction(window: &str) -> Option<Restriction> {
+    if !window.contains("only to cast") {
+        return None;
+    }
+    if window.contains("creature") {
+        Some(Restriction::Creature)
+    } else if window.contains("legendary") {
+        Some(Restriction::Legendary)
+    } else if window.contains("artifact") {
+        Some(Restriction::Artifact)
+    } else if window.contains("instant and sorcery") || window.contains("instant or sorcery") {
+        Some(Restriction::InstantSorcery)
+    } else {
+        None
+    }
 }
 
 /// Gate colors of a verge-style land: the types listed after the second
@@ -612,6 +840,10 @@ fn enters_tapped(text: &str) -> bool {
 /// counters on it" → 3). The search stays inside the same sentence so a
 /// later "{2}, {T}" activation does not leak a number.
 fn parse_enter_counters(text: &str) -> u32 {
+    // Sunburst (best case): two colors paid on-curve → 2 counters.
+    if text.contains("sunburst") {
+        return 2;
+    }
     if !text.contains("enters with") {
         return 0;
     }

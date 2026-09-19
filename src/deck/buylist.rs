@@ -99,17 +99,33 @@ pub(super) fn missing_rows(
             .or_insert(entry.foil);
     }
     let mut rows = Vec::new();
-    for (name, qty) in needed {
-        let owned = available.get(&name).copied().unwrap_or(0);
+    let missing_names: Vec<String> = needed
+        .iter()
+        .filter(|(name, qty)| {
+            let owned = available.get(*name).copied().unwrap_or(0);
+            **qty - owned > 0
+        })
+        .map(|(name, _)| name.clone())
+        .collect();
+    // One batched query per finish kind instead of four per card name.
+    let ranges = crate::prints::price_ranges(conn, &missing_names)?;
+    for (name, qty) in &needed {
+        let owned = available.get(name).copied().unwrap_or(0);
         let missing = qty - owned;
         if missing <= 0 {
             continue;
         }
-        let range = crate::prints::price_range(conn, &name)?;
-        let print = if wants_foil[&name] {
-            range.cheapest_foil.or(range.cheapest)
+        let range = match ranges.get(name) {
+            Some(range) => range,
+            None => continue,
+        };
+        let print = if wants_foil[name] {
+            range
+                .cheapest_foil
+                .clone()
+                .or_else(|| range.cheapest.clone())
         } else {
-            range.cheapest
+            range.cheapest.clone()
         };
         let Some(print) = print else {
             // No released English printing priced in the snapshot; skip with
@@ -122,9 +138,9 @@ pub(super) fn missing_rows(
             set_name: Some(print.set_name).filter(|s| !s.is_empty()),
             collector_number: print.collector_number,
             scryfall_id: print.scryfall_id,
-            foil: wants_foil[&name],
+            foil: wants_foil[name],
             quantity: missing,
-            price_usd: if wants_foil[&name] {
+            price_usd: if wants_foil[name] {
                 print.usd_foil.or(print.usd)
             } else {
                 print.usd
@@ -225,9 +241,9 @@ pub fn buylist(
         out.status(
             "Total",
             &format!(
-                "{} missing copies, est. market ${:.2}",
+                "{} missing copies, est. market {}",
                 rows.iter().map(|r| r.quantity).sum::<i64>(),
-                total
+                out.styles().money(total)
             ),
         );
     }

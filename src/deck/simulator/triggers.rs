@@ -133,9 +133,47 @@ fn upkeep_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         out.push(Ability {
             trigger: super::model::Trigger::OnUpkeep,
             effect: Effect::ManaPerCounter(TapYield {
-                any: true,
+                any_pips: 1,
                 ..TapYield::default()
             }),
+            ..Ability::default()
+        });
+        return true;
+    }
+    // Win thresholds: "if there are 100 or more tower counters on
+    // Helix Pinnacle, you win". Anchor on the "N or more … counters"
+    // clause directly so the amount is the number before "or more".
+    if lower.contains("or more")
+        && lower.contains("counter")
+        && (lower.contains("you win") || lower.contains("wins the game"))
+    {
+        let counters = {
+            let rel = lower.find(" or more").unwrap_or(0);
+            let digits: String = lower[..rel]
+                .chars()
+                .rev()
+                .take_while(|c| c.is_ascii_digit())
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect();
+            digits.parse::<u32>().unwrap_or(u32::MAX).max(1)
+        };
+        out.push(Ability {
+            trigger: super::model::Trigger::OnUpkeep,
+            effect: Effect::WinThreshold { counters },
+            ..Ability::default()
+        });
+        return true;
+    }
+    // Upkeep drain engines ("At the beginning of each opponent's
+    // upkeep, that player loses N life" is opponent-scoped and stays
+    // inert; "each opponent loses N" at YOUR upkeep drains).
+    if lower.starts_with("at the beginning of your upkeep") && lower.contains("each opponent loses")
+    {
+        out.push(Ability {
+            trigger: super::model::Trigger::OnUpkeep,
+            effect: Effect::Drain(super::model::amount_after(lower, "loses").max(1)),
             ..Ability::default()
         });
         return true;
@@ -169,6 +207,41 @@ fn attack_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         return true;
     }
     false
+}
+
+/// Combat-damage triggers: "Whenever [Cardname] deals combat damage to a
+/// player …". Best case: every attacker connects. Draws, proliferate
+/// (+1 counter on the source), and drain map here.
+fn combat_damage_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
+    let combat = (lower.starts_with("whenever ") || lower.starts_with("when "))
+        && (lower.contains("deals combat damage to a player")
+            || lower.contains("deals combat damage to an opponent"));
+    if !combat {
+        return false;
+    }
+    if lower.contains("draw") {
+        out.push(Ability {
+            trigger: super::model::Trigger::OnCombatDamage,
+            effect: Effect::Draw(draw_amount(lower).max(1)),
+            ..Ability::default()
+        });
+    } else if lower.contains("proliferate") {
+        out.push(Ability {
+            trigger: super::model::Trigger::OnCombatDamage,
+            effect: Effect::Counters(1),
+            ..Ability::default()
+        });
+    } else if lower.contains("player loses")
+        || lower.contains("opponent loses")
+        || lower.contains("loses")
+    {
+        out.push(Ability {
+            trigger: super::model::Trigger::OnCombatDamage,
+            effect: Effect::Drain(super::model::amount_after(lower, "loses").max(1)),
+            ..Ability::default()
+        });
+    }
+    true
 }
 
 /// Death triggers: "When this creature dies …" draws, tokens, returns,
@@ -277,11 +350,14 @@ fn activated_trigger(seg: &str, lower: &str, out: &mut Vec<Ability>) -> bool {
     // Activated abilities on plain cards ("{T}: Draw a card",
     // "{1}, {T}: …", "−3: …", "{2}, Sacrifice a creature: …"). The
     // station-tier path handles tiered activations; this covers the
-    // rest. Loyalty activations start with a minus sign.
+    // rest. Loyalty activations start with a minus sign. Banked
+    // activations ("Remove a charge counter …: Add …") start with a
+    // remove clause and consume a counter per fire.
     if (seg.starts_with('{')
         || lower.starts_with("tap:")
         || lower.starts_with('−')
-        || lower.starts_with('-'))
+        || lower.starts_with('-')
+        || lower.starts_with("remove a charge counter"))
         && let Some(ab) = parse_ability(seg.trim())
     {
         out.push(ab);
@@ -300,6 +376,8 @@ pub(super) fn etb_shape(lower: &str) -> bool {
 fn trigger_for(lower: &str) -> super::model::Trigger {
     if lower.starts_with("whenever ") && lower.contains("attack") {
         super::model::Trigger::OnAttack
+    } else if lower.contains("deals combat damage") {
+        super::model::Trigger::OnCombatDamage
     } else if lower.starts_with("at the beginning of your upkeep")
         || lower.starts_with("at the beginning of your end step")
     {
@@ -334,6 +412,7 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
             && !next.contains("station")
             && !next.contains('|')
             && !next.starts_with('{')
+            && !next.starts_with("remove a charge counter")
         {
             i += 1;
             seg.push(' ');
@@ -347,6 +426,7 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
         if etb_trigger(&lower, &mut out)
             || upkeep_trigger(&lower, &mut out)
             || attack_trigger(&lower, &mut out)
+            || combat_damage_trigger(&lower, &mut out)
             || death_trigger(&lower, &mut out)
             || cast_trigger(&lower, &mut out)
             || wheel_trigger(&lower, &mut out)

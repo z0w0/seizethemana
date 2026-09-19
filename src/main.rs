@@ -1,26 +1,14 @@
-mod card;
-mod cli;
-mod collection;
-mod db;
-mod deck;
-mod embed;
-mod output;
-mod paths;
-mod prints;
-mod query;
-mod release;
-mod scryfall;
-mod search;
-mod setup;
-mod spellbook;
-mod sync;
-mod tags;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use clap::Parser;
-use cli::{Cli, CollectionCommand, Command, DeckCommand, codes};
-use output::Output;
 use rusqlite::Connection;
-use std::sync::atomic::{AtomicBool, Ordering};
+use seizethemana::{
+    card,
+    cli::{self, Cli, CollectionCommand, Command, DeckCommand, codes},
+    collection, db, deck,
+    output::Output,
+    paths, query, setup, sync,
+};
 
 /// Set when the user passed `--offline` anywhere; the revalidator reads it.
 static OFFLINE: AtomicBool = AtomicBool::new(false);
@@ -30,7 +18,7 @@ pub(crate) fn offline_requested() -> bool {
 }
 
 fn main() {
-    let cli = Cli::parse();
+    let cli = cli::Cli::parse();
     OFFLINE.store(cli.offline, Ordering::Relaxed);
     let mut out = Output::new(false, cli.no_color, cli.verbose);
     let code = run(&cli, &mut out);
@@ -95,6 +83,26 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
                         revalidate(out);
                     }
                     card::run_similar(&paths, &mut conn, out, name, *limit, *owned, *json)
+                }
+                Some(cli::CardCommand::Combos {
+                    name,
+                    format,
+                    limit,
+                    json,
+                    offline,
+                }) => {
+                    if !*offline {
+                        revalidate(out);
+                    }
+                    card::run_combos(
+                        &paths,
+                        &mut conn,
+                        out,
+                        name,
+                        format.as_deref(),
+                        *limit,
+                        *json,
+                    )
                 }
                 None => {
                     let Some(name) = name.as_deref() else {
@@ -187,8 +195,21 @@ fn run_deck(
             add,
             remove,
             set,
+            r#move,
             from,
-        }) => deck::update(paths, conn, out, name, add, remove, set, from.as_deref()),
+            allow_partial,
+        }) => deck::update(
+            paths,
+            conn,
+            out,
+            name,
+            add,
+            remove,
+            set,
+            r#move,
+            from.as_deref(),
+            *allow_partial,
+        ),
         Some(DeckCommand::Dedupe { name, json }) => deck::update::dedupe(paths, out, name, *json),
         Some(DeckCommand::Suggest {
             name,
@@ -196,6 +217,7 @@ fn run_deck(
             query,
             role,
             commander,
+            format,
             bracket,
             limit,
             json,
@@ -211,6 +233,7 @@ fn run_deck(
                 effective_query.as_deref(),
                 role.as_deref(),
                 *commander,
+                format.as_deref(),
                 *bracket,
                 *limit,
                 *json,

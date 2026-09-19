@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS cards (
     collector_number TEXT NOT NULL DEFAULT '',
     scryfall_id      TEXT NOT NULL DEFAULT '',
     released_at      TEXT NOT NULL DEFAULT '',
-    game_changer     INTEGER
+    game_changer     INTEGER,
+    tags_text        TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_cards_type     ON cards(type_line);
@@ -27,6 +28,8 @@ CREATE INDEX IF NOT EXISTS idx_cards_type     ON cards(type_line);
 CREATE INDEX IF NOT EXISTS idx_cards_colors   ON cards(colors);
 
 CREATE INDEX IF NOT EXISTS idx_cards_rarity   ON cards(rarity);
+
+CREATE INDEX IF NOT EXISTS idx_cards_oracle   ON cards(oracle_id);
 
 
 
@@ -93,6 +96,9 @@ CREATE TABLE IF NOT EXISTS card_tags (
 
 CREATE INDEX IF NOT EXISTS idx_card_tags_oracle ON card_tags(oracle_id);
 
+-- Reverse lookup: which cards carry one tag (`tag_hits_by_oracle`).
+CREATE INDEX IF NOT EXISTS idx_card_tags_tag ON card_tags(tag_id);
+
 
 
 CREATE TABLE IF NOT EXISTS collection (
@@ -139,32 +145,36 @@ CREATE TABLE IF NOT EXISTS combo_pieces (
     PRIMARY KEY (combo_id, name, ordinal)
 );
 
+-- Candidate lookup for `combos::load_variants_for`: which combos contain
+-- one of N card names.
+CREATE INDEX IF NOT EXISTS idx_combo_pieces_name ON combo_pieces(name);
+
 
 
 CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
-    name, type_line, oracle_text,
+    name, tags_text, type_line, oracle_text,
     content='cards', content_rowid='id',
     tokenize='porter unicode61'
 );
 
 CREATE TRIGGER IF NOT EXISTS cards_fts_ai AFTER INSERT ON cards BEGIN
-    INSERT INTO cards_fts(rowid, name, type_line, oracle_text)
-    VALUES (new.id, new.name, new.type_line, new.oracle_text);
+    INSERT INTO cards_fts(rowid, name, tags_text, type_line, oracle_text)
+    VALUES (new.id, new.name, new.tags_text, new.type_line, new.oracle_text);
 
 END;
 
 CREATE TRIGGER IF NOT EXISTS cards_fts_ad AFTER DELETE ON cards BEGIN
-    INSERT INTO cards_fts(cards_fts, rowid, name, type_line, oracle_text)
-    VALUES ('delete', old.id, old.name, old.type_line, old.oracle_text);
+    INSERT INTO cards_fts(cards_fts, rowid, name, tags_text, type_line, oracle_text)
+    VALUES ('delete', old.id, old.name, old.tags_text, old.type_line, old.oracle_text);
 
 END;
 
 CREATE TRIGGER IF NOT EXISTS cards_fts_au AFTER UPDATE ON cards BEGIN
-    INSERT INTO cards_fts(cards_fts, rowid, name, type_line, oracle_text)
-    VALUES ('delete', old.id, old.name, old.type_line, old.oracle_text);
+    INSERT INTO cards_fts(cards_fts, rowid, name, tags_text, type_line, oracle_text)
+    VALUES ('delete', old.id, old.name, old.tags_text, old.type_line, old.oracle_text);
 
-    INSERT INTO cards_fts(rowid, name, type_line, oracle_text)
-    VALUES (new.id, new.name, new.type_line, new.oracle_text);
+    INSERT INTO cards_fts(rowid, name, tags_text, type_line, oracle_text)
+    VALUES (new.id, new.name, new.tags_text, new.type_line, new.oracle_text);
 
 END;
 

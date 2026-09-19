@@ -72,6 +72,7 @@ stm setup [--force]                               # card data + prices + tags; -
 stm sync [--force]                                # card data + prices + tags, in-bulk
 stm card <name> [--json]                          # `stm card show <name>` sugar
 stm card similar <name> [--limit N] [--owned] [--json]
+stm card combos <name> [--format FMT] [--limit N] [--json]
 stm query <QUERY> [filters] [--limit N] [--json]
 
 stm collection [--json]                           # stats/overview
@@ -83,7 +84,7 @@ stm deck list [--json]                            # decklists + unimported colle
 stm deck show <name> [--json]                     # `stm deck <name>` sugar
 stm deck update <name> [--add SPEC]... [--remove SPEC]... [--set SPEC]... [--from FILE]
 stm deck dedupe <name> [--json]                   # merge duplicate same-name lines
-stm deck suggest <name> [--query TEXT] [--role ROLE] [--commander] [--limit N] [--json]
+stm deck suggest <name> [--query TEXT] [--role ROLE] [--commander] [--format FMT] [--limit N] [--json]
 stm deck legal <name> [--format FMT] [--bracket 1-5] [--json]
 stm deck simulate <name> [--runs N] [--turns N] [--seed S] [--format FMT] [--baseline FILE] [--json]
 stm deck import <name> <file>                     # upsert the decklist from ManaBox deck txt
@@ -102,9 +103,15 @@ Conventions:
   --set --keyword --oracle-text --format`); numeric filters take comparison
   operators (`<=`, `<`, `=`, `>`, `>=`).
 - `--limit` defaults to 20, capped at 100.
-- `query` and `collection query` are hybrid: SQLite full-text (BM25) and
-  vector (semantic) legs, fused by reciprocal rank fusion. The printed and
-  JSON `score` is the fused score normalized to 0–1, not raw cosine.
+- `query` and `collection query` are hybrid: SQLite full-text (BM25)
+  and vector (semantic) legs, fused by reciprocal rank fusion. The
+  printed and JSON `score` is the fused score normalized to 0–1, not raw
+  cosine. Player shorthand expands before retrieval: trigger phrases
+  ("mana ramp", "board wipe", "sacrifice outlet", ~150 entries) append
+  Tagger tag vocabulary + oracle keywords to both legs, capped so one
+  broad trigger cannot flood the BM25 leg. The full-text index covers
+  name, Tagger tag labels, type line, and oracle text; BM25 ties break
+  toward lower EDHREC rank.
 - `--json` works on every read command. `--data-dir/--no-color/
   --offline/--verbose` are global.
 - When card data or prices are more than 24h old, the command quietly
@@ -125,10 +132,21 @@ Conventions:
   card past one copy in a commander-shaped deck; `stm deck dedupe` merges
   accidental duplicates. `--from FILE` reads batch specs, one op per line.
 - `stm deck suggest` fills roles or finds theme cards: semantic search +
-  Scryfall Tagger labels + role keyword scan, filtered to the commander's
-  color identity, ranked by EDHREC playability, annotated with ownership,
-  price, and Game Changer flags. `--commander` swaps the pool to
+  Scryfall Tagger labels + role keyword scan, fused by reciprocal rank
+  fusion (EDHREC breaks ties), grouped owned cards first with each group
+  in fit order, annotated with ownership (copy count), price, and Game
+  Changer flags. `--role` accepts ~41 structured roles (draw, ramp,
+  board-wipe, sacrifice, voltron, spellslinger, typal, group-hug, ...).
+  `--format <fmt>` pins the legality filter; commander-shaped decks default
+  to the commander's color identity and commander legality, other decks
+  accept any format. `--commander` swaps the pool to
   commander-legal legendaries ranked by theme fit. Exit 3 on no matches.
+- `stm card combos <name>` lists Commander Spellbook combos with the card,
+  sorted by popularity. `--format <fmt>` keeps combos legal in that format;
+  commander-only combos (a piece must be the commander) are excluded
+  automatically for 60-card formats. Human view: `A + B (commander) →
+  produces [bracket] pop N legal: …`. Exit 3 when the card appears in no
+  combo.
 - `stm deck simulate` runs Monte Carlo goldfish games (default 10,000 —
   ±0.5pp on percentages) and prints an overview block of aggregates, the
   worst-3 slow-to-cast cards, and `error:` problem lines with a category +
@@ -140,15 +158,35 @@ Conventions:
   `--json` is the full detail:
   opening-hand distribution, land-drop curve + percentiles, commander
   timing (with the full pip check for multicolor commanders), station
-  online metrics, bodies and engines per turn, unspent mana, velocity,
-  role access, per-card castability, a static `color_sources` census of
-  land tap yields per color, and the problems array. Model limits
-  ship in the JSON `assumptions` array.
-- `stm card similar` ranks cards by shared Tagger oracle tags. Ties break
-  toward lower EDHREC rank then name; `--owned` limits to the collection.
-- `stm card <name> --json` includes `tags` (alphabetical Tagger labels) and
-  `game_changer`. `stm card similar <name> --json` adds `shared_count` and
-  `shared_tags` per hit.
+  online metrics, bodies and engines per turn, unspent mana, velocity +
+  library awareness + mill census (self and opponent direction) +
+  library remaining, combat block (attack power per turn and p90,
+  attackers, evasion census), wincons block (drain per turn, extra-turn
+  share, win-threshold engines, planeswalker ultimate online), the
+  interaction block (readiness by turn, mana held, instant-speed copy
+  count; explicitly "capacity, not events"), role access, per-card
+  castability, a static `color_sources` census of land tap yields per
+  color, `combo_access` + store-backed `combos`, a `win_paths` section
+  (complete combos whose Spellbook `produces` labels contain a win
+  feature — "Win the game", "Infinite damage", "Infinite turns", …),
+  and the problems array. Model limits ship in the JSON `assumptions`
+  array.
+  Human output adds lines for interaction readiness, attack power,
+  drain, extra turns, and threshold/ultimate online when non-zero, and
+  a "Win paths" block when a store-backed win path assembles.
+- `stm card similar` ranks cards by reciprocal-rank fusion of shared
+  Tagger oracle tags and stored-vector cosine to the seed (tags-only with
+  a note when the seed has no stored vector; `score` is `null` then).
+  Ties break toward lower EDHREC rank then name; `--owned` limits to the
+  collection. `--json` emits the full card object per hit (as
+  `card <name> --json`) plus `score`, `shared_count`, and `shared_tags`.
+- `stm card <name> --json` includes `oracle_id`, `tags` (alphabetical
+  Tagger labels) and `game_changer`. `query --json` emits the same full
+  card object plus `score`; empty results print `[]` (exit 3 still
+  signals no results). `stm card similar <name> --json` adds `shared_count` and
+  `shared_tags` per hit. `stm card combos <name> --json` adds `produces`,
+  `bracket_tag`, `popularity`, `legalities`, `requires_commander`, and
+  `pieces` (with `zones` and `must_be_commander`) per combo.
 
 ## Examples
 
@@ -156,9 +194,9 @@ Human view (TTY):
 
 ```
 $ stm query "sacrifice a creature to draw cards" --limit 3
- 1. Phyrexian Vault {3} Artifact (0.842)
- 2. Carnage Altar {2} Artifact (0.841)
- 3. Greater Good {2}{G}{G} Enchantment (0.839)
+ 1. Greater Good {2}{G}{G} rare Enchantment (0.876)
+ 2. Life's Legacy {1}{G} rare Sorcery (0.500)
+ 3. Griselbrand {4}{B}{B}{B}{B} mythic Legendary Creature — Demon (0.484)
 ```
 
 Agent view (piped):

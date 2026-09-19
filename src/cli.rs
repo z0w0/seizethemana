@@ -78,6 +78,24 @@ pub enum CardCommand {
         #[arg(long)]
         offline: bool,
     },
+
+    /// List Commander Spellbook combos that include a card
+    Combos {
+        /// Card name (exact, case-insensitive, or unique prefix)
+        name: String,
+        /// Only combos legal in this format, e.g. commander, modern
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
+        /// Maximum results (default 20, max 100)
+        #[arg(long, default_value_t = 20, value_parser = clap::value_parser!(u32).range(1..=100))]
+        limit: u32,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+        /// Skip the stale-while-revalidate sync check
+        #[arg(long)]
+        offline: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -109,7 +127,8 @@ pub enum Command {
         json: bool,
     },
 
-    /// Semantic card search over the whole oracle
+    /// Hybrid card search: keyword (BM25) + meaning (vector) matches,
+    /// fused by reciprocal rank fusion (score 0-1)
     Query {
         /// Free-text query, e.g. "sacrifice a creature to draw cards"
         query: String,
@@ -164,7 +183,7 @@ pub enum CollectionCommand {
         #[arg(long)]
         force: bool,
     },
-    /// Semantic search restricted to cards you own
+    /// Hybrid search restricted to cards you own (keyword + meaning legs)
     Query {
         /// Free-text query
         query: String,
@@ -209,7 +228,7 @@ pub enum DeckCommand {
         json: bool,
     },
 
-    /// Update a deck (add/remove/set quantities, per section)
+    /// Update a deck (add/remove/set/move quantities, per section)
     Update {
         name: String,
         /// Add copies, e.g. `2 Lightning Bolt` or `commander:1 Breya`
@@ -221,10 +240,19 @@ pub enum DeckCommand {
         /// Set an exact quantity, e.g. `Bolt 4` (0 deletes the line)
         #[arg(long = "set", value_name = "SPEC")]
         set: Vec<String>,
+        /// Move copies between sections, e.g. `1 Bolt to:sideboard` or
+        /// `sideboard:1 Bolt` (to: defaults to DECK)
+        #[arg(long = "move", value_name = "SPEC")]
+        r#move: Vec<String>,
         /// Text file of extra specs, one per line (`add 1 Name`, `remove 1
-        /// Name`, `set 2 Name`, or a bare spec = add; `#` comments allowed)
+        /// Name`, `set 2 Name`, `move 1 Name to:sideboard`, or a bare spec
+        /// = add; `#` comments allowed)
         #[arg(long = "from", value_name = "FILE")]
         from: Option<std::path::PathBuf>,
+        /// Apply the resolvable ops and report the unresolvable ones
+        /// instead of aborting the whole batch
+        #[arg(long = "allow-partial")]
+        allow_partial: bool,
     },
 
     /// Merge duplicate lines (same card name) into one line per section
@@ -245,12 +273,21 @@ pub enum DeckCommand {
         /// Free-text query, e.g. "frog payoff" (optional with --role)
         #[arg(long = "query", value_name = "TEXT")]
         query: Option<String>,
-        /// Structured role: draw, removal, ramp, wincon, counterspell, land
+        /// Structured role: draw, ramp, removal, board-wipe, counterspell,
+        /// wincon, tutor, sacrifice, reanimate, recursion, token, anthem,
+        /// equipment, evasion, burn, lifegain, mill, discard, stax, tax,
+        /// combo, storm, blink, landfall, artifact, enchantment,
+        /// planeswalker, voltron, spellslinger, typal, group-hug, ...
         #[arg(long = "role", value_name = "ROLE")]
         role: Option<String>,
         /// Find commander candidates for the deck (theme-matched, P/T-legal)
         #[arg(long = "commander")]
         commander: bool,
+        /// Format the deck plays (default: inferred from the deck's
+        /// sections). Filters suggestions to cards legal in that format;
+        /// commander-required combos are excluded for 60-card formats.
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
         /// Bracket 1-5: filter suggestions that break the bracket (brackets
         /// 1-2 allow no Game Changers)
         #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]

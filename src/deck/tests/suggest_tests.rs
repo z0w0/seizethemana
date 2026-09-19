@@ -41,8 +41,15 @@ fn role_parse_knows_the_names() {
     assert_eq!(Role::parse("draw"), Some(Role::Draw));
     assert_eq!(Role::parse("REMOVAL"), Some(Role::Removal));
     assert_eq!(Role::parse("finisher"), Some(Role::Wincon));
-    assert_eq!(Role::parse("counters"), Some(Role::Counterspell));
-    assert_eq!(Role::parse("lands"), Some(Role::Land));
+    assert_eq!(Role::parse("counterspell"), Some(Role::Counterspell));
+    assert_eq!(Role::parse("lands"), Some(Role::Landfall));
+    assert_eq!(Role::parse("board-wipe"), Some(Role::BoardWipe));
+    assert_eq!(Role::parse("sac outlet"), Some(Role::Sacrifice));
+    assert_eq!(Role::parse("Typal"), Some(Role::Typal));
+    assert_eq!(Role::parse("tribal"), Some(Role::Typal));
+    assert_eq!(Role::parse("group-hug"), Some(Role::GroupHug));
+    assert_eq!(Role::parse("voltron"), Some(Role::Voltron));
+    assert_eq!(Role::parse("stax"), Some(Role::Stax));
     assert!(Role::parse("gibberish").is_none());
 }
 
@@ -116,27 +123,39 @@ fn commander_type_gate_knows_vehicles() {
 }
 
 #[test]
-fn merge_hits_dedupes_by_oracle_id_and_carries_labels() {
-    let a = card("A", "Creature", "G", "", None);
-    let mut a2 = card("A", "Creature", "G", "", None);
-    a2.oracle_id = "oid-A".to_string(); // same oracle id
+fn fuse_legs_rewards_consensus_and_keeps_labels() {
+    let sem = card("Shared", "Creature", "G", "", Some(10));
+    let mut sem_only = card("Semantic", "Creature", "G", "", Some(20));
+    sem_only.oracle_id = "oid-semantic".to_string();
+    let mut tag_only = card("Tagged", "Creature", "G", "", Some(30));
+    tag_only.oracle_id = "oid-tagged".to_string();
     let labels = vec!["frog".to_string()];
-    let merged = merge_hits(vec![a.clone()], vec![(a2, labels.clone())]);
-    assert_eq!(merged.len(), 1, "same oracle id merges");
-    assert_eq!(merged[0].1, labels);
+    let owned_list = vec![(tag_only, labels.clone())];
+    // Shared ranks first: seen on both legs. Semantic and tag-only cards
+    // tie at one-leg scores, but Tagged sits first on the tag leg while
+    // Semantic sits second on the semantic leg: Tagged's 1/(k+1) beats
+    // Semantic's 1/(k+2).
+    let fused = fuse_legs(&[sem.clone(), sem_only.clone()], &owned_list, 3);
+    let names: Vec<&str> = fused.iter().map(|(c, _, _)| c.name.as_str()).collect();
+    assert_eq!(names, vec!["Shared", "Tagged", "Semantic"]);
+    // Labels ride along with their card only.
+    assert_eq!(fused[0].1.len(), 0, "Shared joined via the semantic leg");
+    assert_eq!(fused[1].1, labels);
+    // Fused scores are normalized to [0, 1]; consensus ranks first.
+    assert!((0.0..=1.0).contains(&fused[0].2), "score in range");
+    assert!(fused[0].2 > fused[2].2, "Shared outscores Semantic");
 }
 
 #[test]
-fn rank_hits_prefers_lower_edhrec_rank() {
-    let low = card("Popular", "Creature", "G", "", Some(10));
-    let high = card("Obscure", "Creature", "G", "", Some(9000));
-    let ranked = rank_hits(vec![(high, vec![]), (low, vec![])], 2);
-    assert_eq!(ranked[0].0.name, "Popular");
-    // Unranked cards sort last.
-    let low2 = card("Popular", "Creature", "G", "", Some(10));
-    let unknown = card("Unknown", "Creature", "G", "", None);
-    let ranked = rank_hits(vec![(unknown, vec![]), (low2, vec![])], 2);
-    assert_eq!(ranked[0].0.name, "Popular");
+fn group_owned_first_splits_groups() {
+    let owned_set: std::collections::HashMap<String, i64> =
+        [("Owned".to_string(), 1i64)].into_iter().collect();
+    let a = card("Owned", "Creature", "G", "", Some(2));
+    let b = card("Unowned", "Creature", "G", "", Some(1));
+    let grouped = group_owned_first(vec![(b, vec![], 0.5), (a.clone(), vec![], 0.4)], &owned_set);
+    assert_eq!(grouped[0].0.name, "Owned", "owned card jumps the queue");
+    assert_eq!(grouped[1].0.name, "Unowned");
+    assert!(grouped[0].0.name == a.name);
 }
 
 #[test]
@@ -150,6 +169,24 @@ fn card_is_commander_legal_blocks_banned() {
     assert!(card_is_commander_legal(&card(
         "Mystery", "Creature", "G", "", None
     )));
+}
+
+#[test]
+fn card_legal_in_pins_formats() {
+    let mut modern_only = card("Modern", "Creature", "G", "", None);
+    modern_only.legalities = r#"{"modern": "legal"}"#.to_string();
+    // No pinned format passes everything.
+    assert!(card_legal_in(&modern_only, None));
+    assert!(card_legal_in(&card("Any", "Creature", "G", "", None), None));
+    // A pinned format needs an explicit legal/restricted key.
+    assert!(card_legal_in(&modern_only, Some("modern")));
+    assert!(!card_legal_in(&modern_only, Some("commander")));
+    // Missing key and unknown formats fail (not a silent pass).
+    let unlisted = card("Unlisted", "Creature", "G", "", None);
+    assert!(!card_legal_in(&unlisted, Some("modern")));
+    let mut banned = card("Banned", "Creature", "G", "", None);
+    banned.legalities = r#"{"modern": "banned"}"#.to_string();
+    assert!(!card_legal_in(&banned, Some("modern")));
 }
 
 #[test]
@@ -171,7 +208,7 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
                 color_identity, keywords, oracle_text, rarity, legalities,
                 set_code, collector_number, scryfall_id, released_at)
              VALUES (?1, ?2, '', 2, 'Creature', '[]', ?3, '[]', 'text', 'rare',
-                '{}', 'tst', '1', 'sid', '2020-01-01')",
+                '{\"commander\":\"legal\"}', 'tst', '1', 'sid', '2020-01-01')",
             rusqlite::params![
                 name,
                 format!("oid-{name}"),
@@ -254,7 +291,7 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
             color_identity, keywords, oracle_text, rarity, legalities,
             set_code, collector_number, scryfall_id, released_at)
          VALUES ('Frog Wizard', 'oid-fw', '', 4, 'Legendary Creature — Frog', '[]',
-            '[\"G\",\"U\"]', '[]', 'text', 'rare', '{}', 'tst', '1', 'sid-fw', '2020-01-01')",
+            '[\"G\",\"U\"]', '[]', 'text', 'rare', '{\"commander\":\"legal\"}', 'tst', '1', 'sid-fw', '2020-01-01')",
         [],
     )
     .unwrap();
@@ -265,7 +302,7 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
     .unwrap();
     let mut out = crate::output::Output::new(true, false, false);
     let code = crate::deck::suggest_combo::run_combo_suggest(
-        &paths, &mut conn, &mut out, "CDeck", None, 10, true,
+        &paths, &mut conn, &mut out, "CDeck", None, None, 10, true,
     )
     .unwrap();
     assert_eq!(code, crate::cli::codes::OK);
@@ -274,7 +311,7 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
     // removes it from completions; Wanted is the only in-identity miss.
     let deck_names: std::collections::HashSet<String> =
         ["Held A", "Held B"].iter().map(|s| s.to_string()).collect();
-    let variants = crate::spellbook::load_variants_for(&conn, &deck_names).unwrap();
+    let variants = crate::combos::load_variants_for(&conn, &deck_names).unwrap();
     let missing_names: Vec<Vec<&str>> = variants
         .iter()
         .filter_map(|(_v, pieces)| {
@@ -305,4 +342,85 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
             .unwrap();
     let identity = commander_identity(&deck, &crate::deck::stats::lookup_names(&conn, &deck));
     assert!(!identity_ok(&off_color, &identity));
+}
+
+#[test]
+fn combo_suggest_excludes_commander_required_for_constructed() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut conn = crate::db::open(&dir.path().join("t.db")).unwrap();
+    // Deck: one held piece; missing card is modern-legal. Two variants:
+    // one free (completes), one whose second piece must be a commander.
+    for name in ["Held", "Wanted"] {
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at)
+             VALUES (?1, ?2, '', 2, 'Creature', '[]', '[\"G\"]', '[]', 'text', 'rare',
+                '{\"commander\":\"legal\",\"modern\":\"legal\"}', 'tst', '1', 'sid', '2020-01-01')",
+            rusqlite::params![name, format!("oid-{name}")],
+        )
+        .unwrap();
+    }
+    conn.execute(
+        "INSERT INTO combos (id, produces, mana_value_needed, bracket_tag,
+            legalities, popularity, updated_at)
+         VALUES ('free', '[]', 2, 'C', '{\"commander\":true,\"modern\":true}', 500, 'now')",
+        [],
+    )
+    .unwrap();
+    for (name, ordinal) in [("Held", 0), ("Wanted", 1)] {
+        conn.execute(
+            "INSERT INTO combo_pieces (combo_id, name, ordinal, zones, must_be_commander)
+             VALUES ('free', ?1, ?2, '[\"B\"]', 0)",
+            rusqlite::params![name, ordinal],
+        )
+        .unwrap();
+    }
+    conn.execute(
+        "INSERT INTO combos (id, produces, mana_value_needed, bracket_tag,
+            legalities, popularity, updated_at)
+         VALUES ('locked', '[]', 2, 'C', '{\"commander\":true,\"modern\":true}', 900, 'now')",
+        [],
+    )
+    .unwrap();
+    // Second piece must be the commander: not a 60-card completion.
+    for (name, ordinal, cmdr) in [("Held", 0, 0), ("Wanted", 1, 1)] {
+        conn.execute(
+            "INSERT INTO combo_pieces (combo_id, name, ordinal, zones, must_be_commander)
+             VALUES ('locked', ?1, ?2, '[\"B\"]', ?3)",
+            rusqlite::params![name, ordinal, cmdr],
+        )
+        .unwrap();
+    }
+
+    let paths = crate::paths::Paths::new(dir.path().to_path_buf());
+    crate::deck::create(
+        &paths,
+        &mut crate::output::Output::new(true, false, false),
+        "Modern",
+    )
+    .unwrap();
+    std::fs::write(paths.deck_file("Modern"), "// DECK\n1 Held\n").unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    // JSON output carries the per-completion rows the assertions read.
+    let code = crate::deck::suggest_combo::run_combo_suggest(
+        &paths, &mut conn, &mut out, "Modern", None, None, 10, true,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    // "Wanted" completes the free modern-legal variant (2 near-misses but
+    // the locked variant is commander-only and must not surface). The
+    // variants_completed count distinguishes them: free contributes 1.
+    let variants =
+        crate::combos::load_variants_for(&conn, &["Held".to_string()].into_iter().collect())
+            .unwrap();
+    let legal: Vec<(&str, bool)> = variants
+        .iter()
+        .map(|(v, p)| (v.id.as_str(), crate::combos::requires_commander(p)))
+        .collect();
+    assert_eq!(
+        legal,
+        vec![("free", false), ("locked", true)],
+        "both variants load; only 'free' fires in a 60-card deck"
+    );
 }

@@ -36,6 +36,8 @@ dialoguer = { version = "0.12.0", default-features = false, features = ["fuzzy-s
 fastembed = "6.0.3"
 flate2 = "1.1"
 indicatif = "0.18"
+bytemuck = { version = "1", features = ["extern_crate_alloc"] }
+memmap2 = "0.9"
 owo-colors = "4.2"
 rand = "0.9"
 rand_chacha = "0.9"
@@ -48,6 +50,11 @@ thiserror = "2.0"
 
 [dev-dependencies]
 tempfile = "3.23"
+criterion = { version = "0.5", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "query_bench"
+harness = false
 
 [profile.release]
 lto = true

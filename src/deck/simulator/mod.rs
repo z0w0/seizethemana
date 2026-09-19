@@ -19,12 +19,14 @@ mod combos;
 mod deck;
 mod format;
 mod game;
+mod game_combat;
 mod game_effects;
 mod game_mana;
 mod game_run;
 mod hypgeo;
 mod model;
 mod parse;
+mod parse_keywords;
 mod report;
 mod triggers;
 
@@ -82,7 +84,7 @@ fn load_store_combos(
     }
     let names: std::collections::HashSet<String> =
         deck.cards.iter().map(|c| c.name.clone()).collect();
-    let variants = crate::spellbook::load_variants_for(conn, &names).ok()?;
+    let variants = crate::combos::load_variants_for(conn, &names).ok()?;
     let (candidates, _excluded) = combos::candidates(variants, deck, format_key);
     Some(candidates)
 }
@@ -206,6 +208,10 @@ pub fn simulate(
         }
         if let (Some(assembly), Some(obj)) = (&combo_report, v.as_object_mut()) {
             obj.insert("combos".into(), report::combos_json(assembly, combo_limit));
+            obj.insert(
+                "win_paths".into(),
+                report::win_paths_json(assembly, combo_limit),
+            );
         }
         if hypgeo {
             let ceilings = hypgeo::cast_ceilings(&sim_deck, turns);
@@ -237,6 +243,7 @@ pub fn simulate(
         match &combo_report {
             Some(assembly) => {
                 report::print_store_combos(out, assembly, combo_limit);
+                report::print_win_paths(out, assembly, combo_limit);
             }
             None if !combos.is_empty() || store_has_combos(conn) => {}
             None => {}

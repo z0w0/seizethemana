@@ -34,13 +34,19 @@ type BestExample = (String, Option<String>);
 /// combo store or no near-misses yields NO_RESULTS with a note, never an
 /// error.
 ///
+/// `format` pins the combo legality filter (a commander-shaped deck
+/// defaults to commander). Commander-required variants and pieces are
+/// excluded for 60-card formats.
+///
 /// # Errors
 /// Propagates SQLite failures.
+#[allow(clippy::too_many_arguments)]
 pub fn run_combo_suggest(
     paths: &crate::paths::Paths,
     conn: &mut Connection,
     out: &mut crate::output::Output,
     deck_name: &str,
+    format: Option<&str>,
     bracket: Option<u8>,
     limit: u32,
     json: bool,
@@ -57,6 +63,14 @@ pub fn run_combo_suggest(
     let cards_by_name = super::stats::lookup_names(conn, &deck);
     let identity = super::suggest::commander_identity(&deck, &cards_by_name);
     let is_commander = matches!(infer_format(&deck), super::legal::InferredFormat::Commander);
+    // No pinned format: commander-shaped decks play commander; everything
+    // else takes the combos its cards appear in, minus commander-required
+    // variants.
+    let combo_format = match format {
+        Some(format) => Some(format),
+        None if is_commander => Some("commander"),
+        None => None,
+    };
 
     // The deck's own names drive the candidate join; commander decks keep
     // their sideboard wishlist out of the join.
@@ -67,7 +81,14 @@ pub fn run_combo_suggest(
         .flat_map(|(_, entries)| entries.iter().map(|e| e.name.clone()))
         .collect();
 
-    let variants = crate::spellbook::load_variants_for(conn, &deck_names)?;
+    let variants = crate::combos::load_variants_for(conn, &deck_names)?;
+    let variants = match combo_format {
+        Some(format) => crate::combos::filter_for_format(variants, format),
+        None => variants
+            .into_iter()
+            .filter(|(_, pieces)| !crate::combos::requires_commander(pieces))
+            .collect(),
+    };
     if variants.is_empty() {
         out.error("no combo variants touch this deck's cards");
         out.hint("add cards that participate in known combo variants");
@@ -106,7 +127,17 @@ pub fn run_combo_suggest(
 
     let mut completions: Vec<Completion> = by_missing
         .iter()
-        .filter_map(|(name, hits)| completion(conn, name, hits, is_commander, &identity, bracket))
+        .filter_map(|(name, hits)| {
+            completion(
+                conn,
+                name,
+                hits,
+                is_commander,
+                &identity,
+                combo_format,
+                bracket,
+            )
+        })
         .collect();
     completions.sort_by(|a, b| {
         b.variants_completed
@@ -135,8 +166,9 @@ pub fn run_combo_suggest(
     Ok(crate::cli::codes::OK)
 }
 
-/// Build one completion when the card passes the identity, legality, and
+/// Build one completion when the card passes the identity, format, and
 /// bracket filters.
+#[allow(clippy::too_many_arguments)]
 fn completion(
     conn: &Connection,
     name: &str,
@@ -146,6 +178,7 @@ fn completion(
     )],
     is_commander: bool,
     identity: &str,
+    format: Option<&str>,
     bracket: Option<u8>,
 ) -> Option<Completion> {
     let card = crate::db::get_card(conn, name).ok().flatten()?;
@@ -153,6 +186,9 @@ fn completion(
         return None;
     }
     if is_commander && !super::suggest::card_is_commander_legal(&card) {
+        return None;
+    }
+    if !super::suggest::card_legal_in(&card, format) {
         return None;
     }
     if !super::suggest::bracket_allows(bracket, &card) {
@@ -191,7 +227,10 @@ fn completion(
 
 /// JSON rows: one object per completion, `combo` naming the best example.
 fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<()> {
-    let owned = crate::collection::owned_names_all(conn)?;
+    let owned = crate::collection::owned_counts_all(conn)?;
+    let names: Vec<String> = completions.iter().map(|c| c.card.name.clone()).collect();
+    // One batched query per finish kind instead of four per card name.
+    let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
     let items: Vec<serde_json::Value> = completions
         .iter()
         .map(|c| {
@@ -199,15 +238,17 @@ fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<(
                 serde_json::from_str(&c.card.color_identity).unwrap_or_default();
             serde_json::json!({
                 "name": c.card.name,
+                "oracle_id": c.card.oracle_id,
                 "mana_cost": c.card.mana_cost,
                 "cmc": c.card.cmc,
                 "type_line": c.card.type_line,
                 "edhrec_rank": c.card.edhrec_rank,
                 "game_changer": c.card.game_changer,
-                "owned": owned.contains(&c.card.name),
-                "price_usd": crate::prints::price_range(conn, &c.card.name)
-                    .ok()
-                    .and_then(|r| r.cheapest.and_then(|p| p.usd)),
+                "owned": owned.get(&c.card.name).copied().unwrap_or(0),
+                "price_usd": ranges
+                    .get(&c.card.name)
+                    .and_then(|r| r.cheapest.as_ref())
+                    .and_then(|p| p.usd),
                 "combo": {
                     "pieces": c.best.0,
                     "bracket_tag": c.best.1,
@@ -231,7 +272,10 @@ fn print_text(
     deck_name: &str,
     completions: &[Completion],
 ) -> anyhow::Result<()> {
-    let owned = crate::collection::owned_names_all(conn)?;
+    let owned = crate::collection::owned_counts_all(conn)?;
+    // Batched prices for the ownership note below.
+    let names: Vec<String> = completions.iter().map(|c| c.card.name.clone()).collect();
+    let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
     let styles = out.styles();
     println!(
         "{} {}",
@@ -241,12 +285,14 @@ fn print_text(
         ))
     );
     for (i, c) in completions.iter().enumerate() {
-        let own_note = if owned.contains(&c.card.name) {
-            styles.success("own")
+        let copies = owned.get(&c.card.name).copied().unwrap_or(0);
+        let own_note = if copies > 0 {
+            styles.success(&format!("own {}", styles.thousands(copies)))
         } else {
-            match crate::prints::price_range(conn, &c.card.name)
-                .ok()
-                .and_then(|r| r.cheapest.and_then(|p| p.usd))
+            match ranges
+                .get(&c.card.name)
+                .and_then(|r| r.cheapest.as_ref())
+                .and_then(|p| p.usd)
             {
                 Some(p) => format!("buy ${p:.2}"),
                 None => "unpriced".to_string(),

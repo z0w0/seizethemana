@@ -87,10 +87,11 @@ shapes, keyed off the "or" in the text:
 | colorless | `Add {C}{C}` (Sol Ring) | one tap, N colorless |
 
 A spend restriction ("Spend this mana only to cast a creature spell" —
-Secluded Courtyard, Unclaimed Territory) marks the yield `creature_only`:
-restricted mana sits in its own pool bucket and pays creature casts only.
-A merged tap with any restricted mode counts as restricted (the
-unrestricted colorless mode produces nothing of value for other casts).
+Secluded Courtyard, Unclaimed Territory) marks the yield restricted:
+restricted mana sits in its own pool bucket and pays matching casts only
+(creature / legendary / artifact / instant-and-sorcery). A merged tap
+with any restricted mode counts as restricted (the unrestricted
+colorless mode produces nothing of value for other casts).
 
 A permanent with several tap abilities (Plaza of Heroes, Relic of Legends,
 Blazemire Verge) merges them into one tap: the union of its colors, still
@@ -101,6 +102,34 @@ as its own source and inflated the mana pool.
 Gated modes ("Activate only if you control a Swamp or a Mountain") stay
 locked until another land of the matching type is in play. The ungated
 mode always works. Shock-dual life payments are always paid (best-case).
+
+Beyond the four shapes, three extras:
+
+- **Any-pip counts.** "Add N mana of any color" / "any combination of
+  colors" parse as N flexible pips (Gilded Lotus → 3), not one.
+- **Opponent-dependent.** "Any color a land an opponent controls could
+  produce" (Fellwar Stone) yields one any-color pip from turn 2 on;
+  nothing on turn 1.
+- **Scaling.** "For each color among permanents you control" (Faeburrow
+  Elder) counts the colors actually on the board; "for each charge
+  counter" (Astral Cornucopia) reads one pip per counter.
+
+Two banked shapes:
+
+- **Charge-counter banks.** "Remove a charge counter: add one mana of
+  any color" (Pentad Prism) is a banked activation: the source stays
+  untapped, fires once per turn while counters last, and one counter
+  buys one pip. Sunburst enters with one counter per color paid
+  (best-case 2).
+- **Treasures.** "Create a Treasure token" effects bank one flexible
+  pip per token (sacrificed to use). When any deck card creates
+  treasures, token effects bank pips instead of bodies (goldfish
+  approximation). Smothering Tithe stays inert — it needs opponents.
+
+Static mana grants ("creatures you control have {T}: add one mana of
+any color" — Enduring Vitality; "lands you control have…" — Chromatic
+Lantern) add one flexible pip per matching permanent per turn, capped
+at two per grant, while the source is on the battlefield.
 
 ### Station (CR 702.184, 721)
 
@@ -206,6 +235,10 @@ A best-case agent plays each turn in a fixed order:
    flags reset.
 2. **Upkeep** — draw engines fire (one card each, per turn); saga chapters
    advance.
+2. **Upkeep** — draw engines fire (one card each, per turn); saga
+   chapters advance; win-threshold engines check their counter stock;
+   planeswalker ultimates flag online when loyalty reaches the minus
+   cost.
 3. **Draw** — draw 1.
 4. **Land** — play an untapped land when one is in hand, else any land
    (tapped lands wait for a better turn when possible). Fetch lands search
@@ -213,10 +246,12 @@ A best-case agent plays each turn in a fixed order:
 5. **Cast** — cheapest castable spells first, with the full pip check. A
    cast is blocked (and its color recorded for color-screw stats) when the
    pool has enough total mana but misses the pips. ETB triggers fire; ETB
-   tokens join the battlefield as bodies.
+   tokens join the battlefield as bodies. One-shot effects (ritual mana,
+   draws, mills, scry/surveil, burn, extra turns) apply on cast.
 6. **Activate** — spend leftover mana on unlocked tap-activated engines
    (draw, tutor, mana, counters). Cheapest first, one activation per
-   permanent per turn.
+   permanent per turn. Banked activations (Pentad Prism) consume a
+   counter instead of tapping.
 7. **Tap budget** — remaining untapped bodies, in priority order:
    a. tap for **mana** only while the cheapest uncast spell still needs
       mana;
@@ -224,11 +259,17 @@ A best-case agent plays each turn in a fixed order:
       spacecraft/planet (counters = body power);
    c. else tap to **crew** untapped Vehicles (total body power ≥ crew
       cost; crewed vehicles count as bodies for the turn).
+7b. **Interaction readiness (measured, not forced)** — was instant-speed
+   interaction in hand while spare mana covered its cost? The goldfish
+   never spends it; the spare amount is the "mana held" census.
 8. **Threshold** — station tiers unlock permanently when counters reach
    them; the commander spacecraft's online turn is recorded.
-9. **Combat** — bodies attack (counted, not simulated); attack triggers
-   fire; token payoffs join next turn's bodies.
-10. **End** — crew animations expire; hand-limit discards from the end.
+9. **Combat** — bodies attack; attack triggers and combat-damage
+   triggers fire per connecting attacker (best case: unblocked). Buffs,
+   equipment, double strike, prowess, and landfall join the power sum.
+   Token payoffs join next turn's bodies.
+10. **End** — crew animations expire; hand-limit discards from the end;
+    queued extra turns each grant one land drop and one draw.
 
 The commander casts from the command zone with the full pip check. Its
 cost is deducted (it counts in `mana_spent`), it joins the battlefield as
@@ -253,6 +294,12 @@ carry ±0.5pp at 10k runs.
 | `draw` | games with no draw source by t6 (starvation); `pct_seen_by_turn` = share of games with a draw-role card in hand (hand visibility, not engines online) |
 | `role_access` | share of games with the role seen in hand: removal by t5, draw by t6, creature by t3, wincon by t8, lock by t3 |
 | `velocity` | cumulative cards seen per turn (milled and looted cards count) |
+| `library_awareness_by_turn` | share of the library evaluated per turn (drawn + milled + scried/surveiled). Scry/surveil give zero draw credit — a looked-at card is not a drawn card |
+| `self_milled_by_turn` / `opp_milled_by_turn` | mill split by direction: graveyard fuel vs deck-out pressure ("target player mills") |
+| `library_remaining_by_turn` | average library size (deck-out proximity) |
+| `combat` | attack power per turn + p90 by t8 (a power curve, never a kill estimate); attackers + evasion census (trample/flying/menace) |
+| `wincons` | life drained per turn (burn/drain engines, ×3 for "each opponent"), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct |
+| `interaction` | P(interaction in hand AND affordable with spare mana) per turn — instant-speed copies, spare mana while ready ("mana held"), instant vs sorcery by copy count. **Capacity, not events**: no opponent event is claimed |
 | `color_screw` | per-color share of games with a pip-blocked cast (WUBRG) |
 | `pip_blocks` | top card×color offenders: which card's cast was pip-blocked, worst 5 |
 | `graveyard` | average graveyard size per turn (mill + discards − returns) |
@@ -277,6 +324,7 @@ drawn. It measures the mana base; the hand adds the draw dependency.
 | `mana_unused` | ≥2.5 mana unspent on average by t6 | "add cheaper spells or more draw" |
 | `dead_cards` | ≥3 distinct non-reactive cards cast on time under 60% | "cut or discount late cards, or add ramp" |
 | `category_starved` | removal by t5 <40% / wincons by t8 <40% | "add 2-3 interaction pieces" |
+| `interaction_unready` | instant-speed interaction ready by t5 <40% while access ≥40% | "add cheaper instant-speed answers" |
 
 Suggestions name categories and magnitudes, never card names. Exit 0 when
 no findings; exit 1 otherwise (the finding is the result, not a crash).
@@ -336,8 +384,9 @@ Everything the model cannot execute is dropped at parse time, and the
 `assumptions` array in every report lists the current limits:
 
 - **No opponents, no interaction.** No countermagic fires, no removal is
-  cast, no attacker is blocked, no combat damage happens. Removal and
-  counterspells count toward role access but never cast in the sim.
+  cast, no attacker is blocked. Removal and counterspells count toward
+  role access and the **readiness** metric (in hand + affordable), but
+  never fire. Readiness is capacity, not events.
 - **Draw engines fire on a fixed delay.** An engine draws its amount once
   per turn from the turn after it enters, regardless of board state. A
   "draw for each artifact" engine draws 1. Commanders add a synthetic
@@ -373,8 +422,8 @@ Everything the model cannot execute is dropped at parse time, and the
   Warp uses the cheaper cost; improvise/affinity start at a flat −2 and
   gain 1 more per 4 artifacts on the battlefield, capped at the printed
   generic; they are exempt from the `dead_cards` finding.
-- **Opponent-dependent production yields nothing.** Exotic Orchard and
-  Fellwar Stone taps produce no mana in the goldfish.
+- **Opponent-dependent production yields turn 2 on.** Fellwar Stone
+  reads as any-color from turn 2, nothing on turn 1.
 - **Type-granted lands read as any-color.** "This land is the chosen type"
   lands tap for one mana of any color (the choice is the player's). Static
   grants on other lands (The World Tree) do not model.
@@ -383,11 +432,29 @@ Everything the model cannot execute is dropped at parse time, and the
 - **No energy, metalcraft, ascend, delirium.** Conditional producers and
   discounts keyed on game state do not fire (Mox Opal reads as dead
   colorless in the pool unless its text says otherwise).
-- **No proliferate or counter injection beyond the parser's shapes.**
-  "Put N charge counters" spells and enter-with-counters work; chained
-  proliferate engines do not.
+- **Proliferate stays one-shot.** "Put N charge counters" spells,
+  enter-with-counters, and combat-damage proliferate (one counter per
+  fire on the source) work; chained proliferate engines do not.
 - **No replay mechanics.** Flashback, rebound, splice, ninjutsu, warp
   beyond the cheaper cost, and cast-from-graveyard chains fire once.
+- **Keyword support is goldfish-aligned only.** A keyword models only
+  when it moves an existing metric: combat-damage triggers fire per
+  connecting attacker (draw/proliferate/drain), static "+N/+N" board
+  buffs and equipment join the attack power (equip is a spend-leftover
+  activation; Skullclamp-class death-draws fire on sacrificed bodies),
+  double strike doubles attack power, prowess adds +1 per noncreature
+  spell cast that turn, landfall adds +1 per later land drop, scry/
+  surveil feed awareness only (surveil puts the cards in the graveyard),
+  and trample/flying/menace count as an evasion census with no math.
+  Vigilance is free (attackers never tap). Imprint is out of scope.
+- **Drain is a census, not a life total.** "Each opponent loses N" /
+  "deals N damage to target player" multiplies by 3 (three opponents).
+  No life totals, no racing.
+- **Extra turns are fixed-value.** A queued extra turn grants one land
+  drop and one draw; no full turn replay, no chaining.
+- **Win thresholds are checked at upkeep.** "N or more counters wins"
+  engines record the first turn the stock reaches N; the sim does not
+  declare a win.
 - **Once-per-turn activations are optimistic.** Planeswalker loyalty
   activations fire once per turn from the turn after they are cast, with
   no loyalty cost gating beyond affordability.

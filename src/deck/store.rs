@@ -200,13 +200,23 @@ pub fn list(
         } else {
             format!("{} cards", d.cards)
         };
-        // Completion coloring: green when fully owned, yellow when partial.
+        // Completion coloring: green when fully owned, yellow when partial,
+        // red when nothing is owned.
         let owned_display = if d.owned >= d.cards && d.cards > 0 {
-            styles.success(&format!("own {}/{}", d.owned, d.cards))
+            styles.glyph(
+                &format!("own {}/{}", d.owned, d.cards),
+                crate::output::GlyphKind::Good,
+            )
         } else if d.owned > 0 {
-            styles.warning(&format!("own {}/{}", d.owned, d.cards))
+            styles.glyph(
+                &format!("own {}/{}", d.owned, d.cards),
+                crate::output::GlyphKind::Warn,
+            )
         } else {
-            format!("own {}/{}", d.owned, d.cards)
+            styles.glyph(
+                &format!("own {}/{}", d.owned, d.cards),
+                crate::output::GlyphKind::Bad,
+            )
         };
         println!(
             "  {} {}  {}{}",
@@ -417,10 +427,11 @@ fn print_overview(
     let (owned_value, missing_cost) = deck_value(deck, &cards_by_name, &prices, &available);
     if owned_value > 0.0 || missing_cost > 0.0 {
         println!(
-            "{}{}{}",
+            "{}{}{}{}",
             label("Value"),
             styles.money(owned_value),
-            styles.dim(&format!(" owned · missing ${missing_cost:.2}")),
+            styles.dim(" owned · missing "),
+            styles.money(missing_cost),
         );
     }
     if !stats.curve.is_empty() {
@@ -435,7 +446,7 @@ fn print_overview(
                 if i == 0 { label("Curve") } else { label("") },
                 styles.bar(bucket.ratio, 12),
                 styles.dim(&format!("{:>2}", bucket.label)),
-                bucket.count,
+                styles.thousands(bucket.count),
                 styles.dim(&suffix),
             );
         }
@@ -474,7 +485,7 @@ fn print_overview(
                 if i == 0 { label("Colors") } else { label("") },
                 styles.bar(bucket.count as f64 / max, 12),
                 styles.color_letters(&bucket.label),
-                bucket.count,
+                styles.thousands(bucket.count),
             );
         }
     }
@@ -492,7 +503,7 @@ fn print_overview(
                 if i == 0 { label("Types") } else { label("") },
                 styles.bar(bucket.count as f64 / max, 12),
                 styles.dim(&bucket.label),
-                bucket.count,
+                styles.thousands(bucket.count),
             );
         }
     }
@@ -551,25 +562,31 @@ fn deck_prices(
     conn: &Connection,
     deck: &super::Deck,
 ) -> std::collections::HashMap<String, Option<f64>> {
-    let mut map = std::collections::HashMap::new();
-    for name in deck.entries().map(|e| e.name.clone()).collect::<Vec<_>>() {
-        if map.contains_key(&name) {
-            continue;
+    let mut names: Vec<String> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    for name in deck.entries().map(|e| e.name.clone()) {
+        if seen.insert(name.clone()) {
+            names.push(name);
         }
-        let Ok(range) = crate::prints::price_range(conn, &name) else {
-            map.insert(name, None);
-            continue;
-        };
+    }
+    // One batched query per finish kind instead of four statements per
+    // card name.
+    let Ok(ranges) = crate::prints::price_ranges(conn, &names) else {
+        return names.into_iter().map(|n| (n, None)).collect();
+    };
+    let mut map = std::collections::HashMap::new();
+    for name in names {
+        let range = ranges.get(&name);
         // A foil deck entry prefers the cheapest foil print when one exists.
         let is_foil = deck.entries().any(|e| e.name == name && e.foil);
-        let price = if is_foil {
-            range
+        let price = match range {
+            Some(range) if is_foil => range
                 .cheapest_foil
                 .as_ref()
                 .and_then(|p| p.usd_foil)
-                .or_else(|| range.cheapest.as_ref().and_then(|p| p.usd))
-        } else {
-            range.cheapest.as_ref().and_then(|p| p.usd)
+                .or_else(|| range.cheapest.as_ref().and_then(|p| p.usd)),
+            Some(range) => range.cheapest.as_ref().and_then(|p| p.usd),
+            None => None,
         };
         map.insert(name, price);
     }
@@ -741,11 +758,12 @@ pub fn show(
         }
         let total: f64 = to_buy.iter().map(|(_, q, p)| (*q as f64) * p).sum();
         println!(
-            "  {}",
+            "  {} {}",
             styles.dim(&format!(
-                "{} copies · est. ${total:.2} (full list: stm deck buylist {name})",
+                "{} copies · est.",
                 to_buy.iter().map(|(_, q, _)| q).sum::<i64>()
-            ))
+            )),
+            styles.money(total),
         );
     }
     for (section, entries) in &deck.sections {
@@ -764,11 +782,20 @@ pub fn show(
             let owned_display = if basic {
                 styles.dim("(basics unlimited)")
             } else if owned >= entry.quantity {
-                styles.success(&format!("(own {owned}/{})", entry.quantity))
+                styles.glyph(
+                    &format!("(own {owned}/{})", entry.quantity),
+                    crate::output::GlyphKind::Good,
+                )
             } else if owned > 0 {
-                styles.warning(&format!("(own {owned}/{})", entry.quantity))
+                styles.glyph(
+                    &format!("(own {owned}/{})", entry.quantity),
+                    crate::output::GlyphKind::Warn,
+                )
             } else {
-                format!("(own 0/{})", entry.quantity)
+                styles.glyph(
+                    &format!("(own 0/{})", entry.quantity),
+                    crate::output::GlyphKind::Bad,
+                )
             };
             let elsewhere = if elsewhere > 0 && !basic {
                 styles.dim(&format!(" (+{elsewhere} elsewhere)"))
@@ -778,7 +805,7 @@ pub fn show(
             // Unit price next to the ownership note (skip basics: free).
             let price_note = match prices.get(&entry.name).copied().flatten() {
                 Some(unit) if !basic => {
-                    format!(" {}", styles.dim(&format!("@${unit:.2}")))
+                    format!(" {}{}", styles.dim("@"), styles.money(unit))
                 }
                 _ => String::new(),
             };

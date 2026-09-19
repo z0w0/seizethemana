@@ -99,6 +99,43 @@ pub struct SimStats {
     pub bodies_by_turn: Vec<f64>,
     /// Average engines online by turn.
     pub engines_by_turn: Vec<f64>,
+    /// Average attacking power on the board by turn.
+    pub attack_power_by_turn: Vec<f64>,
+    /// 90th-percentile attacking power by turn 8 (power curve, not a
+    /// kill estimate).
+    pub attack_power_p90: u32,
+    /// Average attacking bodies with evasion by turn.
+    pub evasive_by_turn: Vec<f64>,
+    /// Average attacking bodies by turn (denominator of the evasion
+    /// census).
+    pub attackers_by_turn: Vec<f64>,
+    /// Average library size by turn (deck-out proximity).
+    pub library_by_turn: Vec<f64>,
+    /// Average cards self-milled by turn (graveyard fuel velocity).
+    pub self_milled_by_turn: Vec<f64>,
+    /// Average cards milled toward opponents by turn (deck-out
+    /// pressure).
+    pub opp_milled_by_turn: Vec<f64>,
+    /// Average fraction of the library evaluated by turn (drawn +
+    /// milled + scried/surveiled).
+    pub library_awareness_by_turn: Vec<f64>,
+    /// Average life drained by turn (burn, drain engines).
+    pub drain_total_by_turn: Vec<f64>,
+    /// P(at least one extra turn taken by turn t).
+    pub extra_turns_pct: f64,
+    /// Median first turn a win-threshold engine could fire.
+    pub win_threshold_p50_turn: u32,
+    /// P(win-threshold engine online by turn 10).
+    pub win_threshold_pct: f64,
+    /// P(a planeswalker ultimate online by turn 10).
+    pub ultimate_online_pct: f64,
+    /// P(interaction ready — in hand + affordable) by turn.
+    pub interaction_ready_by_turn: Vec<f64>,
+    /// Average spare mana while interaction was ready.
+    pub interaction_mana_held: f64,
+    /// Instant-speed interaction copies in the deck (readiness
+    /// denominator).
+    pub interaction_instant_count: usize,
 }
 
 /// Aggregate many game logs into the report values.
@@ -114,6 +151,20 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     stats.cards_seen = vec![0.0; turns];
     stats.bodies_by_turn = vec![0.0; turns];
     stats.engines_by_turn = vec![0.0; turns];
+    stats.attack_power_by_turn = vec![0.0; turns];
+    stats.evasive_by_turn = vec![0.0; turns];
+    stats.attackers_by_turn = vec![0.0; turns];
+    stats.library_by_turn = vec![0.0; turns];
+    stats.self_milled_by_turn = vec![0.0; turns];
+    stats.opp_milled_by_turn = vec![0.0; turns];
+    stats.library_awareness_by_turn = vec![0.0; turns];
+    stats.drain_total_by_turn = vec![0.0; turns];
+    stats.interaction_ready_by_turn = vec![0.0; turns];
+    stats.interaction_instant_count = deck
+        .cards
+        .iter()
+        .filter(|c| c.is_interaction && c.is_instant_speed)
+        .count();
 
     // Opening-hand land distribution.
     let mut opener_counts = [0i64; 7];
@@ -200,8 +251,79 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             if t < log.engines_online.len() {
                 stats.engines_by_turn[t] += f64::from(log.engines_online[t]) / n;
             }
+            if t < log.attack_power.len() {
+                stats.attack_power_by_turn[t] += f64::from(log.attack_power[t]) / n;
+            }
+            if t < log.evasive.len() {
+                stats.evasive_by_turn[t] += f64::from(log.evasive[t]) / n;
+            }
+            if t < log.attackers.len() {
+                stats.attackers_by_turn[t] += f64::from(log.attackers[t]) / n;
+            }
+            if t < log.library_size.len() {
+                stats.library_by_turn[t] += f64::from(log.library_size[t]) / n;
+            }
+            if t < log.self_milled.len() {
+                stats.self_milled_by_turn[t] += f64::from(log.self_milled[t]) / n;
+            }
+            if t < log.opp_milled.len() {
+                stats.opp_milled_by_turn[t] += f64::from(log.opp_milled[t]) / n;
+            }
+            if t < log.awareness.len() {
+                stats.library_awareness_by_turn[t] += log.awareness[t] / n;
+            }
+            if t < log.drain_total.len() {
+                stats.drain_total_by_turn[t] += f64::from(log.drain_total[t]) / n;
+            }
+            if t < log.interaction_ready.len() && log.interaction_ready[t] {
+                stats.interaction_ready_by_turn[t] += 1.0 / n;
+            }
         }
     }
+    // Interaction tempo tax: average spare mana on ready turns.
+    let ready_turns: usize = logs
+        .iter()
+        .map(|l| l.interaction_ready.iter().filter(|r| **r).count())
+        .sum();
+    let held_total: f64 = logs
+        .iter()
+        .flat_map(|l| {
+            l.interaction_ready
+                .iter()
+                .zip(l.interaction_mana_held.iter())
+                .filter(|(r, _)| **r)
+                .map(|(_, h)| *h)
+                .collect::<Vec<f64>>()
+        })
+        .sum();
+    stats.interaction_mana_held = held_total / f64::from(ready_turns as u32).max(1.0);
+    // Attack power p90 at turn 8 (or the last turn simulated).
+    if turns >= 8 {
+        let mut p90s: Vec<u32> = logs.iter().map(|l| l.attack_power[7]).collect();
+        p90s.sort_unstable();
+        stats.attack_power_p90 = p90s
+            .get((p90s.len() as f64 * 0.9) as usize)
+            .copied()
+            .unwrap_or(0);
+    }
+    stats.extra_turns_pct = logs
+        .iter()
+        .filter(|l| l.extra_turns.iter().any(|e| *e > 0))
+        .count() as f64
+        / n;
+    let mut win_turns: Vec<u32> = logs.iter().filter_map(|l| l.win_threshold_turn).collect();
+    win_turns.sort_unstable();
+    stats.win_threshold_p50_turn = win_turns
+        .get(win_turns.len() / 2)
+        .copied()
+        .unwrap_or_default();
+    stats.win_threshold_pct = logs
+        .iter()
+        .filter(|l| l.win_threshold_turn.is_some())
+        .count() as f64
+        / n;
+    stats.ultimate_online_pct =
+        logs.iter().filter(|l| l.ultimate_online.is_some()).count() as f64 / n;
     if turns >= 6 {
         stats.floated_pct = logs
             .iter()
@@ -377,7 +499,9 @@ pub struct ComboAccess {
     pub pair: String,
     /// Target turn: the later piece's cast-on-curve turn.
     pub target_turn: u32,
-    /// Share of games with both pieces seen in hand by the target turn.
+    /// Share of games with both pieces seen in hand by the target turn,
+    /// serialized 0-100 (the JSON percent scale).
+    #[serde(serialize_with = "crate::deck::simulator::report::serialize_pct")]
     pub pct_games: f64,
 }
 
@@ -481,11 +605,15 @@ fn color_source_shape(deck: &SimDeck, color_index: usize) -> (usize, usize, &'st
     let mut enters_tapped = 0usize;
     for card in deck.cards.iter().filter(|c| c.role == Role::Land) {
         let Some(y) = &card.tap else { continue };
-        let serves = y.any || y.choice.iter().any(|c| *c) || y.fixed[color_index] > 0;
+        let serves = y.any_pips > 0
+            || y.opponent_any
+            || y.choice.iter().any(|c| *c)
+            || y.fixed[color_index] > 0;
         if !serves {
             continue;
         }
-        let multi = y.any
+        let multi = y.any_pips > 0
+            || y.opponent_any
             || y.choice.iter().filter(|c| **c).count() > 1
             || y.fixed.iter().filter(|p| **p > 0).count() > 1;
         if multi {
@@ -556,13 +684,31 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             });
         }
     }
+    /// True for the unlimited basic land names (the same exemption
+    /// `deck update`'s singleton guard uses).
+    fn is_basic_name(name: &str) -> bool {
+        matches!(
+            name,
+            "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
+        ) || name.starts_with("Snow-Covered")
+    }
+
     // Color screw: any color pip missed in 10%+ of games.
+    let basic_count = deck
+        .cards
+        .iter()
+        .filter(|c| c.role == Role::Land && is_basic_name(&c.name))
+        .count();
     for (i, pct) in stats.color_screw.iter().enumerate() {
         if *pct >= 0.10 {
-            // Rank the fix by what the deck lacks: choice lands beat
-            // single-color lands when the missing color has few sources.
+            // Rank the fix by what the deck lacks. At few basics the
+            // standard "swap basics" advice is wrong: the deck's fix is
+            // any-color sources (rainbow lands, Fellwar-class rocks,
+            // Prism-class banks).
             let (few_sources, choice_sources, shape) = color_source_shape(deck, i);
-            let suggestion = if choice_sources > 0 {
+            let suggestion = if basic_count <= 8 {
+                "add any-color sources (rainbow lands, Fellwar-class rocks, or banked-pip artifacts)".to_string()
+            } else if choice_sources > 0 {
                 format!(
                     "swap basics for lands that also tap for {} (choice sources exist but basics still dominate)",
                     COLORS[i],
@@ -711,6 +857,26 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                 stats.wincon_count
             ),
             suggestion: "add 1-2 win conditions or more draw".to_string(),
+        });
+    }
+    // Interaction readiness: access is fine but the answer is rarely
+    // affordable with spare mana. Capacity, not events.
+    if turns >= 5
+        && stats.interaction_instant_count > 0
+        && stats.interaction_ready_by_turn[4] < 0.40
+        && stats.removal_access_5 >= 0.40
+    {
+        problems.push(Problem {
+            kind: "interaction_unready",
+            severity: severity((1.0 - stats.interaction_ready_by_turn[4]) * 100.0),
+            pct_games: Some((1.0 - stats.interaction_ready_by_turn[4]) * 100.0),
+            color: None,
+            detail: format!(
+                "instant-speed interaction ready (in hand + affordable) by turn 5 in only {:.1}% of games ({} instant-speed copies)",
+                stats.interaction_ready_by_turn[4] * 100.0,
+                stats.interaction_instant_count
+            ),
+            suggestion: "add cheaper instant-speed answers".to_string(),
         });
     }
     problems

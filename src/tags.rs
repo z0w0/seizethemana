@@ -63,6 +63,13 @@ pub struct TagIndex {
 }
 
 impl TagIndex {
+    /// Empty index (no tags): tests and tag-less stores.
+    pub fn default_empty() -> Self {
+        Self {
+            by_oracle: std::collections::HashMap::new(),
+        }
+    }
+
     /// Load every card's tags in one query.
     ///
     /// A missing or empty `tags` table (fresh schema, failed ingest) reads as

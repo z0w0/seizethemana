@@ -1,4 +1,5 @@
-// Deck update ops (`--add`/`--remove`/`--set`) and the `deck update` command.
+// Deck update ops (`--add`/`--remove`/`--set`/`--move`) and the
+// `deck update` command.
 //
 // Ops are parsed from CLI specs (`[section:]qty Name [(SET) [cn]] [*F*]`)
 // and applied to an in-memory deck; the caller persists the result.
@@ -25,6 +26,14 @@ pub enum DeckOp {
         section: Option<String>,
         entry: DeckEntry,
     },
+    /// Move copies between sections (`--move [section:]qty Name to:section`).
+    /// Applied as an atomic remove-then-add so the net state (one copy, in
+    /// the new section) is what every later check sees.
+    Move {
+        from: Option<String>,
+        to: String,
+        entry: DeckEntry,
+    },
 }
 
 /// Parse one op spec: `[section:]qty Name [(SET) [cn]] [*F*]`.
@@ -32,10 +41,19 @@ pub enum DeckOp {
 /// The section prefix is matched when the token before the first space
 /// contains a `:`; card names never contain colons in ManaBox exports.
 /// `--set` allows qty 0 (delete the line); add/remove require qty > 0.
+/// `--move` specs end with `to:<section>` (default DECK).
 ///
 /// # Errors
 /// Fails with a message naming the bad spec.
 pub fn parse_op(kind: &str, spec: &str) -> anyhow::Result<DeckOp> {
+    // `--move` carries a trailing `to:<section>` clause instead of the
+    // qty+name body alone; split it off before the shared parsing.
+    let (spec, to) = if kind == "move" {
+        let (spec, to) = parse_move_target(spec);
+        (spec, to)
+    } else {
+        (spec, "DECK".to_string())
+    };
     let (section, body) = match spec.split_once(':') {
         Some((section, body)) => (Some(section.trim().to_string()), body.trim()),
         None => (None, spec),
@@ -59,8 +77,30 @@ pub fn parse_op(kind: &str, spec: &str) -> anyhow::Result<DeckOp> {
         "add" => DeckOp::Add { section, entry },
         "remove" => DeckOp::Remove { section, entry },
         "set" => DeckOp::Set { section, entry },
+        "move" => DeckOp::Move {
+            from: section,
+            to,
+            entry,
+        },
         other => anyhow::bail!("unknown op kind {other:?}"),
     })
+}
+
+/// Split a trailing `to:<section>` off a move spec.
+///
+/// Returns `(spec_without_to, section)`. The `to:` clause is optional and
+/// always last; DECK is the default target. A card name containing
+/// " to:" followed by more words is left intact (only a trailing
+/// single-word target splits).
+fn parse_move_target(spec: &str) -> (&str, String) {
+    let lower = spec.to_ascii_lowercase();
+    if let Some(idx) = lower.rfind(" to:") {
+        let target = spec[idx + 4..].trim();
+        if !target.is_empty() && !target.contains(' ') {
+            return (&spec[..idx], target.trim().to_string());
+        }
+    }
+    (spec, "DECK".to_string())
 }
 
 /// Apply parsed ops to a deck, returning a summary of what changed.
@@ -97,14 +137,47 @@ pub fn apply_ops(deck: &mut Deck, ops: &[DeckOp]) -> anyhow::Result<DeckOpSummar
                     // Deleting an already-absent line is a no-op.
                     if let Some(pos) = entry_position(entries, entry) {
                         entries.remove(pos);
+                        summary.set += 1;
+                    } else if section.is_none() {
+                        // Unqualified: fall back to other sections, same
+                        // identity rule as remove. A qualified set stays
+                        // strict (the named section has no such line).
+                        match delete_elsewhere(deck, entry) {
+                            Some(section_name) => {
+                                summary.set += 1;
+                                summary.relocated.push((entry.name.clone(), section_name));
+                            }
+                            None => summary.set += 1,
+                        }
+                    } else {
+                        summary.set += 1;
                     }
-                    summary.set += 1;
                 } else if let Some(pos) = entry_position(entries, entry) {
                     entries[pos].quantity = entry.quantity;
                     summary.set += 1;
                 } else {
                     entries.push(entry.clone());
                     summary.set += 1;
+                }
+            }
+            DeckOp::Move { from, to, entry } => {
+                // Atomic remove-then-add: the net state (one line, in the
+                // target section) is what later ops and checks see.
+                match remove_from_section(deck, from.as_deref(), entry) {
+                    RemoveOutcome::Removed(n) => summary.moved += n,
+                    RemoveOutcome::Absent => {
+                        summary.missing.push(entry.name.clone());
+                        continue;
+                    }
+                    RemoveOutcome::Elsewhere(actual) => {
+                        summary.moved += entry.quantity;
+                        summary.relocated.push((entry.name.clone(), actual));
+                    }
+                }
+                let entries = deck.section_entries_mut(to);
+                match entry_position(entries, entry) {
+                    Some(pos) => entries[pos].quantity += entry.quantity,
+                    None => entries.push(entry.clone()),
                 }
             }
         }
@@ -176,6 +249,22 @@ enum RemoveOutcome {
     Elsewhere(String),
 }
 
+/// Delete the first line matching `entry` outside the default section.
+/// Returns the section name it was deleted from, if any.
+fn delete_elsewhere(deck: &mut Deck, entry: &DeckEntry) -> Option<String> {
+    for idx in 0..deck.sections.len() {
+        let (name, entries) = &mut deck.sections[idx];
+        if name.eq_ignore_ascii_case("DECK") {
+            continue;
+        }
+        if let Some(pos) = entry_position(entries, entry) {
+            entries.remove(pos);
+            return Some(name.clone());
+        }
+    }
+    None
+}
+
 /// Result of applying update ops.
 #[derive(Debug, Default, PartialEq)]
 pub struct DeckOpSummary {
@@ -185,6 +274,8 @@ pub struct DeckOpSummary {
     pub removed: i64,
     /// Lines set to an exact quantity.
     pub set: usize,
+    /// Card copies moved between sections.
+    pub moved: i64,
     /// Names referenced by remove ops that were not in the deck.
     pub missing: Vec<String>,
     /// `(name, section)` for removals that hit another section than the
@@ -244,8 +335,9 @@ fn validate_names(
             DeckOp::Add { entry, .. } => (&entry.name, false),
             DeckOp::Set { entry, .. } => (&entry.name, entry.quantity == 0),
             // `--remove` of a card missing from the oracle is fine; the
-            // missing-from-deck path reports it.
-            DeckOp::Remove { .. } => continue,
+            // missing-from-deck path reports it. Moves target a card the
+            // deck already holds; oracle validation is unnecessary.
+            DeckOp::Remove { .. } | DeckOp::Move { .. } => continue,
         };
         // `--set 0 X` deletes a line; the name needs no oracle check.
         if is_zero_set {
@@ -283,7 +375,9 @@ fn validate_names(
 ///
 /// `from_file` (when given) is a text file of extra specs, one per line;
 /// blank lines and `#` comments are skipped. Specs from `--add`/`--remove`/
-/// `--set` run first, then the file's.
+/// `--set`/`--move` run first, then the file's. With `allow_partial`,
+/// remove ops that miss the deck are reported and skipped instead of
+/// aborting the whole batch (exit 1 still signals that something missed).
 #[allow(clippy::too_many_arguments)]
 pub fn update(
     paths: &crate::paths::Paths,
@@ -293,7 +387,9 @@ pub fn update(
     add: &[String],
     remove: &[String],
     set: &[String],
+    move_specs: &[String],
     from: Option<&std::path::Path>,
+    allow_partial: bool,
 ) -> anyhow::Result<i32> {
     let mut ops = Vec::new();
     for spec in add {
@@ -304,6 +400,9 @@ pub fn update(
     }
     for spec in set {
         ops.push(parse_op("set", spec)?);
+    }
+    for spec in move_specs {
+        ops.push(parse_op("move", spec)?);
     }
     if let Some(file) = from {
         let text =
@@ -321,14 +420,14 @@ pub fn update(
             out.error(&format!("no specs found in {}", file.display()));
             out.hint(
                 "one op per line: 'add 1 Name', 'remove 1 Name', 'set 2 Name', \
-                 or a bare spec (treated as add)",
+                 'move 1 Name to:sideboard', or a bare spec (treated as add)",
             );
             return Ok(USAGE_EXIT);
         }
     }
     if ops.is_empty() {
         out.error("no update operations given");
-        out.hint("pass --add/--remove/--set specs, e.g. --add '2 Bolt'");
+        out.hint("pass --add/--remove/--set/--move specs, e.g. --add '2 Bolt'");
         return Ok(USAGE_EXIT);
     }
     if !valid_deck_name(name) {
@@ -340,21 +439,33 @@ pub fn update(
     if let Some(code) = validate_names(conn, out, &ops)? {
         return Ok(code);
     }
-    // Singleton guard: commander-shape decks should hold one copy per
-    // non-basic card. Compute against the pre-apply deck so a first-copy
-    // add does not self-warn; the write still happens so agents keep
-    // flowing, and `deck legal` reports the real violation.
-    let warnings = singleton_warnings(&ops, &deck);
-    let summary = apply_ops(&mut deck, &ops)?;
+    let mut summary = apply_ops(&mut deck, &ops)?;
+    let mut had_missing = false;
     if !summary.missing.is_empty() {
         out.error(&format!(
             "{} of the referenced cards are not in the deck: {}",
             summary.missing.len(),
             summary.missing.join(", ")
         ));
-        out.hint("show the deck first: stm deck show");
-        return Ok(crate::cli::codes::NO_RESULTS);
+        if allow_partial {
+            // Partial mode: the applied ops already mutated the deck
+            // in place; report and continue past the misses. The exit
+            // code still flags the incomplete batch.
+            out.warning("continuing without the missing cards (--allow-partial)");
+            summary.missing.clear();
+            had_missing = true;
+        } else {
+            out.hint("show the deck first: stm deck show");
+            out.hint("apply the resolvable ops anyway with --allow-partial");
+            return Ok(crate::cli::codes::NO_RESULTS);
+        }
     }
+    // Singleton guard: commander-shape decks should hold one copy per
+    // non-basic card. Computed against the post-apply deck so a legal
+    // remove+add pair (net one copy) does not warn; the write still
+    // happens so agents keep flowing, and `deck legal` reports the real
+    // violation.
+    let warnings = singleton_warnings(&ops, &deck);
     for w in &warnings {
         out.warning(w);
     }
@@ -366,12 +477,20 @@ pub fn update(
     if summary.removed > 0 {
         parts.push(format!("-{}", summary.removed));
     }
+    if summary.moved > 0 {
+        parts.push(format!("{} moved", summary.moved));
+    }
     if summary.set > 0 {
         parts.push(format!("{} set", summary.set));
     }
     for (card, section) in &summary.relocated {
         out.warning(&format!("{card} was in {section}; removed it there"));
     }
+    let exit = if had_missing {
+        crate::cli::codes::ERROR
+    } else {
+        crate::cli::codes::OK
+    };
     out.finish(
         "Updated",
         &format!(
@@ -381,13 +500,13 @@ pub fn update(
         ),
         std::time::Duration::ZERO,
     );
-    Ok(crate::cli::codes::OK)
+    Ok(exit)
 }
 
 /// Parse one line from a `--from` spec file.
 ///
-/// Lines are `add <spec>`, `remove <spec>`, `set <spec>`, or a bare spec
-/// (treated as `add`).
+/// Lines are `add <spec>`, `remove <spec>`, `set <spec>`,
+/// `move <spec> to:<section>`, or a bare spec (treated as `add`).
 ///
 /// # Errors
 /// Fails with the line content for unknown verbs or bad specs.
@@ -396,16 +515,28 @@ fn parse_spec_line(line: &str) -> anyhow::Result<DeckOp> {
         Some(("add", rest)) => ("add", rest),
         Some(("remove", rest)) => ("remove", rest),
         Some(("set", rest)) => ("set", rest),
+        Some(("move", rest)) => ("move", rest),
         _ => ("add", line),
     };
     parse_op(kind, body.trim_start())
 }
 
+/// Op kinds the singleton guard distinguishes: Set pins an exact count;
+/// Add and Move both read the post-apply deck's actual holdings.
+#[derive(Clone, Copy)]
+enum OpKind {
+    Add,
+    Set,
+    Move,
+}
+
 /// Warn when an op would push a non-basic card past one copy in a
 /// commander-shaped deck (a COMMANDER section present).
 ///
-/// Returns one warning per affected card name. The deck is still written:
-/// the warning is a nudge, and `deck legal` reports the real violation.
+/// Called against the post-apply deck: a legal remove+add pair nets to one
+/// copy and must not warn. Returns one warning per affected card name.
+/// The deck is still written: the warning is a nudge, and `deck legal`
+/// reports the real violation.
 fn singleton_warnings(ops: &[DeckOp], deck: &Deck) -> Vec<String> {
     if deck.section_index("COMMANDER").is_none() {
         return Vec::new();
@@ -413,22 +544,29 @@ fn singleton_warnings(ops: &[DeckOp], deck: &Deck) -> Vec<String> {
     let mut warned: Vec<String> = Vec::new();
     for op in ops {
         let (entry, kind) = match op {
-            DeckOp::Add { entry, .. } => (entry, "add"),
-            DeckOp::Set { entry, .. } => (entry, "set"),
+            DeckOp::Add { entry, .. } => (entry, OpKind::Add),
+            DeckOp::Set { entry, .. } => (entry, OpKind::Set),
+            // Post-apply: a move has already landed; the deck's total copy
+            // count is unchanged, so only a genuine multi-copy hold warns.
+            DeckOp::Move { entry, .. } => (entry, OpKind::Move),
             DeckOp::Remove { .. } => continue,
         };
         if warned.contains(&entry.name) {
             continue;
         }
-        let existing = deck
+        // Sum across sections: a commander deck holds one copy total, so
+        // a move that splits 2 copies as 1+1 across sections still
+        // breaches the singleton rule.
+        let held = deck
             .entries()
             .filter(|e| e.name == entry.name)
             .map(|e| e.quantity)
-            .max()
-            .unwrap_or(0);
+            .sum();
         let end_state = match kind {
-            "set" => entry.quantity,
-            _ => existing + entry.quantity,
+            OpKind::Set => entry.quantity,
+            // Add and Move both read the post-apply deck: what it now
+            // holds is the only state worth checking.
+            OpKind::Add | OpKind::Move => held,
         };
         if end_state <= 1 || is_unlimited_basics(&entry.name) {
             continue;
@@ -498,15 +636,17 @@ pub fn dedupe(
     let merged_copies: i64 = total_merged(&merged_cards);
     if merged_lines == 0 {
         if json {
+            // Same success shape either way: `merged` empty on a no-op, so
+            // agents parse one contract. Exit 3 still flags "nothing done".
             println!(
                 "{}",
-                serde_json::json!({
+                serde_json::to_string_pretty(&serde_json::json!({
                     "name": name,
-                    "duplicates": 0,
                     "merged_lines": 0,
                     "merged_copies": 0,
                     "cards": deck.total(),
-                })
+                    "merged": [],
+                }))?
             );
         } else {
             out.error("no duplicate lines; the deck is already one line per card");
@@ -517,13 +657,16 @@ pub fn dedupe(
     if json {
         println!(
             "{}",
-            serde_json::json!({
+            serde_json::to_string_pretty(&serde_json::json!({
                 "name": name,
                 "merged_lines": merged_lines,
                 "merged_copies": merged_copies,
                 "cards": deduped.total(),
-                "merged": merged_cards,
-            })
+                "merged": merged_cards
+                    .iter()
+                    .map(|(card, qty)| serde_json::json!({"name": card, "copies": qty}))
+                    .collect::<Vec<_>>(),
+            }))?
         );
     } else {
         for (card, qty) in &merged_cards {
@@ -748,41 +891,57 @@ mod tests {
         let deck = Deck::parse("// DECK\n2 Bolt\n").unwrap();
         let ops = vec![parse_op("add", "2 Bolt").unwrap()];
         assert!(singleton_warnings(&ops, &deck).is_empty());
-        // With a COMMANDER section, the raise warns.
-        let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
+        // With a COMMANDER section, a post-apply hold of two warns.
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
         let ops = vec![parse_op("add", "2 Bolt").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert_eq!(
             singleton_warnings(&ops, &deck),
             vec![
                 "Bolt would exceed the singleton limit; commander decks hold one copy".to_string()
             ]
         );
-        // Basincs are exempt.
+        // Basics are exempt.
         let ops = vec![parse_op("add", "20 Island").unwrap()];
         assert!(singleton_warnings(&ops, &deck).is_empty());
         // A set that lowers to 1 does not warn.
-        let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n4 Bolt\n").unwrap();
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n4 Bolt\n").unwrap();
         let ops = vec![parse_op("set", "1 Bolt").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert!(singleton_warnings(&ops, &deck).is_empty());
-        // A set that raises does warn.
+        // A set that raises to 3 warns after apply.
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
         let ops = vec![parse_op("set", "3 Bolt").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
     }
 
     #[test]
-    fn singleton_warnings_use_pre_apply_deck_state() {
-        // A first-copy add of an absent card must not warn: the warning
-        // reads the deck before ops apply, not after.
-        let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
+    fn singleton_warnings_read_post_apply_deck_state() {
+        // A first-copy add of an absent card must not warn: the deck now
+        // holds one copy.
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
         let ops = vec![parse_op("add", "1 Secluded Courtyard").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert!(singleton_warnings(&ops, &deck).is_empty());
         // A multi-copy add still warns.
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
         let ops = vec![parse_op("add", "2 Secluded Courtyard").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
         // Adding a second copy of a held card still warns.
-        let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Secluded Courtyard\n").unwrap();
+        let mut deck =
+            Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Secluded Courtyard\n").unwrap();
         let ops = vec![parse_op("add", "1 Secluded Courtyard").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
         assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+        // A move nets to one copy: no warning (the false-positive case
+        // that motivated post-apply semantics).
+        let mut deck =
+            Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n").unwrap();
+        let ops = vec![parse_op("move", "1 Bolt to:sideboard").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
+        assert!(singleton_warnings(&ops, &deck).is_empty());
     }
 
     #[test]
@@ -799,11 +958,133 @@ mod tests {
             DeckOp::Set { entry, .. } => assert_eq!(entry.quantity, 2),
             other => panic!("unexpected {other:?}"),
         }
+        match parse_spec_line("move 1 Bolt to:sideboard") {
+            Ok(DeckOp::Move { to, entry, .. }) => {
+                assert_eq!(entry.name, "Bolt");
+                assert_eq!(to, "sideboard");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
         // Bare spec defaults to add.
         match parse_spec_line("3 Bolt").unwrap() {
             DeckOp::Add { entry, .. } => assert_eq!(entry.quantity, 3),
             other => panic!("unexpected {other:?}"),
         }
         assert!(parse_spec_line("shuffle 1 Bolt").is_err());
+    }
+
+    #[test]
+    fn move_ops_parse_from_and_to() {
+        // Explicit from + explicit to.
+        match parse_op("move", "sideboard:1 Bolt to:deck").unwrap() {
+            DeckOp::Move { from, to, entry } => {
+                assert_eq!(from.as_deref(), Some("sideboard"));
+                assert_eq!(to, "deck");
+                assert_eq!(entry.name, "Bolt");
+                assert_eq!(entry.quantity, 1);
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+        // No to: clause defaults to DECK.
+        match parse_op("move", "sideboard:1 Bolt").unwrap() {
+            DeckOp::Move { from, to, .. } => {
+                assert_eq!(from.as_deref(), Some("sideboard"));
+                assert_eq!(to, "DECK");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+        // Unqualified moves DECK→DECK (harmless but valid).
+        match parse_op("move", "2 Bolt to:sideboard").unwrap() {
+            DeckOp::Move { from, to, .. } => {
+                assert_eq!(from, None);
+                assert_eq!(to, "sideboard");
+            }
+            other => panic!("unexpected {other:?}"),
+        }
+    }
+
+    #[test]
+    fn ops_move_copies_between_sections() {
+        let mut deck =
+            Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n1 Strix\n").unwrap();
+        let ops = vec![parse_op("move", "1 Bolt to:sideboard").unwrap()];
+        let summary = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(summary.moved, 1);
+        assert!(summary.missing.is_empty());
+        let sb: Vec<_> = deck.section_entries_mut("SIDEBOARD").clone();
+        assert_eq!(sb.len(), 2, "Bolt joined Strix in the sideboard");
+        let main = deck.section_entries_mut("DECK").len();
+        assert_eq!(main, 0);
+        // 1 commander + 1 Bolt + 1 Strix: a move never changes the count.
+        assert_eq!(deck.total(), 3, "net count unchanged by a move");
+    }
+
+    #[test]
+    fn move_missing_card_records_missing() {
+        let mut deck = Deck::parse("// DECK\n1 Bolt\n").unwrap();
+        let ops = vec![parse_op("move", "1 Strix to:sideboard").unwrap()];
+        let summary = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(summary.missing, vec!["Strix"]);
+        assert_eq!(deck.total(), 1, "nothing changed");
+    }
+
+    #[test]
+    fn singleton_warnings_read_post_apply_state() {
+        // A legal remove+add pair nets to one copy; the post-apply deck
+        // holds one copy, so no warning fires. (The old pre-apply reading
+        // warned here — the regression this test pins.)
+        let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
+        let mut deck = deck;
+        let ops = vec![
+            parse_op("remove", "1 Bolt").unwrap(),
+            parse_op("add", "1 Bolt").unwrap(),
+        ];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
+        assert!(
+            singleton_warnings(&ops, &deck).is_empty(),
+            "a legal move must not warn"
+        );
+        // A genuine double-copy hold still warns after apply.
+        let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
+        let ops = vec![parse_op("add", "1 Bolt").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+    }
+
+    #[test]
+    fn set_zero_falls_back_to_other_sections() {
+        // Unqualified `--set 0` deletes a sideboard-only line (parity with
+        // unqualified remove).
+        let mut deck = Deck::parse("// DECK\n1 Bolt\n// SIDEBOARD\n1 Strix\n").unwrap();
+        let ops = vec![parse_op("set", "0 Strix").unwrap()];
+        let summary = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(summary.set, 1);
+        assert!(
+            summary
+                .relocated
+                .contains(&("Strix".to_string(), "SIDEBOARD".to_string()))
+        );
+        assert_eq!(deck.total(), 1);
+        // Qualified set-0 stays strict: no fallback.
+        let mut deck = Deck::parse("// DECK\n1 Bolt\n// SIDEBOARD\n1 Strix\n").unwrap();
+        let ops = vec![parse_op("set", "deck:0 Strix").unwrap()];
+        let _ = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(
+            deck.total(),
+            2,
+            "qualified set-0 leaves other sections alone"
+        );
+    }
+
+    #[test]
+    fn move_onto_existing_line_sums_quantities() {
+        let mut deck = Deck::parse("// DECK\n1 Bolt\n// SIDEBOARD\n2 Strix\n").unwrap();
+        let ops = vec![parse_op("move", "sideboard:1 Strix to:deck").unwrap()];
+        let summary = apply_ops(&mut deck, &ops).unwrap();
+        assert_eq!(summary.moved, 1);
+        let main = deck.section_entries_mut("DECK").clone();
+        assert_eq!(main.len(), 2);
+        assert_eq!(main[1].name, "Strix");
+        assert_eq!(main[1].quantity, 1);
     }
 }

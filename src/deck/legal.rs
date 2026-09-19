@@ -61,8 +61,8 @@ pub struct Violation {
 /// A check the CLI cannot decide; the reader validates these by hand.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BracketNote {
-    /// One line per check. Lines that start with "PASS" or "CHECK" carry a
-    /// verdict; anything else stays a manual note.
+    /// One line per check. Lines that start with "PASS", "CHECK", or
+    /// "ADVISE" carry a verdict; anything else stays a manual note.
     pub checks: Vec<String>,
 }
 
@@ -405,17 +405,18 @@ pub fn check(
             .map(|(name, _)| name.clone())
             .collect();
         let limit = game_changer_limit(bracket);
-        if let Some(limit) = limit
-            && changers.len() > limit as usize
-        {
-            violations.push(Violation {
-                rule: "game changers".into(),
-                cards: changers.clone(),
-                detail: format!(
-                    "{} Game Changers; bracket {bracket} allows at most {limit}",
-                    changers.len()
-                ),
-            });
+        if let Some(limit) = limit {
+            let capped = format!(
+                "{} Game Changers; the bracket-{bracket} hard cap is {limit} (Game Changer count is the hard bracket rule)",
+                changers.len()
+            );
+            if changers.len() > limit as usize {
+                violations.push(Violation {
+                    rule: "game changers".into(),
+                    cards: changers.clone(),
+                    detail: capped,
+                });
+            }
         }
     }
 
@@ -434,9 +435,13 @@ fn game_changer_limit(bracket: u8) -> Option<u8> {
 
 /// Scan the deck's oracle text for the bracket's judgment-call signals.
 ///
-/// Deterministic text search: tutors, extra turns, mass land destruction,
-/// and upkeep/end-step win-enabler lines. Verdicts are PASS (no hits) or
-/// CHECK (hits found, named). The Game Changer count is checked elsewhere.
+/// Deterministic text search: library searchers (hard tutors vs soft
+/// searchers), extra turns, mass land destruction, and "you win the game"
+/// lines. Verdicts are PASS (no hits), CHECK (genuine bracket conflict),
+/// or ADVISE (soft signal, official rules treat it as a judgment call).
+/// Lines that start with any verdict prefix also land in the JSON
+/// `advisories`/`notes` split. The Game Changer count is the hard check
+/// elsewhere.
 pub fn scan_bracket_signals(
     deck: &Deck,
     cards: &HashMap<String, CardRow>,
@@ -456,8 +461,13 @@ pub fn scan_bracket_signals(
     };
 
     let mut out = Vec::new();
-    // Tutors. Cards that search for basic lands are ramp, not tutors: they
-    // get their own note line so the tutor verdict stays readable.
+    // Library searchers, split by how the official bracket guidance treats
+    // them. Hard tutors are one-shot spells ("search your library for a
+    // card"): they fetch combo pieces and are the class the best-of list
+    // sits on — several are Game Changers, so the GC count does the real
+    // work at bracket 3. Soft searchers are ETB/activated effects with
+    // restrictions ("into your hand", mana-value caps, sacrifice costs):
+    // utility, not combo delivery.
     let is_land_ramp = |name: &str| -> bool {
         let Some(card) = cards.get(name) else {
             return false;
@@ -476,28 +486,82 @@ pub fn scan_bracket_signals(
                     || sentence.contains("forest")
             })
     };
-    let tutors: Vec<String> = scan("search your library for")
-        .into_iter()
-        .filter(|name| !is_land_ramp(name))
+    let mut searchers = scan("search your library for");
+    searchers.extend(scan("search your library and/or graveyard"));
+    searchers.sort();
+    searchers.dedup();
+    // Hard tutor: a spell (instant/sorcery) whose search is the card's
+    // whole job — a one-shot tutor. Soft: ETB/activated searchers and
+    // one-shots with utility twists (a "put it into your hand" clause on
+    // a spell is still a tutor; an activated "sacrifice an artifact:"
+    // cost, an MV cap, or a battlefield-reveal shape is not).
+    let is_hard_tutor = |name: &str| -> bool {
+        let Some(card) = cards.get(name) else {
+            return false;
+        };
+        let text = card.oracle_text.to_lowercase();
+        let spell = card.type_line.contains("Instant") || card.type_line.contains("Sorcery");
+        let activated_or_etb = text.contains("sacrifice an artifact")
+            || text.contains("mana value equal to")
+            || text.contains("when ")
+            || text.contains("whenever ")
+            || text.contains(", {t}")
+            || text.contains("reveal cards from the top");
+        spell && !activated_or_etb
+    };
+    let hard: Vec<String> = searchers
+        .iter()
+        .map(|name| (*name).clone())
+        .filter(|name| !is_land_ramp(name) && is_hard_tutor(name))
         .collect();
-    let ramp = scan("search your library for")
-        .into_iter()
+    let soft: Vec<String> = searchers
+        .iter()
+        .map(|name| (*name).clone())
+        .filter(|name| !is_land_ramp(name) && !is_hard_tutor(name))
+        .collect();
+    let ramp = searchers
+        .iter()
+        .map(|name| (*name).clone())
         .filter(|name| is_land_ramp(name))
         .collect::<std::collections::BTreeSet<_>>();
-    match (bracket, tutors.len()) {
-        (1 | 2, 0) => out.push("PASS tutors: none found".to_string()),
+    // Advisory counts are official guidance, not hard rules: tutors are
+    // "sparse" in brackets 1-2, and bracket 3's only hard cap is the
+    // Game Changer allowance (the best tutors are on that list).
+    match (bracket, hard.len() + soft.len()) {
+        (1 | 2, 0) => out.push("PASS library search: none found".to_string()),
         (1 | 2, n) => out.push(format!(
-            "CHECK tutors: {} card(s) search the library (bracket 1-2 wants none for combo pieces): {}",
+            "CHECK library search: {} card(s) search the library (official guidance: tutors should be sparse; no tutors for combo pieces): {}",
             n,
-            tutors.join(", ")
+            {
+                let mut names = hard.clone();
+                names.extend(soft.clone());
+                names.join(", ")
+            }
         )),
-        (3, n) if n > 3 => out.push(format!(
-            "CHECK tutors: {} found (bracket 3 allows at most 3): {}",
+        (3, n) if n > 0 => out.push(format!(
+            "ADVISE library search: {} card(s) search the library (advisory; the bracket-3 hard cap is 3 Game Changers, which includes the best tutors): {}",
             n,
-            tutors.join(", ")
+            {
+                let mut names = hard.clone();
+                names.extend(soft.clone());
+                names.join(", ")
+            }
         )),
-        (3, n) => out.push(format!("PASS tutors: {} found, within the bracket-3 allowance of 3", n)),
         _ => {}
+    }
+    if !hard.is_empty() {
+        out.push(format!(
+            "note hard tutors: {} card(s) are one-shot search spells (combo delivery): {}",
+            hard.len(),
+            hard.join(", ")
+        ));
+    }
+    if !soft.is_empty() {
+        out.push(format!(
+            "note soft searchers: {} card(s) are ETB/activated/restricted searchers (utility): {}",
+            soft.len(),
+            soft.join(", ")
+        ));
     }
     if !ramp.is_empty() {
         out.push(format!(
@@ -506,25 +570,45 @@ pub fn scan_bracket_signals(
             ramp.into_iter().collect::<Vec<_>>().join(", ")
         ));
     }
-    // Extra turns.
+    // Extra turns: official wording is "low quantities, not chained".
     let extra_turns = scan("extra turn");
     match (bracket, extra_turns.len()) {
         (1..=3, 0) => out.push("PASS extra turns: none found".to_string()),
         (1..=3, n) => out.push(format!(
-            "CHECK extra turns: {} card(s) grant an extra turn: {}",
+            "CHECK extra turns: {} card(s) grant an extra turn (official guidance: low quantities, not chained in succession): {}",
             n,
             extra_turns.join(", ")
         )),
         _ => {}
     }
-    // Mass land destruction.
-    let mld = scan("destroy all lands");
+    // Mass land denial: officially "should not be expected anywhere in
+    // brackets 1-3". The needles cover the standard wordings: destroy,
+    // exile, bounce-all, and untap-lock.
+    let mld_needles = [
+        "destroy all lands",
+        "destroy all non",
+        "exile all lands",
+        "return all lands",
+        "lands don't untap",
+        "lands you control don't untap",
+        "doesn't untap lands",
+    ];
+    // "destroy all non" (Ruination-class) needs a land word nearby.
+    let mld: std::collections::BTreeSet<String> = mld_needles
+        .iter()
+        .flat_map(|needle| scan(needle))
+        .filter(|name| {
+            cards
+                .get(name)
+                .is_some_and(|c| c.oracle_text.to_lowercase().contains("land"))
+        })
+        .collect();
     match (bracket, mld.len()) {
         (1..=3, 0) => out.push("PASS mass land destruction: none found".to_string()),
-        (1..=3, n) => out.push(format!(
-            "CHECK mass land destruction: {} card(s) destroy all lands: {}",
-            n,
-            mld.join(", ")
+        (1..=3, _) => out.push(format!(
+            "CHECK mass land destruction: {} card(s) deny several lands (official rule: none in brackets 1-3): {}",
+            mld.len(),
+            mld.into_iter().collect::<Vec<_>>().join(", ")
         )),
         _ => {}
     }
@@ -554,16 +638,16 @@ pub fn bracket_note(bracket: u8) -> Option<BracketNote> {
     let checks: &[&str] = match bracket {
         1 | 2 => &[
             "no two-card combos that end the game early",
-            "no mass land destruction",
-            "no extra turns before turn 7",
-            "no tutors for combo pieces",
-            "no Game Changers",
+            "no mass land denial",
+            "extra turns only in low quantities, not chained",
+            "tutors should be sparse",
+            "no Game Changers (hard cap)",
         ],
         3 => &[
-            "at most 3 tutors, and they should not fetch combo pieces",
-            "no mass land destruction",
-            "no extra turns before turn 7",
-            "two-card combos should only win in the late game",
+            "at most 3 Game Changers (hard cap)",
+            "no mass land denial",
+            "no intentional early-game two-card infinite combos",
+            "extra turns only in low quantities, not chained",
         ],
         _ => &[],
     };
@@ -696,6 +780,20 @@ pub fn legal(
     let legal = violations.is_empty();
     let summary = summary_line(&deck, &cards);
 
+    // Advisories: bracket judgment calls the official rules leave to the
+    // table. Only `ADVISE ` verdicts (the `ℹ` lines) land here; `CHECK `
+    // verdicts stay hard rules and surface in `violations`/`notes`.
+    let advisories: Vec<String> = note
+        .as_ref()
+        .map(|n| {
+            n.checks
+                .iter()
+                .filter(|c| c.starts_with("ADVISE "))
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+
     if json {
         let violations: Vec<serde_json::Value> = violations
             .iter()
@@ -715,6 +813,7 @@ pub fn legal(
             "bracket": bracket,
             "legal": legal,
             "violations": violations,
+            "advisories": advisories,
             "notes": notes,
             "summary": summary,
         });
@@ -812,7 +911,7 @@ fn print_report(
         for v in violations {
             println!("  {}", styles.error(&format!("{}: {}", v.rule, v.detail)));
             for card in &v.cards {
-                println!("    {card}");
+                println!("    {}", styles.card_name(card));
             }
         }
     }
@@ -821,14 +920,29 @@ fn print_report(
         let has_verdicts = note
             .checks
             .iter()
-            .any(|c| c.starts_with("PASS ") || c.starts_with("CHECK "));
+            .any(|c| c.starts_with("PASS ") || c.starts_with("CHECK ") || c.starts_with("ADVISE "));
         if has_verdicts {
             println!("{}", styles.note("bracket checks:"));
             for check in &note.checks {
                 if let Some(rest) = check.strip_prefix("PASS ") {
-                    println!("  {} {}", styles.success("✓"), rest);
+                    // Bare verdict glyph; success() would double the ✓.
+                    println!(
+                        "  {} {}",
+                        styles.glyph("✓", crate::output::GlyphKind::Good),
+                        rest
+                    );
                 } else if let Some(rest) = check.strip_prefix("CHECK ") {
-                    println!("  {} {}", styles.warning("!"), rest);
+                    println!(
+                        "  {} {}",
+                        styles.glyph("!", crate::output::GlyphKind::Warn),
+                        rest
+                    );
+                } else if let Some(rest) = check.strip_prefix("ADVISE ") {
+                    println!(
+                        "  {} {}",
+                        styles.glyph("ℹ", crate::output::GlyphKind::Info),
+                        rest
+                    );
                 } else {
                     println!("  - {check}");
                 }

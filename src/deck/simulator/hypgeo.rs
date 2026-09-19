@@ -90,7 +90,7 @@ pub fn cast_ceilings(deck: &super::model::SimDeck, turns: u32) -> serde_json::Va
                 "name": name,
                 "copies": copies as i64,
                 "target_turn": target,
-                "pct_castable_ceiling": (ceiling * 1000.0).round() / 1000.0,
+                "pct_castable_ceiling": (ceiling * 10_000.0).round() / 100.0,
             })
         })
         .collect();

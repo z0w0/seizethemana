@@ -365,7 +365,11 @@ fn creature_only_restriction_parses() {
         "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type.",
     ));
     let y = courtyard.tap.expect("courtyard taps");
-    assert!(y.creature_only, "restriction captured");
+    assert_eq!(
+        y.restriction,
+        Some(Restriction::Creature),
+        "restriction captured"
+    );
     let tower = parse_sim_card(&card(
         "Command Tower",
         "",
@@ -373,7 +377,7 @@ fn creature_only_restriction_parses() {
         "{T}: Add one mana of any color.",
     ));
     let y = tower.tap.expect("tower taps");
-    assert!(!y.creature_only);
+    assert_eq!(y.restriction, None);
 }
 
 #[test]
@@ -531,4 +535,218 @@ fn lock_and_booster_roles_classify() {
         "Target creature gets +3/+3 until end of turn.",
     ));
     assert_eq!(pump.role, Role::Booster);
+}
+
+#[test]
+fn gilded_lotus_parses_three_any_pips() {
+    // "Add three mana of any one color" = 3 flexible pips, not 1.
+    let lotus = parse_sim_card(&card(
+        "Gilded Lotus",
+        "Artifact",
+        "",
+        "{T}: Add three mana of any one color.",
+    ));
+    let y = lotus.tap.expect("lotus taps");
+    assert_eq!(y.any_pips, 3);
+    assert_eq!(y.total(), 3);
+}
+
+#[test]
+fn any_combination_parses() {
+    // "Add three mana in any combination of colors" = 3 flexible pips
+    // (Golden Throne's sacrifice activation).
+    let throne = parse_sim_card(&card(
+        "The Golden Throne",
+        "Artifact",
+        "",
+        "{T}, Sacrifice a creature: Add three mana in any combination of colors.",
+    ));
+    assert!(
+        throne
+            .abilities()
+            .any(|a| matches!(a.effect, Effect::Mana(ref y) if y.any_pips == 3)),
+        "sacrifice activation parses with the full 3-pip amount"
+    );
+}
+
+#[test]
+fn fellwar_stone_parses_opponent_any() {
+    let fellwar = parse_sim_card(&card(
+        "Fellwar Stone",
+        "Artifact",
+        "",
+        "{T}: Add one mana of any color that a land an opponent controls could produce.",
+    ));
+    let y = fellwar.tap.expect("fellwar taps");
+    assert!(y.opponent_any);
+    assert_eq!(y.any_pips, 1);
+}
+
+#[test]
+fn faeburrow_elder_parses_colors_present_scaling() {
+    let mut elder_row = card(
+        "Faeburrow Elder",
+        "{1}{G}{W}",
+        "Creature — Treefolk Druid",
+        "Vigilance\nThis creature gets +1/+1 for each color among permanents you control.\n{T}: For each color among permanents you control, add one mana of that color.",
+    );
+    elder_row.colors = r#"["G","W"]"#.into();
+    let elder = parse_sim_card(&elder_row);
+    let y = elder.tap.expect("elder taps");
+    assert_eq!(y.scaling, Some(Scale::ColorsPresent));
+    assert_eq!(elder.colors, [true, false, false, false, true], "GW");
+}
+
+#[test]
+fn plaza_of_heroes_legendary_restriction_parses() {
+    let plaza = parse_sim_card(&card(
+        "Plaza of Heroes",
+        "Land",
+        "",
+        "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell.",
+    ));
+    let y = plaza.tap.expect("plaza taps");
+    assert_eq!(y.restriction, Some(Restriction::Legendary));
+}
+
+#[test]
+fn steelswarm_operator_artifact_restriction_parses() {
+    let op = parse_sim_card(&card(
+        "Steelswarm Operator",
+        "Artifact Creature",
+        "U",
+        "Flying\n{T}: Add {U}. Spend this mana only to cast an artifact spell.",
+    ));
+    let y = op.tap.expect("operator taps");
+    assert_eq!(y.restriction, Some(Restriction::Artifact));
+}
+
+#[test]
+fn opponent_any_yields_nothing_turn_1_any_from_turn_2() {
+    // Fellwar Stone: turn 1 produces nothing (no opponent lands yet),
+    // turn 2+ produces one flexible pip (best-case reading). Structural
+    // check: the parsed yield carries the opponent gate; the turn gate
+    // lives in add_yield_turns.
+    let fellwar = parse_sim_card(&card(
+        "Fellwar Stone",
+        "Artifact",
+        "",
+        "{T}: Add one mana of any color that a land an opponent controls could produce.",
+    ));
+    let y = fellwar.tap.expect("fellwar taps");
+    assert!(y.opponent_any);
+    assert_eq!(y.any_pips, 1);
+}
+
+#[test]
+fn astral_cornucopia_parses_per_counter_scaling() {
+    let cornucopia = parse_sim_card(&card(
+        "Astral Cornucopia",
+        "{X}{X}{X}",
+        "Artifact",
+        "This artifact enters with X charge counters on it.\n{T}: Choose a color. Add one mana of that color for each charge counter on this artifact.",
+    ));
+    let y = cornucopia.tap.expect("cornucopia taps");
+    assert_eq!(y.scaling, Some(Scale::PerChargeCounter));
+}
+
+#[test]
+fn mox_amber_conditional_any_parses() {
+    // "Add one mana of any color among legendary creatures and
+    // planeswalkers you control" — parsed as scaling (conditional).
+    let mox = parse_sim_card(&card(
+        "Mox Amber",
+        "{0}",
+        "Artifact",
+        "{T}: Add one mana of any color among legendary creatures and planeswalkers you control.",
+    ));
+    let y = mox.tap.expect("mox taps");
+    assert_eq!(y.scaling, Some(Scale::ColorsPresent));
+}
+
+#[test]
+fn spend_restriction_instant_sorcery_parses() {
+    let hydro = parse_sim_card(&card(
+        "Hydro-Channeler",
+        "Creature",
+        "U",
+        "{T}: Add {U}. Spend this mana only to cast an instant or sorcery spell.",
+    ));
+    let y = hydro.tap.expect("channeler taps");
+    assert_eq!(y.restriction, Some(Restriction::InstantSorcery));
+}
+
+#[test]
+fn pentad_prism_parses_banked_activation() {
+    let prism = card(
+        "Pentad Prism",
+        "{2}",
+        "Artifact",
+        "Sunburst (This artifact enters with a charge counter on it for each color of mana spent to cast it.)\nRemove a charge counter from this artifact: Add one mana of any color.",
+    );
+    let sim = parse_sim_card(&prism);
+    // Sunburst best-case: two colors paid → 2 banked pips.
+    assert_eq!(sim.enter_counters, 2);
+    let banked = sim
+        .abilities()
+        .find(|a| a.uses_counters)
+        .expect("banked activation parsed");
+    assert!(!banked.taps, "banked activations do not tap");
+    assert!(matches!(banked.effect, Effect::Mana(ref y) if y.any_pips == 1));
+}
+
+#[test]
+fn enduring_vitality_parses_creature_grant() {
+    let mut row = card(
+        "Enduring Vitality",
+        "{1}{G}{W}",
+        "Enchantment",
+        "Creatures you control have \"{T}: Add one mana of any color.\"\nWhen Enduring Vitality dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment.",
+    );
+    row.colors = r#"["G","W"]"#.into();
+    let vital = parse_sim_card(&row);
+    assert_eq!(vital.grant, Some(Grant::Creatures));
+}
+
+#[test]
+fn chromatic_lantern_parses_land_grant() {
+    let lantern = parse_sim_card(&card(
+        "Chromatic Lantern",
+        "{3}",
+        "Artifact",
+        "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color.",
+    ));
+    assert_eq!(lantern.grant, Some(Grant::Lands));
+}
+
+#[test]
+fn treasure_creator_flags() {
+    let exec = parse_sim_card(&card(
+        "Stark Industries Executive",
+        "{2}",
+        "Artifact Creature",
+        "{2}, {T}: Create a Treasure token.",
+    ));
+    assert!(exec.treasures_on_token);
+    let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
+    assert!(!plain.treasures_on_token);
+}
+
+#[test]
+fn helix_pinnacle_threshold_is_100_not_10() {
+    let pinnacle = card(
+        "Helix Pinnacle",
+        "{G}",
+        "Enchantment",
+        "Shield counter on enchanted permanent.\nEnchanted permanent has hexproof.\n{X}: Put X tower counters on Helix Pinnacle.\nIf there are 100 or more tower counters on Helix Pinnacle, you win the game.",
+    );
+    let sim = parse_sim_card(&pinnacle);
+    let threshold = sim
+        .abilities()
+        .find_map(|a| match a.effect {
+            Effect::WinThreshold { counters } => Some(counters),
+            _ => None,
+        })
+        .expect("threshold parsed");
+    assert_eq!(threshold, 100);
 }

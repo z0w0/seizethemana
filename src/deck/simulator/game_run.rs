@@ -2,13 +2,13 @@
 // to keep files small. Pure apart from the passed RNG.
 
 use super::game::{
-    Activation, GameLog, GameState, HAND_LIMIT, InPlay, OPENING_HAND, Pool, card_of,
-    fetches_land_text, fire_on_enter, land_types, new_perm,
+    GameLog, GameState, HAND_LIMIT, InPlay, OPENING_HAND, Pool, card_of, fetches_land_text,
+    fire_on_enter, land_types, new_perm,
 };
-use super::game_effects::{apply_effect, tap_budget};
+use super::game_effects::{apply_effect, spend_leftover, tap_budget};
 use super::game_mana::{
-    add_yield, effective_min_cost, pay_cost, pay_creature_cost, payable, pips_ok,
-    usable_for_creature, usable_for_noncreature,
+    add_yield, add_yield_turns, add_yield_turns_empty_board, effective_min_cost, pay_cost,
+    pay_creature_cost, payable, pips_ok, usable_for_creature, usable_for_noncreature,
 };
 use super::model::{Effect, Role, SimDeck, Trigger};
 use rand::Rng;
@@ -81,6 +81,13 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         graveyard: Vec::new(),
         battlefield_seen: HashMap::new(),
         graveyard_seen: HashMap::new(),
+        treasure_bank: 0,
+        milled_self: 0,
+        milled_opp: 0,
+        drained: 0,
+        awareness_cards: 0,
+        extra_turns_queued: 0,
+        prowess_casts: 0,
     };
     st.hand.retain(|&idx| {
         if deck.cards[idx].opens_in_play {
@@ -111,6 +118,22 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     let mut graveyard_size = vec![0u32; turns];
     let mut card_first_seen: HashMap<usize, u32> = HashMap::new();
     let mut pip_blocks: Vec<(usize, usize)> = Vec::new();
+    let mut attack_power = vec![0u32; turns];
+    let mut attackers_turn = vec![0u32; turns];
+    let mut evasive_turn = vec![0u32; turns];
+    let mut library_size = vec![0u32; turns];
+    let mut self_milled = vec![0u32; turns];
+    let mut opp_milled = vec![0u32; turns];
+    let mut awareness = vec![0.0f64; turns];
+    let mut drain_total = vec![0u32; turns];
+    let mut extra_turns = vec![0u32; turns];
+    let mut win_threshold_turn: Option<u32> = None;
+    let mut ultimate_online: Option<u32> = None;
+    let mut interaction_ready = vec![false; turns];
+    let mut interaction_mana_held = vec![0.0f64; turns];
+    // Extra-turn queue: the loop replays these indices after the main
+    // schedule (one replay pass per queued turn, capped by remaining).
+    let mut pending_extra_turns: u32 = 0;
 
     // The commander's synthetic engine tier (upkeep/end-step draws only)
     // comes from deck construction. Attack-gated draws live in real tiers
@@ -149,10 +172,14 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             perm.sick = false;
             perm.fired = false;
         }
+        st.prowess_casts = 0;
 
         // 2 UPKEEP: engines fire; saga chapters advance (one card each).
         // Draw engines fire their amount; mill/recursion engines run
         // through the effect executor (one firing per turn, fixed delay).
+        // Win-threshold engines check their counter stock here (Darksteel
+        // Reactor class); planeswalker ultimates flag online when
+        // loyalty reaches the minus cost.
         let engine_positions: Vec<usize> = engines
             .iter()
             .filter(|(pos, _)| {
@@ -201,7 +228,9 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                         }
                     }
                     Effect::Mill(_) | Effect::ReturnFromGraveyard { .. } => {
-                        apply_effect(deck, effect, &mut st, turn as u32);
+                        let mill_opp = deck.cards.get(host_card).is_some_and(|c| c.mills_opponent)
+                            || deck.commanders.first().is_some_and(|c| c.mills_opponent);
+                        apply_effect(deck, effect, &mut st, turn as u32, mill_opp);
                     }
                     _ => {}
                 }
@@ -226,10 +255,36 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             }
         }
 
+        // Win-threshold engines: enough counters at upkeep wins.
+        for perm in &st.battlefield {
+            let card = card_of(deck, perm);
+            for ability in card.abilities() {
+                if let Effect::WinThreshold { counters } = ability.effect
+                    && perm.counters >= counters
+                    && win_threshold_turn.is_none()
+                {
+                    win_threshold_turn = Some(turn as u32);
+                }
+            }
+        }
+        // Planeswalker ultimates: online when loyalty covers the minus
+        // cost (the sim does not resolve the ultimate).
+        for perm in &st.battlefield {
+            for ability in card_of(deck, perm).abilities() {
+                if ability.loyalty_cost >= 6
+                    && perm.loyalty >= ability.loyalty_cost
+                    && ultimate_online.is_none()
+                {
+                    ultimate_online = Some(turn as u32);
+                }
+            }
+        }
+
         // 3 DRAW.
         if let Some(i) = st.library.pop() {
             st.hand.push(i);
             st.seen += 1;
+            st.awareness_cards += 1;
         }
 
         // Record role sightings from the hand.
@@ -242,39 +297,10 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             card_first_seen.entry(*i).or_insert(turn as u32);
         }
 
-        // 4 LAND: play an untapped land when one is in hand (the best-case
-        // agent keeps tapped lands for later); any land plays otherwise.
-        // Verge-style gates gate the activation mode, not playability.
-        let land_pos = st
-            .hand
-            .iter()
-            .position(|idx| deck.cards[*idx].role == Role::Land && !deck.cards[*idx].enters_tapped)
-            .or_else(|| {
-                st.hand
-                    .iter()
-                    .position(|idx| deck.cards[*idx].role == Role::Land)
-            });
-        if let Some(pos) = land_pos {
-            let idx = st.hand.remove(pos);
-            let card = &deck.cards[idx];
-            let tapped_in = card.enters_tapped;
-            st.battlefield_seen.entry(idx).or_insert(turn as u32);
-            st.battlefield
-                .push(new_perm(deck, idx, turn as u32, tapped_in));
-            if fetches_land_text(card) {
-                // Search up a land from the library (enters tapped).
-                if let Some(i) = st.library.iter().position(|c| {
-                    deck.cards[*c].role == Role::Land && !fetches_land_text(&deck.cards[*c])
-                }) {
-                    let fetched = st.library.remove(i);
-                    st.battlefield_seen.entry(fetched).or_insert(turn as u32);
-                    st.battlefield
-                        .push(new_perm(deck, fetched, turn as u32, true));
-                }
-            }
-            // ETB triggers for the new land (ExtraLand-style ramp lands).
-            let new_pos = st.battlefield.len() - 1;
-            fire_on_enter(deck, &mut st, new_pos, turn as u32);
+        // 4 LAND: play an untapped land when one is in hand (the
+        // best-case agent keeps tapped lands for later); any land plays
+        // otherwise.
+        if play_land(deck, &mut st, turn as u32) {
             land_drops[turn - 1] = 1;
         }
 
@@ -284,29 +310,37 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         let mut pool = Pool::default();
         // Banked-mana engines release at the upkeep (Coalition Relic):
         // counters × N mana joins the pool, counters clear.
-        for perm in st.battlefield.iter_mut() {
-            let card = card_of(deck, perm);
-            let Some(release) = card
-                .station_tiers
-                .iter()
-                .flat_map(|t| t.abilities.iter())
-                .find(|a| {
-                    a.trigger == Trigger::OnUpkeep && matches!(a.effect, Effect::ManaPerCounter(_))
-                })
-            else {
-                continue;
-            };
-            let y = match &release.effect {
-                Effect::ManaPerCounter(y) => Some(y.clone()),
-                _ => None,
-            };
-            let Some(y) = y else {
-                continue;
-            };
-            for _ in 0..perm.counters {
-                add_yield(&y, &mut pool);
+        let releases: Vec<(usize, super::model::TapYield, u32)> = st
+            .battlefield
+            .iter()
+            .filter_map(|perm| {
+                let card = card_of(deck, perm);
+                let release = card
+                    .station_tiers
+                    .iter()
+                    .flat_map(|t| t.abilities.iter())
+                    .find(|a| {
+                        a.trigger == Trigger::OnUpkeep
+                            && matches!(a.effect, Effect::ManaPerCounter(_))
+                    })?;
+                let y = match &release.effect {
+                    Effect::ManaPerCounter(y) => y.clone(),
+                    _ => return None,
+                };
+                Some((perm.card, y, perm.counters))
+            })
+            .collect();
+        for (card_idx, y, counters) in releases {
+            for _ in 0..counters {
+                add_yield_turns(deck, &y, &mut pool, turn as u32, &st.battlefield);
             }
-            perm.counters = 0;
+            if let Some(perm) = st
+                .battlefield
+                .iter_mut()
+                .find(|p| p.card == card_idx && p.counters > 0)
+            {
+                perm.counters = 0;
+            }
         }
         for perm in &st.battlefield {
             if perm.tapped {
@@ -317,7 +351,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 continue;
             };
             if card.gate_types.is_empty() {
-                add_yield(y, &mut pool);
+                add_yield_turns(deck, y, &mut pool, turn as u32, &st.battlefield);
                 continue;
             }
             // Gate check: does the board hold another land of a gated type?
@@ -331,7 +365,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 })
             });
             if gates_open {
-                add_yield(y, &mut pool);
+                add_yield_turns(deck, y, &mut pool, turn as u32, &st.battlefield);
             } else {
                 // Locked: only the ungated first mode produces. The ungated
                 // color is the first fixed pip, or the first choice color
@@ -350,14 +384,53 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 let mut ungated = super::model::TapYield {
                     fixed: [0; 5],
                     choice: [false; 5],
-                    any: false,
+                    any_pips: 0,
+                    opponent_any: false,
+                    scaling: None,
                     colorless: 0,
                     alternatives: false,
-                    creature_only: false,
+                    restriction: None,
                 };
                 ungated.fixed[ci] = 1;
                 add_yield(&ungated, &mut pool);
             }
+        }
+        // Static mana grants (Enduring Vitality, Chromatic Lantern):
+        // each matching permanent adds one flexible pip per turn, capped
+        // at two pips per grant. The grant source itself must be on the
+        // battlefield.
+        for grantor_idx in 0..st.battlefield.len() {
+            let grant = {
+                let perm = &st.battlefield[grantor_idx];
+                card_of(deck, perm).grant
+            };
+            let Some(grant) = grant else {
+                continue;
+            };
+            let want_creatures = matches!(grant, super::model::Grant::Creatures);
+            let matches = st
+                .battlefield
+                .iter()
+                .filter(|p| {
+                    let card = card_of(deck, p);
+                    // Creatures grant empowers creatures; lands grant
+                    // empowers lands. Commanders are never granted mana
+                    // by their own static engine here.
+                    if want_creatures {
+                        card.is_creature && !p.is_commander
+                    } else {
+                        card.role == Role::Land && !p.is_commander
+                    }
+                })
+                .count() as u32;
+            pool.flexible += matches.min(2);
+        }
+        // Treasure bank: spend up to the full bank as flexible pips
+        // (the player would sacrifice them when needed; best-case the
+        // whole bank converts this turn).
+        if st.treasure_bank > 0 {
+            pool.flexible += st.treasure_bank;
+            st.treasure_bank = 0;
         }
 
         // Commander cast: full pip check, cost deducted, joins the board.
@@ -446,6 +519,29 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         // station; then crew.
         tap_budget(deck, &mut st.battlefield, &mut pool, &st.hand);
 
+        // 7b INTERACTION READINESS (measured, not forced): was instant-
+        // speed interaction in hand while spare mana covered its cost?
+        // The cheapest answer in hand decides; the goldfish never spends
+        // it. Capacity, not events.
+        if turn <= turns {
+            let cheapest = st
+                .hand
+                .iter()
+                .filter_map(|i| {
+                    let c = &deck.cards[*i];
+                    (c.is_interaction && c.is_instant_speed)
+                        .then(|| c.min_cost.total().max(c.cost.total()))
+                })
+                .min();
+            match cheapest {
+                Some(cheapest) if pool.total() >= cheapest => {
+                    interaction_ready[turn - 1] = true;
+                    interaction_mana_held[turn - 1] = f64::from(pool.total() - cheapest);
+                }
+                _ => {}
+            }
+        }
+
         // 8 THRESHOLD: station tiers unlock (permanent for animate tiers).
         for perm in st.battlefield.iter_mut() {
             let card = card_of(deck, perm);
@@ -461,36 +557,20 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             }
         }
 
-        // 9 COMBAT: bodies attack; attack triggers fire. Token payoffs
-        // (Parhelion II, Ajani) join the battlefield as small bodies.
-        let mut token_bodies = 0u32;
-        for perm in st.battlefield.clone() {
-            let attacks = perm.animated
-                || perm.crewed
-                || (card_of(deck, &perm).is_creature && !perm.tapped && !perm.sick);
-            if !attacks {
-                continue;
-            }
-            for ability in card_of(deck, &perm).abilities() {
-                if ability.trigger != Trigger::OnAttack {
-                    continue;
-                }
-                match ability.effect {
-                    Effect::Draw(n) => {
-                        for _ in 0..n {
-                            if let Some(i) = st.library.pop() {
-                                st.hand.push(i);
-                                st.seen += 1;
-                            }
-                        }
-                    }
-                    Effect::Tokens(n) => token_bodies += n,
-                    _ => {}
-                }
-            }
-        }
+        // 9 COMBAT: bodies attack; attack triggers fire (see game_combat).
+        let combat = super::game_combat::combat_phase(deck, &mut st, turn, turns, &land_drops);
+        attack_power[turn - 1] = combat.power;
+        attackers_turn[turn - 1] = combat.attackers;
+        evasive_turn[turn - 1] = combat.evasive;
+        let token_bodies = combat.token_bodies;
         cards_seen[turn - 1] = st.seen;
         graveyard_size[turn - 1] = st.graveyard.len() as u32;
+        library_size[turn - 1] = st.library.len() as u32;
+        self_milled[turn - 1] = st.milled_self;
+        opp_milled[turn - 1] = st.milled_opp;
+        awareness[turn - 1] = f64::from(st.awareness_cards) / (deck.cards.len() as f64).max(1.0);
+        drain_total[turn - 1] = st.drained;
+        extra_turns[turn - 1] = st.extra_turns_queued;
         bodies[turn - 1] = st
             .battlefield
             .iter()
@@ -506,6 +586,30 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 .entry(discarded)
                 .or_insert(turns.max(1) as u32);
             st.graveyard.push(discarded);
+        }
+        // 11 EXTRA TURNS: queued extra turns each give one land drop and
+        // one draw (the fixed-value replay the goldfish credits). The
+        // queue drains while schedule turns remain.
+        while pending_extra_turns > 0 && turn as u32 + pending_extra_turns <= turns as u32 {
+            pending_extra_turns -= 1;
+            if let Some(i) = st.library.pop() {
+                st.hand.push(i);
+                st.seen += 1;
+                st.awareness_cards += 1;
+            }
+            let land_pos = st
+                .hand
+                .iter()
+                .position(|idx| deck.cards[*idx].role == Role::Land);
+            if let Some(pos) = land_pos {
+                let idx = st.hand.remove(pos);
+                st.battlefield_seen.entry(idx).or_insert(turn as u32);
+                st.battlefield.push(new_perm(deck, idx, turn as u32, false));
+            }
+        }
+        if pending_extra_turns == 0 && st.extra_turns_queued > 0 {
+            pending_extra_turns = st.extra_turns_queued;
+            st.extra_turns_queued = 0;
         }
     }
 
@@ -529,145 +633,60 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         pip_blocks,
         graveyard_size,
         card_first_seen,
+        attack_power,
+        attackers: attackers_turn,
+        evasive: evasive_turn,
+        library_size,
+        self_milled,
+        opp_milled,
+        awareness,
+        drain_total,
+        extra_turns,
+        win_threshold_turn,
+        ultimate_online,
+        interaction_ready,
+        interaction_mana_held,
         card_first_battlefield: st.battlefield_seen,
         card_first_graveyard: st.graveyard_seen,
     }
 }
 
-/// The spend-leftover-mana pass: repeatedly fire the cheapest unlocked
-/// activation (draw engines, mana engines, walkers, sacrifice outlets).
-/// Each firing taps the source or spends loyalty; sacrifice outlets feed
-/// death triggers from the surviving board.
-fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) {
-    loop {
-        let mut best: Option<Activation> = None;
-        for (bi, perm) in st.battlefield.iter().enumerate() {
-            if perm.tapped || perm.fired {
-                continue;
-            }
-            let card = card_of(deck, perm);
-            // Loyalty activations gate on loyalty, not mana.
-            let unlocked = card
-                .station_tiers
+/// Play one land from the hand (untapped first), fetch a search land,
+/// and fire its ETB triggers. Returns true when a land was played.
+fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
+    let land_pos = st
+        .hand
+        .iter()
+        .position(|idx| deck.cards[*idx].role == Role::Land && !deck.cards[*idx].enters_tapped)
+        .or_else(|| {
+            st.hand
                 .iter()
-                .filter(|t| t.at == 0 || perm.counters >= t.at)
-                .flat_map(|t| t.abilities.iter())
-                .filter(|a| a.trigger == Trigger::Activated && a.taps);
-            for ability in unlocked {
-                let loyalty_affordable =
-                    ability.loyalty_cost == 0 || perm.loyalty >= ability.loyalty_cost;
-                let usable = matches!(
-                    ability.effect,
-                    Effect::Draw(_)
-                        | Effect::Tutor
-                        | Effect::Mana(_)
-                        | Effect::Counters(_)
-                        | Effect::Loot(_)
-                ) || ability.sacrifice_bodies > 0;
-                if usable
-                    && loyalty_affordable
-                    && (ability.loyalty_cost > 0
-                        || (payable(&ability.cost, pool) && pips_ok(&ability.cost, pool)))
-                    && best.as_ref().is_none_or(|b| {
-                        ability.cost.total() + ability.sacrifice_bodies.min(1) < b.cost
-                    })
-                {
-                    let draws = match ability.effect {
-                        Effect::Draw(n) => n,
-                        Effect::Tutor => 1,
-                        Effect::Loot(n) => n,
-                        _ => 0,
-                    };
-                    let mana = match &ability.effect {
-                        Effect::Mana(y) => Some(y.clone()),
-                        _ => None,
-                    };
-                    let counters = match ability.effect {
-                        Effect::Counters(n) => n,
-                        _ => 0,
-                    };
-                    best = Some(Activation {
-                        pos: bi,
-                        cost: ability.cost.total(),
-                        draws,
-                        mana_yield: mana,
-                        counters,
-                        sacrifice_bodies: ability.sacrifice_bodies,
-                    });
-                }
-            }
-        }
-        let Some(a) = best else {
-            break;
-        };
-        let perm = &mut st.battlefield[a.pos];
-        let card = card_of(deck, perm);
-        let ability = card
-            .station_tiers
+                .position(|idx| deck.cards[*idx].role == Role::Land)
+        });
+    let Some(pos) = land_pos else {
+        return false;
+    };
+    let idx = st.hand.remove(pos);
+    let card = &deck.cards[idx];
+    let tapped_in = card.enters_tapped;
+    st.battlefield_seen.entry(idx).or_insert(turn);
+    st.battlefield.push(new_perm(deck, idx, turn, tapped_in));
+    if fetches_land_text(card) {
+        // Search up a land from the library (enters tapped).
+        if let Some(i) = st
+            .library
             .iter()
-            .flat_map(|t| t.abilities.iter())
-            .find(|ab| {
-                ab.trigger == Trigger::Activated
-                    && ab.taps
-                    && ab.cost.total() + ab.sacrifice_bodies.min(1)
-                        == a.cost + a.sacrifice_bodies.min(1)
-            })
-            .cloned()
-            .unwrap_or_default();
-        // Loyalty activations spend loyalty; mana costs do not apply.
-        if ability.loyalty_cost > 0 {
-            perm.loyalty = perm.loyalty.saturating_sub(ability.loyalty_cost);
-            perm.fired = true;
-        } else {
-            pay_cost(&ability.cost, pool);
-            perm.tapped = true;
-            perm.fired = true;
-        }
-        for _ in 0..a.draws {
-            if let Some(i) = st.library.pop() {
-                st.hand.push(i);
-                st.seen += 1;
-            }
-        }
-        // Sacrifice outlets feed an untapped non-token body to the
-        // cost: it leaves play and its OnDeath triggers fire.
-        for _ in 0..ability.sacrifice_bodies {
-            let victim = st.battlefield.iter().position(|p| {
-                !p.is_commander
-                    && p.card < usize::MAX - 1
-                    && p.card != a.pos
-                    && card_of(deck, p).is_creature
-                    && !p.tapped
-            });
-            let Some(v) = victim else {
-                break;
-            };
-            let victim_card = st.battlefield[v].card;
-            st.battlefield.remove(v);
-            st.graveyard_seen.entry(victim_card).or_insert(turn);
-            st.graveyard.push(victim_card);
-            // Death triggers: draw/token payoffs fire from the
-            // surviving board.
-            let death_effects: Vec<Effect> = st
-                .battlefield
-                .iter()
-                .flat_map(|p| card_of(deck, p).abilities().cloned().collect::<Vec<_>>())
-                .filter(|ab| ab.trigger == Trigger::OnDeath)
-                .map(|ab| ab.effect)
-                .collect();
-            for effect in &death_effects {
-                apply_effect(deck, effect, st, turn);
-            }
-        }
-        // Mana activations feed this turn's pool; counter engines
-        // (Moxite Refinery) charge their host.
-        if let Some(y) = &a.mana_yield {
-            add_yield(y, pool);
-        }
-        if let Some(perm) = st.battlefield.get_mut(a.pos) {
-            perm.counters += a.counters;
+            .position(|c| deck.cards[*c].role == Role::Land && !fetches_land_text(&deck.cards[*c]))
+        {
+            let fetched = st.library.remove(i);
+            st.battlefield_seen.entry(fetched).or_insert(turn);
+            st.battlefield.push(new_perm(deck, fetched, turn, true));
         }
     }
+    // ETB triggers for the new land (ExtraLand-style ramp lands).
+    let new_pos = st.battlefield.len() - 1;
+    fire_on_enter(deck, st, new_pos, turn);
+    true
 }
 
 /// The cast pass: cheapest castable spells first, pip-aware. Updates the
@@ -749,13 +768,14 @@ fn cast_phase(
         });
         // One-shot mana (rituals) joins this turn's pool only.
         if let Some(y) = &card.mana_on_cast {
-            add_yield(y, pool);
+            add_yield_turns_empty_board(y, pool, turn as u32);
         }
         // One-shot draws on cast (cantrips, Divination).
         for _ in 0..card.draws_on_cast {
             if let Some(i) = st.library.pop() {
                 st.hand.push(i);
                 st.seen += 1;
+                st.awareness_cards += 1;
             }
         }
         // One-shot mill on cast (plain "mill N" spells).
@@ -764,7 +784,41 @@ fn cast_phase(
                 st.graveyard_seen.entry(i).or_insert(turn as u32);
                 st.graveyard.push(i);
                 st.seen += 1;
+                st.awareness_cards += 1;
+                if card.mills_opponent {
+                    st.milled_opp += 1;
+                } else {
+                    st.milled_self += 1;
+                }
             }
+        }
+        // Scry/surveil on cast: awareness only; surveil mills the
+        // scry'd cards to the graveyard.
+        if card.scry_on_cast > 0 {
+            st.awareness_cards += card.scry_on_cast;
+            if card.surveils {
+                for _ in 0..card.scry_on_cast {
+                    if let Some(i) = st.library.pop() {
+                        st.graveyard_seen.entry(i).or_insert(turn as u32);
+                        st.graveyard.push(i);
+                        st.milled_self += 1;
+                    }
+                }
+            }
+        }
+        // One-shot extra turns queue for replay after this turn.
+        if card.extra_turns_on_cast {
+            st.extra_turns_queued += 1;
+        }
+        // One-shot drain spells (burn at a player, "each opponent
+        // loses N life"). Player-targeted damage resolves ×3 (three
+        // opponents); creature-target burn never got here (Removal).
+        if card.drain_on_cast > 0 {
+            st.drained += card.drain_on_cast * 3;
+        }
+        // Prowess census: noncreature spells cast this turn.
+        if !card.is_creature && card.role != Role::Land {
+            st.prowess_casts += 1;
         }
         // OnCastSpell engines fire per spell cast.
         for p in st.battlefield.clone() {

@@ -158,7 +158,7 @@ fn tap_yield_fixed_set_is_simultaneous() {
 #[test]
 fn tap_yield_any_color_prose() {
     let y = parse_tap_yield("{T}: Add one mana of any color.");
-    assert!(y.is_some_and(|y| y.any && y.total() == 1));
+    assert!(y.is_some_and(|y| y.any_pips == 1 && y.total() == 1));
 }
 
 #[test]
@@ -180,10 +180,13 @@ fn tap_yield_none_for_non_mana() {
 }
 
 #[test]
-fn tap_yield_opponent_dependent_is_none() {
-    // Goldfish: no opponents, so opponent-scaled production yields nothing.
+fn tap_yield_opponent_dependent_flags_any() {
+    // Goldfish: opponent-scaled production reads as any-color from turn 2
+    // (add_yield_turns gates the turn), not nothing.
     let orchard = "{T}: Add one mana of any color that a land an opponent controls could produce.";
-    assert!(parse_tap_yield(orchard).is_none());
+    let y = parse_tap_yield(orchard).expect("opponent yield parses");
+    assert!(y.opponent_any);
+    assert_eq!(y.any_pips, 1);
     assert!(parse_tap_yield("{T}: Add {G}.").is_some());
 }
 
@@ -199,7 +202,7 @@ fn type_granted_land_taps_for_any_color() {
     );
     let sim = parse_sim_card(&passage);
     let tap = sim.tap.expect("type-granted land taps for mana");
-    assert!(tap.any && tap.total() == 1);
+    assert!(tap.any_pips == 1 && tap.total() == 1);
     // Regular add-clause lands are unaffected.
     let plain = card("Plains", "", "Basic Land — Plains", "({T}: Add {W}.)");
     assert!(parse_sim_card(&plain).tap.is_some());

@@ -76,6 +76,14 @@ pub fn run_setup(
         ),
         std::time::Duration::ZERO,
     );
+    // Make the labels searchable: tag labels are FTS content (weight second
+    // to name), so role words resolve through the community vocabulary.
+    out.status("Indexing", "tag labels into full-text search");
+    let tagged = crate::db::refresh_tags_text(conn)?;
+    out.status(
+        "Indexed",
+        &format!("{tagged} tagged cards", tagged = tagged),
+    );
 
     // 3b. Combo variants (Commander Spellbook). A failed refresh warns and
     // continues: combos are additive diagnostics, never a blocker.

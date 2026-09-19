@@ -48,6 +48,18 @@ pub struct Styles {
 /// Verb column width for cargo-style status lines (`   Compiling serde ...`).
 const VERB_WIDTH: usize = 12;
 
+/// Color family for [`Styles::glyph`].
+#[derive(Debug, Clone, Copy)]
+pub enum GlyphKind {
+    Good,
+    Warn,
+    Bad,
+    Dim,
+    /// Advisory note (bracket judgment calls): informational, never a
+    /// violation or a genuine conflict.
+    Info,
+}
+
 // Some render helpers are exercised only from unit tests; keep them so the
 // output surface stays uniform.
 #[allow(dead_code)]
@@ -306,6 +318,24 @@ impl Styles {
             text.dimmed().to_string()
         } else {
             text
+        }
+    }
+
+    /// Bare colored text without a prefix (verdict glyphs, diff signs).
+    ///
+    /// The prefixing helpers (`success`/`warning`/`error`) embed
+    /// `✓`/`warning:`/`error:` text; bare glyphs like the `deck legal`
+    /// bracket verdicts and the simulate diff signs need color only.
+    pub fn glyph(&self, s: &str, kind: GlyphKind) -> String {
+        if !self.color {
+            return s.to_string();
+        }
+        match kind {
+            GlyphKind::Good => s.green().to_string(),
+            GlyphKind::Warn => s.yellow().to_string(),
+            GlyphKind::Bad => s.red().to_string(),
+            GlyphKind::Dim => s.dimmed().to_string(),
+            GlyphKind::Info => s.cyan().to_string(),
         }
     }
 

@@ -74,7 +74,9 @@ pub struct ComboAccess {
     pub bracket_tag: Option<String>,
     /// Target turn: max(manaValueNeeded, highest piece cmc), clamped.
     pub target_turn: u32,
-    /// Share of games where every piece reached a required zone in time.
+    /// Share of games where every piece reached a required zone in time,
+    /// serialized 0-100 (the JSON percent scale).
+    #[serde(serialize_with = "crate::deck::simulator::report::serialize_pct")]
     pub pct_games: f64,
     /// Names of the pieces the deck lacks (empty for complete combos).
     pub missing: Vec<String>,

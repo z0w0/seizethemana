@@ -78,6 +78,16 @@ pub fn run_sync(
     out.status("Ingesting", "oracle tags from bulk data");
     let tags_delta = crate::tags::ingest(conn, &tags_dest, out)?;
 
+    // Push the new labels into the full-text index: tag labels are FTS
+    // content (weight second to name), so role words resolve through the
+    // community vocabulary.
+    out.status("Indexing", "tag labels into full-text search");
+    let tagged = crate::db::refresh_tags_text(conn)?;
+    out.status(
+        "Indexed",
+        &format!("{tagged} tagged cards", tagged = tagged),
+    );
+
     // Combos refresh their own tables wholesale; embeddings ignore them.
     // A failed refresh warns and continues: combos are additive
     // diagnostics, never a blocker for card data.
@@ -107,7 +117,9 @@ pub fn run_sync(
                 delta.changed
             ),
         );
-        let mut store = crate::embed::VectorStore::load(paths.root())?;
+        // Sync mutates the matrix (row overwrites + appends); load an
+        // owned copy instead of the read-only query mapping.
+        let mut store = crate::embed::VectorStore::load_owned(paths.root())?;
         let mut model = crate::embed::load_model(&paths.models_dir(), out.verbose)?;
         let tag_index = crate::tags::TagIndex::load(conn)?;
         // A layout bump re-embeds every stored card once; otherwise only the
@@ -400,12 +412,9 @@ pub fn upsert_vector(
         .context("model returned no embedding")?;
     match store.meta.index_of(&card.name) {
         Some(idx) => {
-            store.vectors[idx * crate::embed::DIM..(idx + 1) * crate::embed::DIM]
-                .copy_from_slice(&vector);
             // Push() normalizes; writing in place must too.
-            crate::embed::normalize_row(
-                &mut store.vectors[idx * crate::embed::DIM..(idx + 1) * crate::embed::DIM],
-            );
+            store.row_mut(idx).copy_from_slice(&vector);
+            crate::embed::normalize_row(store.row_mut(idx));
         }
         None => store.push(&card.name, vector)?,
     }
@@ -575,8 +584,7 @@ mod tests {
         let idx = store.meta.index_of("B").unwrap();
         let mut new_vec = vec![1.0; crate::embed::DIM];
         crate::embed::normalize_row(&mut new_vec);
-        store.vectors[idx * crate::embed::DIM..(idx + 1) * crate::embed::DIM]
-            .copy_from_slice(&new_vec);
+        store.row_mut(idx).copy_from_slice(&new_vec);
         assert_eq!(store.meta.index_of("B"), Some(1));
     }
 

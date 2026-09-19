@@ -69,18 +69,49 @@ pub struct TapYield {
     pub fixed: [u8; 5],
     /// Colors this source can choose from when tapped (choice sources).
     pub choice: [bool; 5],
-    /// Any-color choice (Command Tower, Arcane Signet).
-    pub any: bool,
+    /// Any-color pips produced per tap (Command Tower 1, Gilded Lotus 3).
+    pub any_pips: u32,
+    /// True when the "any color" clause depends on an opponent's board
+    /// ("any color a land an opponent controls could produce" — Fellwar
+    /// Stone). Goldfish: yields like `any_pips` from turn 2, nothing on
+    /// turn 1.
+    pub opponent_any: bool,
+    /// Conditional scaling: the tap's output grows with board state.
+    pub scaling: Option<Scale>,
     /// Colorless-only production (`{C}`).
     pub colorless: u32,
     /// True when merged from several separate tap abilities: one tap
     /// yields one mana of any reachable color, never the sum
     /// (Plaza of Heroes, Verge lands).
     pub alternatives: bool,
-    /// Spend restriction: the mana may only pay for creature spells
+    /// Spend restriction: the mana may only pay for certain casts
     /// ("spend this mana only to cast creature spells" — Secluded
-    /// Courtyard, Unclaimed Territory). Noncreature casts cannot use it.
-    pub creature_only: bool,
+    /// Courtyard; "…a legendary spell" — Plaza of Heroes).
+    pub restriction: Option<Restriction>,
+}
+
+/// Spend-restriction classes the pool can honor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Restriction {
+    /// Creature spells only (Secluded Courtyard).
+    Creature,
+    /// Artifact spells only (Steelswarm Operator).
+    Artifact,
+    /// Legendary spells only (Plaza of Heroes).
+    Legendary,
+    /// Instant and sorcery spells only (Hydro-Channeler).
+    InstantSorcery,
+}
+
+/// Board-state growth of a tap yield.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Scale {
+    /// One any-color pip per color among permanents you control
+    /// (Faeburrow Elder, Bloom Tender, Plaza of Heroes' legendary mode).
+    ColorsPresent,
+    /// One any-color pip per charge counter on the source
+    /// (Astral Cornucopia, Crystalline Crawler).
+    PerChargeCounter,
 }
 
 impl TapYield {
@@ -88,11 +119,12 @@ impl TapYield {
     /// tap abilities on one permanent) yield one mana, never the sum.
     pub fn total(&self) -> u32 {
         if self.alternatives {
-            let reachable = self.any || self.choice.iter().any(|c| *c);
+            let reachable = self.any_pips > 0 || self.choice.iter().any(|c| *c);
             return u32::from(reachable || self.colorless > 0);
         }
         self.fixed.iter().map(|p| u32::from(*p)).sum::<u32>()
-            + u32::from(self.any || self.choice.iter().any(|c| *c))
+            + self.any_pips
+            + u32::from(self.choice.iter().any(|c| *c))
             + self.colorless
     }
 }
@@ -109,6 +141,9 @@ pub enum Trigger {
     OnUpkeep,
     /// Fired when the card attacks.
     OnAttack,
+    /// Fired when the card deals combat damage to a player (best case:
+    /// every attacker connects). Thrummingbird proliferate, draw, drain.
+    OnCombatDamage,
     /// Fired when another spell is cast (Y'shtola, Vivi, Jhoira).
     OnCastSpell,
     /// Fired when the permanent dies or is sacrificed.
@@ -154,6 +189,23 @@ pub enum Effect {
     /// Draw N, then discard N (loot). Net velocity +N; the graveyard
     /// log fills with the discards.
     Loot(u32),
+    /// Look at the top N cards (scry, surveil). Zero draw credit: the
+    /// cards feed `library_awareness_by_turn` instead. Surveil also
+    /// puts them in the graveyard (best case for graveyard decks).
+    Scry(u32),
+    /// Take an extra turn after this one (Time Sieve class). Queued
+    /// and replayed by the turn loop; never chained mid-turn.
+    ExtraTurn,
+    /// Upkeep threshold engine: when the host holds `counters` charge
+    /// counters it wins (Darksteel Reactor, Helix Pinnacle class).
+    WinThreshold {
+        /// Counters needed to win.
+        counters: u32,
+    },
+    /// Lose N life (drain, burn at a player). Opponent-scoped phrasing
+    /// ("target player", "each opponent") maps here; creature-target
+    /// burn does not.
+    Drain(u32),
 }
 
 /// One executable ability: what fires it, what it costs, what it does.
@@ -167,6 +219,10 @@ pub struct Ability {
     pub effect: Effect,
     /// Consumes the source's tap (mana abilities and tap-activated draws).
     pub taps: bool,
+    /// Consumes one charge counter per fire (Pentad Prism's "remove a
+    /// charge counter: add one mana of any color"). The source stays
+    /// untapped and fires once per turn while counters last.
+    pub uses_counters: bool,
     /// Bodies sacrificed as part of the cost (aristocrats outlets). The
     /// activation consumes an untapped body and fires its OnDeath
     /// triggers.
@@ -233,6 +289,18 @@ pub struct SimCard {
     pub draws_on_cast: u32,
     /// One-shot mill on cast or on entering ("mill N").
     pub mills_on_enter: u32,
+    /// One-shot scry/surveil on cast. Awareness credit, not draw.
+    pub scry_on_cast: u32,
+    /// True when the one-shot look effect is surveil (the scry'd cards
+    /// go to the graveyard — best case for graveyard decks).
+    pub surveils: bool,
+    /// Mill effects target opponents ("target player mills N") instead
+    /// of the deck's own library (deck-out pressure direction).
+    pub mills_opponent: bool,
+    /// One-shot extra turn on cast ("take an extra turn").
+    pub extra_turns_on_cast: bool,
+    /// One-shot life loss at a player on cast (burn, drain).
+    pub drain_on_cast: u32,
     /// Printed power (creatures); crew and station use it instead of the
     /// flat body power. Tokens and unknowns stay flat.
     pub printed_power: Option<u32>,
@@ -242,6 +310,63 @@ pub struct SimCard {
     /// affinity): the discount grows as artifacts enter, instead of the
     /// parse-time flat −2.
     pub board_discount: bool,
+    /// Printed colors of the card (subset of WUBRG, by index). Powers
+    /// "one mana per color among permanents you control" scaling.
+    pub colors: [bool; 5],
+    /// Treasure tokens created per token effect (Stark Industries
+    /// Executive). Each treasure is one banked any-color pip, sacrificed
+    /// to use; the bank lives on the game state, not the card.
+    pub treasures_on_token: bool,
+    /// Static mana grant while on the battlefield ("creatures you control
+    /// have {T}: add one mana of any color" — Enduring Vitality;
+    /// "lands you control have…" — Chromatic Lantern). Each matching
+    /// permanent adds one flexible pip per turn, capped at 2.
+    pub grant: Option<Grant>,
+    /// Static creature buff while on the battlefield ("creatures you
+    /// control get +2/+2"): (power, toughness). Power joins the attack
+    /// sum.
+    pub buff: Option<(i32, i32)>,
+    /// Equipment stats: (equip cost, equipped-creature buff, draws when
+    /// the equipped creature dies). None when not Equipment.
+    pub equipment: Option<Equipment>,
+    /// Attack power ×2 (double strike). Goldfish: no blockers, so the
+    /// first-strike layer is pure damage multiplication.
+    pub double_strike: bool,
+    /// +1 power per noncreature spell cast this turn (prowess),
+    /// credited in the combat phase of the same turn.
+    pub prowess: bool,
+    /// +1 power per land drop made after this permanent entered
+    /// (landfall +1/+1 counter patterns).
+    pub landfall: bool,
+    /// Evasion census flag (trample, flying, menace): counted in the
+    /// attack block, no math.
+    pub evasion: bool,
+    /// Castable at instant speed (Instant type or flash). Powers the
+    /// interaction-readiness metric.
+    pub is_instant_speed: bool,
+    /// Interaction role (removal or counterspells): feeds readiness.
+    pub is_interaction: bool,
+}
+
+/// One Equipment: the suit-up cost, the buff, and the Skullclamp-style
+/// death-draw rider.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Equipment {
+    /// Equip cost (mana).
+    pub cost: u32,
+    /// Equipped-creature buff (power, toughness).
+    pub buff: (i32, i32),
+    /// Cards drawn when the equipped creature dies.
+    pub death_draws: u32,
+}
+
+/// One static mana grant: the permanent class it empowers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Grant {
+    /// Lands you control each tap for one any-color pip.
+    Lands,
+    /// Creatures you control each tap for one any-color pip.
+    Creatures,
 }
 
 impl SimCard {
@@ -298,6 +423,37 @@ pub fn draw_amount(text: &str) -> u32 {
                 _ => 5,
             };
         }
+    }
+    1
+}
+
+/// Number-word and numeral amounts for generic clauses ("scry 2",
+/// "look at the top three cards"). Returns 1 when present but uncounted.
+pub fn amount_after(text: &str, needle: &str) -> u32 {
+    let mut from = 0;
+    while let Some(rel) = text[from..].find(needle) {
+        let tail = &text[from + rel + needle.len()..];
+        let digits: String = tail
+            .trim_start()
+            .chars()
+            .take_while(|c| c.is_ascii_digit())
+            .collect();
+        if let Ok(n) = digits.parse::<u32>() {
+            return n;
+        }
+        for (word, n) in [
+            ("seven", 7u32),
+            ("six", 6),
+            ("five", 5),
+            ("four", 4),
+            ("three", 3),
+            ("two", 2),
+        ] {
+            if tail.trim_start().starts_with(word) {
+                return n;
+            }
+        }
+        from += rel + needle.len();
     }
     1
 }

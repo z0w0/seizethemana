@@ -84,47 +84,62 @@ pub struct DeckStats {
 /// Propagates SQLite failures.
 pub fn lookup_names(conn: &rusqlite::Connection, deck: &Deck) -> HashMap<String, CardRow> {
     let mut map = HashMap::new();
-    let mut stmt = match conn.prepare(
-        "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity, keywords,
-                power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
+    // Chunked IN-lookups over the deck's own names instead of materializing
+    // every card in the store; a 40-card deck reads 40 rows, not 33,000.
+    let names: Vec<String> = {
+        let mut seen = std::collections::HashSet::new();
+        let mut unique = Vec::new();
+        for name in deck.entries().map(|e| e.name.clone()) {
+            if seen.insert(name.clone()) {
+                unique.push(name);
+            }
+        }
+        unique
+    };
+    if names.is_empty() {
+        return map;
+    }
+    const CHUNK: usize = 400;
+    let row_sql = "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+                keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
                 legalities, set_code, collector_number, scryfall_id, released_at,
                 game_changer
-         FROM cards",
-    ) {
-        Ok(stmt) => stmt,
-        Err(_) => return map,
-    };
-    let rows = stmt.query_map([], |row| {
-        Ok(CardRow {
-            name: row.get(0)?,
-            oracle_id: row.get(1)?,
-            mana_cost: row.get(2)?,
-            cmc: row.get(3)?,
-            type_line: row.get(4)?,
-            colors: row.get(5)?,
-            color_identity: row.get(6)?,
-            keywords: row.get(7)?,
-            power: row.get(8)?,
-            toughness: row.get(9)?,
-            loyalty: row.get(10)?,
-            oracle_text: row.get(11)?,
-            rarity: row.get(12)?,
-            edhrec_rank: row.get(13)?,
-            legalities: row.get(14)?,
-            set_code: row.get(15)?,
-            collector_number: row.get(16)?,
-            scryfall_id: row.get(17)?,
-            released_at: row.get(18)?,
-            game_changer: row.get(19)?,
-        })
-    });
-    let Ok(rows) = rows else { return map };
-    for row in rows.flatten() {
-        map.insert(row.name.clone(), row);
+         FROM cards WHERE name IN";
+    for chunk in names.chunks(CHUNK) {
+        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
+        let mut stmt = match conn.prepare(&format!("{row_sql} ({placeholders})")) {
+            Ok(stmt) => stmt,
+            Err(_) => return map,
+        };
+        let rows = stmt.query_map(rusqlite::params_from_iter(chunk.iter()), |row| {
+            Ok(CardRow {
+                name: row.get(0)?,
+                oracle_id: row.get(1)?,
+                mana_cost: row.get(2)?,
+                cmc: row.get(3)?,
+                type_line: row.get(4)?,
+                colors: row.get(5)?,
+                color_identity: row.get(6)?,
+                keywords: row.get(7)?,
+                power: row.get(8)?,
+                toughness: row.get(9)?,
+                loyalty: row.get(10)?,
+                oracle_text: row.get(11)?,
+                rarity: row.get(12)?,
+                edhrec_rank: row.get(13)?,
+                legalities: row.get(14)?,
+                set_code: row.get(15)?,
+                collector_number: row.get(16)?,
+                scryfall_id: row.get(17)?,
+                released_at: row.get(18)?,
+                game_changer: row.get(19)?,
+            })
+        });
+        let Ok(rows) = rows else { return map };
+        for row in rows.flatten() {
+            map.insert(row.name.clone(), row);
+        }
     }
-    // Keep only names this deck references.
-    let names: std::collections::HashSet<&str> = deck.entries().map(|e| e.name.as_str()).collect();
-    map.retain(|name, _| names.contains(name.as_str()));
     map
 }
 

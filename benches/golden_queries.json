@@ -1,0 +1,494 @@
+[
+  {
+    "query": "bolt",
+    "relevant": [
+      "Lightning Bolt",
+      "Precision Bolt",
+      "Energy Bolt"
+    ],
+    "note": "exact keyword word"
+  },
+  {
+    "query": "Lightning Bolt",
+    "relevant": [
+      "Lightning Bolt"
+    ],
+    "note": "exact card name"
+  },
+  {
+    "query": "lightning bolt",
+    "relevant": [
+      "Lightning Bolt"
+    ],
+    "note": "case-insensitive name"
+  },
+  {
+    "query": "Cyclonic Rift",
+    "relevant": [
+      "Cyclonic Rift"
+    ],
+    "note": "exact name, title case"
+  },
+  {
+    "query": "Smothering Tithe",
+    "relevant": [
+      "Smothering Tithe"
+    ],
+    "note": "exact name"
+  },
+  {
+    "query": "The Great Henge",
+    "relevant": [
+      "The Great Henge"
+    ],
+    "note": "name with article"
+  },
+  {
+    "query": "Kiki-Jiki",
+    "relevant": [
+      "Kiki-Jiki, Mirror Breaker"
+    ],
+    "note": "hyphenated prefix"
+  },
+  {
+    "query": "Atraxa, Grand Unifier",
+    "relevant": [
+      "Atraxa, Grand Unifier"
+    ],
+    "note": "comma name"
+  },
+  {
+    "query": "Demonic Consultation",
+    "relevant": [
+      "Demonic Consultation"
+    ],
+    "note": "combo staple name"
+  },
+  {
+    "query": "Thassa's Oracle",
+    "relevant": [
+      "Thassa's Oracle"
+    ],
+    "note": "apostrophe name"
+  },
+  {
+    "query": "Rhystic Study",
+    "relevant": [
+      "Rhystic Study"
+    ],
+    "note": "enchantment name"
+  },
+  {
+    "query": "Sol Ring",
+    "relevant": [
+      "Sol Ring // Sol Ring"
+    ],
+    "note": "split-face name"
+  },
+  {
+    "query": "Swords to Plowshares",
+    "relevant": [
+      "Swords to Plowshares"
+    ],
+    "note": "removal name"
+  },
+  {
+    "query": "Beast Within",
+    "relevant": [
+      "Beast Within"
+    ],
+    "note": "removal name"
+  },
+  {
+    "query": "Farseek",
+    "relevant": [
+      "Farseek"
+    ],
+    "note": "ramp name"
+  },
+  {
+    "query": "Rampant Growth",
+    "relevant": [
+      "Rampant Growth"
+    ],
+    "note": "ramp name"
+  },
+  {
+    "query": "Kodama's Reach",
+    "relevant": [
+      "Kodama's Reach"
+    ],
+    "note": "ramp name"
+  },
+  {
+    "query": "Avacyn, Angel of Hope",
+    "relevant": [
+      "Avacyn, Angel of Hope"
+    ],
+    "note": "legendary name"
+  },
+  {
+    "query": "Elesh Norn, Grand Cenobite",
+    "relevant": [
+      "Elesh Norn, Grand Cenobite"
+    ],
+    "note": "legendary name"
+  },
+  {
+    "query": "Frodo, Adventurous Hobbit",
+    "relevant": [
+      "Frodo, Adventurous Hobbit"
+    ],
+    "note": "modern-set legendary"
+  },
+  {
+    "query": "sacrifice outlet",
+    "relevant": [
+      "High Market",
+      "Martyr's Cause",
+      "Recurring Nightmare"
+    ],
+    "note": "role intent"
+  },
+  {
+    "query": "sacrifice a creature to draw cards",
+    "relevant": [
+      "Greater Good",
+      "Life's Legacy",
+      "Griselbrand"
+    ],
+    "note": "multi-step intent"
+  },
+  {
+    "query": "wheel effect",
+    "relevant": [
+      "Wheel of Fortune",
+      "Flamecast Wheel"
+    ],
+    "note": "community term"
+  },
+  {
+    "query": "board wipe",
+    "relevant": [
+      "Time Wipe",
+      "Split Up",
+      "Retaliate"
+    ],
+    "note": "community term"
+  },
+  {
+    "query": "wrath effect",
+    "relevant": [
+      "Wrath of God",
+      "Wrath of Oko"
+    ],
+    "note": "community term"
+  },
+  {
+    "query": "graveyard recursion",
+    "relevant": [
+      "Muldrotha, the Gravetide",
+      "Squee, the Immortal",
+      "Resurrection",
+      "Yawgmoth's Will"
+    ],
+    "note": "mechanic intent"
+  },
+  {
+    "query": "reanimate",
+    "relevant": [
+      "Thrilling Encore",
+      "Second Sunrise",
+      "Resurrection"
+    ],
+    "note": "mechanic keyword"
+  },
+  {
+    "query": "counterspell",
+    "relevant": [
+      "Flash Counter",
+      "Last Word",
+      "Counterspell"
+    ],
+    "note": "role term"
+  },
+  {
+    "query": "counter target spell",
+    "relevant": [
+      "Spell Counter",
+      "Flash Counter",
+      "Spell Snare"
+    ],
+    "note": "oracle phrasing"
+  },
+  {
+    "query": "mana ramp",
+    "relevant": [
+      "Hall of Tagsin",
+      "Overlaid Terrain",
+      "Sheltered Aerie"
+    ],
+    "note": "role term"
+  },
+  {
+    "query": "land ramp",
+    "relevant": [
+      "Reshape the Earth",
+      "Explosive Vegetation",
+      "Far Wanderings"
+    ],
+    "note": "role term"
+  },
+  {
+    "query": "mana rock",
+    "relevant": [
+      "Hedron Archive",
+      "Dreamstone Hedron",
+      "Mana Crypt"
+    ],
+    "note": "community term"
+  },
+  {
+    "query": "draw cards",
+    "relevant": [
+      "Reverse Engineer",
+      "Insight Engine",
+      "Keep Watch"
+    ],
+    "note": "loose intent"
+  },
+  {
+    "query": "destroy target permanent",
+    "relevant": [
+      "Topple the Statue",
+      "Return to Nature",
+      "Desert Twister"
+    ],
+    "note": "oracle phrasing"
+  },
+  {
+    "query": "token generator",
+    "relevant": [
+      "Serpent Generator",
+      "God-Favored General",
+      "Determined Iteration"
+    ],
+    "note": "loose intent"
+  },
+  {
+    "query": "treasure tokens",
+    "relevant": [
+      "Stimulus Package",
+      "Tempting Contract",
+      "Generous Plunderer"
+    ],
+    "note": "token type"
+  },
+  {
+    "query": "extra turn",
+    "relevant": [
+      "Temporal Manipulation",
+      "Time Walk",
+      "Last Chance",
+      "Time Warp"
+    ],
+    "note": "mechanic"
+  },
+  {
+    "query": "win the game",
+    "relevant": [
+      "Ruin Grinder",
+      "Platinum Persecutor"
+    ],
+    "note": "oracle phrase"
+  },
+  {
+    "query": "protection from red",
+    "relevant": [
+      "Everybody Lives!",
+      "Surge of Salvation",
+      "Orbs of Warding"
+    ],
+    "note": "keyword phrase"
+  },
+  {
+    "query": "flying creature",
+    "relevant": [
+      "Battleflight Eagle",
+      "Arborea Pegasus",
+      "Welkin Guide"
+    ],
+    "note": "keyword + type"
+  },
+  {
+    "query": "tutor artifact",
+    "relevant": [
+      "Enlightened Tutor",
+      "Diabolic Tutor"
+    ],
+    "note": "community term"
+  },
+  {
+    "query": "explore",
+    "relevant": [
+      "Explore",
+      "Exploration"
+    ],
+    "note": "mechanic word"
+  },
+  {
+    "query": "storm",
+    "relevant": [
+      "Storm King's Thunder",
+      "Eye of the Storm",
+      "Thousand-Year Storm"
+    ],
+    "note": "mechanic word"
+  },
+  {
+    "query": "exile graveyard",
+    "relevant": [
+      "Relic of Progenitus",
+      "Crook of Condemnation"
+    ],
+    "note": "hate piece"
+  },
+  {
+    "query": "return from graveyard to hand",
+    "relevant": [
+      "Kethis, the Hidden Hand",
+      "Dread Return",
+      "Yawgmoth's Will"
+    ],
+    "note": "oracle phrasing"
+  },
+  {
+    "query": "equip",
+    "relevant": [
+      "Neglected Heirloom // Ashmouth Blade",
+      "Ano'thr, Equipment Commander"
+    ],
+    "note": "keyword word"
+  },
+  {
+    "query": "kicker",
+    "relevant": [
+      "Conqueror's Pledge",
+      "Stomped by the Foot"
+    ],
+    "note": "keyword word"
+  },
+  {
+    "query": "hexproof",
+    "relevant": [
+      "Archetype of Endurance"
+    ],
+    "note": "keyword word"
+  },
+  {
+    "query": "deathtouch",
+    "relevant": [
+      "Archetype of Finality"
+    ],
+    "note": "keyword word"
+  },
+  {
+    "query": "haste",
+    "relevant": [
+      "Haste Magic",
+      "Mai, Scornful Striker"
+    ],
+    "note": "keyword word"
+  },
+  {
+    "query": "goblin",
+    "relevant": [
+      "Goblin Cavaliers",
+      "Goblin Hero"
+    ],
+    "note": "creature type",
+    "filters": {
+      "type": "Creature"
+    }
+  },
+  {
+    "query": "destroy enchantment",
+    "relevant": [
+      "Destroy Evil",
+      "Hull Breach"
+    ],
+    "note": "format-filtered",
+    "filters": {
+      "format": "modern"
+    }
+  },
+  {
+    "query": "counterspell",
+    "relevant": [
+      "Flash Counter",
+      "Last Word",
+      "Counterspell"
+    ],
+    "note": "color-filtered",
+    "filters": {
+      "color": "U"
+    }
+  },
+  {
+    "query": "big creature",
+    "relevant": [
+      "Benthic Anomaly",
+      "Tall as a Beanstalk",
+      "Supersize"
+    ],
+    "note": "cmc-filtered",
+    "filters": {
+      "cmc": ">=7"
+    }
+  },
+  {
+    "query": "bolt",
+    "relevant": [
+      "Lightning Bolt",
+      "Precision Bolt",
+      "Energy Bolt"
+    ],
+    "note": "rarity-filtered",
+    "filters": {
+      "rarity": "common"
+    }
+  },
+  {
+    "query": "sacrifice a creature",
+    "relevant": [
+      "Braids, Cabal Minion",
+      "Blood for Bones",
+      "Tariff"
+    ],
+    "note": "format-filtered",
+    "filters": {
+      "format": "commander"
+    }
+  },
+  {
+    "query": "cheap counterspell",
+    "relevant": [
+      "Counterspell",
+      "Flash Counter"
+    ],
+    "note": "cmc cap",
+    "filters": {
+      "cmc": "<=2"
+    }
+  },
+  {
+    "query": "!!!???",
+    "relevant": [],
+    "note": "punctuation only: both legs skip or degrade"
+  },
+  {
+    "query": "xyzzy impossible nonsense query",
+    "relevant": [],
+    "note": "no relevant docs: nearest-neighbor behavior"
+  }
+]

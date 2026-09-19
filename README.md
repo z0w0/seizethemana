@@ -146,15 +146,16 @@ if you want to see exactly what the assistant will be told.
 | `stm sync [--force]` | Refresh card data, prices, tags, and combos |
 | `stm card <name> [--json]` | Full detail for one card: rules text, price, format legality, community role labels |
 | `stm card similar <name> [--owned]` | Cards that play like a given card (see [Finding cards](#finding-cards)) |
-| `stm query <text> [filters]` | Semantic search over every card |
+| `stm card combos <name> [--format FMT]` | Known combos with a card, from Commander Spellbook |
+| `stm query <text> [filters]` | Hybrid search (keywords + meaning) over every card |
 | `stm collection [--json]` | What you own: counts, value, colors, mana curve |
 | `stm collection import <csv> [--add]` | Import a ManaBox export |
-| `stm collection query <text> [filters]` | Search only cards you own |
+| `stm collection query <text> [filters]` | Hybrid search over only the cards you own |
 | `stm deck create / list / show` | Manage deck files |
 | `stm deck update <name> --add/--remove/--set` | Edit a deck (see [Building decks](#building-decks)) |
 | `stm deck legal <name> [--format FMT] [--bracket N]` | Check deck legality and Commander brackets |
 | `stm deck import / export <name> <file>` | Move decks in and out of ManaBox format |
-| `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first |
+| `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first; works in any format |
 | `stm deck simulate <name> [--seed N]` | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation)) |
 | `stm deck primer <name> [--set <file>]` | Read or write a deck's strategy notes |
 
@@ -226,16 +227,18 @@ to review rather than a guess.
 ### Filling holes in a deck
 
 ```sh
-stm deck suggest Froggy --role ramp        # fill a role: draw, removal, ramp, ...
+stm deck suggest Froggy --role ramp        # fill a role: draw, ramp, board-wipe, sacrifice, ...
 stm deck suggest Froggy "frog payoff"      # or semantic search, owned first
 stm deck suggest Froggy --bracket 2        # stay inside a Commander bracket
+stm deck suggest Froggy --format modern    # filter to one format
 ```
 
 Suggestions rank by how well a card fits the deck's theme and roles, put
-cards you own first, and show the cheapest print with a price. In
-commander decks, the suggester also knows Commander Spellbook combos: when
-a card you don't own would complete a combo the deck is one card away
-from, it says which combo.
+cards you own first, and show the cheapest print with a price. The
+suggester also knows Commander Spellbook combos in any format: when a card
+you don't own would complete a combo the deck is one card away from, it
+says which combo. Commander decks draw on commander combos; decks for
+other formats drop the combos that need a commander.
 
 ### Deck simulation
 
@@ -315,9 +318,15 @@ Three ways to search, depending on what you know:
   recursion" --color BG`.
 - **`stm collection query`** does the same but only over cards you own.
 - **`stm card similar`** starts from a card you like and finds cards that
-  share its community-assigned role labels. Handy for "what plays like
+  share its community-assigned role labels and read like it (both signals
+  mix into one ranking). Handy for "what plays like
   Cyclonic Rift?" or for finding cheaper versions of an expensive card.
   Add `--owned` to stay inside your collection.
+- **`stm card combos`** lists known combos with a card: `stm card combos
+  "Demonic Consultation"` names the pieces, what each combo does, and
+  where it's legal. Pass `--format modern` to keep only combos that work
+  in that format; combos that need a commander are left out of 60-card
+  results automatically.
 
 All three accept filters that combine: `--type Creature --color WU
 --cmc '<=3' --rarity rare --format commander` and friends. Card detail

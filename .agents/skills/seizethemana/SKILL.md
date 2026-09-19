@@ -20,6 +20,26 @@ wants an existing deck improved.
 
 - **stdout = results only.** Progress goes to stderr. `--json` on every
   read command prints stable snake_case JSON and nothing else.
+- **Prefer `--json | jq` when `jq` is available.** JSON plus jq is the
+  most reliable read path for scripts and agents: no prose to parse, no
+  ANSI, stable keys. Check `command -v jq` once; if present, wrap every
+  programmatic read. Common shapes:
+
+  ```sh
+  # Names only
+  stm query "counterspell" --limit 10 --json | jq -r '.[].name'
+  # Cheapest price of the top hit
+  stm card "Sol Ring" --json | jq -r '.price_usd'
+  # Deck lines you still need to buy (owned < quantity)
+  stm deck show Froggy --json | jq -r '
+    .sections[].cards[] | select(.owned < .quantity) |
+    "\(.quantity - .owned)x \(.name) @ \(.price_usd // "unpriced")"'
+  # Top hits sorted by score, name + score + price as TSV
+  stm query "sacrifice outlet" --limit 10 --json | jq -r '
+    sort_by(-.score) | .[] | "\(.score)\t\(.name)\t\(.price_usd)"'
+  # Deck totals without parsing text
+  stm deck show Froggy --json | jq -r '"\(.cards) cards, missing $\(.missing_cost)"'
+  ```
 - **Exit codes**: `0` success, `1` runtime error (or "deck is not legal"),
   `2` usage error, `3` no results / card not found. Use them for control
   flow. Read stderr only when a command fails (errors print `error: ...`
@@ -80,9 +100,11 @@ stm query "sacrifice a creature to draw cards" --limit 10
 stm query "graveyard recursion" --color BG --format commander --cmc '<=4' --json
 ```
 
-Meaning-based queries win on intent ("sacrifice outlet", "wrath effect");
-filters pin the mechanics. Filters (AND-combined, shared by `query` and
-`collection query`): `--type` `--color` (subset of WUBRG)
+Hybrid search: keyword (BM25 full-text) + meaning (vector) legs, fused by
+reciprocal rank fusion; the `score` is 0–1. Meaning wins on intent
+("sacrifice outlet", "wrath effect"), exact words win on keywords
+("bolt"); filters pin the mechanics. Filters (AND-combined, shared by
+`query` and `collection query`): `--type` `--color` (subset of WUBRG)
 `--color-identity` `--cmc` `--power` `--toughness` (comparisons
 `<= < = > >=`) `--rarity` `--set` `--keyword` `--oracle-text` `--format`.
 `--limit` default 20, cap 100.
@@ -105,15 +127,43 @@ stm card similar "Cyclonic Rift" --limit 10
 stm card similar "Smothering Tithe" --owned --json
 ```
 
-Ranks cards by shared oracle tags with the seed card: the tool for
+Ranks cards by reciprocal-rank fusion of shared oracle tags and stored-
+vector meaning to the seed card: the tool for
 "what plays like X". `--owned` restricts to the collection (everything you
 own, including cards assigned to decks — this is an ownership lookup, not
 an available-pool search). JSON per hit:
-full card fields + `shared_count` + `shared_tags`. Use this when a known
+full card fields + `score` (0–1, like `query`) + `shared_count` +
+`shared_tags`. Use this when a known
 exemplar exists; use `stm query` when describing an intent with no
 exemplar. **Shared-tag count measures role overlap, not power.** Always
 cross-check `edhrec_rank` (lower is more played) and `price_usd` in the JSON
 before proposing a hit; prefer hits with better ranks than the seed.
+
+### Query combos for a card
+
+```sh
+stm card combos "Thassa's Oracle"
+stm card combos "Demonic Consultation" --format modern
+stm card combos "Kiki-Jiki, Mirror Breaker" --limit 5 --json
+```
+
+Lists Commander Spellbook combos the card takes part in, best first
+(popularity). Each hit names the pieces (`A + B`), what the combo does,
+and the formats it is legal in. `--format <fmt>` keeps only combos legal
+in one format (`commander`, `modern`, `pioneer`, ...). Combos marked
+`(commander)` need one piece as the commander, so they cannot fire in
+60-card formats; they are excluded automatically under a 60-card
+`--format`. Exit 3 when the card appears in no combo.
+
+Use this when a user asks "does X combo?" or wants combo pieces for a
+card. JSON per hit: `produces`, `bracket_tag`, `popularity`,
+`legalities` (format → bool map), `requires_commander`, and
+`pieces: [{name, zones, must_be_commander}]`.
+
+Deck-facing view: bare `stm deck suggest <name>` lists one-card-away
+combo completions for a deck. It works for any format — commander decks
+filter to commander; other decks drop commander-required variants (or pin
+a format with `--format`).
 
 ### Work with the collection
 
@@ -169,7 +219,8 @@ stm deck show Stationz               # contents with (own N/M) per line + To-buy
 stm deck Stationz --json             # sugar; JSON sections + covered_by per line
 stm deck update Froggy --add "1 Phyrexian Vault" --add "sideboard:2 Bolt"
 stm deck update Froggy --remove "1 Bolt" --set "0 Breya"   # --set 0 deletes the line
-stm deck update Froggy --from /tmp/batch.txt         # one spec per line, `#` comments OK
+stm deck update Froggy --move "1 Bolt to:sideboard"       # atomic deck→sideboard move
+stm deck update Froggy --from /tmp/batch.txt --allow-partial  # batch; skips misses, exits 1 when anything missed
 stm deck dedupe Froggy               # merge duplicate same-name lines (sums quantities)
 stm deck import Froggy ~/Downloads/Froggy.txt   # upsert the decklist by name
 stm deck delete Froggy               # remove the decklist; ownership is kept
@@ -180,7 +231,13 @@ stm deck buylist Froggy                      # what to buy: `2x Name` lines
 stm deck buylist Froggy --store cardkingdom  # CK CSV (Name,Edition,Foil,Qty)
 stm deck legal Froggy                          # format legality
 stm deck legal Froggy --format commander --bracket 3
-stm deck suggest Froggy --role draw --json     # role fills: owned first, ranked by EDHREC
+stm deck suggest Froggy --role draw --json     # role fills: owned first, then by fit
+# --role names: draw, cantrip, wheel, discard, mill, ramp, mana-rock,
+# mana-dork, land, removal, board-wipe, counterspell, theft, protection,
+# hate, stax, sacrifice, reanimate, recursion, token, anthem, equipment,
+# evasion, combat-trick, burn, lifegain, tutor, wincon, combo, storm,
+# extra-turn, blink, landfall, artifact, planeswalker, voltron,
+# spellslinger, typal, group-hug, politics, interaction, ...
 stm deck suggest Froggy "frog payoff" --json   # semantic query for theme cards
 stm deck suggest Froggy --commander --json     # commander candidates for the deck
 stm deck suggest Froggy                        # combo completions: one card away from a Spellbook combo
@@ -218,9 +275,26 @@ reprints in mind when pricing buys.
 unknown name exits 3 naming it (with "did you mean" candidates when close);
 fix the name and retry. Tokens are added with a warning, not an error.
 
-**`deck update` takes `--add`, `--remove`, `--set`, and `--from`.** Never
-invent other flags for it. Unreleased cards cannot be referenced because
-the store never holds them; a card shows up once its set releases.
+**`deck update` takes `--add`, `--remove`, `--set`, `--move`, `--from`,
+and `--allow-partial`.** Never invent other flags for it. Unreleased
+cards cannot be referenced because the store never holds them; a card
+shows up once its set releases.
+
+**`--move` for section moves.** `stm deck update <name> --move
+"[section:]qty Name to:section"` performs one atomic remove+add (the
+singleton guard and missing-checks see the net state, so legal moves do
+not warn). `to:` defaults to `deck`; a leading `sideboard:` picks the
+source section. `--move "1 Bolt to:sideboard"` moves a card from the
+maindeck; `--move "sideboard:1 Bolt"` moves it back.
+
+**`--set 0` deletes.** On a sideboard-only card it deletes the
+sideboard line (same fallback as `--remove`), with a note; a qualified
+`sideboard:0 Name` stays strict.
+
+**`--allow-partial` for `--from` batches.** By default a batch is
+all-or-nothing (a missing card aborts everything). With
+`--allow-partial`, resolvable ops apply, misses are reported, and the
+exit code is 1 when anything was missed.
 
 **Singleton guard (commander).** Commander-shaped decks (a COMMANDER
 section) warn on `deck update` when an op would push a non-basic card past
@@ -266,19 +340,26 @@ stm deck legal <name> --format commander --bracket 3
 - Exit 0 = legal, exit 1 = violations. JSON always prints:
   `{name, format, format_assumed, bracket, legal, violations: [{rule,
   cards, detail}], notes, summary}`.
-- **`notes` carries the bracket verdicts the CLI can check.** With
-  `--bracket`, the human view shows `bracket checks:` with `✓` PASS or `!`
-  CHECK lines for tutors, extra turns, mass land destruction, and
-  "you win the game" effects (each names the offenders). Review the CHECK
-  lines against oracle text and say what is left (combo speed, how early
-  effects can fire). JSON `notes` carry the same `PASS …`/`CHECK …`
-  strings. When no bracket was given, use the Game Changers list in
+- **Official bracket semantics (WotC, Feb 2025).** The only hard limit is
+  the Game Changer count: 0 for brackets 1–2, at most 3 for bracket 3,
+  unlimited for 4–5. Everything else is advisory. `deck legal` enforces
+  exactly the GC cap as a violation; everything else ships as advisory.
+- **`notes` carries the bracket verdicts.** With `--bracket`, the human
+  view shows `bracket checks:` with `✓` PASS, `!` CHECK (genuine
+  conflicts: mass land destruction in brackets 1–3, extra turns), or `ℹ`
+  advisory lines. Tutors are advisory in every bracket ("tutors should be
+  sparse" in 1–2; in 3 the cap is Game Changers, which includes the best
+  tutors). The scan splits `note hard tutors:` (one-shot search spells)
+  from `note soft searchers:` (ETB/activated/restricted searchers). Mass
+  land destruction stays a hard CHECK in brackets 1–3. JSON `advisories`
+  carries the `ℹ` lines separately from `violations`; `notes` carry the
+  raw strings. When no bracket was given, use the Game Changers list in
   `notes` to ask the user which bracket they want.
 - **Land-search ramp is not a tutor.** Cards whose library search targets
   lands (Cultivate, Farseek, Fabled Passage) get their own `note ramp:`
-  line and never trip the tutor CHECK; only nonland tutors do.
-- Bracket levels: 1 = exhibition, 2 = core, 3 = optimized, 4 = ultra, 5 =
-  cEDH. When unsure, ask the user; describe 2–4 in those terms.
+  line and never trip the tutor scan; only nonland tutors do.
+- Bracket levels: 1 = exhibition, 2 = core, 3 = upgraded, 4 = optimized,
+  5 = cEDH. When unsure, ask the user; describe 2–4 in those terms.
 
 ### Simulation (goldfish)
 
@@ -302,12 +383,19 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   format>` to simulate a commander list as a flat library instead.
 - Card model: oracle-text driven. Tap yields are source-correct ("Add {G}
   or {U}" is one choice tap; Jegantha's fixed five pips produce all at
-  once; a permanent with multiple tap abilities taps once). Spend-
-  restricted mana (Secluded Courtyard, "only to cast a creature spell")
-  pays creature casts only. Station cards (Spacecraft/Planets) get charge
-  counters from creature taps and unlock `{N+}` tiers (only the P/T tier
-  animates); station and crew use printed power when known. Vehicles crew
-  with bodies and revert at end of turn. Mill fills a graveyard census
+  once; a permanent with multiple tap abilities taps once; "add N mana
+  of any color" counts N pips; "for each color among permanents you
+  control" scales with the board; "any color an opponent's land could
+  produce" yields from turn 2). Spend-restricted mana (Secluded
+  Courtyard, Plaza of Heroes) pays matching casts only. Charge-counter
+  banks (Pentad Prism) fire untapped once per turn while counters last;
+  Treasure creators bank one flexible pip per token. Static grants
+  (Enduring Vitality, Chromatic Lantern) add one flexible pip per
+  matching permanent, capped at 2 per grant. Station cards
+  (Spacecraft/Planets) get charge counters from creature taps and unlock
+  `{N+}` tiers (only the P/T tier animates); station and crew use
+  printed power when known. Vehicles crew with bodies and revert at end
+  of turn. Mill fills a graveyard census (self vs opponent direction)
   and counts as cards seen; graveyard return (hand or battlefield) fires
   once per card; wheels reset the hand; loot is draw-n discard-n;
   sacrifice outlets consume real bodies and fire death triggers;
@@ -315,32 +403,59 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   cuts (warp, improvise, affinity) approximate to flat discounts.
   Enters-tapped lands follow their oracle text (shock-dual life payments
   are always paid).
+- **Wincon and keyword signals (goldfish-aligned only).** Attack power
+  per turn + p90 by t8 (a power curve, never a kill estimate) with
+  static "+N/+N" buffs, equipment, double strike, prowess, and landfall
+  counted in; trample/flying/menace show as an evasion census.
+  Combat-damage triggers fire per connecting attacker (proliferate,
+  draw, drain). Burn/drain accumulate into `drain_total_by_turn`
+  (×3 for "each opponent"). Extra turns each grant one land drop and
+  one draw. Win-threshold engines (Darksteel Reactor class) and
+  planeswalker ultimates report a first-online share. Scry/surveil give
+  zero draw credit — they feed `library_awareness_by_turn` instead
+  (share of the library evaluated; surveil puts the cards in the
+  graveyard). Imprint and blocking are not modeled.
+- **Interaction readiness is capacity, not events.** The goldfish never
+  fires a counterspell or removal spell. It measures whether instant-
+  speed interaction is in hand **and** affordable with spare mana
+  (`interaction.ready_pct_by_turn`), plus the spare amount while ready
+  (`interaction.mana_held_avg`). Three terms: **access** = seen in hand
+  (`role_access`), **ready** = in hand + affordable, **mana held** =
+  spare mana while ready. Report readiness as capacity; never claim a
+  counter or removal resolved.
 - **Exit 1 means the simulation found problems** (the result, not a crash).
   Problem kinds: `mana_screw`, `mana_flood`, `color_screw` (enough mana,
   wrong colors), `commander_late`, `draw_starvation`, `mana_unused`,
   `dead_cards` (3+ distinct non-reactive spells cast on-time under 60%),
-  `category_starved` (removal, wincons). Each problem carries a category +
+  `category_starved` (removal, wincons), `interaction_unready` (answers
+  seen but rarely affordable with spare mana → "add cheaper
+  instant-speed answers"). Each problem carries a category +
   magnitude suggestion ("add 2-3 draw engines") — never card names.
   Reactive spells (removal, fogs, protection) are exempt from `dead_cards`;
   judge them by `role_access` — a castability flag on them is noise.
 - Human output = aggregates + worst-3 slow-to-cast cards + pip-block
   offenders + problems. `--json` is the full contract: `deck_shape
   opening_hand land_drops commander station bodies_by_turn
-  engines_online_by_turn mana draw role_access velocity color_screw
+  engines_online_by_turn mana draw role_access velocity
+  library_awareness_by_turn self_milled_by_turn opp_milled_by_turn
+  library_remaining_by_turn combat wincons interaction color_screw
   pip_blocks graveyard card_castability problems assumptions summary`.
   `--combo "A + B"` (repeatable) adds `combo_access` (share of games with
   both pieces in hand by the target turn). A synced combo store adds
   `combos` (Spellbook variants joined to the deck: complete combos with
   assembly rates + one-card-away near-misses; `--combo-limit N` caps each
-  list, default 20). `--hypgeo` adds `hypgeo` (exact cast-on-curve
-  ceilings = an upper bound on the real cast rate; the sim's castability
-  is draw-agnostic and naturally sits above its ceiling — the two answer
-  different questions, not one scale). `station` is
-  null for non-spacecraft commanders.
+  list, default 20) and `win_paths` (complete combos whose Spellbook
+  `produces` label contains a win feature — "Win the game", "Infinite
+  damage", "Infinite turns", …). `--hypgeo` adds `hypgeo` (exact
+  cast-on-curve ceilings = an upper bound on the real cast rate; the
+  sim's castability is draw-agnostic and naturally sits above its
+  ceiling — the two answer different questions, not one scale).
+  `station` is null for non-spacecraft commanders.
 - The model is a **consistency diagnostic, not a win-rate predictor**. Its
   limits are listed in the JSON `assumptions` array: enters-tapped
   honored, no opponents or interaction, draw engines fire once per turn on
-  a fixed delay, opponent-dependent mana sources produce nothing, no
+  a fixed delay, opponent-dependent mana sources (Fellwar Stone) produce
+  from turn 2 on, no
   commander recast tax, attack-gated commander draws wait for animation
   (no synthetic engine), improvise/affinity discounts grow with the
   artifact count, printed power (else flat 2) for stationing and crewing,
@@ -374,16 +489,24 @@ deck change. For full-detail comparison keep the `--json` diff form.
   English printing per finish; the `max_price_usd*` fields the most
   expensive. All null when no print is priced. Use `price_usd` for budget
   math instead of parsing human output.
-- `card similar <name> --json` → array of hits: card fields + `shared_count
-  shared_tags`.
-- `query --json` → array of hits: card fields + `score` (hybrid 0–1:
-  reciprocal-rank fusion of full-text and vector matches) + `price_usd`
-  (cheapest printing).
+- `card similar <name> --json` → array of hits: card fields (including
+  `oracle_id`) + `score` (hybrid 0–1; `null` when the seed had no stored
+  vector) + `shared_count shared_tags`.
+- `card combos <name> --json` → array of hits: `{id, produces,
+  mana_value_needed, bracket_tag, popularity, legalities,
+  requires_commander, pieces: [{name, zones, must_be_commander}]}`.
+- `query --json` → array of hits: the same full card object as
+  `card <name> --json` (all fields, `tags`, four price fields) plus
+  `score` (hybrid 0–1: reciprocal-rank fusion of full-text and vector
+  matches). Empty result prints `[]` with exit 3.
 - `collection --json` → `unique_cards total_cards foils total_value
   purchase_total color_identity curve rarity top_sets locations`.
   `total_value` prices every owned copy by its exact printing.
 - `collection query --json` → card fields + `score owned locations`
-  (binder pool by default; `--deck` adds a deck's cards).
+  (binder pool by default; `--deck` adds a deck's cards). `owned` is a
+  copy count (0 = none) on every command that reports it. `deck suggest`
+  and combo completions count copies across binders **and** deck
+  assignments (a card owned only inside a deck reports its count there).
 - `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
   owned_value, missing_cost, sections: [{section, cards: [{quantity, name,
   set, collector_number, foil, owned, owned_elsewhere, covered_by,
@@ -402,12 +525,12 @@ deck change. For full-detail comparison keep the `--json` diff form.
   owned, has_primer}]` (`cards` is maindeck; `has_decklist: false` marks
   collection decks whose list is not imported).
 - `deck legal <name> --json` → `{name, format, format_assumed, bracket,
-  legal, violations, notes, summary}`.
+  legal, violations, advisories, notes, summary}`.
 - `deck simulate <name> --json` → `{name, format, runs, turns, seed,
   deck_shape, assumptions, opening_hand, land_drops, commander, station,
   bodies_by_turn, engines_online_by_turn, mana, draw, role_access,
-  velocity, color_screw, color_sources, card_castability, problems,
-  summary}`.
+  velocity, combat, wincons, interaction, color_screw, color_sources,
+  card_castability, problems, summary, win_paths?}`.
   `deck_shape.total_cards` is the simulated library
   plus commander (sideboard excluded; `deck_shape.sideboard_cards` counts
   it). `commander` is null for non-commander decks; `station` is null for
@@ -419,7 +542,8 @@ deck change. For full-detail comparison keep the `--json` diff form.
   multi-color pickers) — read it next to `color_screw` to pick fixes.
   `problems` is an array of `{kind, severity, pct_games, color, detail,
   suggestion}`; severity is `high` (≥20% games), `medium` (10–20%), or
-  `low`. Color-screw details name the dedicated source count and shape.
+  `low`. Every `pct_*` field in the report is 0–100 percent at two
+  decimals. Color-screw details name the dedicated source count and shape.
   `card_castability` rows are `{name, cmc, target_turn,
   pct_castable_by_target, avg_first_castable_turn}` (one row per distinct
   card name).
@@ -428,17 +552,24 @@ deck change. For full-detail comparison keep the `--json` diff form.
   metric lines (`path: old → new`), and problems (`+` new, `-` resolved).
   Exit 1 only when a problem is *new*; identical or improved decks exit 0.
   Use it in the fix loop instead of saving and diffing JSON by hand.
-- `deck suggest <name> --json` → array of `{name, mana_cost, cmc,
-  type_line, edhrec_rank, game_changer, owned, price_usd, tags,
-  oracle_text, color_identity}`. Ranked by EDHREC playability (lower rank
-  first); `tags` carries the Tagger labels that matched; `owned` marks
-  cards the collection already holds. `--commander` swaps the pool to
+- `deck suggest <name> --json` → array of `{name, oracle_id, mana_cost,
+  cmc, type_line, edhrec_rank, game_changer, owned, price_usd, score,
+  tags, oracle_text, color_identity}`. Ranked by fit: semantic search and
+  tag matches fuse (reciprocal rank fusion, same as `query`), EDHREC rank
+  breaks ties; owned cards list first, then unowned, each group in fit
+  order. `tags` carries the Tagger labels that matched; `owned` is a copy
+  count (0 = none); `score` is the fused fit 0–1. `--commander` swaps the pool to
   commander-legal legendaries (legendary creatures/planeswalkers, plus
   legendary Vehicle/Spacecraft with a P/T box) ranked by theme fit to the
-  deck. With no query and no role the pool is one-card-away Spellbook
+  deck. `--format <fmt>` pins the legality filter (cards legal in that
+  format only); without it, commander-shaped decks filter to commander and
+  the commander's colors, and other decks take any format. With no query
+  and no role the pool is one-card-away Spellbook
   completions ranked by variants completed, win-the-game, popularity,
   EDHREC; each row carries `combo` (`{pieces, bracket_tag, produces,
-  variants_completed}`) naming the best example. `--bracket 1-2` filters
+  variants_completed}`) naming the best example. Commander decks complete
+  commander combos; other decks drop combos that need a commander (pin a
+  format with `--format` to filter to one). `--bracket 1-2` filters
   Game Changers out (their allowance is zero); brackets 3-5 do not
   filter (deck legal counts the deck's allowance).
 - `deck buylist <name> --json` → `{store, rows: [{name, set, set_name,

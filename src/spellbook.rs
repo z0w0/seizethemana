@@ -325,93 +325,6 @@ pub struct ComboPieceRow {
     pub must_be_commander: bool,
 }
 
-/// Load one variant with its pieces; `None` when the id is unknown.
-fn load_variant(
-    conn: &Connection,
-    id: &str,
-) -> anyhow::Result<Option<(ComboVariant, Vec<ComboPieceRow>)>> {
-    let row = conn.query_row(
-        "SELECT id, produces, mana_value_needed, bracket_tag, legalities, popularity
-         FROM combos WHERE id = ?1",
-        [id],
-        |r| {
-            Ok((
-                r.get::<_, String>(0)?,
-                r.get::<_, String>(1)?,
-                r.get::<_, i64>(2)?,
-                r.get::<_, Option<String>>(3)?,
-                r.get::<_, String>(4)?,
-                r.get::<_, Option<i64>>(5)?,
-            ))
-        },
-    );
-    let (id, produces, mana_value_needed, bracket_tag, legalities_json, popularity) = match row {
-        Ok(tuple) => tuple,
-        Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
-        Err(other) => return Err(other.into()),
-    };
-    let mut stmt = conn.prepare(
-        "SELECT name, ordinal, zones, must_be_commander
-         FROM combo_pieces WHERE combo_id = ?1 ORDER BY ordinal, name",
-    )?;
-    let pieces = stmt
-        .query_map([&id], |r| {
-            Ok(ComboPieceRow {
-                name: r.get(0)?,
-                ordinal: r.get(1)?,
-                zones: serde_json::from_str(&r.get::<_, String>(2)?).unwrap_or_default(),
-                must_be_commander: r.get::<_, i64>(3)? != 0,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
-    let legalities: std::collections::HashMap<String, bool> =
-        serde_json::from_str(&legalities_json).unwrap_or_default();
-    Ok(Some((
-        ComboVariant {
-            id: id.clone(),
-            produces: serde_json::from_str(&produces).unwrap_or_default(),
-            mana_value_needed,
-            bracket_tag,
-            popularity,
-            legalities,
-        },
-        pieces,
-    )))
-}
-
-/// Load every variant whose pieces intersect `names`, pieces joined in.
-///
-/// The candidate scan walks the piece-name index; format-legality and
-/// membership checks run in Rust on the small candidate set.
-///
-/// # Errors
-/// Propagates SQLite failures.
-pub fn load_variants_for(
-    conn: &Connection,
-    names: &std::collections::HashSet<String>,
-) -> anyhow::Result<Vec<(ComboVariant, Vec<ComboPieceRow>)>> {
-    if names.is_empty() {
-        return Ok(Vec::new());
-    }
-    let mut ids: Vec<String> = Vec::new();
-    {
-        let mut stmt = conn.prepare("SELECT DISTINCT combo_id FROM combo_pieces")?;
-        let mut rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
-        while let Some(id) = rows.next().transpose()? {
-            ids.push(id);
-        }
-    }
-    let mut out = Vec::new();
-    for id in &ids {
-        if let Some((combo, pieces)) = load_variant(conn, id)?
-            && pieces.iter().any(|p| names.contains(&p.name))
-        {
-            out.push((combo, pieces));
-        }
-    }
-    Ok(out)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -534,7 +447,7 @@ mod tests {
         // Deck join: both names find the variant; an unrelated name does not.
         let mut names = std::collections::HashSet::new();
         names.insert("Thassa's Oracle".to_string());
-        let hits = load_variants_for(&conn, &names).unwrap();
+        let hits = crate::combos::load_variants_for(&conn, &names).unwrap();
         assert_eq!(hits.len(), 1);
         let (combo, pieces) = &hits[0];
         assert_eq!(combo.id, "742-1295");

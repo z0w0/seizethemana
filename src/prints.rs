@@ -122,6 +122,131 @@ pub fn price_range(conn: &Connection, name: &str) -> anyhow::Result<PrintRange> 
     })
 }
 
+/// Price ranges for many card names in one query per finish kind.
+///
+/// Equivalent to calling [`price_range`] once per name (same cheapest/
+/// priciest picks under the same filter), but as two SQL statements
+/// instead of two per name, so deck views stop paying one statement set
+/// per card.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn price_ranges(
+    conn: &Connection,
+    names: &[String],
+) -> anyhow::Result<std::collections::HashMap<String, PrintRange>> {
+    let mut map: std::collections::HashMap<String, PrintRange> = names
+        .iter()
+        .map(|n| (n.clone(), PrintRange::default()))
+        .collect();
+    if names.is_empty() {
+        return Ok(map);
+    }
+    let today = crate::release::today();
+    let chunk = 400;
+    for finish in ["usd", "usd_foil"] {
+        for names_chunk in names.chunks(chunk) {
+            let placeholders = names_chunk
+                .iter()
+                .map(|_| "?")
+                .collect::<Vec<_>>()
+                .join(", ");
+            // Two window functions rank cheapest and priciest per name under
+            // the released-English filter; keeping rn_cheap = 1 or
+            // rn_expensive = 1 yields the same picks `price_range` makes.
+            let query = format!(
+                "SELECT name, rn_cheap, rn_expensive, {PRINT_COLUMNS} FROM (
+                    SELECT *, ROW_NUMBER() OVER (
+                        PARTITION BY name ORDER BY {finish} ASC
+                    ) AS rn_cheap,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY name ORDER BY {finish} DESC
+                    ) AS rn_expensive
+                    FROM card_prints
+                    WHERE name IN ({placeholders})
+                      AND lang = 'en'
+                      AND (released_at = '' OR released_at <= ?{n})
+                      AND {finish} IS NOT NULL
+                ) AS card_prints
+                WHERE rn_cheap = 1 OR rn_expensive = 1
+                ORDER BY name, rn_cheap",
+                n = names_chunk.len() + 1
+            );
+            let mut stmt = conn.prepare(&query)?;
+            let params: Vec<&dyn rusqlite::ToSql> = names_chunk
+                .iter()
+                .map(|n| n as &dyn rusqlite::ToSql)
+                .chain(std::iter::once(&today as &dyn rusqlite::ToSql))
+                .collect();
+            let rows = stmt.query_map(params.as_slice(), map_batched_print)?;
+            for row in rows {
+                let (name, is_cheap, is_expensive, print) =
+                    row.context("reading batched price rows")?;
+                let entry = map.entry(name).or_default();
+                let normal = finish == "usd";
+                if is_cheap {
+                    if normal {
+                        entry.cheapest = Some(print.clone());
+                    } else {
+                        entry.cheapest_foil = Some(print.clone());
+                    }
+                }
+                if is_expensive {
+                    if normal {
+                        entry.priciest = Some(print);
+                    } else {
+                        entry.priciest_foil = Some(print);
+                    }
+                }
+            }
+        }
+    }
+    Ok(map)
+}
+
+/// Map a batched row: `(name, is_cheapest, is_priciest, print)`.
+fn map_batched_print(row: &rusqlite::Row<'_>) -> rusqlite::Result<(String, bool, bool, Print)> {
+    let name: String = row.get(0)?;
+    let cheap: i64 = row.get(1)?;
+    let expensive: i64 = row.get(2)?;
+    let print = map_print_offset(row, 3)?;
+    Ok((name, cheap == 1, expensive == 1, print))
+}
+
+/// [`map_print`] reading the standard print columns from `offset`.
+fn map_print_offset(row: &rusqlite::Row<'_>, offset: usize) -> rusqlite::Result<Print> {
+    let g = |i: usize| -> rusqlite::Result<rusqlite::types::Value> { row.get(i + offset) };
+    let s = |i: usize| -> rusqlite::Result<String> {
+        match g(i)? {
+            rusqlite::types::Value::Text(t) => Ok(t),
+            _ => Ok(String::new()),
+        }
+    };
+    let f = |i: usize| -> rusqlite::Result<Option<f64>> {
+        Ok(match g(i)? {
+            rusqlite::types::Value::Real(r) => Some(r),
+            rusqlite::types::Value::Integer(i) => Some(i as f64),
+            _ => None,
+        })
+    };
+    Ok(Print {
+        scryfall_id: s(0)?,
+        name: s(1)?,
+        set_code: s(2)?,
+        collector_number: s(3)?,
+        lang: s(4)?,
+        finishes: serde_json::from_str(&s(5)?).unwrap_or_default(),
+        released_at: s(6)?,
+        usd: f(7)?,
+        usd_foil: f(8)?,
+        usd_etched: f(9)?,
+        set_name: match g(10)? {
+            rusqlite::types::Value::Text(t) => t,
+            _ => String::new(),
+        },
+    })
+}
+
 /// Prints for many card names at once (map keyed by card name).
 ///
 /// Prints of any language or release state are returned; callers that need
@@ -130,7 +255,7 @@ pub fn price_range(conn: &Connection, name: &str) -> anyhow::Result<PrintRange> 
 ///
 /// # Errors
 /// Propagates SQLite failures.
-#[cfg_attr(not(test), expect(dead_code))] // exercised by tests; reserved for per-print UIs
+// Exercised by tests; reserved for per-print UIs.
 pub fn prints_by_name(
     conn: &Connection,
     names: &[String],
@@ -320,6 +445,81 @@ mod tests {
         assert!(range.priciest.is_none());
         assert!(price_range(&conn, "Fog").unwrap().cheapest.is_none());
         assert!(price_range(&conn, "Nope").unwrap().cheapest.is_none());
+    }
+
+    #[test]
+    fn price_ranges_matches_price_range_per_name() {
+        let conn = conn();
+        seed(
+            &conn,
+            "a",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            Some(0.5),
+            Some(9.0),
+            "en",
+            "2010-01-01",
+        );
+        seed(
+            &conn,
+            "b",
+            "Bolt",
+            "2xm",
+            "Double Masters",
+            "100",
+            Some(2.5),
+            Some(4.0),
+            "en",
+            "2020-01-01",
+        );
+        seed(
+            &conn,
+            "c",
+            "Fog",
+            "m11",
+            "Magic 2011",
+            "1",
+            Some(1.0),
+            None,
+            "en",
+            "2010-01-01",
+        );
+        // Unpriced name present in the batch: must come back as an empty
+        // range, not a missing entry.
+        let names = vec!["Bolt".to_string(), "Fog".to_string(), "Nope".to_string()];
+        let ranges = price_ranges(&conn, &names).unwrap();
+        assert_eq!(ranges.len(), 3);
+        for name in &names {
+            let batched = &ranges[name];
+            let single = price_range(&conn, name).unwrap();
+            fn id(p: &Print) -> &str {
+                &p.scryfall_id
+            }
+            assert_eq!(
+                batched.cheapest.as_ref().map(id),
+                single.cheapest.as_ref().map(id),
+                "{name} cheapest"
+            );
+            assert_eq!(
+                batched.priciest.as_ref().map(id),
+                single.priciest.as_ref().map(id),
+                "{name} priciest"
+            );
+            assert_eq!(
+                batched.cheapest_foil.as_ref().map(id),
+                single.cheapest_foil.as_ref().map(id),
+                "{name} cheapest_foil"
+            );
+            assert_eq!(
+                batched.priciest_foil.as_ref().map(id),
+                single.priciest_foil.as_ref().map(id),
+                "{name} priciest_foil"
+            );
+        }
+        // Empty input returns an empty map without touching SQLite.
+        assert!(price_ranges(&conn, &[]).unwrap().is_empty());
     }
 
     #[test]

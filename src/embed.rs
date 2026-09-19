@@ -8,6 +8,14 @@ use std::io::Write;
 // at this corpus size (~32k) brute-force cosine over a flat f32 matrix is
 // well under 50ms, so no ANN index is needed.
 
+/// Cast raw little-endian bytes to `f32`s (vectors.bin layout).
+mod f32slice {
+    /// Interpret a byte slice as little-endian f32 values.
+    pub fn cast(bytes: &[u8]) -> &[f32] {
+        bytemuck::cast_slice(bytes)
+    }
+}
+
 /// Model used for embeddings; also recorded in `status.json` so we can detect
 /// a stale index after a model change.
 ///
@@ -48,13 +56,59 @@ impl VectorMeta {
     }
 }
 
-/// Flat vector store: row `i` is the embedding of `meta.names[i]`.
-#[derive(Debug, Clone)]
+/// Row-major f32 matrix, unit-normalized rows (`meta.names.len() * dim`).
+/// Backed by either an owned matrix (setup/sync writes) or a memory map of
+/// `vectors.bin` (reads): a query process touches only the pages its scan
+/// needs, so load cost drops from a 51MB heap read to one mapping.
+#[derive(Debug)]
 pub struct VectorStore {
     /// Index metadata (model, dim, card names in row order).
     pub meta: VectorMeta,
     /// Row-major f32 matrix, unit-normalized rows (`meta.names.len() * dim`).
-    pub vectors: Vec<f32>,
+    pub vectors: VectorMatrix,
+}
+
+/// The matrix behind a store: owned heap data or a file mapping.
+#[derive(Debug)]
+pub enum VectorMatrix {
+    /// Owned matrix, used while building (setup, sync updates).
+    Owned(Vec<f32>),
+    /// Read-only map of `vectors.bin`; little-endian f32s, same layout.
+    Mapped(memmap2::Mmap),
+}
+
+impl VectorMatrix {
+    /// Matrix length in f32 values.
+    fn len(&self) -> usize {
+        match self {
+            VectorMatrix::Owned(v) => v.len(),
+            VectorMatrix::Mapped(m) => m.len() / 4,
+        }
+    }
+
+    /// Slice of `count` f32 values starting at `start`.
+    fn slice(&self, start: usize, count: usize) -> &[f32] {
+        match self {
+            VectorMatrix::Owned(v) => &v[start..start + count],
+            VectorMatrix::Mapped(m) => f32slice::cast(&m[start * 4..(start + count) * 4]),
+        }
+    }
+
+    /// Mutable owned slice; panics when mapped (mappings are read-only by
+    /// design — mutating code paths always build on `Owned`).
+    fn slice_mut(&mut self, start: usize, count: usize) -> &mut [f32] {
+        match self {
+            VectorMatrix::Owned(v) => &mut v[start..start + count],
+            VectorMatrix::Mapped(_) => panic!("vector store is read-only when memory-mapped"),
+        }
+    }
+
+    fn push_value(&mut self, value: f32) {
+        match self {
+            VectorMatrix::Owned(v) => v.push(value),
+            VectorMatrix::Mapped(_) => panic!("vector store is read-only when memory-mapped"),
+        }
+    }
 }
 
 /// Version of the document layout [`build_doc`] produces.
@@ -214,7 +268,7 @@ impl VectorStore {
                 dim: DIM,
                 names: Vec::new(),
             },
-            vectors: Vec::new(),
+            vectors: VectorMatrix::Owned(Vec::new()),
         }
     }
 
@@ -230,7 +284,9 @@ impl VectorStore {
         );
         normalize(&mut vector);
         self.meta.names.push(name.to_string());
-        self.vectors.extend(vector);
+        for value in &vector {
+            self.vectors.push_value(*value);
+        }
         Ok(())
     }
 
@@ -239,9 +295,19 @@ impl VectorStore {
         self.meta.names.len()
     }
 
+    /// One row (unit-normalized vector) by index.
+    pub fn row(&self, index: usize) -> &[f32] {
+        self.vectors.slice(index * DIM, DIM)
+    }
+
+    /// Mutable row for in-place updates (sync overwrite path).
+    pub fn row_mut(&mut self, index: usize) -> &mut [f32] {
+        self.vectors.slice_mut(index * DIM, DIM)
+    }
+
     /// True when no vectors are stored.
     pub fn is_empty(&self) -> bool {
-        self.vectors.is_empty()
+        self.vectors.len() == 0
     }
 
     /// Write `vectors.bin` under `dir` atomically.
@@ -259,7 +325,8 @@ impl VectorStore {
         {
             let file = std::fs::File::create(&tmp)?;
             let mut writer = std::io::BufWriter::new(file);
-            for value in &self.vectors {
+            let all = self.vectors.slice(0, self.vectors.len());
+            for value in all {
                 writer.write_all(&value.to_le_bytes())?;
             }
             writer.flush()?;
@@ -270,10 +337,44 @@ impl VectorStore {
 
     /// Rebuild a store from `status.json` + `vectors.bin` on disk.
     ///
+    /// `vectors.bin` is memory-mapped read-only: the scan touches only the
+    /// pages it needs and the OS reclaims them freely, so a query process
+    /// does not carry a 51MB heap copy. Callers that mutate the matrix
+    /// (sync upserts) need [`VectorStore::load_owned`] instead — mapping
+    /// mutations panic.
+    ///
     /// # Errors
     /// Fails on missing/corrupt files, dimension mismatch, or a vector count
     /// that does not match the name count.
     pub fn load(dir: &std::path::Path) -> anyhow::Result<Self> {
+        let (meta, vectors) = Self::read_store(dir)?;
+        Ok(Self {
+            meta,
+            vectors: VectorMatrix::Mapped(vectors),
+        })
+    }
+
+    /// [`load`] with an owned (mutable) matrix for the sync upsert path.
+    ///
+    /// Copies the mapped bytes into heap memory once per sync; the copy is
+    /// what makes `row_mut`/`push` legal on a loaded store.
+    ///
+    /// # Errors
+    /// Same as [`load`].
+    pub fn load_owned(dir: &std::path::Path) -> anyhow::Result<Self> {
+        let (meta, vectors) = Self::read_store(dir)?;
+        Ok(Self {
+            meta,
+            vectors: VectorMatrix::Owned(f32slice::cast(&vectors).to_vec()),
+        })
+    }
+
+    /// Read + validate `status.json` and `vectors.bin`.
+    ///
+    /// # Errors
+    /// Fails on missing/corrupt files, dimension mismatch, or a vector count
+    /// that does not match the name count.
+    fn read_store(dir: &std::path::Path) -> anyhow::Result<(VectorMeta, memmap2::Mmap)> {
         let status = crate::paths::Status::read(&dir.join("status.json"))?;
         let meta = VectorMeta {
             model: status.model,
@@ -281,26 +382,26 @@ impl VectorStore {
             names: status.names,
         };
         let vectors_path = dir.join("vectors.bin");
-        let bytes = std::fs::read(&vectors_path)
+        let file = std::fs::File::open(&vectors_path)
             .with_context(|| format!("reading {}", vectors_path.display()))?;
+        let meta_len = file
+            .metadata()
+            .with_context(|| format!("reading {}", vectors_path.display()))?
+            .len() as usize;
         anyhow::ensure!(
-            bytes.len() % (DIM * 4) == 0,
+            meta_len.is_multiple_of(DIM * 4),
             "vectors.bin size {} is not a multiple of {DIM}*4 bytes",
-            bytes.len()
+            meta_len
         );
-        let count = bytes.len() / (DIM * 4);
+        let count = meta_len / (DIM * 4);
         anyhow::ensure!(
             count == meta.names.len(),
             "vectors.bin holds {count} vectors but status.json lists {} names",
             meta.names.len()
         );
-        let vectors = bytes
-            .as_chunks::<4>()
-            .0
-            .iter()
-            .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
-            .collect();
-        Ok(Self { meta, vectors })
+        // SAFETY-free variant: mmap with private read-only semantics.
+        let mmap = unsafe { memmap2::Mmap::map(&file)? };
+        Ok((meta, mmap))
     }
 
     /// `(index, cosine score)` for the `limit` best matches, best first.
@@ -309,7 +410,7 @@ impl VectorStore {
     pub fn search(&self, query: &[f32], limit: usize) -> Vec<(usize, f32)> {
         let mut scored: Vec<(usize, f32)> = (0..self.meta.names.len())
             .map(|i| {
-                let row = &self.vectors[i * DIM..(i + 1) * DIM];
+                let row = self.vectors.slice(i * DIM, DIM);
                 let score: f32 = query.iter().zip(row).map(|(q, v)| q * v).sum();
                 (i, score)
             })
@@ -467,8 +568,7 @@ mod tests {
         let mut store = VectorStore::new();
         let v: Vec<f32> = vec![3.0; DIM];
         store.push("A", v).expect("push");
-        let row = &store.vectors[..DIM];
-        let norm: f32 = row.iter().map(|x| x * x).sum::<f32>().sqrt();
+        let norm: f32 = store.row(0).iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!((norm - 1.0).abs() < 1e-5, "norm was {norm}");
         assert_eq!(store.len(), 1);
         assert!(store.push("B", vec![1.0, 2.0]).is_err());
@@ -514,13 +614,35 @@ mod tests {
         assert_eq!(loaded.vectors.len(), DIM);
         assert!(
             loaded
-                .vectors
+                .row(0)
                 .iter()
-                .zip(store.vectors.iter())
+                .zip(store.row(0).iter())
                 .all(|(x, y)| (x - y).abs() < 1e-6)
         );
         assert_eq!(loaded.meta.model, "BAAI/bge-small-en-v1.5-Q");
         assert_eq!(loaded.meta.dim, DIM);
+    }
+
+    /// Sync mutates a loaded store; `load_owned` must permit it while a
+    /// mapped `load` would panic.
+    #[test]
+    fn load_owned_permits_mutation() {
+        let tmp = tempfile::tempdir().unwrap();
+        let mut store = VectorStore::new();
+        store
+            .push("Bolt", (0..DIM).map(|i| i as f32).collect())
+            .unwrap();
+        store.save_vectors(tmp.path()).expect("save");
+        write_status(&store, tmp.path());
+
+        let mut owned = VectorStore::load_owned(tmp.path()).expect("load owned");
+        owned.row_mut(0).copy_from_slice(&vec![1.0; DIM]);
+        crate::embed::normalize_row(owned.row_mut(0));
+        owned
+            .push("New", (0..DIM).map(|_| 0.5).collect())
+            .expect("push on owned");
+        assert_eq!(owned.len(), 2);
+        assert_eq!(owned.meta.names, vec!["Bolt", "New"]);
     }
 
     /// Write the matching status.json for a store, mirroring setup step 5.

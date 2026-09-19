@@ -52,7 +52,7 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "lands enter per their oracle text (enters-tapped honored, untapped when none)".to_string(),
         "no opponents, no counters or protection spells fire".to_string(),
         "draw engines fire once per turn on a fixed delay, not from full board state".to_string(),
-        "opponent-dependent mana sources (any color a land an opponent controls could produce) yield nothing".to_string(),
+        "opponent-dependent mana sources (Fellwar Stone) read as any-color from turn 2, nothing on turn 1".to_string(),
         "hybrid pips pay from any of their colors".to_string(),
         "body power uses the printed power when known, else flat 2 (tokens stay flat)".to_string(),
         "improvise/affinity/warp approximate to cost cuts; improvise/affinity discounts grow with the artifact count; X-costs pay for one".to_string(),
@@ -114,6 +114,67 @@ pub fn combos_json(assembly: &super::combos::Assembly, limit: usize) -> serde_js
 /// Human output for store-backed combos: complete combos with assembly
 /// rates, then near-misses (one card away). Combo rows never create
 /// problems: they are opportunities, not violations.
+/// Spellbook features that win the game, for the win-path filter.
+const WIN_FEATURES: [&str; 6] = [
+    "Win the game",
+    "Infinite damage",
+    "Infinite turns",
+    "Infinite mana",
+    "Infinite card draw",
+    "Infinite storm",
+];
+
+/// True when the combo produces a win feature.
+fn is_win_path(produces: &[String]) -> bool {
+    produces
+        .iter()
+        .any(|p| WIN_FEATURES.iter().any(|f| p.contains(f)))
+}
+
+/// Win-path rows: complete combos that produce a win feature.
+pub fn win_paths_json(assembly: &super::combos::Assembly, limit: usize) -> serde_json::Value {
+    let paths: Vec<&super::combos::ComboAccess> = assembly
+        .complete
+        .iter()
+        .filter(|r| is_win_path(&r.produces))
+        .take(limit)
+        .collect();
+    serde_json::json!({
+        "count": paths.len(),
+        "paths": paths,
+    })
+}
+
+/// Human win-path block: compact, only when win paths exist.
+pub fn print_win_paths(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
+    let s = out.styles();
+    let paths: Vec<&super::combos::ComboAccess> = assembly
+        .complete
+        .iter()
+        .filter(|r| is_win_path(&r.produces))
+        .take(limit)
+        .collect();
+    if paths.is_empty() {
+        return;
+    }
+    println!();
+    println!("{}", s.header("Win paths"));
+    for row in paths {
+        let feature = row
+            .produces
+            .iter()
+            .find(|p| is_win_path(std::slice::from_ref(p)))
+            .map(String::as_str)
+            .unwrap_or("");
+        println!(
+            "  {}  {}  {:.0}% of games",
+            s.card_name(&row.combo),
+            s.dim(&format!("{feature} by t{}", row.target_turn)),
+            row.pct_games * 100.0
+        );
+    }
+}
+
 pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
     let s = out.styles();
     println!();
@@ -148,7 +209,7 @@ pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limi
     let misses: Vec<&super::combos::ComboAccess> =
         assembly.near_misses.iter().take(limit).collect();
     if !misses.is_empty() {
-        println!("{}", s.dim("One card away:"));
+        println!("{}", s.header("One card away"));
         for row in misses {
             println!(
                 "  {}  {}  {}{}",
@@ -204,6 +265,28 @@ pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
 /// Round to 2 decimals.
 fn round2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0
+}
+
+/// Round a 0-1 share to 0-100 percent, 2 decimals.
+///
+/// The JSON contract reports every `pct_*` field on the same 0-100 scale;
+/// internal shares stay 0-1.
+fn pct2(share: f64) -> f64 {
+    round2(share * 100.0)
+}
+
+/// serde helper: emit a 0-1 share as 0-100 percent.
+pub(super) fn serialize_pct<S: serde::Serializer>(share: &f64, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_f64(pct2(*share))
+}
+
+/// Turn-indexed map of 0-1 shares, emitted as 0-100 percent.
+fn pct_turn_map(values: &[f64]) -> serde_json::Map<String, serde_json::Value> {
+    let mut map = serde_json::Map::new();
+    for (i, v) in values.iter().enumerate() {
+        map.insert((i + 1).to_string(), serde_json::json!(pct2(*v)));
+    }
+    map
 }
 
 /// Turn-indexed JSON object with 1-based string keys, rounded to 2 decimals.
@@ -270,11 +353,11 @@ pub fn json_report(
         serde_json::json!({
             "name": cmd.name,
             "cmc": cmd.cost.total() as f64,
-            "pct_castable_by_turn": turn_map(&stats.commander_castable_by[1..=turns.min(12)]),
+            "pct_castable_by_turn": pct_turn_map(&stats.commander_castable_by[1..=turns.min(12)]),
             "avg_first_cast_turn": round2(stats.avg_commander_cast_turn),
             "p50_cast_turn": stats.p50_commander_cast_turn,
             "p95_cast_turn": stats.p95_commander_cast_turn,
-            "on_curve_pct": round2(stats.commander_castable_by[cmc.clamp(1, turns.min(12))]),
+            "on_curve_pct": pct2(stats.commander_castable_by[cmc.clamp(1, turns.min(12))]),
         })
     });
     let problems_json: Vec<serde_json::Value> = problems
@@ -296,7 +379,7 @@ pub fn json_report(
         .is_some_and(|cmd| cmd.animate_at().is_some())
     {
         serde_json::json!({
-            "online_by_t6": round2(stats.station_online_pct),
+            "online_by_t6": pct2(stats.station_online_pct),
             "p50_online_turn": stats.station_p50_turn,
         })
     } else {
@@ -325,18 +408,18 @@ pub fn json_report(
         "assumptions": assumptions(deck),
         "opening_hand": {
             "avg_lands": round2(stats.avg_opener_lands),
-            "pct_0": round2(stats.opener_pct[0]),
-            "pct_1": round2(stats.opener_pct[1]),
-            "pct_2": round2(stats.opener_pct[2]),
-            "pct_3": round2(stats.opener_pct[3]),
-            "pct_4": round2(stats.opener_pct[4]),
-            "pct_5plus": round2(stats.opener_pct[5]),
-            "mulligan_rate": round2(stats.mulligan_rate),
+            "pct_0": pct2(stats.opener_pct[0]),
+            "pct_1": pct2(stats.opener_pct[1]),
+            "pct_2": pct2(stats.opener_pct[2]),
+            "pct_3": pct2(stats.opener_pct[3]),
+            "pct_4": pct2(stats.opener_pct[4]),
+            "pct_5plus": pct2(stats.opener_pct[5]),
+            "mulligan_rate": pct2(stats.mulligan_rate),
         },
         "land_drops": {
-            "hit_all_by_turn": turn_map(&stats.hit_all_drops_by[1..=turns.min(5)]),
-            "screw_pct_2_or_fewer_by_t4": round2(stats.screw_pct),
-            "flood_pct_5plus_by_t4": round2(stats.flood_pct),
+            "hit_all_by_turn": pct_turn_map(&stats.hit_all_drops_by[1..=turns.min(5)]),
+            "screw_pct_2_or_fewer_by_t4": pct2(stats.screw_pct),
+            "flood_pct_5plus_by_t4": pct2(stats.flood_pct),
             "p50_drops_by_4": stats.p50_drops_by_4,
             "p95_drops_by_4": stats.p95_drops_by_4,
         },
@@ -346,34 +429,59 @@ pub fn json_report(
         "engines_online_by_turn": turn_map(&stats.engines_by_turn[..turns]),
         "mana": {
             "avg_unused_by_turn": turn_map(&stats.unused_mana[..turns]),
-            "pct_games_floated_3plus_t6": round2(stats.floated_pct),
+            "pct_games_floated_3plus_t6": pct2(stats.floated_pct),
         },
         "draw": {
-            "pct_seen_by_turn": turn_map(&stats.draw_sources[..turns]),
-            "pct_starved_0_by_t6": round2(stats.starved_pct),
+            "pct_seen_by_turn": pct_turn_map(&stats.draw_sources[..turns]),
+            "pct_starved_0_by_t6": pct2(stats.starved_pct),
         },
         "role_access": {
-            "removal_pct_seen_by_5": round2(stats.removal_access_5),
-            "draw_pct_seen_by_6": round2(stats.draw_access_6),
-            "creature_pct_seen_by_3": round2(stats.creature_access_3),
-            "wincon_pct_seen_by_8": round2(stats.wincon_access_8),
-            "lock_pct_seen_by_3": round2(stats.lock_access_3),
+            "removal_pct_seen_by_5": pct2(stats.removal_access_5),
+            "draw_pct_seen_by_6": pct2(stats.draw_access_6),
+            "creature_pct_seen_by_3": pct2(stats.creature_access_3),
+            "wincon_pct_seen_by_8": pct2(stats.wincon_access_8),
+            "lock_pct_seen_by_3": pct2(stats.lock_access_3),
         },
         "velocity": {
             "avg_cards_seen": turn_map(&stats.cards_seen[..turns]),
+            "library_awareness_by_turn": pct_turn_map(
+                &stats.library_awareness_by_turn[..turns],
+            ),
+            "self_milled_by_turn": turn_map(&stats.self_milled_by_turn[..turns]),
+            "opp_milled_by_turn": turn_map(&stats.opp_milled_by_turn[..turns]),
+            "library_remaining_by_turn": turn_map(&stats.library_by_turn[..turns]),
+        },
+        "combat": {
+            "attack_power_avg_by_turn": turn_map(&stats.attack_power_by_turn[..turns]),
+            "attack_power_p90_by_t8": stats.attack_power_p90,
+            "attackers_by_turn": turn_map(&stats.attackers_by_turn[..turns]),
+            "evasive_by_turn": turn_map(&stats.evasive_by_turn[..turns]),
+        },
+        "wincons": {
+            "drain_total_by_turn": turn_map(&stats.drain_total_by_turn[..turns]),
+            "extra_turns_pct": pct2(stats.extra_turns_pct),
+            "win_threshold_p50_turn": stats.win_threshold_p50_turn,
+            "win_threshold_pct": pct2(stats.win_threshold_pct),
+            "ultimate_online_pct": pct2(stats.ultimate_online_pct),
+        },
+        "interaction": {
+            "ready_pct_by_turn": pct_turn_map(&stats.interaction_ready_by_turn[..turns]),
+            "mana_held_avg": round2(stats.interaction_mana_held),
+            "instant_speed_count": stats.interaction_instant_count,
+            "note": "capacity, not events",
         },
         "color_screw": {
-            "W": round2(stats.color_screw[0]),
-            "U": round2(stats.color_screw[1]),
-            "B": round2(stats.color_screw[2]),
-            "R": round2(stats.color_screw[3]),
-            "G": round2(stats.color_screw[4]),
+            "W": pct2(stats.color_screw[0]),
+            "U": pct2(stats.color_screw[1]),
+            "B": pct2(stats.color_screw[2]),
+            "R": pct2(stats.color_screw[3]),
+            "G": pct2(stats.color_screw[4]),
         },
         "pip_blocks": stats.pip_blocks.iter().map(|p| {
             serde_json::json!({
                 "name": p.name,
                 "color": p.color,
-                "pct_games": round2(p.pct_games),
+                "pct_games": pct2(p.pct_games),
             })
         }).collect::<Vec<_>>(),
         "graveyard": {
@@ -385,7 +493,7 @@ pub fn json_report(
                 "name": c.name,
                 "cmc": round2(c.cmc),
                 "target_turn": c.target_turn,
-                "pct_castable_by_target": round2(c.pct_by_target),
+                "pct_castable_by_target": pct2(c.pct_by_target),
                 "avg_first_castable_turn": round2(c.avg_first_castable_turn),
             })
         }).collect::<Vec<_>>(),
@@ -403,31 +511,46 @@ fn color_source_census(deck: &SimDeck) -> serde_json::Value {
     use super::model::Role;
     let mut fixed = [0u32; 5];
     let mut choice = [0u32; 5];
-    for card in deck.cards.iter().filter(|c| c.role == Role::Land) {
-        let Some(y) = &card.tap else { continue };
-        for (i, p) in y.fixed.iter().enumerate() {
-            if *p > 0 {
-                fixed[i] += 1;
+    let mut flexible_nonland = 0u32;
+    let mut scaling = 0u32;
+    for card in deck.cards.iter() {
+        if card.role == Role::Land {
+            let Some(y) = &card.tap else { continue };
+            for (i, p) in y.fixed.iter().enumerate() {
+                if *p > 0 {
+                    fixed[i] += 1;
+                }
+            }
+            if y.any_pips > 0 || y.opponent_any {
+                // Any-color choice lands (Command Tower): every tracked color.
+                for c in choice.iter_mut() {
+                    *c += 1;
+                }
+            } else {
+                let colors = y.choice.iter().filter(|c| **c).count();
+                if colors >= 2 {
+                    for (i, c) in y.choice.iter().enumerate() {
+                        if *c {
+                            choice[i] += 1;
+                        }
+                    }
+                } else if colors == 1
+                    && let Some(i) = y.choice.iter().position(|c| *c)
+                {
+                    fixed[i] += 1;
+                }
+            }
+        } else if card.role == Role::Rock || card.role == Role::Dork {
+            // Non-land mana sources: flexible output per turn (rocks tap
+            // for one; dorks join on the first body turn).
+            if let Some(y) = &card.tap
+                && (y.any_pips > 0 || y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0))
+            {
+                flexible_nonland += 1;
             }
         }
-        if y.any {
-            // Any-color choice lands (Command Tower): every tracked color.
-            for c in choice.iter_mut() {
-                *c += 1;
-            }
-        } else {
-            let colors = y.choice.iter().filter(|c| **c).count();
-            if colors >= 2 {
-                for (i, c) in y.choice.iter().enumerate() {
-                    if *c {
-                        choice[i] += 1;
-                    }
-                }
-            } else if colors == 1
-                && let Some(i) = y.choice.iter().position(|c| *c)
-            {
-                fixed[i] += 1;
-            }
+        if card.tap.as_ref().is_some_and(|y| y.scaling.is_some()) {
+            scaling += 1;
         }
     }
     serde_json::json!({
@@ -437,7 +560,9 @@ fn color_source_census(deck: &SimDeck) -> serde_json::Value {
         "choice_source_lands": {
             "W": choice[0], "U": choice[1], "B": choice[2], "R": choice[3], "G": choice[4],
         },
-        "note": "static census of land tap yields; a choice land serves every color it can pick",
+        "flexible_nonland_sources": flexible_nonland,
+        "scaling_sources": scaling,
+        "note": "static census of land tap yields; a choice land serves every color it can pick; flexible_nonland_sources counts rocks and dorks",
     })
 }
 
@@ -533,6 +658,61 @@ pub fn print_report(
             s.dim("draw source by t6"),
             stats.draw_access_6 * 100.0,
             stats.starved_pct * 100.0
+        );
+    }
+    if stats.interaction_instant_count > 0 && turns >= 5 {
+        println!(
+            "  {}  {}  {:.1}% · instant-speed {} · held {:.1}",
+            s.bar(stats.interaction_ready_by_turn[4], 10),
+            s.dim("interaction ready by t5"),
+            stats.interaction_ready_by_turn[4] * 100.0,
+            stats.interaction_instant_count,
+            stats.interaction_mana_held
+        );
+    }
+    if stats.attack_power_by_turn[t6] > 0.0 {
+        println!(
+            "  {}  {}  {:.0} avg power · {:.0} p90 t8 · {:.1}/{:.0} evasion",
+            s.bar((stats.attack_power_by_turn[t6] / 40.0).min(1.0), 10),
+            s.dim("attack power"),
+            stats.attack_power_by_turn[t6],
+            stats.attack_power_p90,
+            stats.evasive_by_turn[t6],
+            stats.bodies_by_turn[t6]
+        );
+    }
+    if stats.drain_total_by_turn[t6] > 0.0 {
+        println!(
+            "  {}  {}  {:.1} life drained by t{}",
+            s.bar((stats.drain_total_by_turn[t6] / 30.0).min(1.0), 10),
+            s.dim("drain"),
+            stats.drain_total_by_turn[t6],
+            t6 + 1
+        );
+    }
+    if stats.extra_turns_pct > 0.0 {
+        println!(
+            "  {}  {}  {:.1}% of games",
+            s.bar(stats.extra_turns_pct, 10),
+            s.dim("extra turns taken"),
+            stats.extra_turns_pct * 100.0
+        );
+    }
+    if stats.win_threshold_pct > 0.0 {
+        println!(
+            "  {}  {}  {:.1}% by t10 · p50 t{}",
+            s.bar(stats.win_threshold_pct, 10),
+            s.dim("win threshold online"),
+            stats.win_threshold_pct * 100.0,
+            stats.win_threshold_p50_turn
+        );
+    }
+    if stats.ultimate_online_pct > 0.0 {
+        println!(
+            "  {}  {}  {:.1}% by t10",
+            s.bar(stats.ultimate_online_pct, 10),
+            s.dim("ultimate online"),
+            stats.ultimate_online_pct * 100.0
         );
     }
     let mut worst: Vec<&super::aggregate::CardCast> = stats.card_castability.iter().collect();
@@ -775,23 +955,35 @@ pub fn print_diff(out: &Output, diff: &ReportDiff) {
     }
     println!("{}", s.header("Deltas vs baseline"));
     if !diff.shape.is_empty() {
-        println!("{}", s.dim("shape"));
+        println!("{}", s.header("Shape"));
         for (name, old, new) in &diff.shape {
             println!("    {name}: {old} → {new}");
         }
     }
     if !diff.metrics.is_empty() {
-        println!("{}", s.dim("metrics"));
+        println!("{}", s.header("Metrics"));
         for d in &diff.metrics {
             println!("    {}: {} → {}", d.path, d.old, d.new);
         }
     }
     if !diff.problems.is_empty() {
-        println!("{}", s.dim("problems"));
+        println!("{}", s.header("Problems"));
         for p in &diff.problems {
             match p.change {
-                "new" => println!("    {} {}: {}", s.error("+"), p.kind, p.detail),
-                _ => println!("    {} {}: {}", s.success("-"), p.kind, p.detail),
+                // Bare signs: "+" = new problem (red), "-" = resolved
+                // (green). error()/success() would print "error: +".
+                "new" => println!(
+                    "    {} {}: {}",
+                    s.glyph("+", crate::output::GlyphKind::Bad),
+                    p.kind,
+                    p.detail
+                ),
+                _ => println!(
+                    "    {} {}: {}",
+                    s.glyph("-", crate::output::GlyphKind::Good),
+                    p.kind,
+                    p.detail
+                ),
             }
         }
     }

@@ -84,7 +84,7 @@ fn bracket_scan_flags_tutors_and_extra_turns() {
     assert!(
         checks
             .iter()
-            .any(|c| c.starts_with("CHECK tutors:") && c.contains("Demonic Tutor"))
+            .any(|c| c.starts_with("CHECK library search:") && c.contains("Demonic Tutor"))
     );
     assert!(
         checks
@@ -100,7 +100,7 @@ fn bracket_scan_flags_tutors_and_extra_turns() {
     assert!(
         !checks
             .iter()
-            .any(|c| c.starts_with("PASS") && c.contains("tutors"))
+            .any(|c| c.starts_with("PASS") && c.contains("library search"))
     );
 }
 
@@ -156,8 +156,8 @@ fn bracket_scan_splits_land_ramp_from_tutors() {
     // Only the nonland tutor trips the CHECK.
     let tutors = checks
         .iter()
-        .find(|c| c.starts_with("CHECK tutors:"))
-        .expect("tutor check present");
+        .find(|c| c.starts_with("CHECK library search:"))
+        .expect("library search check present");
     assert!(tutors.contains("Demonic Tutor"));
     assert!(!tutors.contains("Cultivate"));
     assert!(!tutors.contains("Farseek"));
@@ -538,4 +538,209 @@ fn constructed_checks_sizes_and_copies() {
     assert!(violations.iter().any(|v| v.rule == "copy limit"));
     // Maindeck 11 + sideboard 2 = 13 total, under 60: deck size violation.
     assert!(violations.iter().any(|v| v.rule == "deck size"));
+}
+
+#[test]
+fn bracket_3_library_search_is_advisory_not_check() {
+    // Official rules: bracket 3's only hard cap is the Game Changer
+    // allowance. Library searchers (even many) never make a bracket-3
+    // deck illegal; they print as ADVISE lines.
+    let cards: HashMap<String, CardRow> = [
+        card(
+            "Demonic Tutor",
+            "Sorcery",
+            "B",
+            "Search your library for a card, put it into your hand.",
+        ),
+        card(
+            "The Seriema",
+            "Artifact",
+            "W",
+            "When The Seriema enters, search your library for a legendary creature card, reveal it, put it into your hand, then shuffle.",
+        ),
+        card("Bear", "Creature — Bear", "G", "Just a bear."),
+    ]
+    .into_iter()
+    .map(|c| (c.name.clone(), c))
+    .collect();
+    let deck =
+        Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n1 Demonic Tutor\n1 The Seriema\n").unwrap();
+    let checks = scan_bracket_signals(&deck, &cards, 3);
+    let advise = checks
+        .iter()
+        .find(|c| c.starts_with("ADVISE library search:"))
+        .expect("bracket-3 library search is advisory");
+    assert!(advise.contains("Demonic Tutor"));
+    assert!(advise.contains("The Seriema"));
+    assert!(
+        !checks
+            .iter()
+            .any(|c| c.starts_with("CHECK") && c.contains("library search")),
+        "bracket 3 has no hard tutor count"
+    );
+    // No advisory when the deck searches nothing.
+    let cards = cards
+        .into_iter()
+        .filter(|(n, _)| n != "Demonic Tutor" && n != "The Seriema")
+        .collect();
+    let clean = Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n10 Forest\n").unwrap();
+    let checks = scan_bracket_signals(&clean, &cards, 3);
+    assert!(
+        !checks.iter().any(|c| c.contains("library search")),
+        "no searchers, no advisory"
+    );
+}
+
+#[test]
+fn bracket_scan_splits_hard_tutors_from_soft_searchers() {
+    // A one-shot spell tutor is hard; an ETB searcher with a hand/put-it-
+    // into-your-had clause is soft. Both land in the advisory count; the
+    // split surfaces in note lines.
+    let cards: HashMap<String, CardRow> = [
+        card(
+            "Demonic Tutor",
+            "Sorcery",
+            "B",
+            "Search your library for a card, put it into your hand.",
+        ),
+        card(
+            "Enlightened Tutor",
+            "Instant",
+            "W",
+            "Search your library for an artifact or enchantment card, put it onto the battlefield, then shuffle.",
+        ),
+        card(
+            "Oswald Fiddlebender",
+            "Legendary Creature",
+            "W",
+            "{W}, {T}, Sacrifice an artifact: Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put it onto the battlefield, then shuffle.",
+        ),
+        card("Bear", "Creature — Bear", "G", "Just a bear."),
+    ]
+    .into_iter()
+    .map(|c| (c.name.clone(), c))
+    .collect();
+    let deck = Deck::parse(
+        "// COMMANDER\n1 Bear\n\n// DECK\n1 Demonic Tutor\n1 Enlightened Tutor\n1 Oswald Fiddlebender\n",
+    )
+    .unwrap();
+    let checks = scan_bracket_signals(&deck, &cards, 3);
+    let hard = checks
+        .iter()
+        .find(|c| c.starts_with("note hard tutors:"))
+        .expect("hard tutor note present");
+    assert!(hard.contains("Demonic Tutor"));
+    // Oswald is restricted (sacrifice cost + mana value clause): soft.
+    // Enlightened Tutor puts onto the battlefield: still a one-shot spell
+    // but the battlefield placement keeps it in the hard class.
+    assert!(
+        !hard.contains("Oswald"),
+        "restricted activated searchers are soft"
+    );
+    let soft = checks
+        .iter()
+        .find(|c| c.starts_with("note soft searchers:"))
+        .expect("soft searcher note present");
+    assert!(soft.contains("Oswald"));
+    assert!(!soft.contains("Demonic Tutor"));
+}
+
+#[test]
+fn bracket_scan_matches_library_and_or_graveyard() {
+    // "Search your library and/or graveyard" phrasing counts as a
+    // searcher (the old needle missed it).
+    let cards: HashMap<String, CardRow> = [card(
+        "Shenanigans",
+        "Instant",
+        "R",
+        "Search your library and/or graveyard for a card with the same name as a nontoken permanent card, then exile it.",
+    )]
+    .into_iter()
+    .map(|c| (c.name.clone(), c))
+    .collect();
+    let deck = Deck::parse("// COMMANDER\n1 Shenanigans\n\n// DECK\n").unwrap();
+    let checks = scan_bracket_signals(&deck, &cards, 2);
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.starts_with("CHECK library search:") && c.contains("Shenanigans"))
+    );
+}
+
+#[test]
+fn bracket_scan_catches_mld_wordings() {
+    // MLD needles cover destroy/exile/return-all and untap-lock shapes.
+    let cards: HashMap<String, CardRow> = [
+        card("Ruination", "Sorcery", "R", "Destroy all non-Swamp lands."),
+        card("Sunder", "Instant", "U", "Return all lands to their owners' hands."),
+        card(
+            "Winter Orb",
+            "Artifact",
+            "2",
+            "As long as Winter Orb is untapped, lands don't untap during their controllers' untap steps.",
+        ),
+        card("Bear", "Creature — Bear", "G", "Just a bear."),
+    ]
+    .into_iter()
+    .map(|c| (c.name.clone(), c))
+    .collect();
+    let deck =
+        Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n1 Ruination\n1 Sunder\n1 Winter Orb\n")
+            .unwrap();
+    let checks = scan_bracket_signals(&deck, &cards, 2);
+    let mld = checks
+        .iter()
+        .find(|c| c.starts_with("CHECK mass land destruction"))
+        .expect("MLD check present");
+    assert!(mld.contains("Ruination"));
+    assert!(mld.contains("Sunder"));
+    assert!(mld.contains("Winter Orb"));
+}
+
+#[test]
+fn legal_json_splits_advisories_from_violations() {
+    // Bracket 3 with three Game Changers and soft searchers: legal, and
+    // the advisory lands in `advisories`, not `violations`.
+    let mut cards: HashMap<String, CardRow> = HashMap::new();
+    for (name, text) in [
+        ("Bear", "Vanilla."),
+        (
+            "The Seriema",
+            "When The Seriema enters, search your library for a legendary creature card, put it into your hand, then shuffle.",
+        ),
+        ("Smothering Tithe", "Vanilla artifact."),
+        ("Enlightened Tutor", "Instant tutor."),
+        (
+            "Coalition Victory",
+            "You win the game if you control a land of each basic land type and a creature of each color.",
+        ),
+    ] {
+        let mut c = card("x", "Card", "", text);
+        c.name = name.to_string();
+        c.game_changer = Some(
+            name == "Smothering Tithe"
+                || name == "Enlightened Tutor"
+                || name == "Coalition Victory",
+        );
+        cards.insert(name.to_string(), c);
+    }
+    let deck = Deck::parse(
+        "// COMMANDER\n1 Bear\n\n// DECK\n1 The Seriema\n1 Smothering Tithe\n1 Enlightened Tutor\n1 Coalition Victory\n",
+    )
+    .unwrap();
+    let violations = check(&deck, &cards, Some("commander"), Some(3));
+    // Three GCs at the cap: no violation. The Seriema searcher is
+    // advisory-only and never a violation.
+    assert!(
+        !violations.iter().any(|v| v.rule == "game changers"),
+        "3 GCs at the bracket-3 cap is legal"
+    );
+    let checks = scan_bracket_signals(&deck, &cards, 3);
+    assert!(checks.iter().any(|c| c.starts_with("ADVISE ")));
+    assert!(
+        !checks
+            .iter()
+            .any(|c| c.starts_with("CHECK ") && c.contains("library search")),
+        "soft searchers do not CHECK at bracket 3"
+    );
 }

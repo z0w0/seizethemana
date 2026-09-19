@@ -97,6 +97,37 @@ pub struct GameLog {
     /// First turn each card index reached the graveyard (mill, discard,
     /// sacrifice) — combo assembly for graveyard pieces.
     pub card_first_graveyard: HashMap<usize, u32>,
+    /// Total attacking power on the board at the combat phase of each
+    /// turn (buffs, equipment, double strike included).
+    pub attack_power: Vec<u32>,
+    /// Attacking bodies each turn (denominator for the evasion census).
+    pub attackers: Vec<u32>,
+    /// Attacking bodies with evasion (trample/flying/menace) each turn.
+    pub evasive: Vec<u32>,
+    /// Library size at the end of each turn (deck-out proximity).
+    pub library_size: Vec<u32>,
+    /// Cards self-milled (own-library mill + surveil) by end of turn.
+    pub self_milled: Vec<u32>,
+    /// Cards milled toward opponents ("target player/opponent mills")
+    /// by end of turn — deck-out pressure on the table.
+    pub opp_milled: Vec<u32>,
+    /// Cards evaluated (drawn + milled + scried/surveiled) per turn,
+    /// cumulative fraction of the library.
+    pub awareness: Vec<f64>,
+    /// Life drained (burn, drain engines) by end of each turn.
+    pub drain_total: Vec<u32>,
+    /// Extra turns taken by end of each turn.
+    pub extra_turns: Vec<u32>,
+    /// First turn a win-threshold engine could fire (enough counters);
+    /// None when the deck has no such engine or never reached it.
+    pub win_threshold_turn: Option<u32>,
+    /// First turn a planeswalker ultimate became affordable (loyalty
+    /// >= the ultimate's cost); None when none exists or never reached.
+    pub ultimate_online: Option<u32>,
+    /// Ready-to-fire interaction (in hand + affordable) per turn.
+    pub interaction_ready: Vec<bool>,
+    /// Spare mana while interaction was ready, per turn.
+    pub interaction_mana_held: Vec<f64>,
 }
 
 /// One chosen activation in the spend-leftover-mana pass.
@@ -145,6 +176,24 @@ pub(super) struct GameState {
     /// First turn each card index reached the graveyard (mill, discard,
     /// sacrifice); copied into the log at the end of the game.
     pub(super) graveyard_seen: HashMap<usize, u32>,
+    /// Banked Treasure tokens: each is one any-color pip, sacrificed to
+    /// use (the token itself is not tracked on the battlefield).
+    pub(super) treasure_bank: u32,
+    /// Running mill census, split by direction (self = graveyard fuel,
+    /// opponent = deck-out pressure). Filled by Mill effects.
+    pub(super) milled_self: u32,
+    pub(super) milled_opp: u32,
+    /// Running life drained (burn, drain engines, combat-damage drains).
+    pub(super) drained: u32,
+    /// Cards evaluated (drawn + milled + scried/surveiled), cumulative.
+    pub(super) awareness_cards: u32,
+    /// Extra turns queued by effects this game.
+    pub(super) extra_turns_queued: u32,
+    /// True while the next Scry effect should surveil (put cards in the
+    /// graveyard). Set by the Surveil spell shape before the Scry fires.
+    /// Noncreature spells cast this turn (prowess power bumps), reset
+    /// at the start of each turn.
+    pub(super) prowess_casts: u32,
 }
 
 impl Pool {
@@ -284,14 +333,17 @@ pub(super) fn fire_on_enter(deck: &SimDeck, st: &mut GameState, pos: usize, turn
     let has_real_etb = card_of(deck, perm)
         .abilities()
         .any(|a| a.trigger == Trigger::OnEnter);
-    for ability in card_of(deck, perm).abilities() {
-        if ability.trigger != Trigger::OnEnter {
-            continue;
-        }
-        apply_effect(deck, &ability.effect, st, turn);
+    let mill_opp = card_of(deck, perm).mills_opponent;
+    let etb_effects: Vec<Effect> = card_of(deck, perm)
+        .abilities()
+        .filter(|a| a.trigger == Trigger::OnEnter)
+        .map(|a| a.effect.clone())
+        .collect();
+    for effect in &etb_effects {
+        apply_effect(deck, effect, st, turn, mill_opp);
         // Blink-shaped ETBs ("exile … return it to the battlefield")
         // re-fire the host's OnEnter triggers once, next turn.
-        if matches!(ability.effect, Effect::ExtraLand)
+        if matches!(effect, Effect::ExtraLand)
             && has_real_etb
             && perm_card < usize::MAX - 1
             && let Some(p) = st
