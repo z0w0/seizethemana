@@ -4,7 +4,7 @@
 use super::cast_phase::{cast_phase, play_land};
 use super::game::{
     GameLog, GameState, HAND_LIMIT, InPlay, OPENING_HAND, Pool, card_of, fire_on_enter, land_types,
-    new_perm,
+    new_perm, register_loyalty_token_engines,
 };
 use super::game_effects::{apply_effect, spend_leftover, tap_budget};
 use super::game_mana::{
@@ -577,6 +577,11 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             if commander_engine_draws.is_some_and(|n| n > 0) || commander_engine_other {
                 engines.push((usize::MAX, commander_engine_draws.unwrap_or(0)));
             }
+            // Planeswalker +1 token engines register at first cast: a
+            // loyalty-gain activation that creates tokens is a repeatable
+            // once-per-turn engine (Liliana-class token fuel).
+            let cmd_pw_pos = st.battlefield.len() - 1;
+            register_loyalty_token_engines(deck, &st, cmd_pw_pos, &mut engines);
             // The commander's ETB triggers fire (IGS creates station
             // fuel tokens for each multicolored permanent).
             let cmd_pos = st.battlefield.len() - 1;

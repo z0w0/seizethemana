@@ -245,7 +245,7 @@ fn spacecraft_with_pt_box_commands() {
     // Legal commander type; identity WUBRG covers Bolt's R. The tiny
     // deck still trips deck size, so check that no commander violation
     // appears.
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     assert!(
         violations.iter().all(|v| v.rule != "commander"),
         "Spacecraft with P/T must command: {violations:?}"
@@ -257,10 +257,10 @@ fn spacecraft_with_pt_box_commands() {
     no_pt.toughness = None;
     cards.insert("IGS".to_string(), no_pt);
     let v = check(&deck, &cards, Some("commander"), None)
-        .iter()
+        .0
+        .into_iter()
         .find(|v| v.rule == "commander")
-        .expect("Spacecraft without P/T must not command")
-        .clone();
+        .expect("Spacecraft without P/T must not command");
     assert_eq!(v.cards, vec!["IGS".to_string()]);
     assert!(v.detail.contains("Vehicle/Spacecraft"));
 }
@@ -276,7 +276,7 @@ fn vehicle_commander_rules() {
 
     // Legendary Vehicle with P/T commands (deck size aside).
     let deck = Deck::parse("// COMMANDER\n1 Parhelion\n// DECK\n1 Bolt\n").unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     assert!(
         violations.iter().all(|v| v.rule != "commander"),
         "Vehicle with P/T must command: {violations:?}"
@@ -288,10 +288,10 @@ fn vehicle_commander_rules() {
     plain.toughness = Some("6".into());
     cards.insert("Parhelion".to_string(), plain);
     let v = check(&deck, &cards, Some("commander"), None)
-        .iter()
+        .0
+        .into_iter()
         .find(|v| v.rule == "commander")
-        .expect("non-legendary Vehicle must not command")
-        .clone();
+        .expect("non-legendary Vehicle must not command");
     assert_eq!(v.cards, vec!["Parhelion".to_string()]);
 
     // Color identity still applies to the Spacecraft/Vehicle commander.
@@ -301,6 +301,7 @@ fn vehicle_commander_rules() {
     cards.insert("Ship".to_string(), ubs_ship);
     let deck = Deck::parse("// COMMANDER\n1 Ship\n// DECK\n1 Bolt\n").unwrap();
     let identity_v = check(&deck, &cards, Some("commander"), None)
+        .0
         .into_iter()
         .find(|v| v.rule == "commander color identity")
         .expect("R pips fall outside UB identity");
@@ -320,7 +321,7 @@ fn color_identity_subset_check() {
         card("Birds", "Creature — Bird", "WU", ""),
     );
     let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n1 Birds\n").unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     let identity_v = violations
         .iter()
         .find(|v| v.rule == "commander color identity")
@@ -354,7 +355,7 @@ fn singleton_limit_excepts_basics_and_oracle_text() {
         "Sol Ring".to_string(),
         card("Sol Ring", "Artifact", "", "{T}: Add {C}{C}."),
     );
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     // 30 Plains and 1 Rats pass; no singleton violation at all.
     assert!(
         violations.iter().all(|v| v.rule != "singleton"),
@@ -377,14 +378,14 @@ fn commander_size_ignores_sideboard() {
     let deck =
         Deck::parse("// COMMANDER\n1 Breya\n// DECK\n99 Bolt\n// SIDEBOARD\n2 Bolt\n1 Bolt\n")
             .unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     assert!(
         violations.iter().all(|v| v.rule != "deck size"),
         "sideboard must not count toward commander size: {violations:?}"
     );
     // 99 maindeck + 0 sideboard is one short: still a violation.
     let short = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n98 Bolt\n").unwrap();
-    let violations = check(&short, &cards, Some("commander"), None);
+    let (violations, _) = check(&short, &cards, Some("commander"), None);
     assert!(violations.iter().any(|v| v.rule == "deck size"));
     // The summary line separates the sideboard from the deck count.
     let s = summary_line(&deck, &cards);
@@ -418,14 +419,14 @@ fn game_changer_count_violates_bracket_3() {
         "// COMMANDER\n1 Breya\n// DECK\n95 Plains\n1 GC One\n1 GC Two\n1 GC Three\n1 GC Four\n",
     )
     .unwrap();
-    let violations = check(&deck, &cards, Some("commander"), Some(3));
+    let (violations, _) = check(&deck, &cards, Some("commander"), Some(3));
     let gc_v = violations
         .iter()
         .find(|v| v.rule == "game changers")
         .expect("4 Game Changers exceed bracket 3's limit of 3");
     assert_eq!(gc_v.cards.len(), 4);
     // Bracket 4 allows any number.
-    let violations = check(&deck, &cards, Some("commander"), Some(4));
+    let (violations, _) = check(&deck, &cards, Some("commander"), Some(4));
     assert!(violations.iter().all(|v| v.rule != "game changers"));
 }
 
@@ -453,7 +454,7 @@ fn sideboard_game_changers_ignore_bracket_count() {
          // SIDEBOARD\n1 GC Four\n1 GC Four\n",
     )
     .unwrap();
-    let violations = check(&deck, &cards, Some("commander"), Some(3));
+    let (violations, _) = check(&deck, &cards, Some("commander"), Some(3));
     assert!(
         violations.iter().all(|v| v.rule != "game changers"),
         "sideboard Game Changers must not count: {violations:?}"
@@ -482,7 +483,7 @@ fn banned_cards_fail_the_format() {
     banned_card.legalities = r#"{"commander":"banned"}"#.into();
     cards.insert("Banned Card".to_string(), banned_card);
     let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n99 Plains\n1 Banned Card\n").unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     assert!(violations.iter().any(|v| v.rule == "banned"));
 }
 
@@ -498,7 +499,7 @@ fn unknown_names_are_reported() {
         card("Plains", "Basic Land — Plains", "", ""),
     );
     let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n99 Plains\n1 Ghost Card\n").unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     let v = violations
         .iter()
         .find(|v| v.rule == "unknown cards")
@@ -518,7 +519,7 @@ fn unknown_names_are_deduped() {
         card("Plains", "Basic Land — Plains", "", ""),
     );
     let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n90 Plains\n3 Ghost Card\n").unwrap();
-    let violations = check(&deck, &cards, Some("commander"), None);
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
     let v = violations
         .iter()
         .find(|v| v.rule == "unknown cards")
@@ -533,7 +534,7 @@ fn constructed_checks_sizes_and_copies() {
     cards.insert("Bolt".to_string(), card("Bolt", "Instant", "R", "Deal 3."));
     // 61 cards: 60 maindeck (5 Bolt × 12 = 60) plus a 5-card sideboard.
     let deck = Deck::parse("// DECK\n10 Bolt\n1 Bolt\n// SIDEBOARD\n2 Bolt\n").unwrap();
-    let violations = check(&deck, &cards, Some("modern"), None);
+    let (violations, _) = check(&deck, &cards, Some("modern"), None);
     // 13 Bolt copies trip the copy limit.
     assert!(violations.iter().any(|v| v.rule == "copy limit"));
     // Maindeck 11 + sideboard 2 = 13 total, under 60: deck size violation.
@@ -588,6 +589,54 @@ fn bracket_3_library_search_is_advisory_not_check() {
     assert!(
         !checks.iter().any(|c| c.contains("library search")),
         "no searchers, no advisory"
+    );
+}
+
+#[test]
+fn sideboard_game_changers_surface_as_advisory() {
+    // Sideboard Game Changers never count toward the bracket cap (the
+    // sideboard is an upgrade kit), but a reader previewing a bracket
+    // bump should see them; they land as check advisories.
+    let mut cards: HashMap<String, CardRow> = HashMap::from([
+        (
+            "Demonic Tutor".to_string(),
+            card(
+                "Demonic Tutor",
+                "Sorcery",
+                "B",
+                "Search your library for a card.",
+            ),
+        ),
+        (
+            "Bear".to_string(),
+            card("Bear", "Creature", "B", "Just a bear."),
+        ),
+        ("Bolt".to_string(), card("Bolt", "Instant", "R", "Deal 3.")),
+    ]);
+    for c in cards.values_mut() {
+        c.game_changer = Some(c.name == "Demonic Tutor");
+    }
+    let deck =
+        Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n1 Bolt\n\n// SIDEBOARD\n1 Demonic Tutor\n")
+            .unwrap();
+    // Bracket 2: maindeck GC count is 0, sideboard GC is advisory.
+    let (violations, advisories) = check(&deck, &cards, Some("commander"), Some(2));
+    assert!(
+        violations.iter().all(|v| v.rule != "game changers"),
+        "sideboard GCs do not violate: {violations:?}"
+    );
+    assert!(
+        advisories
+            .iter()
+            .any(|a| a.contains("sideboard Game Changer") && a.contains("Demonic Tutor")),
+        "sideboard GCs surface as advisories: {advisories:?}"
+    );
+    // No sideboard, no advisory.
+    let clean = Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n1 Bolt\n").unwrap();
+    let (_, advisories) = check(&clean, &cards, Some("commander"), Some(2));
+    assert!(
+        !advisories.iter().any(|a| a.contains("sideboard")),
+        "no sideboard GCs, no advisory: {advisories:?}"
     );
 }
 
@@ -728,7 +777,7 @@ fn legal_json_splits_advisories_from_violations() {
         "// COMMANDER\n1 Bear\n\n// DECK\n1 The Seriema\n1 Smothering Tithe\n1 Enlightened Tutor\n1 Coalition Victory\n",
     )
     .unwrap();
-    let violations = check(&deck, &cards, Some("commander"), Some(3));
+    let (violations, _) = check(&deck, &cards, Some("commander"), Some(3));
     // Three GCs at the cap: no violation. The Seriema searcher is
     // advisory-only and never a violation.
     assert!(

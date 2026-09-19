@@ -225,7 +225,7 @@ stm deck update Froggy --add "1 Phyrexian Vault" --add "sideboard:2 Bolt"
 stm deck update Froggy --remove "1 Bolt" --set "0 Breya"   # --set 0 deletes the line
 stm deck update Froggy --move "1 Bolt to:sideboard"       # atomic deck→sideboard move
 stm deck update Froggy --from /tmp/batch.txt --allow-partial  # batch; skips misses, exits 1 when anything missed
-stm deck dedupe Froggy               # merge duplicate same-name lines (sums quantities)
+stm deck dedupe Froggy               # merge duplicate lines; collapse over-singleton quantities in commander decks
 stm deck import Froggy ~/Downloads/Froggy.txt   # upsert the decklist by name
 stm deck delete Froggy               # remove the decklist; ownership is kept
 stm deck export Froggy /tmp/out.txt --force
@@ -262,7 +262,9 @@ stm deck suggest Froggy --bracket 2            # completions filtered to no Game
   no decklist (`has_decklist: false` in JSON) so the gap is visible.
 - `stm deck buylist` autofills owned copies (deck-assigned + binders)
   read-only and lists only what needs purchasing, at the cheapest
-  printing. Nothing in the collection is moved.
+  printing. Nothing in the collection is moved. Same-name entries across
+  sections aggregate into one row; JSON rows carry `sections` naming
+  where the copies live (e.g. `["DECK", "SIDEBOARD"]`).
 
 Update specs: `[section:]qty Name [(SET) [cn]] [*F*]`. `--add` increments,
 `--remove` decrements (line deleted at 0), `--set` pins exact. The `(SET)
@@ -301,11 +303,15 @@ all-or-nothing (a missing card aborts everything). With
 exit code is 1 when anything was missed.
 
 **Singleton guard (commander).** Commander-shaped decks (a COMMANDER
-section) warn on `deck update` when an op would push a non-basic card past
-one copy — the write still lands, the warning names the card. `stm deck
-dedupe <name>` merges accidental duplicates (same-name lines sum per
-section; first line's print info wins); exit 3 when there is nothing to
-merge. After long build sessions run `dedupe` before `deck legal`.
+section) reject an `--add` that would push a non-basic card past one copy
+— the batch aborts with the offenders named and a hint to use `--set`
+(for an exact quantity) or `--allow-partial` (skip the add). Set and Move
+ops still warn-and-write (exact quantities and net-zero moves are
+deliberate). `stm deck dedupe <name>` merges duplicate same-name lines per
+section AND collapses non-basic lines holding more than one copy down to
+1 (basics keep quantities; 60-card-style decks keep summed quantities);
+exit 3 when there is nothing to fix. After long build sessions run
+`dedupe` before `deck legal`.
 
 **`--from` batch specs.** A spec file holds one op per line: `add 1 Name`,
 `remove 1 Name`, `set 2 Name`, or a bare spec (treated as add). Blank
@@ -348,6 +354,11 @@ stm deck legal <name> --format commander --bracket 3
   the Game Changer count: 0 for brackets 1–2, at most 3 for bracket 3,
   unlimited for 4–5. Everything else is advisory. `deck legal` enforces
   exactly the GC cap as a violation; everything else ships as advisory.
+- **Sideboard = upgrade kit (commander).** Sideboard Game Changers never
+  count toward the bracket cap, but `deck legal` prints an advisory
+  (`advisories` in JSON, `ℹ` lines in the human view) naming them — the
+  usual pattern is a bracket-3 upgrade kit parked in the sideboard, so
+  the advisory confirms what a bracket bump would bring along.
 - **`notes` carries the bracket verdicts.** With `--bracket`, the human
   view shows `bracket checks:` with `✓` PASS, `!` CHECK (genuine
   conflicts: mass land destruction and extra turns in brackets 1–2,
@@ -396,8 +407,9 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   restrictions, charge-counter banks, Treasure pips, static grants,
   station tiers + crew, mill/wheel/loot/sacrifice outlets, and
   planeswalker loyalty activations (one per turn; ultimates only flag
-  online). "Create N tokens" sorceries and additional costs
-  (sacrifice a creature / pay N life) execute on cast.
+  online; plus abilities that create tokens register as repeatable
+  engines from their first activation). "Create N tokens" sorceries and
+  additional costs (sacrifice a creature / pay N life) execute on cast.
 - **Keyword and effect signals (goldfish-aligned).** Haste attacks the
   entry turn. Landfall triggers run as real engines (draw/token/mana/ramp;
   "+1/+1 counter" shapes join attack power). Attack power per turn + p90

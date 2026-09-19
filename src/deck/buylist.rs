@@ -52,6 +52,9 @@ impl Store {
 }
 
 /// One buylist line: cheapest printing for `quantity` missing copies.
+///
+/// `sections` names the deck sections that needed the copies (e.g. a card
+/// wanted by both DECK and SIDEBOARD lists both).
 #[derive(Debug, Clone)]
 pub struct BuylistRow {
     pub name: String,
@@ -61,6 +64,8 @@ pub struct BuylistRow {
     pub scryfall_id: String,
     pub foil: bool,
     pub quantity: i64,
+    /// Sections holding this card: a BTreeSet-ordered list of section names.
+    pub sections: Vec<String>,
     /// Cheapest print's USD price (finish-aware); None when unpriced.
     pub price_usd: Option<f64>,
 }
@@ -85,18 +90,26 @@ pub(super) fn missing_rows(
     let mut needed: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
     let mut wants_foil: std::collections::BTreeMap<String, bool> =
         std::collections::BTreeMap::new();
-    for entry in deck.entries() {
-        let Some(card) = cards_by_name.get(&entry.name) else {
-            continue;
-        };
-        if super::stats::is_basic_land(card) {
-            continue;
+    let mut sections: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for (section, entries) in &deck.sections {
+        for entry in entries {
+            let Some(card) = cards_by_name.get(&entry.name) else {
+                continue;
+            };
+            if super::stats::is_basic_land(card) {
+                continue;
+            }
+            *needed.entry(entry.name.clone()).or_insert(0) += entry.quantity;
+            wants_foil
+                .entry(entry.name.clone())
+                .and_modify(|f| *f = *f || entry.foil)
+                .or_insert(entry.foil);
+            let seen = sections.entry(entry.name.clone()).or_default();
+            if !seen.contains(section) {
+                seen.push(section.clone());
+            }
         }
-        *needed.entry(entry.name.clone()).or_insert(0) += entry.quantity;
-        wants_foil
-            .entry(entry.name.clone())
-            .and_modify(|f| *f = *f || entry.foil)
-            .or_insert(entry.foil);
     }
     let mut rows = Vec::new();
     let missing_names: Vec<String> = needed
@@ -140,6 +153,7 @@ pub(super) fn missing_rows(
             scryfall_id: print.scryfall_id,
             foil: wants_foil[name],
             quantity: missing,
+            sections: sections.get(name).cloned().unwrap_or_default(),
             price_usd: if wants_foil[name] {
                 print.usd_foil.or(print.usd)
             } else {
@@ -205,6 +219,7 @@ pub fn buylist(
                 "scryfall_id": r.scryfall_id,
                 "foil": r.foil,
                 "quantity": r.quantity,
+                "sections": r.sections,
                 "price_usd": r.price_usd,
             })).collect::<Vec<_>>(),
             "total_usd": round2(total),
@@ -456,6 +471,7 @@ mod tests {
         let rows = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].quantity, 5);
+        assert_eq!(rows[0].sections, vec!["DECK", "SIDEBOARD"]);
     }
 
     #[test]

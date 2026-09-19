@@ -303,6 +303,34 @@ pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &InPlay) -> &'a super::model:
     }
 }
 
+/// Register a planeswalker's +1 token ability as a repeatable engine.
+///
+/// A loyalty-gain activation that creates tokens is once-per-turn token
+/// fuel (Liliana, Dreadhorde General class): it feeds sacrifice engines
+/// and body counts every turn after the first activation. The engine is
+/// zero-draw (no card draw) and keyed to the battlefield position so it
+/// drops out when the permanent leaves.
+pub(super) fn register_loyalty_token_engines(
+    deck: &SimDeck,
+    st: &GameState,
+    pos: usize,
+    engines: &mut Vec<(usize, u32)>,
+) {
+    if engines.iter().any(|(p, _)| *p == pos) {
+        return;
+    }
+    let Some(perm) = st.battlefield.get(pos) else {
+        return;
+    };
+    let card = card_of(deck, perm);
+    let is_token_engine = card
+        .abilities()
+        .any(|a| a.loyalty_gain > 0 && matches!(a.effect, super::model::Effect::Tokens(_)));
+    if is_token_engine {
+        engines.push((pos, 0));
+    }
+}
+
 /// Static data for a 2/2 token body (no abilities, no tap yield).
 pub(super) fn token_body() -> super::model::SimCard {
     super::model::SimCard {

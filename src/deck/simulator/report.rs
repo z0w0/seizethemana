@@ -66,7 +66,7 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "spend-restricted mana (creature-only lands) pays creature casts only".to_string(),
         "sacrifice outlets (Ashnod's Altar class) consume real untapped bodies; with no body available they do not fire".to_string(),
         "blink effects re-fire the host's ETB triggers once, the turn after".to_string(),
-        "planeswalkers fire one loyalty ability per turn; plus abilities gain loyalty, minus abilities spend it; ultimates only flag online".to_string(),
+        "planeswalkers fire one loyalty ability per turn; plus abilities gain loyalty, minus abilities spend it; ultimates only flag online; plus abilities that create tokens register as repeatable engines from their first activation".to_string(),
         "sagas advance one chapter per turn; parsed chapter abilities fire (combined numeral lines fill every chapter); the saga leaves the battlefield after its final chapter".to_string(),
         "per-cast mana engines (Vivi class) add their yield per spell cast every turn the host is on the battlefield; their own tap clause does not double count; 'for each' token counts cap at 8".to_string(),
         "zero-cost mana engines that out-produce their cost are capped and flagged (infinite_mana_pct); 'activate only once each turn' engines fire once per turn without flagging".to_string(),

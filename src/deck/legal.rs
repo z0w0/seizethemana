@@ -214,13 +214,20 @@ fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
 /// checks only, since there is no legality key to test against).
 /// `cards` maps card names to stored rows; names absent from the map are
 /// skipped by metadata checks (they are reported separately as unknown).
+/// Deterministic legality checks for one deck.
+///
+/// Returns `(violations, advisories)`: violations are hard failures
+/// (unknown cards, copy limits, size, commander rules, Game Changer cap);
+/// advisories are informational notes (e.g. Game Changers waiting in the
+/// sideboard) that never affect the exit code.
 pub fn check(
     deck: &Deck,
     cards: &HashMap<String, CardRow>,
     format: Option<&str>,
     bracket: Option<u8>,
-) -> Vec<Violation> {
+) -> (Vec<Violation>, Vec<String>) {
     let mut violations = Vec::new();
+    let mut advisories: Vec<String> = Vec::new();
     let mut unknown: Vec<String> = deck
         .entries()
         .map(|e| e.name.clone())
@@ -418,9 +425,42 @@ pub fn check(
                 });
             }
         }
+        // The sideboard is the upgrade kit: surface its Game Changers so a
+        // reader previewing a bracket bump can see what comes along.
+        let sideboard_changers: Vec<String> = deck
+            .sections
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("SIDEBOARD"))
+            .map(|(_, entries)| {
+                entries
+                    .iter()
+                    .filter(|e| {
+                        cards
+                            .get(&e.name)
+                            .is_some_and(|c| c.game_changer == Some(true))
+                    })
+                    .map(|e| e.name.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+        if !sideboard_changers.is_empty() {
+            let names = sideboard_changers.join(", ");
+            match limit {
+                Some(l) => advisories.push(format!(
+                    "ADVISE sideboard: {} sideboard Game Changer(s) not counted toward the bracket-{bracket} cap of {l}: {}",
+                    sideboard_changers.len(),
+                    names
+                )),
+                None => advisories.push(format!(
+                    "ADVISE sideboard: {} sideboard Game Changer(s) (uncapped at bracket {bracket}): {}",
+                    sideboard_changers.len(),
+                    names
+                )),
+            }
+        }
     }
 
-    violations
+    (violations, advisories)
 }
 
 /// Game Changer allowance per Commander bracket: none for 1–2, at most 3 for
@@ -751,7 +791,7 @@ pub fn legal(
     } else {
         Some(&format)
     };
-    let violations = check(&deck, &cards, check_format, bracket);
+    let (violations, check_advisories) = check(&deck, &cards, check_format, bracket);
 
     // Notes: bracket checklist with oracle-text scan verdicts when given;
     // otherwise, for commander decks, list the deck's Game Changers so the
@@ -783,16 +823,21 @@ pub fn legal(
     // Advisories: bracket judgment calls the official rules leave to the
     // table. Only `ADVISE ` verdicts (the `ℹ` lines) land here; `CHECK `
     // verdicts stay hard rules and surface in `violations`/`notes`.
-    let advisories: Vec<String> = note
-        .as_ref()
-        .map(|n| {
-            n.checks
-                .iter()
-                .filter(|c| c.starts_with("ADVISE "))
-                .cloned()
-                .collect()
-        })
-        .unwrap_or_default();
+    let advisories: Vec<String> = {
+        let mut merged = check_advisories;
+        merged.extend(
+            note.as_ref()
+                .map(|n| {
+                    n.checks
+                        .iter()
+                        .filter(|c| c.starts_with("ADVISE "))
+                        .cloned()
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default(),
+        );
+        merged
+    };
 
     if json {
         let violations: Vec<serde_json::Value> = violations

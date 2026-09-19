@@ -1161,3 +1161,35 @@ fn token_count_etb_feeds_bodies() {
         stats.bodies_by_turn[5]
     );
 }
+
+#[test]
+fn loyalty_token_plus1_counts_as_engine() {
+    // A planeswalker +1 that creates tokens is a repeatable once-per-turn
+    // engine: it registers in engines_online the turn after the first
+    // activation (Liliana, Dreadhorde General class).
+    let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
+    let mut row = card(
+        "Walker",
+        "{3}{W}{W}",
+        "Legendary Planeswalker — Human",
+        "+1: Create a 2/2 black Zombie creature token.",
+    );
+    row.loyalty = Some("4".to_string());
+    let walker = parse_sim_card(&row);
+    assert!(
+        walker
+            .abilities()
+            .any(|a| a.loyalty_gain == 1 && matches!(a.effect, Effect::Tokens(_)))
+    );
+    deck.cards.push(walker);
+    let mut rng = ChaCha8Rng::seed_from_u64(89);
+    let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 10)).collect();
+    let stats = aggregate(&logs, &deck, 10);
+    // Token engines only exist in games where the walker was drawn and
+    // cast (1 copy in 66); a low bar: some games show an engine online.
+    assert!(
+        stats.engines_by_turn[9] > 0.0,
+        "loyalty +1 token engines should register: {:.3}",
+        stats.engines_by_turn[9]
+    );
+}

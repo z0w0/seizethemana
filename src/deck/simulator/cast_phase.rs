@@ -2,7 +2,10 @@
 // from game_run.rs to keep files small. Pure apart from the game state
 // mutations they drive.
 
-use super::game::{GameState, InPlay, Pool, card_of, fetches_land_text, fire_on_enter, new_perm};
+use super::game::{
+    GameState, InPlay, Pool, card_of, fetches_land_text, fire_on_enter, new_perm,
+    register_loyalty_token_engines,
+};
 use super::game_effects::{apply_effect, apply_effect_at};
 use super::game_mana::{
     add_yield_turns_empty_board, effective_min_cost, pay_cost, pay_creature_cost, payable, pips_ok,
@@ -198,6 +201,11 @@ pub(super) fn cast_phase(
             is_commander: false,
             commander_slot: 0,
         });
+        // Planeswalker +1 token engines register at first cast: a
+        // loyalty-gain activation that creates tokens is a repeatable
+        // once-per-turn engine (Liliana-class token fuel).
+        let pw_pos = st.battlefield.len() - 1;
+        register_loyalty_token_engines(deck, st, pw_pos, engines);
         // One-shot mana (rituals) joins this turn's pool only.
         if let Some(y) = &card.mana_on_cast {
             add_yield_turns_empty_board(y, pool, turn as u32);
