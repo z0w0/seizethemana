@@ -21,3 +21,4 @@ pub mod setup;
 pub mod spellbook;
 pub mod sync;
 pub mod tags;
+pub mod universe;

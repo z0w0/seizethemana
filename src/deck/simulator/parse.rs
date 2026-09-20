@@ -720,7 +720,7 @@ fn parse_saga_chapters(oracle_text: &str) -> Vec<Effect> {
 }
 
 /// Functional role classification.
-fn classify(
+pub fn classify(
     row: &CardRow,
     text: &str,
     tap: &Option<TapYield>,

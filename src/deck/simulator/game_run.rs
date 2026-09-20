@@ -123,6 +123,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     let mut attackers_turn = vec![0u32; turns];
     let mut evasive_turn = vec![0u32; turns];
     let mut library_size = vec![0u32; turns];
+    let mut lands_seen = vec![0u32; turns];
     let mut self_milled = vec![0u32; turns];
     let mut opp_milled = vec![0u32; turns];
     let mut awareness = vec![0.0f64; turns];
@@ -531,6 +532,10 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         // The cost records in mana_spent once (this +=), not twice.
         // Partner decks cast each commander separately; the log's cast turn
         // is the first one (the command-zone availability timing).
+        // Snapshot the pool first: the mana-readiness check below must
+        // see the pre-cast pool, or a same-turn commander cast pushes
+        // every other card's readiness a turn later.
+        let pool_before_commander = pool.clone();
         for (cmd_i, cmd) in deck.commanders.iter().enumerate() {
             if commander_cast_turn.is_some() && cmd_i > 0 {
                 // Only the first commander's timing feeds the log curve.
@@ -591,11 +596,13 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         mana_available[turn - 1] = pool.total() as f64;
 
         // Mana-readiness: the first turn the board could pay each card's
-        // cost, independent of drawing it (the castability curve).
+        // cost, independent of drawing it (the castability curve). The
+        // check uses the pre-cast pool: a same-turn commander cast must
+        // not push every other card's readiness a turn later.
         for (idx, card) in deck.cards.iter().enumerate() {
             if card.role != Role::Land && mana_ready[idx].is_none() {
                 let eff = effective_min_cost(deck, card, &st.battlefield);
-                if payable(&eff, &pool) && pips_ok(&eff, &pool) {
+                if payable(&eff, &pool_before_commander) && pips_ok(&eff, &pool_before_commander) {
                     mana_ready[idx] = Some(turn as u32);
                 }
             }
@@ -667,6 +674,20 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         cards_seen[turn - 1] = st.seen;
         graveyard_size[turn - 1] = st.graveyard.len() as u32;
         library_size[turn - 1] = st.library.len() as u32;
+        // Lands seen so far: hand + battlefield. The flood metric reads
+        // this (a land drawn and never dropped still floods; a drop made
+        // is the wrong lens).
+        lands_seen[turn - 1] = (st
+            .hand
+            .iter()
+            .filter(|i| deck.cards[**i].role == Role::Land)
+            .count()
+            + st.battlefield
+                .iter()
+                // Token permanents carry sentinel card indexes; only real
+                // cards can be lands.
+                .filter(|p| p.card < usize::MAX - 1 && deck.cards[p.card].role == Role::Land)
+                .count()) as u32;
         self_milled[turn - 1] = st.milled_self;
         opp_milled[turn - 1] = st.milled_opp;
         awareness[turn - 1] = f64::from(st.awareness_cards) / (deck.cards.len() as f64).max(1.0);
@@ -763,6 +784,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     }
 
     let lands_by_4: u8 = land_drops[..4.min(turns)].iter().sum();
+    let cards_seen_by_4_value = cards_seen[3.min(turns - 1)];
     GameLog {
         land_drops,
         mana_available,
@@ -776,6 +798,11 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         opener_lands,
         mulliganed,
         lands_by_4,
+        // End of turn 4: the flood window. Draw engines widen the window
+        // past the nominal 11 (opener + 4 draws); the log carries the
+        // real seen count so the expectation matches the measurement.
+        lands_seen_by_11: lands_seen.get(3).copied().unwrap_or(0),
+        cards_seen_by_4: cards_seen_by_4_value,
         station_online,
         bodies,
         engines_online,

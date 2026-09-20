@@ -695,7 +695,9 @@ pub fn run_query(
             .iter()
             .filter_map(|h| {
                 let range = ranges.get(&h.card.name)?;
-                let mut v = crate::card::card_json(&h.card, &tag_index, range);
+                let universe = crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)
+                    .unwrap_or_default();
+                let mut v = crate::card::card_json(&h.card, &tag_index, range, &universe);
                 v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
                 Some(v)
             })
@@ -859,7 +861,7 @@ mod tests {
             cheapest_foil: None,
             priciest_foil: None,
         };
-        let v = crate::card::card_json(&card, &empty_tags, &range);
+        let v = crate::card::card_json(&card, &empty_tags, &range, &Default::default());
         // The full contract: every CardRow field an agent joins on.
         for key in [
             "name",
@@ -893,7 +895,8 @@ mod tests {
         assert_eq!(v["oracle_id"], "oid");
         assert_eq!(v["price_usd"], 0.99);
         // An unpriced card renders null, not a missing field.
-        let v = crate::card::card_json(&card, &empty_tags, &Default::default());
+        let v =
+            crate::card::card_json(&card, &empty_tags, &Default::default(), &Default::default());
         assert_eq!(v["price_usd"], serde_json::Value::Null);
     }
 }

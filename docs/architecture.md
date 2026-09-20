@@ -133,6 +133,7 @@ default-cards bulk. Set codes are lowercase everywhere in this store.
 | `released_at` | This printing's release date |
 | `usd`, `usd_foil`, `usd_etched` | Latest USD prices, nullable |
 | `updated_at` | Refresh timestamp for the row |
+| `universes_beyond` | 1 when the print is a Universes Beyond printing (Scryfall's `promo_types` "universesbeyond" flag) or belongs to an honorary-UB set (AFR/AFC/CLB, the D&D sets) |
 
 The index on `(name, set_code, collector_number)` serves cheapest-print
 picks and the collection-valuation join. Price reads go through
@@ -143,10 +144,23 @@ views, suggest, and buylist all batch). The partial index on
 like "Godzilla, King of the Monsters" resolves to its oracle card
 ("Zilortha, Strength Incarnate") for exact and unique-prefix lookups.
 
-`sets` maps lowercase set code to full set name (Card Kingdom's buylist
-matches by name). `stm sync` upserts both tables; prints that drop out of
+`sets` maps lowercase set code to full set name plus set metadata:
+`set_type` ("expansion", "commander", …), `block` (in-universe block
+name, mostly NULL for modern sets), and `franchise` — the Universes
+Beyond IP the set belongs to ("Marvel", "Middle-earth", …). Franchises
+apply to UB families only; Secret Lair sets stay franchise-NULL (they
+group by set name in censuses), and the D&D sets are honorary UB (WotC
+owns D&D, so Scryfall does not flag their prints). The mapping lives in
+`src/universe.rs`: a curated code list plus name-keyword rules that
+auto-map future sets; an unknown UB-flagged set logs a sync warning.
+`stm sync` upserts both tables; prints that drop out of
 the bulk keep their last known row. Freshness is tracked once in
 `status.json` (`synced_at`), not per row.
+
+Universe and franchise data feeds display and census only — card views,
+`deck show --json`'s `universe_census`, and `collection`'s
+`by_universe`/`by_franchise` splits. Legality and bracket checks never
+read it.
 
 ### `tags` and `card_tags` — Tagger oracle tags
 
@@ -423,15 +437,15 @@ forward-only on every `db::open`:
 
 - Each migration lives in `migrations/` as `NNNN_description.sql`, loaded
   with `include_str!` in `db::migrations` (`0001_initial_schema.sql`
-  creates the full current schema: cards, collection, card_prints, sets,
-  combos, cards_fts). The store has not shipped yet, so `0001` is edited
-  in place when the schema changes. Because an existing v1 database has
-  no version bump to trigger, `stm setup --force` deletes `stm.db` (and
-  its WAL sidecars) and rebuilds from the bulk — that is the documented
-  path for schema changes (or delete `stm.db` by hand).
-- After the first release, edits to `0001` stop: each schema change
-  becomes a new `NNNN_description.sql` file plus an `M::up(include_str!(...))`
-  entry in `db::migrations`, so existing databases migrate in place.
+  creates the base schema: cards, collection, card_prints, sets, combos,
+  cards_fts; `0002_universe.sql` adds the set metadata and
+  Universes-Beyond columns). The store has not shipped yet, so edits
+  stay possible in place — but once a database exists with a later
+  version stamped, each schema change must become a new
+  `NNNN_description.sql` file plus an `M::up(include_str!(...))` entry
+  in `db::migrations`, so existing databases migrate in place.
+  `stm setup --force` remains the reset path (it deletes `stm.db` and
+  rebuilds from the bulk).
 
 ## Module map
 
@@ -444,6 +458,7 @@ forward-only on every `db::open`:
 | `tags.rs`       | Oracle-tags bulk parsing + ingest (`tags`, `card_tags`), `TagIndex` lookups, embedding-label selection |
 | `spellbook.rs`  | Commander Spellbook variants bulk: download + stream parse + ingest (`combos`, `combo_pieces`) |
 | `combos.rs`     | Shared combo reads: set-based variant loading, format legality, commander-required filtering |
+| `universe.rs`   | Universes Beyond + franchise mapping (curated set codes + name-keyword rules), card-level universe resolution |
 | `embed.rs`      | Model loading, doc building, vector store save/load/search     |
 | `search.rs`     | Structured filters (`--type/--color/--cmc/...`), ranking       |
 | `query.rs`      | `stm query` orchestration + hybrid search pipeline (FTS + vector, RRF fusion) |
@@ -452,7 +467,7 @@ forward-only on every `db::open`:
 | `card.rs`       | `stm card` detail rendering (text + JSON)                      |
 | `release.rs`    | Release-date parsing/checking helpers for ingest gating        |
 | `collection.rs` | ManaBox CSV import (ownership only; deck rows are deck-assignment rows), collection stats, owned-only search |
-| `deck/`         | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, format-aware suggestions, overview stats, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`simulator`) |
+| `deck/`         | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, format-aware suggestions, overview stats, combo audit, cut ranking, deck diffing, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`combos`/`cuts`/`diff`/`simulator`) |
 | `prints.rs`     | `card_prints` reads: cheapest/priciest print, owned-print pricing |
 | `output.rs`     | Human/JSON output hub: color detection, style helpers (bars, framing, wrapping), progress plumbing |
 | `main.rs`       | Dispatch, exit codes, auto-refresh hook, error reporting       |

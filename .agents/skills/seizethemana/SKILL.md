@@ -32,6 +32,9 @@ wants an existing deck improved.
 | `stm deck suggest <name> [--role R | "q" | --commander] --json` | ranked fill candidates |
 | `stm deck legal <name> [--format F] [--bracket 1-5]` | legality + bracket checklist |
 | `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
+| `stm deck combos <name> [--bracket B] --json` | Spellbook combo audit, split by section |
+| `stm deck cuts <name> [--for ROLE] --json` | ranked expendability list, cut+fill pairing |
+| `stm deck diff <A> <B-or-file> [--markdown] --json` | exact change instructions between two lists |
 | `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
 | `stm deck primer <name> --set <file>` | replace the primer markdown |
 
@@ -504,35 +507,80 @@ deck change. For full-detail comparison keep the `--json` diff form.
   `card <name> --json` plus `score` (0–1, semantics above). Empty result
   prints `[]` with exit 3.
 - `collection --json` → `unique_cards total_cards foils total_value
-  purchase_total color_identity curve rarity top_sets locations`.
-  `total_value` prices every owned copy by its exact printing.
+  purchase_total color_identity curve rarity top_sets by_universe
+  by_franchise locations`. `total_value` prices every owned copy by its
+  exact printing. `top_sets` rows are `{set, set_name, cards}`.
+  `by_universe` splits copies into `multiverse` / `beyond` buckets, each
+  `{cards, value}`; `by_franchise` subdivides the beyond bucket the same
+  way (Marvel, Final Fantasy, …). Secret Lair prints count as beyond but
+  never get a franchise. The human view prints full set names
+  ("The Hobbit (HOB)") and a `Universes` breakdown line.
 - `collection query --json` → card fields + `score owned locations`
   (binder pool by default; `--deck` adds a deck's cards). `owned` is a
   copy count (0 = none) on every command that reports it. `deck suggest`
   and combo completions count copies across binders **and** deck
   assignments (a card owned only inside a deck reports its count there).
 - `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
-  owned_value, missing_cost, sections: [{section, cards: [{quantity, name,
-  set, collector_number, foil, owned, owned_elsewhere, covered_by,
-  basic_land, price_usd}]}]}`. `cards` is the maindeck count (the legal
-  deck); `sideboard_cards` reports the sideboard separately. `primer` is
-  the file path; read the primer's contents
+  owned_value, missing_cost, universe_census?, sections: [{section, cards:
+  [{quantity, name, set, set_name?, set_type?, block?, universe?,
+  collector_number, foil, owned, assigned_to_this_deck, owned_elsewhere,
+  covered_by, missing_reason?, basic_land, price_usd}]}]}`. `cards` is the
+  maindeck count (the legal deck); `sideboard_cards` reports the sideboard
+  separately. `primer` is the file path; read the primer's contents
   with `stm deck primer <name>` (plain markdown on stdout; an empty
   primer prints a note instead). `price_usd` is the cheapest printing
   (foil entries price at the cheapest foil print when one exists).
-  `covered_by` is `deck` (deck-assigned copies fill the slots), `binder`
-  (binder copies fill them), `basic`, or `missing`. Ownership math is
-  shared with `deck buylist`: `missing_cost` equals the buylist total, so
-  budget math needs only one of the two. The human view also prints a
-  `To buy` block (top lines by cost, running total).
+  **`owned` = copies available to this deck** (assigned here + binders);
+  it never contradicts `covered_by`. `assigned_to_this_deck` is the
+  deck-assigned count; `owned_elsewhere` counts copies parked in other
+  decks. `covered_by` is `deck` (deck-assigned copies fill the slots),
+  `binder` (binder copies fill them), `basic`, or `missing`. A missing
+  slot carries `missing_reason`: `not_owned` (buy it) or
+  `held_elsewhere` (owned but in another deck — swap it there or buy a
+  second copy; never propose a re-buy of something already owned).
+  Ownership math is shared with `deck buylist`: `missing_cost` equals the
+  buylist total, so budget math needs only one of the two. The human view
+  also prints a `To buy` block (top lines by cost with the reason,
+  running total) and a full-set-name suffix on entry lines.
+  `universe_census` appears when the store has set metadata:
+  `{multiverse, universes_beyond, franchises: {Marvel: 3, …}, ub_cards}`.
+- `deck combos <name> --json` → per-section Spellbook audit:
+  `[{section, complete: [{combo, id, produces, bracket_tag, complete,
+  missing, self_contained}], near_misses: [{combo, id, produces,
+  bracket_tag, missing, owned (bool), popularity,
+  requires_commander}], bracket_breaks: [combo…]}]`. `--bracket 3`
+  fills `bracket_breaks` with main-deck combos whose Spellbook tag
+  breaks the bracket (S/K-tagged infinite-turn loops); near misses too.
+  Run
+  it as part of any bracket review ("no infinite combo in a bracket-3
+  main deck" is the standard check).
+- `deck cuts <name> --json` → ranked cut rows
+  `[{name, qty, reasons: [{kind, detail}], score (0–1), pinned, rank,
+  replace_with?: {role, candidates}}]`. Kinds: `game_changer` (over the
+  bracket allowance), `illegal`, `castability` (rarely castable on
+  curve), `curve` (CMC outlier), `price`. Basics and the commander never
+  appear; illegal cards and Game Changers over the bracket cap pin to
+  the top (`pinned: true`, rank 1.. regardless of score). `--for
+  <role>` pairs every cut with fill candidates for the deficit role
+  (owned first) and discounts incumbents already serving that role.
+- `deck diff <A> <B-or-file> --json` →
+  `[{section, removed: [{name, qty}], added: [{name, qty}], changed:
+  [{name, from, to}]}]`. Both operands accept a deck name or a ManaBox
+  txt file path, so `stm deck diff ~/Downloads/Original.txt Optimized
+  --markdown` diffs the file first. Basics and quantity changes collapse
+  to `changed` rows (`Forest: 16 → 12`); `--exact` diffs by print
+  identity instead of name. `--markdown` prints the change-log
+  instruction table (`decks/<name>.changes.md` shape): basics as one
+  "Remove 4 Forests and 2 Islands" line plus a remove/add table.
 - `deck list --json` → `[{name, has_decklist, cards, sideboard_cards,
   owned, has_primer}]` (`cards` is maindeck; `has_decklist: false` marks
   collection decks whose list is not imported).
 - `deck legal <name> --json` → `{name, format, format_assumed, bracket,
   legal, violations, advisories, notes, summary}`.
 - `deck simulate <name> --json` → `{name, format, runs, turns, seed,
-  deck_shape, assumptions, opening_hand, land_drops, commander, station,
-  bodies_by_turn, engines_online_by_turn, mana, draw, role_access,
+  deck_shape, assumptions, opening_hand, land_drops, mana_base,
+  mana_base_bracket_inferred, commander,
+  station, bodies_by_turn, engines_online_by_turn, mana, draw, role_access,
   velocity, combat, wincons, interaction, color_screw, color_sources,
   pip_blocks, graveyard, card_castability, problems, summary,
   combo_access?, combos?, win_paths?, hypgeo?}`.
@@ -540,6 +588,19 @@ deck change. For full-detail comparison keep the `--json` diff form.
   plus commander (sideboard excluded; `deck_shape.sideboard_cards` counts
   it). `commander` is null for non-commander decks; `station` is null for
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
+  **`mana_base` = `{lands, rocks, dorks, ramp_spells, total_sources,
+  bracket_target_lands: [min, max], bracket_target_ramp: [min, max],
+  bracket, verdict}`** — the deck's counts against the bracket band.
+  Without `--bracket` the bracket is inferred from the Game Changer
+  census (0 GC → 2, 1–3 → 3, 4+ → 4); the report carries
+  `mana_base_bracket_inferred: true` when that happened. The verdict is the norm anchor:
+  "add/trim lands", "add ramp", or "on target". Check it before acting on
+  any land suggestion: `land_drops.flood_pct_6plus_lands_seen_in_11`
+  counts lands *seen* by end of turn 4 (opener + draws + cantrips), and
+  `flood_expectation` matches that actual draw volume — a rate within
+  10pp of the expectation fires no finding, so a cantrip deck never
+  gets a wrong "trim lands". Never treat "add lands" as the only lever
+  when `total_sources` is fine and rocks/dorks are few.
   `bodies_by_turn` counts creatures, animated spacecraft, and ETB tokens
   per turn; `engines_online_by_turn` counts repeatable engines.
   `combat` carries `attack_power_avg_by_turn`, `attack_power_p90_by_t8`,
@@ -631,6 +692,16 @@ store's job; the USD figure is a market-price estimate.
   always compare runs with the same `--seed`.
 - Never hand-edit `stm.db`, `vectors.bin`, or `status.json`. If the store
   looks corrupt, rebuild with `stm setup --force`.
+- `deck export` of a 100-card commander deck with an 8-card sideboard
+  reports 108 total cards: the sideboard is a separate section in the txt
+  file, not part of the legal deck. Check `sideboard_cards` separately in
+  `deck show --json`.
+- Universes Beyond is a display and census concern only: `card --json`
+  carries `universe` ("beyond"/"multiverse") and `franchise` (Marvel,
+  Middle-earth, Dungeons & Dragons, …; null for Secret Lair). It never
+  couples to legality or brackets. `deck show --json`'s `universe_census`
+  answers "how much crossover is in this deck" in one read; main deck
+  only (the sideboard is not counted).
 
 ## Part 2 — Deckbuilding workflow
 
@@ -710,10 +781,18 @@ pieces, need 3–5 more in the next batch":
 
 | Category (commander) | Bracket 1–2 | Bracket 3–4 | Bracket 5 (cEDH) |
 | --- | --- | --- | --- |
-| Ramp (lands, rocks, dorks) | 8–10 | 10–12 | 12+ |
+| Lands | 34–40 | 32–38 (bracket 3: 33–38) | 25–31 |
+| Ramp (rocks, dorks, ramp spells) | 7–12 | 8–12 | 10–16 |
 | Card draw | 8–10 | 8–12 | 10+ |
 | Interaction (removal, wipes, countermagic) | 8–10 | 10–14 | 12+ |
 | Win conditions | 3–5 | 3–5 | 2–4 (fast) |
+
+The land and ramp rows are research-derived (EDHREC average decks: 46
+average decks across 11 commanders; Sam Black's cEDH land-count article),
+and `deck simulate`'s `mana_base` block enforces them — its `verdict` is
+the check, so a deck at 44 lands with no lands-matter theme reads "trim 6
+lands" and an AI agent should treat "add lands" suggestions as "add rocks"
+first when the deck already has fewer than 6 nonland ramp sources.
 
 For 60-card formats: 20–24 lands (more for control), 4-ofs for core pieces,
 a curve that lets the deck do its thing by turns 3–4 (aggro) or 4–6
@@ -740,8 +819,9 @@ confirmed batch, and let `problems[]` drive the next batch.
    before writing anything.
 5. Once the skeleton is written, sanity-check it with `stm deck simulate
    <name> --seed 42 --json`: commander on-curve and land-drop rates should
-   already look sane at this stage; fix the mana-base plan before filling
-   if they don't.
+   already look sane at this stage, and `mana_base.verdict` should read
+   "on target" (or the lands-matter note) for the target bracket; fix the
+   mana-base plan before filling if they don't.
 
 **Round 3 — fill by category, batch by batch.** Work in this order, one
 batch per round, confirming between each: ramp → card draw → removal/board
@@ -836,20 +916,62 @@ exceed it.
 3. **Optional research.** If the user asks or the problems are unclear,
    search online (EDHREC primer for the commander, bracket guides) and
    summarize findings with sources before proposing anything.
-4. **Change batches like Mode A.** For each problem, propose swaps: remove
+4. **Keep the original untouched; build the optimized list as a separate
+   deck.** Import the original as `"<name> Original"` (or leave the
+   user's list as-is) and build the improved list as `"<name>"
+   (Optimized)`. Produce the change log with one command:
+   `stm deck diff <optimized> <original-file-or-deck> --markdown >
+   decks/<name>.changes.md`, and verify the change log matches the two
+   lists (removed + added counts reconcile against the diff JSON). This
+   replaces hand-written Perl diff scripts.
+5. **Change batches like Mode A.** For each problem, propose swaps: remove
    N, add M, favoring cards the user already owns, stating the price of
    anything new, staying inside the budget the user confirms at the start
    of Mode B ("what's the budget for these upgrades?").
-5. **Apply and verify.** `stm deck update` per confirmed batch. After each
+
+   **The edit loop (named procedure, per batch):**
+
+   1. Propose the batch (≤5 cards, table, budget line).
+   2. `stm deck export <name> <tmp.txt>` — checkpoint before the first
+      edit of the batch.
+   3. Apply via `stm deck update <name> --from batch.txt` (one call;
+      the file format takes `add/remove/set/move` lines and `#`
+      comments).
+   4. `stm deck simulate <name> --seed <same> --baseline <prev.json>
+      --json` → report the deltas.
+   5. One question per batch → next batch.
+
+   Loop tools: `deck simulate` (diagnose) → `deck suggest` (fill) →
+   `deck cuts` (make room).
+6. **Apply and verify.** `stm deck update` per confirmed batch. After each
    batch, re-simulate with the same seed and show the metric deltas (the
    fix loop in Part 1) — a batch is working when its target metric moved
-   and no new `problems[]` appeared. Then a final `stm deck show` +
+   and no new `problems[]` appeared. `deck cuts --for <role>` makes room
+   for a fill: it ranks incumbents by expendability (castability faults,
+   Game Changer over-cap, curve outliers) and pairs each cut with fill
+   candidates owned first; never cut the commander or basics (cuts never
+   suggests them). Then a final `stm deck show` +
    `stm deck legal` + primer update (current state, not build history).
    Present spend vs budget and what
    changed per problem the user named. **Keep commander decks at exactly
    100 cards** (60-card formats at 60): after a trim, backfill to the
    required size with basics or cheap fillers, then re-run
    `deck legal` — the legality check enforces the exact count.
+7. **Ownership before proposing buys.** Check `missing_reason` on
+   `deck show --json`: `held_elsewhere` means the card is owned but
+   parked in another deck — propose swapping it out of that deck or
+   buying a second copy, never propose a re-buy as if unowned.
+   `missing_reason: "not_owned"` is the only plain buy.
+8. **Bracket upgrade kits.** A bracket-3 main deck with a bracket-4
+   sideboard kit is a legal shape: put the stronger pieces in `//
+   SIDEBOARD`, verify with `deck legal --bracket 4` sideboard advisories,
+   and audit the main deck's combo status with `deck combos <name>
+   --bracket 3` (an S/K-tagged combo must not be in the main deck).
+   State the swap plan explicitly ("move these N cards in, move these N
+   out") so the user can play either power level.
+9. **Universes Beyond census.** When the deck carries crossover cards,
+   report `universe_census` in the final review (count + franchises).
+   Purely informational; no legality coupling.
 
 ### Output style during deckbuilding
 

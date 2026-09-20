@@ -42,13 +42,15 @@ pub fn run_card(
             .ok()
             .unwrap_or_default();
         let range = ranges.get(&card.name).cloned().unwrap_or_default();
-        print_json(&card, &tag_index, &range)?;
+        let universe = crate::universe::card_universe(conn, &card.name, &card.set_code)?;
+        print_json(&card, &tag_index, &range, &universe)?;
     } else {
         let range = crate::prints::price_range(conn, &card.name)
             .ok()
             .unwrap_or_default();
         let tag_index = crate::tags::TagIndex::load(conn)?;
-        print_text(out, &card, &range, &tag_index);
+        let universe = crate::universe::card_universe(conn, &card.name, &card.set_code)?;
+        print_text(out, &card, &range, &tag_index, &universe);
     }
     Ok(crate::cli::codes::OK)
 }
@@ -57,8 +59,9 @@ fn print_json(
     card: &crate::db::CardRow,
     tag_index: &crate::tags::TagIndex,
     range: &crate::prints::PrintRange,
+    universe: &crate::universe::CardUniverse,
 ) -> anyhow::Result<()> {
-    let text = serde_json::to_string_pretty(&card_json(card, tag_index, range))?;
+    let text = serde_json::to_string_pretty(&card_json(card, tag_index, range, universe))?;
     println!("{text}");
     Ok(())
 }
@@ -72,6 +75,7 @@ pub fn card_json(
     card: &crate::db::CardRow,
     tag_index: &crate::tags::TagIndex,
     range: &crate::prints::PrintRange,
+    universe: &crate::universe::CardUniverse,
 ) -> serde_json::Value {
     let colors: serde_json::Value = serde_json::from_str(&card.colors).unwrap_or_default();
     let identity: serde_json::Value =
@@ -104,6 +108,11 @@ pub fn card_json(
         "legalities": legalities,
         "game_changer": card.game_changer,
         "set": card.set_code,
+        "set_name": universe.set_name,
+        "set_type": universe.set_type,
+        "block": universe.block,
+        "universe": universe.universe,
+        "franchise": universe.franchise,
         "collector_number": card.collector_number,
         "scryfall_id": card.scryfall_id,
         "released_at": card.released_at,
@@ -125,6 +134,7 @@ fn print_text(
     card: &crate::db::CardRow,
     range: &crate::prints::PrintRange,
     tag_index: &crate::tags::TagIndex,
+    universe: &crate::universe::CardUniverse,
 ) {
     let styles = out.styles();
     let width = crate::output::terminal_width().clamp(40, 100);
@@ -180,16 +190,32 @@ fn print_text(
     println!("{}", blank);
 
     // Footer: set · collector number · release date, then extras.
+    let set_display = match &universe.set_name {
+        Some(name) => format!("{name} ({})", card.set_code),
+        None => card.set_code.clone(),
+    };
     println!(
         "{}",
         line(format!(
             "{} {} #{} · {}",
             styles.dim("Set:"),
-            styles.dim(&card.set_code),
+            styles.dim(&set_display),
             styles.dim(&card.collector_number),
             styles.dim(&crate::release::release_display(&card.released_at)),
         ))
     );
+    // Universe line: beyond/franchise when set, block for multiverse sets.
+    let universe_bit = match (universe.universe, &universe.franchise) {
+        ("beyond", Some(franchise)) => format!("Universes Beyond · Franchise: {franchise}"),
+        ("beyond", None) => "Universes Beyond".to_string(),
+        _ => match &universe.block {
+            Some(block) => format!("Block: {block}"),
+            None => String::new(),
+        },
+    };
+    if !universe_bit.is_empty() {
+        println!("{}", line(styles.dim(&universe_bit)));
+    }
     if let Some(rank) = card.edhrec_rank {
         println!(
             "{}",
@@ -398,7 +424,7 @@ mod tests {
     #[test]
     fn card_json_carries_all_fields() {
         let index = empty_index();
-        let v = card_json(&row(), &index, &Default::default());
+        let v = card_json(&row(), &index, &Default::default(), &Default::default());
         assert_eq!(v["name"], "Test Card");
         assert_eq!(v["set"], "TST");
         assert_eq!(v["scryfall_id"], "sid");
@@ -419,7 +445,7 @@ mod tests {
         r.colors = "not json".into();
         r.legalities = "also not".into();
         let index = empty_index();
-        let v = card_json(&r, &index, &Default::default());
+        let v = card_json(&r, &index, &Default::default(), &Default::default());
         assert_eq!(v["colors"], serde_json::Value::Null);
         assert_eq!(v["legalities"], serde_json::Value::Null);
     }
@@ -759,7 +785,16 @@ fn finish_similar(
             .iter()
             .filter_map(|hit| {
                 let range = ranges.get(&hit.card.name)?;
-                let mut v = card_json(&hit.card, &tag_index, range);
+                let universe =
+                    crate::universe::card_universe(conn, &hit.card.name, &hit.card.set_code)
+                        .unwrap_or(crate::universe::CardUniverse {
+                            universe: "multiverse",
+                            franchise: None,
+                            set_name: None,
+                            set_type: None,
+                            block: None,
+                        });
+                let mut v = card_json(&hit.card, &tag_index, range, &universe);
                 // Null score when the seed had no stored vector (tags-only
                 // ranking); agents can tell "no score" from "unranked".
                 v["score"] = match hit.score {

@@ -426,7 +426,7 @@ fn default_role_query(role: Role) -> String {
 ///
 /// # Errors
 /// Propagates SQLite failures.
-fn matched_tag_ids(
+pub(super) fn matched_tag_ids(
     conn: &Connection,
     role: Option<Role>,
     query: Option<&str>,

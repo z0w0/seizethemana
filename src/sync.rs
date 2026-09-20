@@ -74,6 +74,10 @@ pub fn run_sync(
     out.status("Comparing", "bulk data against stored cards");
     let delta = sync_cards(conn, &cards_dest, out, &now.to_rfc3339())?;
 
+    // The universe migration may have arrived after the last full sync:
+    // backfill set_type/franchise from the store + the curated mapping.
+    backfill_universe(conn, out)?;
+
     // Tags refresh the lookup tables only; embeddings ignore them.
     out.status("Ingesting", "oracle tags from bulk data");
     let tags_delta = crate::tags::ingest(conn, &tags_dest, out)?;
@@ -737,5 +741,130 @@ mod tests {
         // Tokens are recorded by name and resolvable; real cards are not.
         assert!(crate::db::is_token_name(&conn, "Elf Warrior").unwrap());
         assert!(!crate::db::is_token_name(&conn, "Bolt").unwrap());
+    }
+}
+
+/// Backfill the universe columns for sets that predate migration 0002.
+///
+/// Existing `sets` rows keep their old `set_type`/`franchise` values until
+/// the bulk refresh upserts them; this pass derives what the store alone
+/// can: franchise from the curated mapping, plus card-level UB flags for
+/// D&D sets (honorary UB: their prints are never promo-flagged). Print
+/// flags from the bulk refresh on the next full sync.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn backfill_universe(conn: &Connection, out: &mut crate::output::Output) -> anyhow::Result<()> {
+    // Re-derive every set's franchise from code + name (idempotent).
+    let rows: Vec<(String, String)> = {
+        let mut stmt = conn.prepare("SELECT set_code, set_name FROM sets")?;
+        let rows = stmt.query_map([], |r| Ok((r.get(0)?, r.get(1)?)))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+    let mut updated = 0usize;
+    let mut unknown: Vec<String> = Vec::new();
+    for (code, name) in &rows {
+        let franchise = crate::universe::franchise_for(code, name);
+        conn.execute(
+            "UPDATE sets SET franchise = ?2 WHERE set_code = ?1",
+            rusqlite::params![code, franchise],
+        )?;
+        if franchise.is_none() && crate::universe::is_secret_lair(code) {
+            continue;
+        }
+        updated += 1;
+    }
+    // Sets whose stored prints carry the UB flag but map to no franchise:
+    // a curated-table gap (Secret Lair is deliberately franchise-less).
+    let flagged: Vec<String> = {
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT set_code FROM card_prints
+             WHERE universes_beyond = 1",
+        )?;
+        let rows = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()?
+    };
+    for code in &flagged {
+        let name: Option<String> = rows.iter().find(|(c, _)| c == code).map(|(_, n)| n.clone());
+        if crate::universe::unknown_ub_set(code, name.as_deref().unwrap_or(""), true) {
+            unknown.push(code.clone());
+        }
+    }
+    // Honorary-UB D&D sets: flag their prints even without the promo mark.
+    let dnd = conn.execute(
+        "UPDATE card_prints SET universes_beyond = 1
+             WHERE set_code IN ('afr', 'afc', 'clb')",
+        [],
+    )?;
+    if dnd > 0 {
+        out.status(
+            "Universe",
+            &format!("flagged {dnd} D&D prints as honorary Universes Beyond"),
+        );
+    }
+    for code in &unknown {
+        out.warning(&format!(
+            "unknown Universes Beyond set {code:?}: add a mapping in src/universe.rs"
+        ));
+    }
+    out.status(
+        "Universe",
+        &format!("franchise mapping refreshed over {updated} sets"),
+    );
+    Ok(())
+}
+
+#[cfg(test)]
+mod universe_backfill_tests {
+    use super::*;
+
+    #[test]
+    fn backfill_sets_franchise_and_flags_dnd() {
+        let tmp = tempfile::tempdir().unwrap();
+        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+        conn.execute(
+            "INSERT INTO sets (set_code, set_name) VALUES ('msh', 'Marvel Super Heroes'),
+                    ('afr', 'Adventures in the Forgotten Realms'),
+                    ('mh3', 'Modern Horizons 3')",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO card_prints (scryfall_id, name, set_code, universes_beyond, updated_at)
+             VALUES ('p1', 'X', 'afr', 0, 't')",
+            [],
+        )
+        .unwrap();
+        let mut out = crate::output::Output::new(true, false, false);
+        backfill_universe(&conn, &mut out).unwrap();
+        let (franchise, set_type): (Option<String>, String) = conn
+            .query_row(
+                "SELECT franchise, set_type FROM sets WHERE set_code = 'msh'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(franchise.as_deref(), Some("Marvel"));
+        // set_type stays whatever the bulk last wrote (empty here): the
+        // backfill derives what the store alone can.
+        assert_eq!(set_type, "");
+        let ub: i64 = conn
+            .query_row(
+                "SELECT universes_beyond FROM card_prints WHERE set_code = 'afr'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ub, 1, "D&D prints are honorary UB");
+        // Idempotent: a second pass changes nothing.
+        backfill_universe(&conn, &mut out).unwrap();
+        let ub: i64 = conn
+            .query_row(
+                "SELECT universes_beyond FROM card_prints WHERE set_code = 'afr'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ub, 1);
     }
 }

@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 
 use super::game::GameLog;
+use super::hypgeo::flood_expectation;
 use super::model::{COLORS, Role, SimDeck};
 
 /// Per-card castability row for nonland cards.
@@ -39,8 +40,15 @@ pub struct SimStats {
     pub hit_all_drops_by: [f64; 6],
     /// P(2 or fewer lands by turn 4).
     pub screw_pct: f64,
-    /// P(5 or more lands by turn 4).
+    /// P(6 or more lands in hand + on the battlefield at end of turn 4),
+    /// the draw-aware flood metric. Calibrated so a land-heavy deck
+    /// actually reports flood (a drops-made detector reads a 44-land
+    /// deck as 0% flooded).
     pub flood_pct: f64,
+    /// Hypergeometric expectation of the flood bucket at the deck's
+    /// actual draw volume (mean per-game cards seen by t4), for
+    /// calibration checks.
+    pub flood_expectation: f64,
     /// Median land drops made by turn 4.
     pub p50_drops_by_4: u32,
     /// 95th-percentile land drops made by turn 4.
@@ -188,6 +196,7 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
 
     // Land-drop rates and screw/flood buckets.
     let mut drops_by_4: Vec<u32> = Vec::new();
+    let mut seen_by_4: Vec<u32> = Vec::new();
     for log in logs {
         for k in 1..=5.min(turns) {
             let made: u32 = log.land_drops[..k].iter().map(|d| u32::from(*d)).sum();
@@ -202,15 +211,36 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             if log.lands_by_4 <= 2 {
                 stats.screw_pct += 1.0 / n;
             }
-            if log.lands_by_4 >= 5 {
+            // Flood = a flood-grade window, not drops made: 6+ lands in
+            // hand + on the battlefield at end of turn 4. A deck whose
+            // lands exceed ~35 reports flood near its hypergeometric
+            // expectation (at the game's actual seen count).
+            if log.lands_seen_by_11 >= 6 {
                 stats.flood_pct += 1.0 / n;
             }
+            seen_by_4.push(log.cards_seen_by_4);
         }
     }
     if !drops_by_4.is_empty() {
         stats.p50_drops_by_4 = percentile(&mut drops_by_4, 0.5);
         stats.p95_drops_by_4 = percentile(&mut drops_by_4, 0.95);
     }
+    // Expectation at the deck's actual draw volume: each game's own
+    // cards-seen count feeds its own hypergeometric window, so the
+    // printed baseline matches the measured bucket even for cantrip
+    // decks (a fixed 11-card window reads draw-heavy decks as floodier
+    // than they are).
+    let lands_count = deck.cards.iter().filter(|c| c.role == Role::Land).count();
+    let deck_size = deck.cards.len();
+    stats.flood_expectation = if seen_by_4.is_empty() {
+        0.0
+    } else {
+        seen_by_4
+            .iter()
+            .map(|&seen| flood_expectation(lands_count, deck_size, seen as usize))
+            .sum::<f64>()
+            / seen_by_4.len() as f64
+    };
 
     // Commander timing.
     if let Some(cmd) = deck.commanders.first() {
@@ -571,6 +601,146 @@ pub struct PipBlock {
     pub pct_games: f64,
 }
 
+/// Severity-scaled magnitude word for a share (the suggestion sizes to the
+/// problem, not a fixed "2-3").
+fn magnitude(pct: f64) -> &'static str {
+    if pct >= 30.0 {
+        "3-4"
+    } else if pct >= 20.0 {
+        "2-3"
+    } else {
+        "1-2"
+    }
+}
+
+/// Nonland mana sources that join per turn: rocks, dorks, and ramp
+/// spells. A rock-heavy deck's sources do not read as land-screwed.
+fn ramp_source_count(deck: &SimDeck) -> usize {
+    use super::model::Role;
+    deck.cards
+        .iter()
+        .filter(|c| matches!(c.role, Role::Rock | Role::Dork | Role::RampSpell))
+        .count()
+}
+
+/// The deck's mana base against the bracket target bands (research-derived:
+/// EDHREC average decks n=46 across 11 commanders, 2026-09; Sam Black's
+/// cEDH land-count guidance).
+#[derive(Debug, Default, Clone, serde::Serialize)]
+pub struct ManaBase {
+    /// Land count (basics + nonbasic lands).
+    pub lands: usize,
+    /// Rocks.
+    pub rocks: usize,
+    /// Creature mana sources.
+    pub dorks: usize,
+    /// Ramp spells (search lands, ritual-class accelerants).
+    pub ramp_spells: usize,
+    /// Total mana sources (lands + ramp).
+    pub total_sources: usize,
+    /// `[min, max]` land band for the deck's bracket.
+    pub bracket_target_lands: [usize; 2],
+    /// `[min, max]` ramp band for the deck's bracket.
+    pub bracket_target_ramp: [usize; 2],
+    /// The verdict sentence; "on target" when both counts sit in band.
+    pub verdict: String,
+    /// The bracket the bands came from (inferred from the Game Changer
+    /// census when the command got no explicit `--bracket`).
+    pub bracket: u8,
+    /// True when `bracket` was inferred from the Game Changer census
+    /// rather than passed explicitly.
+    pub bracket_inferred: bool,
+}
+
+/// Land and ramp target bands by bracket (1-5). Lands-matter decks widen
+/// the land band by 4.
+fn bracket_bands(bracket: u8, lands_matter: bool) -> ([usize; 2], [usize; 2]) {
+    let widen = if lands_matter { 4 } else { 0 };
+    let (lands, ramp) = match bracket {
+        5 => ([25usize, 31], [10usize, 16]),
+        4 => ([32, 36], [9, 12]),
+        3 => ([33, 38], [8, 11]),
+        // Brackets 1-2 share the casual band.
+        _ => ([34, 40], [7, 12]),
+    };
+    ([lands[0], lands[1] + widen], ramp)
+}
+
+/// Build the mana-base verdict for a deck.
+///
+/// `bracket` drives the target band; a bracket outside 1-5 falls back to
+/// the casual band.
+pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBase {
+    use super::model::Role;
+    let lands = deck.cards.iter().filter(|c| c.role == Role::Land).count();
+    let rocks = deck.cards.iter().filter(|c| c.role == Role::Rock).count();
+    let dorks = deck.cards.iter().filter(|c| c.role == Role::Dork).count();
+    let ramp_spells = deck
+        .cards
+        .iter()
+        .filter(|c| c.role == Role::RampSpell)
+        .count();
+    let total_sources = lands + rocks + dorks + ramp_spells;
+    // Lands-matter: the commander or any card name carries a landfall /
+    // lands-matter engine signal. The parse marks extra-land-drop boards
+    // (`extra_land_drops`); their presence widens the band.
+    let lands_matter = deck.cards.iter().any(|c| c.extra_land_drops)
+        || deck.commanders.iter().any(|c| c.extra_land_drops);
+    let bracket = bracket.clamp(1, 5);
+    let (land_band, ramp_band) = bracket_bands(bracket, lands_matter);
+    // The lands-matter label rides on any verdict, so the widened band is
+    // still a real comparison (a 20-land landfall deck reads "add lands").
+    let suffix = if lands_matter {
+        " (lands-matter band)"
+    } else {
+        ""
+    };
+    let verdict = if lands < land_band[0] {
+        format!(
+            "add {} lands ({} < band {}-{}){}",
+            (land_band[0] - lands).max(2),
+            lands,
+            land_band[0],
+            land_band[1],
+            suffix
+        )
+    } else if lands > land_band[1] {
+        format!(
+            "trim {} lands ({} > band {}-{}); add rocks if sources are low{}",
+            (lands - land_band[1]).max(1),
+            lands,
+            land_band[0],
+            land_band[1],
+            suffix
+        )
+    } else if ramp_spells + rocks + dorks < ramp_band[0] {
+        format!(
+            "add {} ramp ({} of band {}-{}){}",
+            (ramp_band[0] - (rocks + dorks + ramp_spells)).max(1),
+            rocks + dorks + ramp_spells,
+            ramp_band[0],
+            ramp_band[1],
+            suffix
+        )
+    } else if lands_matter {
+        format!("on target{suffix}")
+    } else {
+        "on target".to_string()
+    };
+    ManaBase {
+        lands,
+        rocks,
+        dorks,
+        ramp_spells,
+        total_sources,
+        bracket_target_lands: land_band,
+        bracket_inferred,
+        bracket_target_ramp: ramp_band,
+        verdict,
+        bracket,
+    }
+}
+
 /// One deck problem found by the simulation.
 #[derive(Debug, Clone)]
 pub struct Problem {
@@ -647,6 +817,23 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
     let turns = stats.turns as usize;
 
     if turns >= 4 && stats.screw_pct >= 0.20 {
+        let sources = ramp_source_count(deck);
+        let suggestion = if sources < 6 {
+            format!(
+                "add {} two-mana rocks or land slots (only {sources} nonland ramp sources)",
+                magnitude(stats.screw_pct * 100.0)
+            )
+        } else if sources >= 10 {
+            // A rock-heavy deck screwing on color, not volume: more lands
+            // will not help. The color_screw findings name the missing pips.
+            "check the color_screw findings: the deck has enough nonland sources, so fix the missing colors (any-color sources, fixing lands)".to_string()
+        } else {
+            format!(
+                "add {} land slots ({} nonland ramp sources already)",
+                magnitude(stats.screw_pct * 100.0),
+                sources
+            )
+        };
         problems.push(Problem {
             kind: "mana_screw",
             severity: severity(stats.screw_pct * 100.0),
@@ -656,21 +843,42 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                 "{:.1}% of games had 2 or fewer lands by turn 4",
                 stats.screw_pct * 100.0
             ),
-            suggestion: "add 2-3 land slots".to_string(),
+            suggestion,
         });
     }
+    // Flood fires when the rate sits well above the velocity-adjusted
+    // expectation (the 11-card baseline is meaningless for cantrip
+    // decks, and a rate at or under the expectation is no finding at
+    // all). Lands-matter decks flood by design: their finding reads as
+    // an observation, never a trim instruction.
     if turns >= 4 && stats.flood_pct >= 0.20 {
-        problems.push(Problem {
-            kind: "mana_flood",
-            severity: severity(stats.flood_pct * 100.0),
-            pct_games: Some(stats.flood_pct * 100.0),
-            color: None,
-            detail: format!(
-                "{:.1}% of games drew 5 or more lands in the first 4 turns",
-                stats.flood_pct * 100.0
-            ),
-            suggestion: "trim ~2 land slots toward the curve".to_string(),
-        });
+        let lands_matter = deck.cards.iter().any(|c| c.extra_land_drops)
+            || deck.commanders.iter().any(|c| c.extra_land_drops);
+        let detail = format!(
+            "{:.1}% of games saw 6+ lands by turn 4 (expectation at the deck's actual draw volume: {:.1}%)",
+            stats.flood_pct * 100.0,
+            stats.flood_expectation * 100.0
+        );
+        // At or under the expectation is not a finding: the deck draws
+        // its share of lands, no trim implied.
+        if stats.flood_pct > stats.flood_expectation + 0.10 {
+            let lands_matter_note = if lands_matter {
+                " (lands-matter deck: check the plan before trimming)"
+            } else {
+                ""
+            };
+            problems.push(Problem {
+                kind: "mana_flood",
+                severity: severity(stats.flood_pct * 100.0),
+                pct_games: Some(stats.flood_pct * 100.0),
+                color: None,
+                detail,
+                suggestion: format!(
+                    "trim {} land slots toward the curve{lands_matter_note}",
+                    magnitude(stats.flood_pct * 100.0)
+                ),
+            });
+        }
     }
     if commander && turns >= 4 {
         let cmc_turn =

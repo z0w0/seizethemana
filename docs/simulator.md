@@ -346,7 +346,8 @@ carry ±0.5pp at 10k runs.
 | Block | Meaning |
 | --- | --- |
 | `opening_hand` | land distribution, mulligan rate (one free mulligan under 2 or over 6 lands in commander) |
-| `land_drops` | hit-all-N rates, screw (≤2 by t4), flood (≥5 by t4), percentiles |
+| `land_drops` | hit-all-N rates, screw (≤2 by t4), flood (6+ lands in hand + on the battlefield at end of t4 — drops made are the wrong lens), flood expectation at the deck's actual draw volume, percentiles |
+| `mana_base` | lands/rocks/dorks/ramp-spells/total sources + the bracket target band (see below) + a verdict sentence; top level `mana_base_bracket_inferred` says when the bracket was inferred |
 | `commander` | castable-by-turn curve, p50/p95/avg first cast turn, on-curve share |
 | `station` | commander spacecraft animated by t6 + p50 online turn (null when not a station card) |
 | `bodies_by_turn` | creatures + animated spacecraft + ETB tokens in play |
@@ -373,14 +374,39 @@ carry ±0.5pp at 10k runs.
 board could first pay each cost, independent of whether the card was
 drawn. It measures the mana base; the hand adds the draw dependency.
 
+### Mana-base target bands
+
+`mana_base` compares the deck's counts against research-derived bands
+(EDHREC average decks, 46 average decks across 11 commanders, fetched
+2026-09; Sam Black's cEDH land-count guidance in the Commander's Herald).
+A deck outside its band gets a "trim/add lands" verdict — the same signal
+an AI deckbuilding agent sees, so "add lands" is never the only lever.
+
+| Bracket | Lands | Ramp (rocks + dorks + ramp spells) |
+| --- | --- | --- |
+| 1–2 (casual) | 34–40 | 7–12 |
+| 3 (upgraded) | 33–38 | 8–11 |
+| 4 (optimized) | 32–36 | 9–12 |
+| 5 (cEDH) | 25–31 | 10–16 |
+
+Without an explicit `--bracket` the bracket is inferred from the Game
+Changer census (0 GC → 2, 1–3 → 3, 4+ → 4); `mana_base.bracket` reports
+it and `mana_base_bracket_inferred` (top level) marks the inference.
+
+Lands-matter decks (an extra-land-drop engine on the board) widen the
+land band by 4 and the verdict says so. Calibration anchors: a 35-land
+deck with 9 rocks reads "on target" at bracket 3; a 44-land deck reads
+"trim 6 lands"; a 44-land deck floods in ~35% of games (expectation
+~35%), while the old drops-made detector read it as 0.0%.
+
 ### Findings (exit 1)
 
 | Kind | Trigger | Suggestion pattern |
 | --- | --- | --- |
-| `mana_screw` | ≥20% of games ≤2 lands by t4 | "add 2-3 land slots" |
-| `mana_flood` | ≥20% of games ≥5 lands by t4 | "trim ~2 land slots" |
+| `mana_screw` | ≥20% of games ≤2 lands by t4 | magnitude-scaled "add {N} land slots" — or "add two-mana rocks" when the deck has fewer than 6 nonland ramp sources (rock-heavy decks must not read as land-screwed) |
+| `mana_flood` | rate exceeds its velocity-adjusted expectation by >10pp | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check the plan before trimming |
 | `commander_late` | <60% castable on curve | "add 2-3 ramp sources" |
-| `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}" |
+| `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts |
 | `draw_starvation` | ≥25% of games see no draw source by t6 | "add 2-3 draw engines" |
 | `mana_unused` | ≥2.5 mana unspent on average by t6 | "add cheaper spells or more draw" |
 | `dead_cards` | ≥3 distinct non-reactive cards cast on time under 60% | "cut or discount late cards, or add ramp" |

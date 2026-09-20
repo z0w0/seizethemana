@@ -255,6 +255,7 @@ fn run_deck(
             hypgeo,
             combo,
             combo_limit,
+            bracket,
             json,
         }) => deck::simulator::simulate(
             paths,
@@ -269,14 +270,58 @@ fn run_deck(
             *hypgeo,
             combo.clone(),
             combo_limit.map(|n| n as usize),
+            *bracket,
             *json,
         ),
         Some(DeckCommand::Import { name, file }) => {
             deck::import(paths, conn, out, json, name, file)
         }
-        Some(DeckCommand::Export { name, file, force }) => {
-            deck::export(paths, out, name, file, *force)
+        Some(DeckCommand::Cuts {
+            name,
+            count,
+            for_role,
+            bracket,
+            json,
+        }) => deck::cuts(
+            paths,
+            conn,
+            out,
+            name,
+            &deck::cuts::CutOptions {
+                count: *count as usize,
+                for_role: for_role.as_deref(),
+                bracket: *bracket,
+                json: *json,
+            },
+        ),
+        Some(DeckCommand::Combos {
+            name,
+            format,
+            bracket,
+            json,
+        }) => deck::combos(paths, conn, out, name, format.as_deref(), *bracket, *json),
+        Some(DeckCommand::Diff {
+            deck_a,
+            deck_b,
+            exact,
+            json,
+            markdown,
+        }) => {
+            let format = if *json {
+                deck::diff::DiffFormat::Json
+            } else if *markdown {
+                deck::diff::DiffFormat::Markdown
+            } else {
+                deck::diff::DiffFormat::Human
+            };
+            deck::diff(paths, conn, out, deck_a, deck_b, *exact, format)
         }
+        Some(DeckCommand::Export {
+            name,
+            file,
+            force,
+            format,
+        }) => deck::export(paths, out, name, file, *force, format),
         Some(DeckCommand::Delete { name }) => deck::delete(paths, conn, out, name),
         Some(DeckCommand::Buylist { name, store, json }) => {
             deck::buylist(paths, conn, out, name, store.as_deref(), *json)

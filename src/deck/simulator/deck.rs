@@ -116,6 +116,15 @@ pub fn build_sim_deck(
     }
 }
 
+/// The deck's format key: `commander` when a COMMANDER section exists,
+/// else `constructed` (the same inference `build_sim_deck` uses).
+pub fn infer_format_key(deck: &crate::deck::grammar::Deck) -> String {
+    let has_commanders = deck.section_index("COMMANDER").is_some();
+    super::format::rules_inferred(has_commanders)
+        .key
+        .to_string()
+}
+
 /// An explicit `--format` may override the inferred one. A constructed run
 /// of a commander deck shuffles the whole list (rough approximation).
 pub fn apply_format_override(deck: &mut SimDeck, format: &str) -> bool {

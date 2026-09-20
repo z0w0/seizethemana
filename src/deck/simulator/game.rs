@@ -83,6 +83,14 @@ pub struct GameLog {
     pub mulliganed: bool,
     /// Lands seen by turn 4 (for the screw/flood buckets).
     pub lands_by_4: u8,
+    /// Lands *seen* by turn 11 (hand + battlefield): the flood metric's
+    /// input. Drops made are the wrong lens — a land drawn and never
+    /// dropped still floods.
+    pub lands_seen_by_11: u32,
+    /// Cards seen by end of turn 4: the flood window's actual size.
+    /// Draw engines widen it beyond the nominal 11, and the flood
+    /// expectation must use this count to stay comparable.
+    pub cards_seen_by_4: u32,
     /// First turn the commander spacecraft was animated (station online).
     pub station_online: Option<u32>,
     /// Bodies (creatures, crewed vehicles, animated spacecraft) per turn.

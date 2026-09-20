@@ -398,9 +398,10 @@ pub fn refresh_tags_text(conn: &Connection) -> anyhow::Result<usize> {
 /// # Errors
 /// Propagates migration failures.
 fn migrations() -> Migrations<'static> {
-    Migrations::new(vec![M::up(include_str!(
-        "../migrations/0001_initial_schema.sql"
-    ))])
+    Migrations::new(vec![
+        M::up(include_str!("../migrations/0001_initial_schema.sql")),
+        M::up(include_str!("../migrations/0002_universe.sql")),
+    ])
 }
 
 /// Open (creating if needed) the SQLite database at `path`, migrate to the
@@ -508,7 +509,7 @@ mod tests {
         let version: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .expect("version");
-        assert_eq!(version, 1, "flattened schema is migration version 1");
+        assert_eq!(version, 2, "flattened schema plus the universe migration");
         // The game_changer column must exist on the cards table.
         let gc: i64 = conn
             .query_row(
@@ -518,6 +519,24 @@ mod tests {
             )
             .expect("pragma");
         assert_eq!(gc, 1);
+        // The universe migration columns must exist.
+        let ub: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('card_prints')
+                 WHERE name = 'universes_beyond'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("pragma");
+        assert_eq!(ub, 1);
+        let franchise: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('sets') WHERE name = 'franchise'",
+                [],
+                |r| r.get(0),
+            )
+            .expect("pragma");
+        assert_eq!(franchise, 1);
         drop(conn);
 
         // Reopening must not fail on existing schema.

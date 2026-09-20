@@ -14,19 +14,19 @@
 // at parse time; the documented limits ship in the output `assumptions`.
 // This is a consistency diagnostic, not a win-rate predictor.
 
-mod aggregate;
+pub(crate) mod aggregate;
 mod cast_phase;
 mod combos;
-mod deck;
+pub(crate) mod deck;
 mod format;
-mod game;
+pub(crate) mod game;
 mod game_combat;
 mod game_effects;
 mod game_mana;
 mod game_run;
-mod hypgeo;
-mod model;
-mod parse;
+pub(crate) mod hypgeo;
+pub(crate) mod model;
+pub(crate) mod parse;
 mod parse_cost;
 mod parse_keywords;
 mod parse_land;
@@ -53,6 +53,9 @@ mod deck_tests;
 #[cfg(test)]
 #[path = "tests/game_tests.rs"]
 mod game_tests;
+#[cfg(test)]
+#[path = "tests/mana_base_tests.rs"]
+mod mana_base_tests;
 #[cfg(test)]
 #[path = "tests/mechanic_tests.rs"]
 mod mechanic_tests;
@@ -98,6 +101,42 @@ fn load_store_combos(
 }
 
 /// True when the store carries combo data at all.
+/// True when the store carries combo data at all (public for the
+/// `deck combos` audit).
+pub fn store_has_combos_pub(conn: &rusqlite::Connection) -> bool {
+    store_has_combos(conn)
+}
+
+/// Infer the commander bracket from the deck's Game Changer census: the
+/// same allowance rule `deck legal` checks, run backwards. 0 changers
+/// reads as bracket 2, up to 3 as bracket 3, more as bracket 4.
+pub(crate) fn infer_bracket(
+    deck: &super::Deck,
+    cards: &std::collections::HashMap<String, crate::db::CardRow>,
+) -> u8 {
+    let changers = deck
+        .sections
+        .iter()
+        // Maindeck only: the sideboard is a commander wishlist (the same
+        // census `deck legal` uses).
+        .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+        .flat_map(|(_, e)| e.iter())
+        .filter(|e| {
+            !e.name.is_empty()
+                && cards
+                    .get(&e.name)
+                    .is_some_and(|c| c.game_changer == Some(true))
+        })
+        .map(|e| e.name.clone())
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
+    match changers {
+        0 => 2,
+        1..=3 => 3,
+        _ => 4,
+    }
+}
+
 fn store_has_combos(conn: &rusqlite::Connection) -> bool {
     conn.query_row("SELECT COUNT(*) FROM combos", [], |r| r.get::<_, i64>(0))
         .map(|n| n > 0)
@@ -131,6 +170,7 @@ pub fn simulate(
     hypgeo: bool,
     combos: Vec<String>,
     combo_limit: Option<usize>,
+    bracket: Option<u8>,
     json: bool,
 ) -> anyhow::Result<i32> {
     let (_path, deck) = super::store::load_deck(paths, name)?;
@@ -186,6 +226,13 @@ pub fn simulate(
         .filter(|c| c.role == model::Role::Land)
         .count();
     let problems = aggregate::find_problems(&stats, &sim_deck);
+    // Bracket for the mana-base band: explicit flag, else inferred from the
+    // Game Changer census (the same signals `deck legal` checks).
+    let (inferred_bracket, bracket) = match bracket {
+        Some(b) => (false, b),
+        None => (true, infer_bracket(&deck, &cards)),
+    };
+    let mana_base = aggregate::mana_base(&sim_deck, bracket, inferred_bracket);
 
     // Combo assembly, two sources:
     // 1. Explicit "A + B" pairs (--combo, repeatable, measured always).
@@ -208,7 +255,15 @@ pub fn simulate(
     });
 
     if json {
-        let mut v = report::json_report(&stats, &sim_deck, name, seed, &problems, sideboard_cards);
+        let mut v = report::json_report(
+            &stats,
+            &sim_deck,
+            name,
+            seed,
+            &problems,
+            sideboard_cards,
+            &mana_base,
+        );
         if !combo_rows.is_empty()
             && let Some(obj) = v.as_object_mut()
         {
@@ -233,8 +288,15 @@ pub fn simulate(
         let baseline_text = read_baseline(baseline_path)?;
         let baseline: serde_json::Value = serde_json::from_str(&baseline_text)
             .with_context(|| format!("parsing baseline {}", baseline_path.display()))?;
-        let current =
-            report::json_report(&stats, &sim_deck, name, seed, &problems, sideboard_cards);
+        let current = report::json_report(
+            &stats,
+            &sim_deck,
+            name,
+            seed,
+            &problems,
+            sideboard_cards,
+            &mana_base,
+        );
         let diff = report::diff_reports(&baseline, &current);
         report::print_diff(out, &diff);
         // Diff mode exits on the delta: empty diff or only resolved
@@ -244,7 +306,7 @@ pub fn simulate(
         }
         return Ok(crate::cli::codes::OK);
     } else {
-        report::print_report(out, name, &sim_deck, &stats, &problems);
+        report::print_report(out, name, &sim_deck, &stats, &problems, &mana_base);
         if !combo_rows.is_empty() {
             report::print_combo_access(out, &combo_rows);
         }

@@ -221,3 +221,84 @@ fn import_notes_skip_existing_decklists() {
             .unwrap();
     assert_eq!(deck.total(), 3);
 }
+
+#[test]
+fn by_universe_rolls_up_cards_and_value() {
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!(
+            "{CSV_HEADER}\
+             Collect,binder,Bolt,TST,Test,1,normal,common,2,3,sid2,0.5\n\
+             Collect,binder,Iron Man,MSH,Marvel,58,normal,rare,1,4,sid5,3.0\n"
+        ),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    for (name, sid) in [("Bolt", "sid2"), ("Iron Man", "sid5")] {
+        db.execute(
+            "INSERT INTO cards (name, oracle_id, scryfall_id) VALUES (?1, 'oid', ?2)",
+            rusqlite::params![name, sid],
+        )
+        .unwrap();
+    }
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 2,
+        embedded_cards: 2,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Bolt".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    // Set metadata: msh is a UB Marvel set, tst is in-universe.
+    db.execute(
+        "INSERT INTO sets (set_code, set_name, set_type, franchise)
+         VALUES ('tst', 'Test Set', 'expansion', NULL),
+                ('msh', 'Marvel Super Heroes', 'expansion', 'Marvel')",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "INSERT INTO card_prints (scryfall_id, name, set_code, universes_beyond, updated_at)
+         VALUES ('sid2', 'Bolt', 'tst', 0, 't'), ('sid5', 'Iron Man', 'msh', 1, 't')",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "UPDATE card_prints SET collector_number = '1' WHERE scryfall_id = 'sid2'",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "UPDATE card_prints SET collector_number = '58' WHERE scryfall_id = 'sid5'",
+        [],
+    )
+    .unwrap();
+    // Owned-print prices: Bolt $1, Iron Man $3 (foil).
+    db.execute(
+        "UPDATE card_prints SET usd = 1.0 WHERE scryfall_id = 'sid2'",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "UPDATE card_prints SET usd = 3.0 WHERE scryfall_id = 'sid5'",
+        [],
+    )
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = import(&paths, &mut db, &mut out, &csv, false, false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let stats = compute_stats(&db).unwrap();
+    let multi = &stats.by_universe["multiverse"];
+    let beyond = &stats.by_universe["beyond"];
+    assert_eq!(multi.cards, 2, "2 copies of the in-universe card");
+    assert_eq!(beyond.cards, 1, "1 copy of the UB card");
+    assert!(multi.value > 0.0, "multiverse value rolls up from prices");
+    assert!(beyond.value > 0.0, "beyond value rolls up from prices");
+    assert!(stats.by_franchise.contains_key("Marvel"));
+}

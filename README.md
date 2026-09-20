@@ -157,6 +157,10 @@ if you want to see exactly what the assistant will be told.
 | `stm deck import / export <name> <file>` | Move decks in and out of ManaBox format |
 | `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first; works in any format |
 | `stm deck simulate <name> [--seed N]` | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation)) |
+| `stm deck combos <name> [--bracket B]` | Spellbook combo audit, split by section; flags bracket-breaking combos |
+| `stm deck cuts <name> [--for ROLE]` | Rank the deck's cards by expendability, with cut/fill pairing |
+| `stm deck diff <A> <B> --markdown` | Exact change instructions between two lists (either side a deck name or a file) |
+| `stm deck export <name> <file> --format names` | Plain `qty Name` export (no set decorations) |
 | `stm deck primer <name> [--set <file>]` | Read or write a deck's strategy notes |
 
 Every read command takes `--json` for machine-readable output — the
@@ -244,7 +248,14 @@ other formats drop the combos that need a commander.
 
 ```sh
 stm deck simulate Froggy --runs 10000 --seed 42
+stm deck simulate Froggy --bracket 3      # sets the mana-base target band
 ```
+
+The report includes a `mana_base` verdict: the deck's lands/rocks/ramp
+counts against research-derived target bands for the bracket ("trim 3
+lands", "add 2 ramp", "on target"). Flood counts lands *seen* (opener +
+draws) against the exact hypergeometric expectation, so a land-heavy deck
+gets told to trim where a drops-made check would say nothing.
 
 The simulator plays thousands of solitaire games ("goldfish") with the
 deck and reports how consistently it does its job: does it hit its land

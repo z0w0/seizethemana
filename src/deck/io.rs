@@ -196,31 +196,57 @@ fn has_commander_line(
     })
 }
 
-/// Entry point for `stm deck export <name> <file> [--force]`.
+/// Entry point for `stm deck export <name> <file> [--format manabox|names]`.
 pub fn export(
     paths: &crate::paths::Paths,
     out: &mut crate::output::Output,
     name: &str,
     file: &std::path::Path,
     force: bool,
+    format: &str,
 ) -> anyhow::Result<i32> {
+    if format != "manabox" && format != "names" {
+        out.error(&format!("unknown export format {format:?}"));
+        out.hint("formats: manabox (default), names");
+        return Ok(crate::cli::codes::USAGE);
+    }
     let (_path, deck) = load_deck(paths, name)?;
     if file.exists() && !force {
         out.error(&format!("{} already exists", file.display()));
         out.hint("pass --force to overwrite the destination file");
         return Ok(crate::cli::codes::ERROR);
     }
-    std::fs::write(file, deck.to_text()).with_context(|| format!("writing {}", file.display()))?;
+    let text = match format {
+        "names" => names_text(&deck),
+        _ => deck.to_text(),
+    };
+    std::fs::write(file, text).with_context(|| format!("writing {}", file.display()))?;
     out.finish(
         "Exported",
         &format!(
-            "deck {name:?} ({} cards) to {}",
+            "deck {name:?} ({} cards, {format}) to {}",
             deck.total(),
             file.display()
         ),
         std::time::Duration::ZERO,
     );
     Ok(crate::cli::codes::OK)
+}
+
+/// Plain `qty Name` lines per section: no `(SET) cn` decorations or foil
+/// markers. The shim-free feed for external tools and diffs.
+fn names_text(deck: &Deck) -> String {
+    let mut out = String::new();
+    for (i, (section, entries)) in deck.sections.iter().enumerate() {
+        if i > 0 {
+            out.push('\n');
+        }
+        out.push_str(&format!("// {section}\n"));
+        for entry in entries {
+            out.push_str(&format!("{} {}\n", entry.quantity, entry.name));
+        }
+    }
+    out
 }
 
 /// Entry point for `stm deck primer <name> [--set <file>]`.
@@ -321,12 +347,12 @@ mod tests {
         assert!(primer_file(&paths, "Round").exists());
 
         let dest = paths.root().join("out.txt");
-        export(&paths, &mut out, "Round", &dest, false).unwrap();
+        export(&paths, &mut out, "Round", &dest, false, "manabox").unwrap();
         assert_eq!(std::fs::read_to_string(&dest).unwrap(), DECK_TXT);
         // Export refuses to overwrite without --force.
-        let code = export(&paths, &mut out, "Round", &dest, false).unwrap();
+        let code = export(&paths, &mut out, "Round", &dest, false, "manabox").unwrap();
         assert_eq!(code, crate::cli::codes::ERROR);
-        let code = export(&paths, &mut out, "Round", &dest, true).unwrap();
+        let code = export(&paths, &mut out, "Round", &dest, true, "manabox").unwrap();
         assert_eq!(code, crate::cli::codes::OK);
     }
 
@@ -375,6 +401,27 @@ mod tests {
         std::fs::write(&src, "not a deck line").unwrap();
         let mut out = Output::new(true, false, false);
         assert!(import(&paths, &conn, &mut out, true, "Bad", &src).is_err());
+    }
+
+    #[test]
+    fn export_names_strips_print_and_foil_decorations() {
+        let (_tmp, paths, conn) = setup();
+        seed_card(&conn, "Bolt", "Instant", None);
+        let deck_path = paths.deck_file("Names");
+        if let Some(dir) = deck_path.parent() {
+            std::fs::create_dir_all(dir).unwrap();
+        }
+        std::fs::write(
+            deck_path,
+            "// COMMANDER\n1 Breya\n// DECK\n2 Bolt (SOS) 100 *F*\n1 Fog\n",
+        )
+        .unwrap();
+        let dest = _tmp.path().join("names.txt");
+        let mut out = Output::new(true, false, false);
+        let code = export(&paths, &mut out, "Names", &dest, false, "names").unwrap();
+        assert_eq!(code, crate::cli::codes::OK);
+        let text = std::fs::read_to_string(&dest).unwrap();
+        assert_eq!(text, "// COMMANDER\n1 Breya\n\n// DECK\n2 Bolt\n1 Fog\n");
     }
 
     #[test]

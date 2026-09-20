@@ -86,10 +86,13 @@ stm deck update <name> [--add SPEC]... [--remove SPEC]... [--set SPEC]... [--fro
 stm deck dedupe <name> [--json]                   # merge duplicate same-name lines
 stm deck suggest <name> [--query TEXT] [--role ROLE] [--commander] [--format FMT] [--limit N] [--json]
 stm deck legal <name> [--format FMT] [--bracket 1-5] [--json]
-stm deck simulate <name> [--runs N] [--turns N] [--seed S] [--format FMT] [--baseline FILE] [--json]
+stm deck simulate <name> [--runs N] [--turns N] [--seed S] [--format FMT] [--baseline FILE] [--bracket 1-5] [--json]
+stm deck combos <name> [--format FMT] [--bracket 1-5] [--json]   # Spellbook combo audit, per section
+stm deck cuts <name> [--count N] [--for ROLE] [--bracket 1-5] [--json]   # ranked expendability + cut/fill pairing
+stm deck diff <A> <B-or-file> [--exact] [--json] [--markdown]     # original -> optimized change instructions
 stm deck import <name> <file>                     # upsert the decklist from ManaBox deck txt
 stm deck delete <name>                            # decklist only; ownership is kept
-stm deck export <name> <file> [--force]
+stm deck export <name> <file> [--force] [--format manabox|names]
 stm deck buylist <name> [--store generic|cardkingdom|tcgplayer] [--json]
 stm deck primer <name> [--set FILE]               # no --set prints the primer markdown
 ```
@@ -169,11 +172,42 @@ Conventions:
   color, `combo_access` + store-backed `combos`, a `win_paths` section
   (complete combos whose Spellbook `produces` labels contain a win
   feature — "Win the game", "Infinite damage", "Infinite turns", …),
-  and the problems array. Model limits ship in the JSON `assumptions`
-  array.
+  and the problems array, plus the `mana_base` block: the deck's
+  lands/rocks/dorks/ramp counts against the bracket target bands
+  (`--bracket 1-5`, default 3) with a verdict sentence ("trim 3 lands",
+  "add 2 ramp", "on target"). The flood metric counts lands *seen* at end of turn 4
+  (opener + draws + cantrips) against the hypergeometric expectation at
+  that same draw volume, so a land-heavy deck reports real flood where a
+  drops-made detector reads zero, and a cantrip deck is not punished for
+  seeing more cards. Model limits ship in the JSON
+  `assumptions` array.
   Human output adds lines for interaction readiness, attack power,
   drain, extra turns, and threshold/ultimate online when non-zero, and
   a "Win paths" block when a store-backed win path assembles.
+- `stm deck combos <name>` joins the deck against the Spellbook store
+  per section (COMMANDER / DECK / SIDEBOARD): complete combos,
+  one-card-away near misses (with the missing piece), and — with
+  `--bracket B` — a `bracket_breaks` list of main-deck combos whose
+  Spellbook tag exceeds the bracket. No simulation runs; it is a static
+  join.
+- `stm deck cuts <name>` ranks the deck's incumbents by expendability
+  (banned cards and Game Changers over the bracket allowance pin to the
+  top regardless of score; then sim castability faults, curve outliers,
+  pricey one-offs). Rows carry `rank` and `pinned`. Basics and the
+  commander are never suggested. `--for <role>` pairs every cut with
+  fill candidates for the deficit role (owned first) and discounts
+  incumbents already serving that role.
+- `stm deck diff <A> <B>` prints per-section change instructions
+  (removed / added / quantity changed; basics and quantity shifts
+  collapse to `Name: N → M` rows). `--markdown` renders the change-log
+  instruction table for `decks/<name>.changes.md` (basics read
+  "Remove 4 Forests and 2 Islands"); `--exact` diffs by print identity
+  instead of card name. Both operands are a deck name or a ManaBox txt
+  path.
+- `stm deck export --format names` writes plain `qty Name` lines (no
+  set/collector-number decorations) — the shim-free feed for external
+  tools and diffs. `manabox` (default) stays the ManaBox-compatible
+  format.
 - `stm card similar` ranks cards by reciprocal-rank fusion of shared
   Tagger oracle tags and stored-vector cosine to the seed (tags-only with
   a note when the seed has no stored vector; `score` is `null` then).

@@ -339,6 +339,7 @@ pub fn json_report(
     seed: u64,
     problems: &[super::aggregate::Problem],
     sideboard_cards: i64,
+    mana_base: &super::aggregate::ManaBase,
 ) -> serde_json::Value {
     let turns = stats.turns as usize;
     let lands = deck.cards.iter().filter(|c| c.role == Role::Land).count() as i64;
@@ -430,10 +431,13 @@ pub fn json_report(
         "land_drops": {
             "hit_all_by_turn": pct_turn_map(&stats.hit_all_drops_by[1..=turns.min(5)]),
             "screw_pct_2_or_fewer_by_t4": pct2(stats.screw_pct),
-            "flood_pct_5plus_by_t4": pct2(stats.flood_pct),
+            "flood_pct_6plus_lands_seen_in_11": pct2(stats.flood_pct),
+            "flood_expectation": pct2(stats.flood_expectation),
             "p50_drops_by_4": stats.p50_drops_by_4,
             "p95_drops_by_4": stats.p95_drops_by_4,
         },
+        "mana_base": mana_base,
+        "mana_base_bracket_inferred": mana_base.bracket_inferred,
         "commander": commander_json,
         "station": station_json,
         "bodies_by_turn": turn_map(&stats.bodies_by_turn[..turns]),
@@ -585,6 +589,7 @@ pub fn print_report(
     deck: &SimDeck,
     stats: &SimStats,
     problems: &[super::aggregate::Problem],
+    mana_base: &super::aggregate::ManaBase,
 ) {
     let s = out.styles();
     let turns = stats.turns as usize;
@@ -623,6 +628,21 @@ pub fn print_report(
             stats.hit_all_drops_by[4] * 100.0,
             stats.screw_pct * 100.0,
             stats.flood_pct * 100.0
+        );
+        println!(
+            "  {}  {}  {}",
+            s.dim("mana base"),
+            s.dim(&format!(
+                "{} lands · {} ramp · target {}-{} lands + {}-{} ramp · bracket {}",
+                mana_base.lands,
+                mana_base.rocks + mana_base.dorks + mana_base.ramp_spells,
+                mana_base.bracket_target_lands[0],
+                mana_base.bracket_target_lands[1],
+                mana_base.bracket_target_ramp[0],
+                mana_base.bracket_target_ramp[1],
+                mana_base.bracket,
+            )),
+            s.note(&mana_base.verdict)
         );
     }
     if let Some(cmd) = deck.commanders.first() {
@@ -917,7 +937,8 @@ const METRIC_PATHS: &[&str] = &[
     "commander.on_curve_pct",
     "commander.avg_first_cast_turn",
     "land_drops.screw_pct_2_or_fewer_by_t4",
-    "land_drops.flood_pct_5plus_by_t4",
+    "land_drops.flood_pct_6plus_lands_seen_in_11",
+    "land_drops.flood_expectation",
     "mana.pct_games_floated_3plus_t6",
     "draw.pct_starved_0_by_t6",
     "role_access.removal_pct_seen_by_5",

@@ -13,6 +13,9 @@
 //   split into model/parse/deck/game/aggregate/report submodules
 
 pub mod buylist;
+pub mod combos;
+pub mod cuts;
+pub mod diff;
 pub mod grammar;
 pub mod io;
 pub mod legal;
@@ -27,6 +30,9 @@ pub mod update;
 
 // Command entry points, re-exported flat for `deck::<cmd>` dispatch.
 pub use buylist::buylist;
+pub use combos::combos;
+pub use cuts::cuts;
+pub use diff::diff;
 pub use io::{export, import, primer};
 pub use store::{create, delete, list, show};
 pub use update::update;

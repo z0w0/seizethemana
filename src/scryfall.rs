@@ -97,6 +97,16 @@ pub struct ScryfallCard {
     #[serde(default)]
     pub games: Option<Vec<String>>,
     pub layout: String,
+    /// Set type of the print's set ("expansion", "commander", …).
+    #[serde(rename = "set_type", default)]
+    pub set_type: Option<String>,
+    /// In-universe block name of the print's set (NULL for most modern sets).
+    #[serde(default)]
+    pub block: Option<String>,
+    /// Just-for-fun promo marks of this print; "universesbeyond" flags a UB
+    /// print.
+    #[serde(default)]
+    pub promo_types: Option<Vec<String>>,
     #[serde(default)]
     pub card_faces: Option<Vec<CardFace>>,
 }
@@ -534,11 +544,28 @@ pub fn upsert_print(
     let finishes = serde_json::to_string(&card.finishes.clone().unwrap_or_default())?;
     if let Some(set_name) = &card.set_name {
         conn.execute(
-            "INSERT INTO sets (set_code, set_name) VALUES (?1, ?2)
-             ON CONFLICT (set_code) DO UPDATE SET set_name = excluded.set_name",
-            rusqlite::params![set_code, set_name],
+            "INSERT INTO sets (set_code, set_name, set_type, block, franchise)
+             VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT (set_code) DO UPDATE SET
+                set_name = excluded.set_name,
+                set_type = excluded.set_type,
+                block = excluded.block,
+                franchise = excluded.franchise",
+            rusqlite::params![
+                set_code,
+                set_name,
+                card.set_type.clone().unwrap_or_default(),
+                card.block,
+                crate::universe::franchise_for(&set_code, set_name),
+            ],
         )?;
     }
+    let ub_flag = crate::universe::is_universes_beyond(
+        &set_code,
+        card.promo_types
+            .as_ref()
+            .is_some_and(|p| p.iter().any(|t| t == "universesbeyond")),
+    ) as i64;
     let (usd, usd_foil, usd_etched) = match &card.prices {
         Some(prices) => (
             prices.usd.as_deref().and_then(|s| s.parse::<f64>().ok()),
@@ -556,8 +583,9 @@ pub fn upsert_print(
     conn.execute(
         "INSERT INTO card_prints (
             scryfall_id, name, flavor_name, set_code, collector_number, lang,
-            rarity, finishes, released_at, usd, usd_foil, usd_etched, updated_at
-        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13)
+            rarity, finishes, released_at, usd, usd_foil, usd_etched, updated_at,
+            universes_beyond
+        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)
          ON CONFLICT (scryfall_id) DO UPDATE SET
             name = excluded.name, flavor_name = excluded.flavor_name,
             set_code = excluded.set_code,
@@ -565,7 +593,8 @@ pub fn upsert_print(
             rarity = excluded.rarity, finishes = excluded.finishes,
             released_at = excluded.released_at, usd = excluded.usd,
             usd_foil = excluded.usd_foil, usd_etched = excluded.usd_etched,
-            updated_at = excluded.updated_at",
+            updated_at = excluded.updated_at,
+            universes_beyond = excluded.universes_beyond",
         rusqlite::params![
             card.id.clone().unwrap_or_default(),
             card.name,
@@ -580,6 +609,7 @@ pub fn upsert_print(
             usd_foil,
             usd_etched,
             updated_at,
+            ub_flag,
         ],
     )?;
     Ok(())
@@ -642,6 +672,9 @@ mod tests {
             }),
             games: Some(games.iter().map(|g| g.to_string()).collect()),
             layout: layout.to_string(),
+            set_type: Some("expansion".into()),
+            block: None,
+            promo_types: None,
             card_faces: None,
         }
     }
@@ -769,7 +802,7 @@ mod tests {
     }
 
     #[test]
-    fn upsert_print_stores_print_and_set() {
+    fn upsert_print_stores_universe_metadata() {
         let tmp = tempfile::tempdir().unwrap();
         let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
         let mut c = card("Test Card", "normal", &["paper"]);
@@ -798,6 +831,68 @@ mod tests {
             )
             .unwrap();
         assert_eq!(set_name, "Test Set");
+        // In-universe set: no franchise, unflagged print, set_type stored.
+        let (set_type, block, franchise): (String, Option<String>, Option<String>) = conn
+            .query_row(
+                "SELECT set_type, block, franchise FROM sets WHERE set_code = 'tst'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+            )
+            .unwrap();
+        assert_eq!(set_type, "expansion");
+        assert_eq!(block, None);
+        assert_eq!(franchise, None);
+        let ub: i64 = conn
+            .query_row(
+                "SELECT universes_beyond FROM card_prints WHERE scryfall_id = 'print-1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ub, 0);
+
+        // A UB print in a Marvel set: flagged print, franchise on the set.
+        let mut marvel = card("Test Card", "normal", &["paper"]);
+        marvel.set_code = Some("MSH".to_string());
+        marvel.set_name = Some("Marvel Super Heroes".to_string());
+        marvel.promo_types = Some(vec!["universesbeyond".into()]);
+        marvel.id = Some("print-2".into());
+        upsert_print(&conn, &marvel, "now").unwrap();
+        let franchise: Option<String> = conn
+            .query_row(
+                "SELECT franchise FROM sets WHERE set_code = 'msh'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(franchise.as_deref(), Some("Marvel"));
+        let ub: i64 = conn
+            .query_row(
+                "SELECT universes_beyond FROM card_prints WHERE scryfall_id = 'print-2'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ub, 1, "universesbeyond promo flag marks the print");
+
+        // A D&D set is honorary UB even with no promo flag (Scryfall leaves
+        // its prints unmarked; WotC owns D&D).
+        let mut dnd = card("Test Card", "normal", &["paper"]);
+        dnd.set_code = Some("AFR".to_string());
+        dnd.set_name = Some("Adventures in the Forgotten Realms".to_string());
+        dnd.id = Some("print-3".into());
+        upsert_print(&conn, &dnd, "now").unwrap();
+        let (franchise, ub): (Option<String>, i64) = conn
+            .query_row(
+                "SELECT s.franchise, p.universes_beyond FROM card_prints p
+                 JOIN sets s ON s.set_code = p.set_code
+                 WHERE p.scryfall_id = 'print-3'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(franchise.as_deref(), Some("Dungeons & Dragons"));
+        assert_eq!(ub, 1, "D&D prints are honorary UB");
     }
 
     #[test]

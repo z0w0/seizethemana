@@ -350,9 +350,64 @@ pub enum DeckCommand {
         /// Cap on discovered-combo rows (complete + near-miss; default 20)
         #[arg(long = "combo-limit", value_name = "N", value_parser = clap::value_parser!(u32).range(1..=200))]
         combo_limit: Option<u32>,
+        /// Commander bracket 1-5 for the mana-base target band (default 3)
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]
+        bracket: Option<u8>,
         /// Emit JSON
         #[arg(long)]
         json: bool,
+    },
+
+    /// Rank a deck's incumbents by expendability (guided cutting)
+    Cuts {
+        name: String,
+        /// Maximum cut rows (default 5)
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u32).range(1..=50))]
+        count: u32,
+        /// Pair each cut with fills for this role (deficit role N)
+        #[arg(long = "for", value_name = "ROLE")]
+        for_role: Option<String>,
+        /// Commander bracket 1-5: Game Changers over the allowance pin to
+        /// the top
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]
+        bracket: Option<u8>,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Audit a deck's Commander Spellbook combos, per section
+    Combos {
+        name: String,
+        /// Format to filter combos by (default: inferred from the deck's
+        /// sections)
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
+        /// Commander bracket 1-5: flag combos whose bracket tag exceeds it
+        #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]
+        bracket: Option<u8>,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Diff two decks per section: exact change instructions
+    /// (original → optimized)
+    Diff {
+        /// Base deck name, or a ManaBox deck txt file path
+        deck_a: String,
+        /// Target deck name, or a ManaBox deck txt file path
+        deck_b: String,
+        /// Diff exact printings (name + set + cn + foil) instead of card
+        /// names (any printing fills a slot)
+        #[arg(long = "exact")]
+        exact: bool,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+        /// Emit the change-log markdown (remove/add instruction table)
+        #[arg(long = "markdown")]
+        markdown: bool,
     },
 
     /// Export a deck to a ManaBox txt file
@@ -363,6 +418,10 @@ pub enum DeckCommand {
         /// Overwrite the destination file if it exists
         #[arg(long)]
         force: bool,
+        /// Output format: manabox (default) or names (plain `qty Name`
+        /// lines, no set/collector-number decorations)
+        #[arg(long, value_name = "FMT", default_value = "manabox")]
+        format: String,
     },
 
     /// Delete a decklist (ownership in the collection is kept)

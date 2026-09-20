@@ -18,7 +18,9 @@ fn choose(n: u64, k: u64) -> f64 {
     result
 }
 
-/// P(X >= need) for X ~ Hypergeometric(N = deck, K = copies, n = seen).
+/// P(X >= need) for X ~ Hypergeometric(N = deck, K = copies, n = seen),
+/// with the window clamped to the deck size (a seen count past the deck
+/// size cannot sample distinct cards).
 /// Complement-summed so the tails stay accurate at small probabilities.
 fn hyper_at_least(deck: u64, copies: u64, seen: u64, need: u64) -> f64 {
     if need == 0 {
@@ -49,6 +51,28 @@ pub fn cards_seen_by(turn: u32) -> u64 {
     // library, but the ratios barely move and the ceiling stays
     // conservative either way.
     7u64 + turn as u64
+}
+
+/// P(6 or more lands among the first `seen` cards) for a deck of `deck`
+/// cards holding `lands` lands. The flood bucket's exact expectation at
+/// the game's actual draw volume (`seen`), so the simulated flood rate
+/// can be checked against the math.
+pub fn flood_expectation(lands: usize, deck: usize, seen: usize) -> f64 {
+    let deck = deck.max(1) as u64;
+    let lands = (lands.min(deck as usize)) as u64;
+    let seen = (seen.max(1) as u64).min(deck);
+    1.0 - {
+        let mut below = 0.0f64;
+        let total = choose(deck, seen);
+        for x in 0..=5u64 {
+            let nonlands = deck - lands;
+            if x > lands || x > seen || seen - x > nonlands {
+                continue;
+            }
+            below += choose(lands, x) * choose(nonlands, seen - x) / total;
+        }
+        below
+    }
 }
 
 /// Per-card cast-on-curve ceilings over the whole deck (nonland, distinct
@@ -138,5 +162,30 @@ mod tests {
         };
         let payload = cast_ceilings(&deck, 10);
         assert!(payload.get("cards").is_some());
+    }
+}
+
+#[cfg(test)]
+mod deck_size_tests {
+    use super::*;
+
+    #[test]
+    fn flood_expectation_uses_the_real_deck_size() {
+        // 24 lands in a 60-card deck: expectation is computed against 60,
+        // not a hardcoded 99 (24/99 reads far too low).
+        let sixty = flood_expectation(24, 60, 11);
+        let ninety_nine = flood_expectation(24, 99, 11);
+        assert!(
+            (0.22..0.24).contains(&sixty),
+            "24 lands in 60 sees 6+ of 11 ≈ 22.5%: {sixty}"
+        );
+        assert!(
+            ninety_nine < 0.03,
+            "24 lands in 99 (the wrong-denominator value) ≈ 2%: {ninety_nine}"
+        );
+        assert!(
+            sixty > ninety_nine * 8.0,
+            "24/60 floods far harder than 24/99: {sixty} vs {ninety_nine}"
+        );
     }
 }

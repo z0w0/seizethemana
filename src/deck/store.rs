@@ -633,6 +633,70 @@ fn round2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0
 }
 
+/// Full set name for a set code (`sets` table; `None` when unknown).
+fn set_name_for(conn: &Connection, set_code: &str) -> Option<String> {
+    conn.query_row(
+        "SELECT set_name FROM sets WHERE set_code = ?1",
+        [set_code.to_ascii_lowercase()],
+        |r| r.get(0),
+    )
+    .ok()
+}
+
+/// Universes Beyond census over the deck's main sections (commander + deck,
+/// not the sideboard): total copies per universe, per-franchise counts, and
+/// the UB card names. `None` when the store has no set metadata yet.
+fn universe_census(
+    conn: &Connection,
+    deck: &super::Deck,
+    cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
+) -> Option<serde_json::Value> {
+    let mut multiverse = 0i64;
+    let mut beyond = 0i64;
+    let mut franchises: std::collections::BTreeMap<String, i64> = Default::default();
+    let mut ub_cards: Vec<String> = Vec::new();
+    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    for entry in deck.sections.iter().flat_map(|(s, e)| {
+        if s.eq_ignore_ascii_case("SIDEBOARD") {
+            Vec::new()
+        } else {
+            e.clone()
+        }
+    }) {
+        let Some(card) = cards_by_name.get(&entry.name) else {
+            continue;
+        };
+        if !seen.insert(card.name.as_str()) {
+            continue;
+        }
+        let meta = crate::universe::card_universe(conn, &card.name, &card.set_code).ok()?;
+        let qty = deck
+            .sections
+            .iter()
+            .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+            .flat_map(|(_, e)| e.iter())
+            .filter(|e| e.name == card.name)
+            .map(|e| e.quantity)
+            .sum::<i64>();
+        match meta.universe {
+            "beyond" => {
+                beyond += qty;
+                ub_cards.push(card.name.clone());
+                if let Some(franchise) = &meta.franchise {
+                    *franchises.entry(franchise.clone()).or_insert(0) += qty;
+                }
+            }
+            _ => multiverse += qty,
+        }
+    }
+    Some(serde_json::json!({
+        "multiverse": multiverse,
+        "universes_beyond": beyond,
+        "franchises": franchises,
+        "ub_cards": ub_cards,
+    }))
+}
+
 /// Entry point for `stm deck show <name>` (also the `stm deck <name>` sugar).
 pub fn show(
     paths: &crate::paths::Paths,
@@ -648,13 +712,19 @@ pub fn show(
     let assigned = super::ownership::deck_assigned_map(conn, name)?;
     let available = super::ownership::available_map(conn, name)?;
     let cards_by_name = super::stats::lookup_names(conn, &deck);
-    let slots = super::ownership::slot_map(&deck, &available, &assigned, |name| {
+    let held_elsewhere = super::ownership::held_elsewhere_map(conn, name)?;
+    let slots = super::ownership::slot_map(&deck, &available, &assigned, &held_elsewhere, |name| {
         cards_by_name
             .get(name)
             .is_some_and(super::stats::is_basic_land)
     });
     let prices = deck_prices(conn, &deck);
     let primer = primer_file(paths, name);
+    let universe_census = universe_census(conn, &deck, &cards_by_name);
+    // Full set names per code for the JSON entries (a codes→names cache so
+    // a 100-card deck reads ~2 set rows, not 100).
+    let mut set_names: std::collections::HashMap<String, Option<String>> =
+        std::collections::HashMap::new();
 
     if json {
         let sections: Vec<serde_json::Value> = deck
@@ -664,7 +734,7 @@ pub fn show(
                 let lines: Vec<serde_json::Value> = entries
                     .iter()
                     .map(|entry| {
-                        let (owned, elsewhere) =
+                        let (assigned_here, elsewhere_binder) =
                             owned_map.get(&entry.name).copied().unwrap_or((0, 0));
                         let basic = cards_by_name
                             .get(&entry.name)
@@ -676,15 +746,41 @@ pub fn show(
                             _ if basic => "basic",
                             _ => "missing",
                         };
+                        // `owned` = copies available to this deck (assigned
+                        // here + binders), never contradicting coverage.
+                        // `owned_elsewhere` = other decks' copies.
+                        let owned = slot
+                            .map(|s| s.in_deck + s.in_binder)
+                            .unwrap_or(assigned_here + elsewhere_binder);
+                        let missing_reason: serde_json::Value = if coverage == "missing" {
+                            match slot.map(|s| s.held_elsewhere > 0) {
+                                Some(true) => serde_json::json!("held_elsewhere"),
+                                _ => serde_json::json!("not_owned"),
+                            }
+                        } else {
+                            serde_json::Value::Null
+                        };
                         serde_json::json!({
                             "quantity": entry.quantity,
                             "name": entry.name,
                             "set": entry.set_code,
+                            "set_name": match &entry.set_code {
+                                None => serde_json::Value::Null,
+                                Some(code) if code.is_empty() => serde_json::Value::Null,
+                                Some(code) => set_names
+                                    .entry(code.clone())
+                                    .or_insert_with(|| set_name_for(conn, code))
+                                    .clone()
+                                    .map(serde_json::Value::from)
+                                    .unwrap_or(serde_json::Value::Null),
+                            },
                             "collector_number": entry.collector_number,
                             "foil": entry.foil,
                             "owned": owned,
-                            "owned_elsewhere": elsewhere,
+                            "assigned_to_this_deck": slot.map(|s| s.in_deck).unwrap_or(assigned_here),
+                            "owned_elsewhere": slot.map(|s| s.held_elsewhere).unwrap_or(0),
                             "covered_by": coverage,
+                            "missing_reason": missing_reason,
                             "basic_land": basic,
                             "price_usd": prices.get(&entry.name).and_then(|p| *p),
                         })
@@ -694,7 +790,7 @@ pub fn show(
             })
             .collect();
         let (owned_value, missing_cost) = deck_value(&deck, &cards_by_name, &prices, &available);
-        let v = serde_json::json!({
+        let mut v = serde_json::json!({
             "name": name,
             "cards": deck.maindeck_total(),
             "sideboard_cards": deck.sideboard_total(),
@@ -703,6 +799,11 @@ pub fn show(
             "missing_cost": round2(missing_cost),
             "sections": sections,
         });
+        if let Some(obj) = v.as_object_mut()
+            && let Some(census) = universe_census
+        {
+            obj.insert("universe_census".into(), census);
+        }
         println!("{}", serde_json::to_string_pretty(&v)?);
         return Ok(crate::cli::codes::OK);
     }
@@ -723,14 +824,30 @@ pub fn show(
     print_overview(&styles, conn, &deck, name);
     // To-buy block: the missing slots at the cheapest printing, most
     // expensive first, with the running total (same math as `deck buylist`).
-    let mut to_buy: Vec<(String, i64, f64)> = slots
+    // The reason names the holding deck when the copy exists elsewhere.
+    let mut to_buy: Vec<(String, i64, f64, String)> = slots
         .iter()
         .filter(|(_, slot)| slot.missing > 0)
         .map(|(name, slot)| {
+            let reason = if slot.held_elsewhere > 0 {
+                let (_, holders) = &held_elsewhere[name];
+                if holders.len() == 1 {
+                    format!("1 copy in {}", holders[0])
+                } else {
+                    format!(
+                        "{} copies across {}",
+                        slot.held_elsewhere,
+                        holders.join(", ")
+                    )
+                }
+            } else {
+                "not owned".to_string()
+            };
             (
                 name.clone(),
                 slot.missing,
                 prices.get(name).copied().flatten().unwrap_or(0.0),
+                reason,
             )
         })
         .collect();
@@ -742,12 +859,13 @@ pub fn show(
     if !to_buy.is_empty() {
         println!();
         println!("{}", styles.header("To buy"));
-        for (card, qty, unit) in to_buy.iter().take(8) {
+        for (card, qty, unit, reason) in to_buy.iter().take(8) {
             println!(
-                "  {:>2}  {}  {}",
+                "  {:>2}  {}  {} {}",
                 qty,
                 styles.card_name(card),
-                styles.dim(&format!("@${unit:.2}"))
+                styles.dim(&format!("@${unit:.2}")),
+                styles.dim(&format!("({reason})"))
             );
         }
         if to_buy.len() > 8 {
@@ -756,15 +874,37 @@ pub fn show(
                 styles.dim(&format!("… and {} more lines", to_buy.len() - 8))
             );
         }
-        let total: f64 = to_buy.iter().map(|(_, q, p)| (*q as f64) * p).sum();
+        let total: f64 = to_buy.iter().map(|(_, q, p, _)| (*q as f64) * p).sum();
         println!(
             "  {} {}",
             styles.dim(&format!(
                 "{} copies · est.",
-                to_buy.iter().map(|(_, q, _)| q).sum::<i64>()
+                to_buy.iter().map(|(_, q, _, _)| q).sum::<i64>()
             )),
             styles.money(total),
         );
+    }
+    if universe_census.is_some()
+        && let Some(census) = &universe_census
+    {
+        let beyond = census["universes_beyond"].as_i64().unwrap_or(0);
+        if beyond > 0 {
+            let names = census["ub_cards"]
+                .as_array()
+                .map(|cards| {
+                    cards
+                        .iter()
+                        .filter_map(|c| c.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            println!();
+            println!(
+                "{}",
+                styles.note(&format!("{beyond} Universes Beyond cards: {names}"))
+            );
+        }
     }
     for (section, entries) in &deck.sections {
         println!();
@@ -797,6 +937,18 @@ pub fn show(
                     crate::output::GlyphKind::Bad,
                 )
             };
+            // Full set name when the deck line recorded a set and the store
+            // knows its name (ManaBox txt keeps the code).
+            let set_note = match &entry.set_code {
+                Some(code) => {
+                    let name = set_name_for(conn, code);
+                    match name {
+                        Some(full) => format!(" ({full})"),
+                        None => String::new(),
+                    }
+                }
+                None => String::new(),
+            };
             let elsewhere = if elsewhere > 0 && !basic {
                 styles.dim(&format!(" (+{elsewhere} elsewhere)"))
             } else {
@@ -810,224 +962,17 @@ pub fn show(
                 _ => String::new(),
             };
             println!(
-                "  {:>2} {} {}  {owned_display}{elsewhere}{price_note}",
+                "  {:>2} {} {}{}  {owned_display}{elsewhere}{price_note}",
                 entry.quantity,
                 styles.card_name(&entry.name),
                 styles.dim(rest),
+                styles.dim(&set_note),
             );
         }
     }
     Ok(crate::cli::codes::OK)
 }
+
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::deck::ownership;
-
-    #[test]
-    fn valid_names_reject_paths() {
-        assert!(valid_deck_name("Stationz"));
-        assert!(valid_deck_name("Token Triumph"));
-        assert!(valid_deck_name("Froggy!"));
-        assert!(!valid_deck_name("a/b"));
-        assert!(!valid_deck_name(".."));
-        assert!(!valid_deck_name(""));
-        assert!(!valid_deck_name("x\ny"));
-    }
-
-    /// Connection plus its backing tempdir (must outlive the connection).
-    fn seeded_conn() -> (tempfile::TempDir, Connection) {
-        let tmp = tempfile::tempdir().unwrap();
-        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
-        conn.execute(
-            "INSERT INTO cards (name, oracle_id) VALUES ('Lightning Bolt', 'oid')",
-            [],
-        )
-        .unwrap();
-        (tmp, conn)
-    }
-
-    fn silent_out() -> crate::output::Output {
-        crate::output::Output::new(true, false, false)
-    }
-
-    fn add_collection_row(
-        conn: &Connection,
-        binder: &str,
-        binder_type: &str,
-        name: &str,
-        set: &str,
-        cn: &str,
-        qty: i64,
-    ) {
-        conn.execute(
-            "INSERT INTO collection (name, set_code, collector_number, foil, binder, binder_type, quantity)
-             VALUES (?1, ?2, ?3, 'normal', ?4, ?5, ?6)",
-            rusqlite::params![name, set, cn, binder, binder_type, qty],
-        )
-        .unwrap();
-    }
-
-    #[test]
-    fn any_printing_fills_a_deck_line() {
-        let (_tmp, conn) = seeded_conn();
-        // Owns a different set version than the deck line names.
-        add_collection_row(
-            &conn,
-            "Collect",
-            "binder",
-            "Lightning Bolt",
-            "m11",
-            "148",
-            4,
-        );
-        let owned = owned_map_for_deck(&conn, "TestDeck").unwrap();
-        // Nothing assigned to the deck itself, but 4 sit in a binder.
-        assert_eq!(owned.get("Lightning Bolt"), Some(&(0, 4)));
-
-        add_collection_row(&conn, "TestDeck", "deck", "Lightning Bolt", "2xm", "124", 2);
-        let owned = owned_map_for_deck(&conn, "TestDeck").unwrap();
-        // Deck-assigned copies count regardless of print.
-        assert_eq!(owned.get("Lightning Bolt"), Some(&(2, 4)));
-    }
-
-    #[test]
-    fn delete_removes_files_keeps_ownership() {
-        let (tmp, conn) = seeded_conn();
-        let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
-        std::fs::create_dir_all(paths.decks_dir()).unwrap();
-        std::fs::write(paths.deck_file("Froggy"), "// DECK\n3 Lightning Bolt\n").unwrap();
-        add_collection_row(&conn, "Froggy", "deck", "Lightning Bolt", "m11", "146", 2);
-        let mut out = silent_out();
-
-        let code = delete(&paths, &conn, &mut out, "Froggy").unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-        assert!(!paths.deck_file("Froggy").exists());
-        // Ownership rows are untouched.
-        let copies: i64 = conn
-            .query_row(
-                "SELECT COALESCE(SUM(quantity), 0) FROM collection WHERE binder_type = 'deck'",
-                [],
-                |r| r.get(0),
-            )
-            .unwrap();
-        assert_eq!(copies, 2);
-        // Deleting again fails with no-results.
-        let code = delete(&paths, &conn, &mut out, "Froggy").unwrap();
-        assert_eq!(code, crate::cli::codes::NO_RESULTS);
-    }
-
-    #[test]
-    fn registered_deck_names_power_the_gap_display() {
-        let (_tmp, conn) = seeded_conn();
-        add_collection_row(
-            &conn,
-            "Ghost Deck",
-            "deck",
-            "Lightning Bolt",
-            "m11",
-            "146",
-            2,
-        );
-        add_collection_row(
-            &conn,
-            "Collect",
-            "binder",
-            "Lightning Bolt",
-            "m11",
-            "148",
-            1,
-        );
-        let names = registered_deck_names(&conn).unwrap();
-        assert_eq!(names, vec!["Ghost Deck"]);
-        // Binder copies of deck names count in the binder bucket (they can
-        // fill deck slots).
-        assert_eq!(owned_copies(&conn, "Ghost Deck").unwrap(), (2, 1));
-    }
-
-    /// A deck txt + primer pair inside a temp paths tree.
-    fn deck_paths() -> (tempfile::TempDir, crate::paths::Paths) {
-        let tmp = tempfile::tempdir().unwrap();
-        let paths = crate::paths::Paths::new(tmp.path().join("root"));
-        std::fs::create_dir_all(paths.decks_dir()).unwrap();
-        (tmp, paths)
-    }
-
-    #[test]
-    fn missing_cost_matches_buylist_total() {
-        // The two code paths must agree: deck_value (show) uses the same
-        // deck+binders coverage as buylist's missing math.
-        let (_tmp, paths) = deck_paths();
-        let (tmp2, conn) = seeded_conn();
-        let _keep_alive = tmp2;
-        // 3 needed, 1 deck-assigned + 1 binder → 1 missing.
-        add_collection_row(&conn, "TestDeck", "deck", "Lightning Bolt", "m11", "148", 1);
-        add_collection_row(
-            &conn,
-            "Collect",
-            "binder",
-            "Lightning Bolt",
-            "m11",
-            "148",
-            1,
-        );
-        conn.execute(
-            "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
-                lang, rarity, finishes, released_at, usd, usd_foil, updated_at)
-             VALUES ('a', 'Lightning Bolt', 'm11', '148', 'en', 'common',
-                '[\"nonfoil\",\"foil\"]', '2020-01-01', 0.5, NULL, 't')",
-            [],
-        )
-        .unwrap();
-        let deck = crate::deck::Deck::parse("// DECK\n3 Lightning Bolt\n").unwrap();
-        std::fs::write(paths.deck_file("TestDeck"), deck.to_text()).unwrap();
-
-        let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-        let prices = deck_prices(&conn, &deck);
-        let available = ownership::available_map(&conn, "TestDeck").unwrap();
-        let (_, missing_cost) = deck_value(&deck, &cards_by_name, &prices, &available);
-
-        // Buylist path over the same collection state.
-        let rows =
-            super::super::buylist::missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
-        let buylist_total: f64 = rows
-            .iter()
-            .map(|r| r.price_usd.unwrap_or(0.0) * r.quantity as f64)
-            .sum();
-        assert_eq!(
-            round2(missing_cost),
-            round2(buylist_total),
-            "show missing_cost must equal buylist total"
-        );
-        assert_eq!(rows.len(), 1);
-        assert_eq!(rows[0].quantity, 1);
-    }
-
-    #[test]
-    fn slot_map_classifies_coverage() {
-        let deck = super::super::Deck::parse("// DECK\n3 Bolt\n2 Shock\n").unwrap();
-        let assigned = [("Bolt".to_string(), 3i64)].into_iter().collect();
-        let available = [("Bolt".to_string(), 4i64), ("Shock".to_string(), 1i64)]
-            .into_iter()
-            .collect();
-        let slots = ownership::slot_map(&deck, &available, &assigned, |_| false);
-        let bolt = &slots["Bolt"];
-        assert_eq!(bolt.coverage, ownership::Coverage::Deck);
-        assert_eq!(bolt.in_deck, 3);
-        assert_eq!(bolt.in_binder, 1);
-        assert_eq!(bolt.missing, 0);
-        let shock = &slots["Shock"];
-        assert_eq!(shock.coverage, ownership::Coverage::Missing);
-        assert_eq!(shock.missing, 1);
-        // Binder-only coverage: 3 needed, 0 deck, 3 binder.
-        let assigned2: std::collections::HashMap<String, i64> = Default::default();
-        let available2 = [("Bolt".to_string(), 3i64)].into_iter().collect();
-        let slots = ownership::slot_map(
-            &super::super::Deck::parse("// DECK\n3 Bolt\n").unwrap(),
-            &available2,
-            &assigned2,
-            |_| false,
-        );
-        assert_eq!(slots["Bolt"].coverage, ownership::Coverage::Binder);
-    }
-}
+#[path = "tests/store_tests.rs"]
+mod store_tests;

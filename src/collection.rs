@@ -400,8 +400,23 @@ pub struct Stats {
     pub color_identity: std::collections::BTreeMap<String, i64>,
     pub curve: std::collections::BTreeMap<String, i64>,
     pub rarity: std::collections::BTreeMap<String, i64>,
-    pub top_sets: Vec<(String, i64)>,
+    /// Most-represented sets: (full name, code, copies). The name is the
+    /// code when the store has no set metadata yet.
+    pub top_sets: Vec<(String, String, i64)>,
     pub binders: Vec<(String, String, i64, i64)>,
+    /// Cards + value per universe ("multiverse" / "beyond"), then per
+    /// franchise inside the beyond bucket.
+    pub by_universe: std::collections::BTreeMap<String, Bucket>,
+    pub by_franchise: std::collections::BTreeMap<String, Bucket>,
+}
+
+/// One census bucket: copies and their value at the owned printings.
+#[derive(Debug, Default, Clone)]
+pub struct Bucket {
+    /// Copies in the bucket.
+    pub cards: i64,
+    /// Their value from the exact owned printings' price snapshots.
+    pub value: f64,
 }
 
 /// Aggregate the whole collection (binders and decks).
@@ -439,6 +454,8 @@ pub fn compute_stats(conn: &Connection) -> anyhow::Result<Stats> {
         ))
     })?;
     let mut sets: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
+    let mut by_universe: std::collections::BTreeMap<String, Bucket> = Default::default();
+    let mut by_franchise: std::collections::BTreeMap<String, Bucket> = Default::default();
     let mut binder_totals: std::collections::BTreeMap<(String, String), i64> =
         std::collections::BTreeMap::new();
     let mut unique_names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
@@ -485,10 +502,22 @@ pub fn compute_stats(conn: &Connection) -> anyhow::Result<Stats> {
             }
             *sets.entry(set_code.clone()).or_insert(0) += quantity;
             // Value from the exact owned printing's price snapshot.
-            if let Ok(Some(unit)) =
+            let unit =
                 crate::prints::price_for_owned(conn, &name, &set_code, &collector_number, &foil)
-            {
-                stats.total_value += unit * quantity as f64;
+                    .ok()
+                    .flatten()
+                    .unwrap_or(0.0);
+            stats.total_value += unit * quantity as f64;
+            // Universe bucket: UB decision spans every print of the name.
+            // Copies and value both roll up (the plan's "cards + value").
+            let (universe_key, franchise) = universe_bucket(conn, &name, &set_code);
+            let bucket = by_universe.entry(universe_key.to_string()).or_default();
+            bucket.cards += quantity;
+            bucket.value += unit * quantity as f64;
+            if let Some(f) = franchise {
+                let bucket = by_franchise.entry(f).or_default();
+                bucket.cards += quantity;
+                bucket.value += unit * quantity as f64;
             }
         }
         let _ = (type_line, identity);
@@ -496,12 +525,45 @@ pub fn compute_stats(conn: &Connection) -> anyhow::Result<Stats> {
     stats.unique_cards = unique_names.len();
     let mut top: Vec<(String, i64)> = sets.into_iter().collect();
     top.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
-    stats.top_sets = top.into_iter().take(5).collect();
+    // Full set names beside the codes (JSON keeps the code as the key and
+    // gains `set_name`; the human line prints the full name).
+    stats.top_sets = top
+        .into_iter()
+        .take(5)
+        .map(|(code, n)| {
+            let name = conn
+                .query_row(
+                    "SELECT set_name FROM sets WHERE set_code = ?1",
+                    [&code.to_ascii_lowercase()],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok()
+                .unwrap_or_else(|| code.clone());
+            (name, code, n)
+        })
+        .collect();
+    stats.by_universe = by_universe;
+    stats.by_franchise = by_franchise;
     stats.binders = binder_totals
         .into_iter()
         .map(|((name, kind), cards)| (name, kind, cards, 0))
         .collect();
     Ok(stats)
+}
+
+/// Universe bucket for one collection row: `("beyond", Some(franchise))`
+/// when every stored print of the name is UB (franchise only when the set
+/// maps to one), else `("multiverse", None)`.
+fn universe_bucket(
+    conn: &Connection,
+    name: &str,
+    set_code: &str,
+) -> (&'static str, Option<String>) {
+    let meta = crate::universe::card_universe(conn, name, set_code).unwrap_or_default();
+    match meta.universe {
+        "beyond" => ("beyond", meta.franchise),
+        _ => ("multiverse", None),
+    }
 }
 
 /// WUBRG-sorted color key for grouping ("G,U" style).
@@ -549,6 +611,17 @@ pub fn show_stats(
     Ok(crate::cli::codes::OK)
 }
 
+fn bucket_map(
+    m: &std::collections::BTreeMap<String, Bucket>,
+) -> serde_json::Map<String, serde_json::Value> {
+    serde_json::Map::<String, serde_json::Value>::from_iter(m.iter().map(|(k, b)| {
+        (
+            k.clone(),
+            serde_json::json!({"cards": b.cards, "value": round2(b.value)}),
+        )
+    }))
+}
+
 fn stats_json(stats: &Stats) -> serde_json::Value {
     let map = |m: &std::collections::BTreeMap<String, i64>| {
         serde_json::Map::<String, serde_json::Value>::from_iter(
@@ -564,7 +637,15 @@ fn stats_json(stats: &Stats) -> serde_json::Value {
         "color_identity": map(&stats.color_identity),
         "curve": map(&stats.curve),
         "rarity": map(&stats.rarity),
-        "top_sets": stats.top_sets.iter().map(|(s, n)| serde_json::json!({"set": s, "cards": n})).collect::<Vec<_>>(),
+        "top_sets": stats
+            .top_sets
+            .iter()
+            .map(|(name, code, n)| {
+                serde_json::json!({"set": code, "set_name": name, "cards": n})
+            })
+            .collect::<Vec<_>>(),
+        "by_universe": bucket_map(&stats.by_universe),
+        "by_franchise": bucket_map(&stats.by_franchise),
         "locations": stats.binders.iter().map(|(name, kind, cards, _)| serde_json::json!({
             "name": name, "type": kind, "cards": cards,
         })).collect::<Vec<_>>(),
@@ -672,9 +753,31 @@ fn print_stats(out: &crate::output::Output, stats: &Stats) {
         let sets: Vec<String> = stats
             .top_sets
             .iter()
-            .map(|(set, n)| format!("{} {}", styles.dim(set), styles.thousands(*n)))
+            .map(|(name, code, n)| {
+                format!(
+                    "{} {}",
+                    styles.dim(&format!("{name} ({code})")),
+                    styles.thousands(*n)
+                )
+            })
             .collect();
         println!("{}{}", label("Top sets"), sets.join(" · "));
+    }
+    if !stats.by_universe.is_empty() {
+        let bits: Vec<String> = stats
+            .by_universe
+            .iter()
+            .map(|(k, b)| format!("{} {}", styles.dim(k), styles.thousands(b.cards)))
+            .collect();
+        println!("{}{}", label("Universes"), bits.join(" · "));
+        let bits: Vec<String> = stats
+            .by_franchise
+            .iter()
+            .map(|(k, b)| format!("{} {}", styles.dim(k), styles.thousands(b.cards)))
+            .collect();
+        if !bits.is_empty() {
+            println!("{}{}", label(""), bits.join(" · "));
+        }
     }
 
     println!("{}{}", label("Locations"), styles.dim("binder / deck"));
@@ -772,7 +875,9 @@ pub fn run_query(
             .iter()
             .map(|h| {
                 let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
-                let mut v = crate::card::card_json(&h.card, &tag_index, &range);
+                let universe = crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)
+                    .unwrap_or_default();
+                let mut v = crate::card::card_json(&h.card, &tag_index, &range, &universe);
                 v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
                 v["owned"] = serde_json::json!(h.owned);
                 v["locations"] = serde_json::json!(
