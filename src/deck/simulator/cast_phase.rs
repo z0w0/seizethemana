@@ -26,6 +26,14 @@ fn drain_mult_in(deck: &SimDeck) -> u32 {
 /// Play one land from the hand (untapped first), fetch a search land,
 /// and fire its ETB triggers. Returns true when a land was played.
 pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
+    // Land/spell MDFCs play their land face only when the hand holds no
+    // other land to play this turn; otherwise they stay as spells.
+    let mdfc_fallback = |st: &GameState| {
+        st.hand
+            .iter()
+            .position(|idx| deck.cards[*idx].is_mdfc_spell)
+            .filter(|_| !st.hand.iter().any(|i| deck.cards[*i].role == Role::Land))
+    };
     let land_pos = st
         .hand
         .iter()
@@ -34,7 +42,8 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
             st.hand
                 .iter()
                 .position(|idx| deck.cards[*idx].role == Role::Land)
-        });
+        })
+        .or_else(|| mdfc_fallback(st));
     let Some(pos) = land_pos else {
         return false;
     };
@@ -64,6 +73,8 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
 /// The cast pass: cheapest castable spells first, pip-aware. Updates the
 /// pool, ETB triggers, and the mana-ready curve. Returns nothing; the
 /// caller owns every mutated binding.
+// The 11 parameters are the game state the cast phase needs in full;
+// a parameter struct would just be read back out field by field.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn cast_phase(
     deck: &SimDeck,
@@ -165,7 +176,9 @@ pub(super) fn cast_phase(
             st.graveyard.push(victim_card);
         }
         if card.additional_cost_life > 0 {
-            st.drained += card.additional_cost_life;
+            // Life the goldfish pays itself is not damage dealt; keep it
+            // out of the lethal census.
+            st.life_paid += card.additional_cost_life;
         }
         // Producers join the battlefield: rocks tap at once, creatures
         // from next turn (summoning sickness). Vehicles and spacecraft
@@ -326,6 +339,21 @@ pub(super) fn cast_phase(
                         Some(idx),
                     );
                 }
+                super::model::XClass::RevealPermanents => {
+                    // Best case the top X cards all become permanents on
+                    // the battlefield (capped at 8).
+                    for _ in 0..x.min(8) {
+                        if let Some(i) = st.library.pop() {
+                            st.battlefield_seen.entry(i).or_insert(turn as u32);
+                            st.battlefield.push(new_perm(deck, i, turn as u32, false));
+                        }
+                    }
+                }
+                super::model::XClass::Counters => {
+                    // The entered X +1/+1 counters join the body power
+                    // (the cast path stored X as the entry counters via
+                    // the X sentinel).
+                }
             }
         }
         // Prowess census: noncreature spells cast this turn. The same
@@ -388,6 +416,82 @@ pub(super) fn cast_phase(
                 .max_by_key(|p| card_of(deck, p).animate_at().unwrap_or(0))
         {
             perm.counters += card.counters_on_cast;
+        }
+        // Cascade: one free cast of the cheapest cheaper castable card
+        // from the library. Single level, no cascade chaining. The free
+        // cast counts fully: ETB triggers fire, per-cast engines fire,
+        // and the card leaves the library into the seen census.
+        if card.has_cascade
+            && let Some(cascade_pos) = st
+                .library
+                .iter()
+                .enumerate()
+                .filter(|(_, i)| {
+                    let free = &deck.cards[**i];
+                    free.role != Role::Land
+                        && free.min_cost.total() < card.min_cost.total()
+                        && !free.has_cascade
+                })
+                // The cheapest match wins; a tie keeps the deeper
+                // library position (last found).
+                .max_by_key(|(pos, i)| (std::cmp::Reverse(deck.cards[**i].min_cost.total()), *pos))
+                .map(|(pos, _)| pos)
+        {
+            let free_idx = st.library.remove(cascade_pos);
+            let free_card = &deck.cards[free_idx];
+            st.seen += 1;
+            st.awareness_cards += 1;
+            if free_card.is_creature {
+                st.battlefield_seen.entry(free_idx).or_insert(turn as u32);
+                st.battlefield.push(InPlay {
+                    card: free_idx,
+                    tapped: false,
+                    sick: true,
+                    counters: free_card.enter_counters,
+                    animated: false,
+                    crewed: false,
+                    entered_turn: turn,
+                    saga_step: 0,
+                    fired: false,
+                    blink_pending: false,
+                    loyalty: free_card.starting_loyalty.unwrap_or(0),
+                    equipped: false,
+                    equip_host: None,
+                    is_commander: false,
+                    commander_slot: 0,
+                });
+            }
+            // Per-cast engines fire for the free cast (the cheapest path
+            // applies the same credit the real cast would).
+            if let Some(y) = &free_card.mana_per_cast {
+                for _ in 0..st.prowess_casts {
+                    add_yield_turns_empty_board(y, pool, turn as u32);
+                }
+            }
+            if let Some(y) = &free_card.mana_on_cast {
+                add_yield_turns_empty_board(y, pool, turn as u32);
+            }
+            if free_card.drain_on_cast > 0 {
+                st.drained += free_card.drain_on_cast * drain_mult_in(deck);
+            }
+            for _ in 0..free_card.draws_on_cast {
+                if let Some(i) = st.library.pop() {
+                    st.hand.push(i);
+                    st.seen += 1;
+                    st.awareness_cards += 1;
+                }
+            }
+            if free_card.tokens_on_cast > 0 {
+                apply_effect_at(
+                    deck,
+                    &Effect::Tokens(free_card.tokens_on_cast.min(8)),
+                    st,
+                    turn as u32,
+                    false,
+                    Some(free_idx),
+                );
+            }
+            st.prowess_casts += 1;
         }
     }
     mana_spent[turn - 1] += spent_total as f64;

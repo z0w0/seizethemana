@@ -10,6 +10,50 @@ pub fn terminal_width() -> usize {
         .max(40)
 }
 
+/// Currency used for every price this tool reads and prints. Scryfall
+/// supplies prices in USD only; when another source lands, swap this and
+/// the `money` symbol branch together.
+pub const CURRENCY: &str = "USD";
+
+/// Thousands-grouped integer string ("1,512", "-1,234") for counts.
+pub fn grouped_int(n: i64) -> String {
+    let digits = n.abs().to_string();
+    let mut grouped = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            grouped.push(',');
+        }
+        grouped.push(c);
+    }
+    if n < 0 {
+        format!("-{grouped}")
+    } else {
+        grouped
+    }
+}
+
+/// Money text with an explicit currency: `$1,234.50 USD`.
+pub fn money_text(amount: f64) -> String {
+    let dollars = thousands_amount(amount);
+    format!("${dollars} {CURRENCY}")
+}
+
+/// Thousands-grouped money amount with two decimals ("1,234.50").
+fn thousands_amount(amount: f64) -> String {
+    let fixed = format!("{amount:.2}");
+    let (int_part, frac_part) = fixed.split_once('.').unwrap_or((fixed.as_str(), ""));
+    let group = if let Ok(n) = int_part.parse::<i64>() {
+        grouped_int(n)
+    } else {
+        int_part.to_string()
+    };
+    if frac_part.is_empty() {
+        group
+    } else {
+        format!("{group}.{frac_part}")
+    }
+}
+
 /// Rendering hub: decides between human (colored) and JSON output once, at
 /// startup, so command code never branches on `--json` mid-render.
 ///
@@ -396,9 +440,11 @@ impl Styles {
         }
     }
 
-    /// Money amount: `$975.40`, bold green when color is on.
+    /// Money amount with currency: `$975.40 USD`, bold green when color is
+    /// on. USD is the only supported currency for now; new currencies plug
+    /// in by adding a symbol branch here.
     pub fn money(&self, amount: f64) -> String {
-        let text = format!("${amount:.2}");
+        let text = format!("${} {CURRENCY}", thousands_amount(amount));
         if self.color {
             text.bold().green().to_string()
         } else {
@@ -408,19 +454,7 @@ impl Styles {
 
     /// Thousands-separated integer ("1,512") for counts and dollar totals.
     pub fn thousands(&self, n: i64) -> String {
-        let digits = n.abs().to_string();
-        let mut grouped = String::new();
-        for (i, c) in digits.chars().enumerate() {
-            if i > 0 && (digits.len() - i).is_multiple_of(3) {
-                grouped.push(',');
-            }
-            grouped.push(c);
-        }
-        if n < 0 {
-            format!("-{grouped}")
-        } else {
-            grouped
-        }
+        grouped_int(n)
     }
 
     /// Wrap `text` to `width` columns, preserving existing newlines.
@@ -553,6 +587,16 @@ mod tests {
         assert_eq!(s.thousands(1_512), "1,512");
         assert_eq!(s.thousands(-1_234_567), "-1,234,567");
         assert_eq!(s.thousands(0), "0");
+    }
+
+    #[test]
+    fn money_shows_currency_and_grouping() {
+        let out = Output::new(true, false, false); // color off
+        let s = out.styles();
+        assert_eq!(s.money(975.4), "$975.40 USD");
+        assert_eq!(s.money(1234.5), "$1,234.50 USD");
+        assert_eq!(s.money(0.0), "$0.00 USD");
+        assert_eq!(s.money(-1_234_567.895), "$-1,234,567.90 USD");
     }
 
     #[test]

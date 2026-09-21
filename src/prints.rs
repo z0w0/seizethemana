@@ -41,6 +41,99 @@ pub struct PrintRange {
     pub priciest_foil: Option<Print>,
 }
 
+impl PrintRange {
+    /// The card's effective price: the normal-finish cheapest, or the
+    /// foil cheapest when the normal finish is unpriced. None when
+    /// unpriced.
+    pub fn price(&self) -> Option<f64> {
+        self.cheapest
+            .as_ref()
+            .and_then(|p| p.usd)
+            .or_else(|| self.cheapest_foil.as_ref().and_then(|p| p.usd_foil))
+    }
+}
+
+/// The human note for a price cap: one wording across every command.
+pub fn price_cap_note(max_price: f64, hidden: usize) -> String {
+    format!("candidates capped at ${max_price:.2} USD; {hidden} unpriced or above-cap cards hidden")
+}
+
+/// Names whose effective price (normal-finish cheapest, else cheapest
+/// foil, released English printings) exists and is at or under the cap.
+/// Unpriced cards are excluded (strict budget reading). This is the
+/// SQL-side budget filter for search: the search can pre-drop
+/// above-cap candidates before ranking.
+pub fn names_under_price(conn: &Connection, max_price: f64) -> anyhow::Result<Vec<String>> {
+    let today = crate::release::today();
+    let mut out: Vec<String> = Vec::new();
+    // Cheapest normal finish per name; foil-only cards fall back to
+    // their cheapest foil printing.
+    let mut normal = conn.prepare(
+        "SELECT name, MIN(CAST(usd AS REAL)) FROM card_prints
+         WHERE lang = 'en' AND (released_at = '' OR released_at <= ?1)
+           AND usd IS NOT NULL
+         GROUP BY name",
+    )?;
+    let mut rows = normal.query(rusqlite::params![today])?;
+    while let Some(row) = rows.next()? {
+        let name: String = row.get(0)?;
+        let price: Option<f64> = row.get(1)?;
+        if price.is_some_and(|p| p <= max_price) {
+            out.push(name);
+        }
+    }
+    let mut foil = conn.prepare(
+        "SELECT name, MIN(CAST(usd_foil AS REAL)) FROM card_prints
+         WHERE lang = 'en' AND (released_at = '' OR released_at <= ?1)
+           AND usd_foil IS NOT NULL
+           AND name NOT IN (
+               SELECT name FROM card_prints
+               WHERE lang = 'en' AND (released_at = '' OR released_at <= ?2)
+                 AND usd IS NOT NULL
+           )
+         GROUP BY name",
+    )?;
+    let mut rows = foil.query(rusqlite::params![today, today])?;
+    while let Some(row) = rows.next()? {
+        let name: String = row.get(0)?;
+        let price: Option<f64> = row.get(1)?;
+        if price.is_some_and(|p| p <= max_price) {
+            out.push(name);
+        }
+    }
+    out.sort();
+    out.dedup();
+    Ok(out)
+}
+
+/// Retain only the items whose keyed name passes the price cap.
+/// Unpriced cards are excluded (strict budget reading). Returns the
+/// filtered items and how many rows the cap hid. Errors propagate: a
+/// failed price read must not silently hide every result.
+pub fn retain_by_price<T>(
+    conn: &Connection,
+    items: Vec<T>,
+    name_of: impl Fn(&T) -> &str,
+    max_price: f64,
+) -> anyhow::Result<(Vec<T>, usize)> {
+    let names: Vec<String> = items.iter().map(|i| name_of(i).to_string()).collect();
+    let ranges = price_ranges(conn, &names)?;
+    let mut kept = Vec::new();
+    let mut hidden = 0usize;
+    for item in items {
+        if ranges
+            .get(name_of(&item))
+            .and_then(PrintRange::price)
+            .is_some_and(|p| p <= max_price)
+        {
+            kept.push(item);
+        } else {
+            hidden += 1;
+        }
+    }
+    Ok((kept, hidden))
+}
+
 const PRINT_COLUMNS: &str = "scryfall_id, name, set_code, collector_number, lang, finishes, released_at, usd, usd_foil, usd_etched, (SELECT set_name FROM sets WHERE sets.set_code = card_prints.set_code)";
 
 fn map_print(row: &rusqlite::Row<'_>) -> rusqlite::Result<Print> {
@@ -620,5 +713,76 @@ mod tests {
         assert_eq!(prints[0].set_code, "2xm");
         assert_eq!(prints[1].set_code, "m11");
         assert!(map["Nope"].is_empty());
+    }
+}
+
+#[cfg(test)]
+mod max_price_tests {
+    use super::*;
+
+    fn conn() -> Connection {
+        let tmp = tempfile::tempdir().unwrap();
+        crate::db::open(&tmp.path().join("t.db")).unwrap()
+    }
+
+    fn seed(conn: &Connection, name: &str, usd: Option<f64>, usd_foil: Option<f64>) {
+        conn.execute(
+            "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
+                lang, rarity, finishes, released_at, usd, usd_foil, updated_at)
+             VALUES (?1, ?1, 'm11', '148', 'en', 'rare', '[\"nonfoil\",\"foil\"]',
+                '2020-01-01', ?2, ?3, 't')",
+            rusqlite::params![name, usd, usd_foil],
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn cap_excludes_above_cap_and_unpriced() {
+        let conn = conn();
+        seed(&conn, "Cheap", Some(1.0), None);
+        seed(&conn, "Pricy", Some(9.0), None);
+        seed(&conn, "Ghost", None, None);
+        let names = vec!["Cheap".to_string(), "Pricy".into(), "Ghost".into()];
+        let (kept, hidden) = retain_by_price(&conn, names, |n| n, 2.0).unwrap();
+        assert_eq!(kept, vec!["Cheap".to_string()]);
+        assert_eq!(hidden, 2, "the above-cap and unpriced cards are hidden");
+    }
+
+    #[test]
+    fn cap_uses_foil_price_for_foil_only_rows() {
+        let conn = conn();
+        // A foil-only printing: the normal finish is unpriced, the foil
+        // carries the price the filter must read.
+        seed(&conn, "Foil Only", None, Some(1.5));
+        let names = vec!["Foil Only".to_string()];
+        let (kept, hidden) = retain_by_price(&conn, names, |n| n, 2.0).unwrap();
+        assert_eq!(kept, vec!["Foil Only".to_string()]);
+        assert_eq!(hidden, 0);
+        // And the cap excludes it when the foil price busts the cap.
+        let names = vec!["Foil Only".to_string()];
+        let (kept, _) = retain_by_price(&conn, names, |n| n, 1.0).unwrap();
+        assert!(kept.is_empty(), "foil price above the cap excludes");
+    }
+
+    #[test]
+    fn names_under_price_matches_retain_by_price() {
+        let conn = conn();
+        seed(&conn, "Cheap", Some(1.0), None);
+        seed(&conn, "Pricy", Some(9.0), None);
+        seed(&conn, "Foil Only", None, Some(1.5));
+        seed(&conn, "Ghost", None, None);
+        let under = names_under_price(&conn, 2.0).unwrap();
+        assert_eq!(under, vec!["Cheap".to_string(), "Foil Only".to_string()]);
+        // A tighter cap drops the foil-only card too.
+        let under = names_under_price(&conn, 1.0).unwrap();
+        assert_eq!(under, vec!["Cheap".to_string()]);
+    }
+
+    #[test]
+    fn price_cap_note_reads_one_way() {
+        assert_eq!(
+            price_cap_note(2.0, 3),
+            "candidates capped at $2.00 USD; 3 unpriced or above-cap cards hidden"
+        );
     }
 }

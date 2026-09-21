@@ -3,8 +3,8 @@
 // must report flood near its hypergeometric expectation (the old
 // drops-made detector read it as 0.0%); a 35-land deck must not flood.
 
-use super::aggregate::{find_problems, mana_base};
 use super::deck::build_sim_deck;
+use super::findings::{find_problems, mana_base};
 use super::game::run_game;
 use super::hypgeo::flood_expectation;
 use super::model::Role;
@@ -13,6 +13,14 @@ use crate::deck::grammar::{Deck, DeckEntry};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
+
+/// A filler spell row with no draw text (band fixtures must not trip the
+/// cheap-cantrip credit).
+fn dumb_spell_row(name: &str) -> (String, CardRow) {
+    let (n, mut row) = spell_row(name);
+    row.oracle_text = "Do nothing.".to_string();
+    (n, row)
+}
 
 /// A land card row (the store join is bypassed: lands parse from the type
 /// line even with empty oracle text).
@@ -285,7 +293,171 @@ fn mana_base_reports_its_bracket() {
     let (deck, cards) = deck_with_ramp(35, 9, "b3");
     let sim_deck = build_sim_deck(&deck, &cards, None);
     let verdict = mana_base(&sim_deck, 3, false);
-    assert_eq!(verdict.bracket, 3);
+    assert_eq!(verdict.bracket, Some(3));
+}
+
+/// A 60-card deck: no COMMANDER section, `n_lands` islands, and filler
+/// spells of the given cost. Filler costs set the average MV.
+fn sixty_card_deck(n_lands: usize, filler: &str) -> (Deck, HashMap<String, CardRow>) {
+    let mut deck = Deck::default();
+    let cards: HashMap<String, CardRow> = [land_row("Island"), dumb_spell_row(filler)]
+        .into_iter()
+        .collect();
+    let deck_section = deck.section_entries_mut("DECK");
+    for _ in 0..n_lands {
+        deck_section.push(DeckEntry {
+            quantity: 1,
+            name: "Island".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    for _ in 0..(60 - n_lands) {
+        deck_section.push(DeckEntry {
+            quantity: 1,
+            name: filler.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    (deck, cards)
+}
+
+fn sixty_card_deck_at_cost(n_lands: usize, cost: u32) -> (Deck, HashMap<String, CardRow>) {
+    let filler = format!("Filler {cost}");
+    let mut cards = sixty_card_deck(n_lands, &filler).1;
+    let mut card = dumb_spell_row(&filler).1;
+    card.mana_cost = format!("{{{cost}}}");
+    card.cmc = f64::from(cost);
+    cards.insert(filler.clone(), card);
+    let (deck, _) = sixty_card_deck(n_lands, &filler);
+    (deck, cards)
+}
+
+#[test]
+fn sixty_card_midrange_24_lands_on_target() {
+    // Plain 2-mana fillers: avg MV 2.0 sits at the midrange band's lower
+    // edge (2.0 <= avg < 3.0 → 22-25). 24 lands: on target, no bracket.
+    let (deck, cards) = sixty_card_deck(24, "Midrange Filler");
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, true);
+    assert_eq!(verdict.bracket, None, "60-card decks report no bracket");
+    assert_eq!(
+        verdict.bracket_target_lands,
+        [22, 25],
+        "{}",
+        verdict.verdict
+    );
+    assert_eq!(verdict.verdict, "on target", "{}", verdict.verdict);
+    assert_eq!(
+        verdict.bracket_target_ramp,
+        [0, 0],
+        "no ramp band for 60-card decks"
+    );
+}
+
+#[test]
+fn sixty_card_band_boundaries_follow_avg_mv() {
+    // avg MV 2.0 exactly (all 2-mana fillers) is the midrange band's lower
+    // edge: [22, 25]. 21 lands: add lands.
+    let (deck, cards) = sixty_card_deck_at_cost(21, 2);
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, true);
+    assert_eq!(verdict.bracket_target_lands, [22, 25]);
+    assert_eq!(verdict.verdict, "add 1 land (21 < band 22-25)");
+}
+
+#[test]
+fn sixty_card_control_low_lands_adds_lands() {
+    // avg MV 3.4 → control band [25, 28]; 20 lands: add 5.
+    let (deck, cards) = sixty_card_deck_at_cost(20, 4);
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, true);
+    assert_eq!(verdict.bracket_target_lands, [25, 28]);
+    assert_eq!(verdict.lands, 20);
+    assert_eq!(
+        verdict.verdict, "add 5 lands (20 < band 25-28)",
+        "{}",
+        verdict.verdict
+    );
+}
+
+#[test]
+fn sixty_card_aggro_low_band() {
+    // avg MV < 2 → aggro band [20, 22].
+    let (deck, cards) = sixty_card_deck_at_cost(21, 1);
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, true);
+    assert_eq!(verdict.bracket_target_lands, [20, 22]);
+    assert_eq!(verdict.verdict, "on target", "{}", verdict.verdict);
+}
+
+#[test]
+fn sixty_card_cheap_cantrips_lower_the_floor() {
+    // A control curve (25-28) with 8 cheap cantrips credits 2 lands:
+    // floor 23. 23 lands sit on target.
+    let mut deck = Deck::default();
+    let mut cards: HashMap<String, CardRow> = [
+        land_row("Island"),
+        spell_row("Big Filler"),
+        spell_row("Cheap Cantrip"),
+    ]
+    .into_iter()
+    .collect();
+    let mut big = spell_row("Big Filler").1;
+    big.mana_cost = "{4}".into();
+    big.cmc = 4.0;
+    cards.insert("Big Filler".to_string(), big);
+    let section = deck.section_entries_mut("DECK");
+    for _ in 0..23 {
+        section.push(DeckEntry {
+            quantity: 1,
+            name: "Island".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    for _ in 0..8 {
+        section.push(DeckEntry {
+            quantity: 1,
+            name: "Cheap Cantrip".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    for _ in 0..29 {
+        section.push(DeckEntry {
+            quantity: 1,
+            name: "Big Filler".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, true);
+    assert_eq!(
+        verdict.bracket_target_lands,
+        [23, 26],
+        "8 cheap cantrips credit 2 lands"
+    );
+    assert_eq!(verdict.verdict, "on target", "{}", verdict.verdict);
+}
+
+#[test]
+fn commander_bands_unchanged_regression() {
+    // The commander branch must keep its bracket bands (regression guard
+    // for the 60-card branch split).
+    let (deck, cards) = deck_with_ramp(35, 9, "cmd");
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let verdict = mana_base(&sim_deck, 3, false);
+    assert_eq!(verdict.bracket, Some(3));
+    assert_eq!(verdict.bracket_target_lands, [33, 38]);
+    assert_eq!(verdict.bracket_target_ramp, [8, 11]);
 }
 
 #[test]

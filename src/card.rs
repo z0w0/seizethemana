@@ -68,8 +68,8 @@ fn print_json(
 
 /// Full card detail as a JSON value (also used by collection JSON output).
 ///
-/// Price fields are per-printing: `price_usd`/`price_usd_foil` carry the
-/// cheapest released English printing, `max_price_usd`/`max_price_usd_foil`
+/// Price fields are per-printing and in US dollars: `price`/`price_foil`
+/// carry the cheapest released English printing, `max_price`/`max_price_foil`
 /// the most expensive. All four are null when no print is priced.
 pub fn card_json(
     card: &crate::db::CardRow,
@@ -117,10 +117,10 @@ pub fn card_json(
         "scryfall_id": card.scryfall_id,
         "released_at": card.released_at,
         "tags": tag_index.labels_for(&card.oracle_id),
-        "price_usd": usd,
-        "price_usd_foil": usd_foil,
-        "max_price_usd": max_usd,
-        "max_price_usd_foil": max_usd_foil,
+        "price": usd,
+        "price_foil": usd_foil,
+        "max_price": max_usd,
+        "max_price_foil": max_usd_foil,
     })
 }
 
@@ -433,10 +433,10 @@ mod tests {
         assert_eq!(v["legalities"]["modern"], "legal");
         assert_eq!(v["tags"], serde_json::json!([]));
         // Price members render (null here; no price row passed).
-        assert_eq!(v["price_usd"], serde_json::Value::Null);
-        assert_eq!(v["price_usd_foil"], serde_json::Value::Null);
-        assert_eq!(v["max_price_usd"], serde_json::Value::Null);
-        assert_eq!(v["max_price_usd_foil"], serde_json::Value::Null);
+        assert_eq!(v["price"], serde_json::Value::Null);
+        assert_eq!(v["price_foil"], serde_json::Value::Null);
+        assert_eq!(v["max_price"], serde_json::Value::Null);
+        assert_eq!(v["max_price_foil"], serde_json::Value::Null);
     }
 
     #[test]

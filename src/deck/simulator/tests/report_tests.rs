@@ -78,10 +78,21 @@ fn assumptions_list_documents_limits() {
     };
     let list = super::report::assumptions(&deck);
     let joined = list.join("\n");
-    assert!(joined.contains("no opponents"));
-    assert!(joined.contains("hybrid pips"));
+    // The list is reader-facing: model assumptions, not code names.
+    assert!(joined.contains("There are no opponents"));
     assert!(joined.contains("commander"));
-    assert!(joined.contains("recast tax"));
+    assert!(joined.contains("never costs extra to recast"));
+    // No implementation identifiers in reader-facing text.
+    assert!(
+        !joined.contains("ETB"),
+        "reader-facing assumptions avoid code jargon"
+    );
+    assert!(
+        !joined.contains("oracle"),
+        "reader-facing assumptions avoid implementation terms"
+    );
+    // Every line is one plain assumption; no empty strings.
+    assert!(list.iter().all(|l| !l.trim().is_empty()));
 }
 
 // Multi-ability tap merges: one permanent, one tap, one mana

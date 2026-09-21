@@ -130,6 +130,8 @@ pub struct GameLog {
     pub awareness: Vec<f64>,
     /// Life drained (burn, drain engines) by end of each turn.
     pub drain_total: Vec<u32>,
+    /// Player damage (combat + combat-damage triggers) per turn, cumulative.
+    pub player_damage: Vec<u32>,
     /// Extra turns taken by end of each turn.
     pub extra_turns: Vec<u32>,
     /// First turn a win-threshold engine could fire (enough counters);
@@ -203,7 +205,14 @@ pub(super) struct GameState {
     pub(super) milled_self: u32,
     pub(super) milled_opp: u32,
     /// Running life drained (burn, drain engines, combat-damage drains).
+    /// Damage dealt to opponents only; life the goldfish pays itself
+    /// (additional costs) is counted in `life_paid` and never feeds the
+    /// lethal census.
     pub(super) drained: u32,
+    /// Life the goldfish pays itself (additional cast costs, "pay N
+    /// life" activations). Kept separate from `drained` so the lethal
+    /// census measures damage dealt, not resources spent.
+    pub(super) life_paid: u32,
     /// Cards evaluated (drawn + milled + scried/surveiled), cumulative.
     pub(super) awareness_cards: u32,
     /// Extra turns queued by effects this game.

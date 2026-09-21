@@ -5,7 +5,6 @@
 
 use rusqlite::Connection;
 
-use super::legal::infer_format;
 use super::store::load_deck;
 use crate::db::CardRow;
 
@@ -48,6 +47,7 @@ pub fn run_combo_suggest(
     deck_name: &str,
     format: Option<&str>,
     bracket: Option<u8>,
+    max_price: Option<f64>,
     limit: u32,
     json: bool,
 ) -> anyhow::Result<i32> {
@@ -62,7 +62,7 @@ pub fn run_combo_suggest(
     let (_path, deck) = load_deck(paths, deck_name)?;
     let cards_by_name = super::stats::lookup_names(conn, &deck);
     let identity = super::suggest::commander_identity(&deck, &cards_by_name);
-    let is_commander = matches!(infer_format(&deck), super::legal::InferredFormat::Commander);
+    let is_commander = super::legal::is_commander(&deck, None);
     // No pinned format: commander-shaped decks play commander; everything
     // else takes the combos its cards appear in, minus commander-required
     // variants.
@@ -152,6 +152,20 @@ pub fn run_combo_suggest(
             })
             .then_with(|| a.card.name.cmp(&b.card.name))
     });
+    // --max-price: the budget cap applies before the limit cut; unpriced
+    // candidates are excluded.
+    if let Some(max_price) = max_price {
+        let (kept, hidden) =
+            crate::prints::retain_by_price(conn, completions, |c| &c.card.name, max_price)?;
+        completions = kept;
+        if !json && hidden > 0 {
+            println!(
+                "{}",
+                out.styles()
+                    .note(&crate::prints::price_cap_note(max_price, hidden))
+            );
+        }
+    }
     completions.truncate(limit as usize);
     if completions.is_empty() {
         out.error("no one-card-away combos found");
@@ -230,7 +244,7 @@ fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<(
     let owned = crate::collection::owned_counts_all(conn)?;
     let names: Vec<String> = completions.iter().map(|c| c.card.name.clone()).collect();
     // One batched query per finish kind instead of four per card name.
-    let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
+    let ranges = crate::prints::price_ranges(conn, &names)?;
     let items: Vec<serde_json::Value> = completions
         .iter()
         .map(|c| {
@@ -245,7 +259,7 @@ fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<(
                 "edhrec_rank": c.card.edhrec_rank,
                 "game_changer": c.card.game_changer,
                 "owned": owned.get(&c.card.name).copied().unwrap_or(0),
-                "price_usd": ranges
+                "price": ranges
                     .get(&c.card.name)
                     .and_then(|r| r.cheapest.as_ref())
                     .and_then(|p| p.usd),
@@ -275,7 +289,7 @@ fn print_text(
     let owned = crate::collection::owned_counts_all(conn)?;
     // Batched prices for the ownership note below.
     let names: Vec<String> = completions.iter().map(|c| c.card.name.clone()).collect();
-    let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
+    let ranges = crate::prints::price_ranges(conn, &names)?;
     let styles = out.styles();
     println!(
         "{} {}",
@@ -294,7 +308,7 @@ fn print_text(
                 .and_then(|r| r.cheapest.as_ref())
                 .and_then(|p| p.usd)
             {
-                Some(p) => format!("buy ${p:.2}"),
+                Some(p) => format!("buy {}", styles.money(p)),
                 None => "unpriced".to_string(),
             }
         };

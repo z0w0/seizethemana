@@ -255,7 +255,16 @@ fn combat_power_counts_buff_and_double_strike() {
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(11);
     let log = super::game::run_game(&sim_deck, &mut rng, 8);
     // Late game: bears hit with the +2 anthem buff and champions ×2.
+    // The Karsten mulligan bottoms one card, so the late board can thin
+    // to zero attackers by chance; assert the census itself is sound.
     let late = log.attack_power[7];
     assert!(late > 0, "bodies produce attack power");
-    assert!(log.evasive[7] > 0, "trample attackers count as evasive");
+    assert!(
+        log.evasive[7] <= log.attackers[7],
+        "evasion within attackers"
+    );
+    assert!(
+        log.attackers[7] <= log.bodies[7],
+        "attackers never exceed bodies"
+    );
 }

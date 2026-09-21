@@ -43,7 +43,8 @@ Card lists get domain styling: card names bold cyan, mana pips colored per
 W/U/B/R/G/C, set codes and counts dim, rarity colored (mythic magenta, rare
 yellow, uncommon cyan), deck shortfalls yellow `(own 2/4)` or red
 `(own 0/4)`. Basic lands show `(basics unlimited)` and a unit price
-(`@$1.25`) follows each card line in `deck show`.
+(`@$1.25 USD`) follows each card line in `deck show`. Money renders as
+`$X.XX USD` everywhere in human output.
 
 Histograms get a shared dim bar glyph (`██····`): collection curve/colors/
 rarity, deck curve/ramp/colors/types, and deck completion all use it. The

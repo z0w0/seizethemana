@@ -335,6 +335,10 @@ pub struct SimCard {
     /// not an X spell. `Effect::Drain(0)` carries the class; the game
     /// loop substitutes the paid X.
     pub x_class: Option<XClass>,
+    /// True when the card has Cascade (or battle-cascade wording):
+    /// casting it also casts the cheapest cheaper castable card from the
+    /// library for free, once, with no cascade chaining.
+    pub has_cascade: bool,
     /// Printed power (creatures); crew and station use it instead of the
     /// flat body power. Tokens and unknowns stay flat.
     pub printed_power: Option<u32>,
@@ -389,6 +393,51 @@ pub struct SimCard {
     /// Optional kicker cost (generic part); paid from spare mana when
     /// affordable. The kicker rider bumps drain/damage amounts.
     pub kicker: Option<u32>,
+    /// True when the card destroys or sweeps every permanent of a class
+    /// ("destroy all creatures"): a board wipe. Wipes count as
+    /// interaction capacity but never fire in a goldfish.
+    pub wipe: bool,
+    /// True when the card is an enchantment (scaling draw engines count
+    /// enchantments on the battlefield).
+    pub is_enchantment: bool,
+    /// True when the card enters and buffs the whole board by X ("+X/+X,
+    /// where X is the number of creatures you control"): a one-shot
+    /// combat buff for the turn it enters.
+    pub buffs_board_on_enter: bool,
+    /// True when the card's +1/+1 counters join its body power
+    /// ("enters with X +1/+1 counters").
+    pub counters_are_power: bool,
+    /// Board-count-gated draw engine ("draw a card for each
+    /// enchantment/artifact/land/creature you control"): the engine
+    /// draws the matching permanent count each turn, capped at 8.
+    pub draws_per_matching: Option<DrawMatch>,
+    /// True when the card is a land/spell modal double-faced card: one
+    /// face is a Land, the other is castable. It plays as a land when
+    /// no other land is in hand, else it waits as a castable spell.
+    pub is_mdfc_spell: bool,
+    /// True when the card's rarity is mythic (the rarity column). Feeds
+    /// the shared MDFC land weight.
+    pub mythic: bool,
+}
+
+/// Karsten's MDFC land weight: a land/spell MDFC is one card, so its
+/// land face counts as a partial source — 0.75 for a mythic (the
+/// high-impact slot the deck wants on the battlefield), 0.4 otherwise.
+pub fn mdfc_land_weight(mythic: bool) -> f64 {
+    if mythic { 0.75 } else { 0.4 }
+}
+
+/// The permanent class a scaling draw engine counts each turn.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DrawMatch {
+    /// Enchantments you control.
+    Enchantments,
+    /// Artifacts you control.
+    Artifacts,
+    /// Lands you control.
+    Lands,
+    /// Creatures you control.
+    Creatures,
 }
 
 /// One Equipment: the suit-up cost, the buff, and the Skullclamp-style
@@ -423,6 +472,11 @@ pub enum XClass {
     Mill,
     /// "Create X 1/1 tokens".
     Tokens,
+    /// "Reveal the top X cards, put any number of permanent cards onto
+    /// the battlefield": best case X bodies join.
+    RevealPermanents,
+    /// "Enters with X +1/+1 counters": the counters join the body power.
+    Counters,
 }
 
 impl SimCard {

@@ -58,12 +58,12 @@ fn any_printing_fills_a_deck_line() {
         "148",
         4,
     );
-    let owned = owned_map_for_deck(&conn, "TestDeck").unwrap();
+    let owned = crate::deck::store_show::owned_map_for_deck(&conn, "TestDeck").unwrap();
     // Nothing assigned to the deck itself, but 4 sit in a binder.
     assert_eq!(owned.get("Lightning Bolt"), Some(&(0, 4)));
 
     add_collection_row(&conn, "TestDeck", "deck", "Lightning Bolt", "2xm", "124", 2);
-    let owned = owned_map_for_deck(&conn, "TestDeck").unwrap();
+    let owned = crate::deck::store_show::owned_map_for_deck(&conn, "TestDeck").unwrap();
     // Deck-assigned copies count regardless of print.
     assert_eq!(owned.get("Lightning Bolt"), Some(&(2, 4)));
 }
@@ -160,9 +160,10 @@ fn missing_cost_matches_buylist_total() {
     std::fs::write(paths.deck_file("TestDeck"), deck.to_text()).unwrap();
 
     let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-    let prices = deck_prices(&conn, &deck);
+    let prices = crate::deck::store_show::deck_prices(&conn, &deck);
     let available = ownership::available_map(&conn, "TestDeck").unwrap();
-    let (_, missing_cost) = deck_value(&deck, &cards_by_name, &prices, &available);
+    let (_, missing_cost) =
+        crate::deck::store_show::deck_value(&deck, &cards_by_name, &prices, &available);
 
     // Buylist path over the same collection state.
     let rows =
@@ -172,8 +173,8 @@ fn missing_cost_matches_buylist_total() {
         .map(|r| r.price_usd.unwrap_or(0.0) * r.quantity as f64)
         .sum();
     assert_eq!(
-        round2(missing_cost),
-        round2(buylist_total),
+        crate::deck::store_show::round2(missing_cost),
+        crate::deck::store_show::round2(buylist_total),
         "show missing_cost must equal buylist total"
     );
     assert_eq!(rows.len(), 1);
@@ -270,7 +271,8 @@ mod universe_tests {
     )
     .unwrap();
         let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck);
-        let census = universe_census(&conn, &deck, &cards_by_name).unwrap();
+        let census =
+            crate::deck::store_show::universe_census(&conn, &deck, &cards_by_name).unwrap();
         // Iron Test: all-UB → beyond. Both Prints: any in-universe print wins.
         assert_eq!(census["universes_beyond"], 1, "commander qty only");
         assert_eq!(census["multiverse"], 3, "2 Both Prints + 1 Bolt");

@@ -338,16 +338,19 @@ pub const X_ENTRY_COUNTERS: u32 = u32::MAX;
 /// charge counters" returns the [`X_ENTRY_COUNTERS`] sentinel.
 pub fn parse_enter_counters(text: &str) -> u32 {
     // "Enters with X charge counters": the cast leftover converts to
-    // counters (Astral Cornucopia). Checked before Sunburst, which the
+    // counters. "+1/+1 counters" follows the same rule. Checked before Sunburst, which the
     // reminder text of the same card carries.
-    if text.contains("enters with x charge counters") {
+    if text.contains("enters with x charge counters")
+        || text.contains("enters with x +1/+1 counters")
+        || text.contains("the battlefield with x +1/+1 counters")
+    {
         return X_ENTRY_COUNTERS;
     }
     // Sunburst (best case): two colors paid on-curve → 2 counters.
     if text.contains("sunburst") {
         return 2;
     }
-    if !text.contains("enters with") {
+    if !text.contains("enters with") && !text.contains("the battlefield with") {
         return 0;
     }
     let Some(idx) = text.find("enters with") else {

@@ -4,6 +4,13 @@
 use super::model::Ability;
 use super::parse::parse_ability;
 
+/// True when a trigger segment bounds itself to once per turn.
+pub(super) fn once_each_turn(lower: &str) -> bool {
+    lower.contains("only once each turn")
+        || lower.contains("only once each of your turns")
+        || lower.contains("triggers only once each turn")
+}
+
 /// Activated abilities on plain cards ("{T}: Draw a card",
 /// "{1}, {T}: …", "−3: …", "{2}, Sacrifice a creature: …"). The
 /// station-tier path handles tiered activations; this covers the rest.

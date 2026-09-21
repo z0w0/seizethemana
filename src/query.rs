@@ -661,11 +661,31 @@ pub fn run_query(
     out: &mut Output,
     text: &str,
     cli_filters: &cli::CardFilters,
+    max_price: Option<f64>,
     limit: u32,
     json: bool,
 ) -> anyhow::Result<i32> {
     let filters = CardFilters::from_cli(cli_filters)?;
-    let hits = match run_search(paths, conn, out, text, &filters, limit as usize, None) {
+    // --max-price: a SQL-side budget filter (cheapest released English
+    // print at or under the cap). Passed as the search's restrict set,
+    // so the fusion fills the limit window with under-cap candidates.
+    let price_allow: Option<std::collections::HashSet<String>> = match max_price {
+        Some(max_price) => Some(
+            crate::prints::names_under_price(conn, max_price)?
+                .into_iter()
+                .collect(),
+        ),
+        None => None,
+    };
+    let hits = match run_search(
+        paths,
+        conn,
+        out,
+        text,
+        &filters,
+        limit as usize,
+        price_allow.as_ref(),
+    ) {
         Ok(hits) => hits,
         Err(err) => {
             // Distinguish "not set up" so the agent knows what to run.
@@ -680,6 +700,9 @@ pub fn run_query(
     if hits.is_empty() {
         if json {
             println!("[]");
+        } else if max_price.is_some() {
+            out.error("no cards matched");
+            out.hint("try broader words, or raise --max-price");
         } else {
             out.error("no cards matched");
             out.hint("try broader words, or drop filters");
@@ -689,7 +712,7 @@ pub fn run_query(
     if json {
         let names: Vec<String> = hits.iter().map(|h| h.card.name.clone()).collect();
         // One batched query per finish kind instead of four per card name.
-        let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
+        let ranges = crate::prints::price_ranges(conn, &names)?;
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let items: Vec<serde_json::Value> = hits
             .iter()
@@ -885,18 +908,58 @@ mod tests {
             "scryfall_id",
             "released_at",
             "tags",
-            "price_usd",
-            "price_usd_foil",
-            "max_price_usd",
-            "max_price_usd_foil",
+            "price",
+            "price_foil",
+            "max_price",
+            "max_price_foil",
         ] {
             assert!(v.get(key).is_some(), "missing {key}");
         }
         assert_eq!(v["oracle_id"], "oid");
-        assert_eq!(v["price_usd"], 0.99);
+        assert_eq!(v["price"], 0.99);
         // An unpriced card renders null, not a missing field.
         let v =
             crate::card::card_json(&card, &empty_tags, &Default::default(), &Default::default());
-        assert_eq!(v["price_usd"], serde_json::Value::Null);
+        assert_eq!(v["price"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn names_under_price_keeps_at_or_under_cap() {
+        let dir = tempfile::tempdir().unwrap();
+        let conn = crate::db::open(&dir.path().join("t.db")).unwrap();
+        for (name, usd, foil) in [
+            ("Cheap Bolt", Some(1.0_f64), None),
+            ("Pricy Bolt", Some(9.0), None),
+            ("Unpriced Bolt", None, None),
+            ("Foil Only", None, Some(1.5_f64)),
+        ] {
+            conn.execute(
+                "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                    color_identity, keywords, oracle_text, rarity, legalities,
+                    set_code, collector_number, scryfall_id, released_at)
+                 VALUES (?1, ?2, '{1}{R}', 1, 'Instant', '[]', '[]', '[]',
+                    'bolt deals 3 damage', 'common', '{}', 'tst', '1', 'sid',
+                    '2020-01-01')",
+                rusqlite::params![name, format!("oid-{name}")],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
+                    lang, rarity, finishes, released_at, usd, usd_foil, updated_at)
+                 VALUES (?1, ?2, 'm11', '148', 'en', 'common', '[\"nonfoil\"]',
+                    '2020-01-01', ?3, ?4, 't')",
+                rusqlite::params![format!("sid-{name}"), name, usd, foil],
+            )
+            .unwrap();
+        }
+        let under = crate::prints::names_under_price(&conn, 2.0).unwrap();
+        assert_eq!(
+            under,
+            vec!["Cheap Bolt".to_string(), "Foil Only".to_string()],
+            "unpriced excluded; foil-only prices at its foil print"
+        );
+        // A tighter cap drops the foil-only card.
+        let under = crate::prints::names_under_price(&conn, 1.0).unwrap();
+        assert_eq!(under, vec!["Cheap Bolt".to_string()]);
     }
 }

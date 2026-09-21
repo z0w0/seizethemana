@@ -59,11 +59,16 @@ Per-format behavior lives in one table (`format.rs`), never in branches.
 `FormatRules` carries the format key, the library shape
 (command-zone singleton vs 60-card), the default turn count, and the
 mulligan policy. Commander-family formats redraw once when the opener's
-land count leaves the 2–6 band; 60-card formats play London mulligans
-(outside 1 land: redraw and bottom the same count at random — the sim
-cannot evaluate keep choices). Commander features (cast loop, engine
-tier) gate on the deck having commanders, not on the format enum. An
-unknown `--format` key plays as generic constructed.
+land count leaves the 2–6 band (Karsten's commander model redraws 0–2
+and 6–7; the 2–6 band is close and changing it would churn commander
+baselines for little gain). 60-card formats play Karsten's London
+mulligan: a 7-card opener with 0, 1, 6, or 7 lands redraws once, then
+the redrawn hand bottoms one card toward 3 lands (a land when holding
+4+ lands — shed the flood — else a spell). Kept hands stay at 7 cards;
+only the redrawn hand bottoms. The keep choice is not evaluated; the
+bottomed card rejoins the library at a random depth. Commander features (cast loop,
+engine tier) gate on the deck having commanders, not on the format enum.
+An unknown `--format` key plays as generic constructed.
 
 ## The card model
 
@@ -124,8 +129,10 @@ Two banked shapes:
 - **Treasures.** "Create a Treasure token" effects on the *acting card*
   bank one flexible pip per token (sacrificed to use) instead of
   creating a body. Only Treasure-labeled effects convert; other token
-  spells in the same deck still create bodies. Smothering Tithe stays
-  inert — it needs opponents.
+  spells in the same deck still create bodies, and the deck-wide
+  fallback (any unsourced token converting when any deck card makes
+  Treasures) is gone. Smothering Tithe stays inert — it needs
+  opponents.
 
 Static mana grants ("creatures you control have {T}: add one mana of
 any color" — Enduring Vitality; "lands you control have…" — Chromatic
@@ -156,12 +163,25 @@ the row carries one; tokens and unknowns stay flat (`BODY_POWER = 2`).
 ### Roles
 
 Every card classifies into one role (first match wins):
-`Land`, `Rock`, `Dork`, `RampSpell`, `Draw`, `Removal` (also fogs,
-regeneration, protection — reactive spells), `Lock` (tax/restrict pieces),
-`Booster` (equipment, auras, pump), `Wincon`, `Other`. Reactive spells
-(removal, fogs, protection) never fire in solitaire: `role_access` judges
-them by hand visibility, and they are exempt from the `dead_cards`
-finding.
+`Land`, `Rock`, `Dork`, `RampSpell`, `Draw`, `Removal` (also fogs and
+regeneration — reactive spells), `Lock` (tax/restrict pieces),
+`Booster` (equipment, auras, pump), `Wincon`, `Other`. Protection grants
+("gains hexproof") are not Removal: they answer nothing in solitaire.
+Reactive spells (removal, fogs) never fire in solitaire: `role_access`
+judges them by hand visibility, and they are exempt from the
+`dead_cards` finding.
+
+The removal census splits targeted from sweeps. A card with `wipe = true`
+("destroy all", "exile all", "return all", "sacrifice all", "-X/-X to each
+creature") reports in `deck_shape.removal_wipes`; everything else targeted
+reports in `removal_targeted`. Wipes count toward the interaction metric
+too: a Wrath in hand with mana is readable capacity.
+
+Interaction readiness matches any instant/sorcery with a destroy/exile/
+counter/bounce target shape, any "deals N damage to target …" with N ≥ 2
+(player-targeted burn is drain, not capacity), or a wipe. Ability-word
+prefixes ("Constellation —", "Raid —", …) strip before trigger matching,
+so they no longer hide the trigger underneath.
 
 ### Abilities
 
@@ -233,6 +253,7 @@ A keyword models only when it moves a metric:
 | Prowess | +1 power per noncreature spell cast that turn |
 | Flying / Trample / Menace | evasion census (no math) |
 | Flash | instant-speed flag (feeds interaction readiness); "flashback" does not count as flash |
+| Cascade | casting the card also casts the cheapest cheaper castable card from the library, free, once (no chaining); the free cast fires ETB and per-cast credits |
 
 "Whenever … enters" ETBs parse like "When … enters". Landfall trigger
 lines form their own family (draw / tokens / mana-adds read as an
@@ -247,6 +268,8 @@ extra land drop per turn while on the battlefield, recorded in
 | Shape | Model |
 | --- | --- |
 | `{X}` spells with a scaling effect (drain/draw/mill/tokens) | the cast pays the whole leftover pool as X; the effect scales with it (drain ×N, draw ×N, mill ×N, up to 8 tokens) |
+| "Reveal the top X cards … put any number of permanent cards onto the battlefield" | the cast converts the leftover pool into X battlefield entries (capped at 8; every library card reads as a permanent) |
+| "Enters with X +1/+1 counters" | the entered X counters join the body's attack power (the leftover pool converts at entry) |
 | Kicker / multikicker | paid from spare mana when affordable; drain amounts scale with the kick; multikicker parses as one kick |
 | "Add one mana … for each spell you've cast this turn" (Vivi class) | the yield joins the pool once per spell cast every turn the host is on the battlefield; the same clause never also reads as a plain one-mana tap |
 | Additional costs ("as an additional cost …, sacrifice a creature / pay N life") | the cast consumes the resource (a real body leaves the battlefield; life is paid) |
@@ -360,6 +383,7 @@ carry ±0.5pp at 10k runs.
 | `self_milled_by_turn` / `opp_milled_by_turn` | mill split by direction: graveyard fuel vs deck-out pressure ("target player mills") |
 | `library_remaining_by_turn` | average library size (deck-out proximity) |
 | `combat` | attack power per turn + p90 by t8 (a power curve, never a kill estimate); attackers + evasion census (trample/flying/menace) |
+| `wincons` lethal census | `lethal_damage_by_turn` (share of games at/above the table life by turn — 120 in commander, 20 in 60-card; combat damage + burn/drain effects dealt to the table; life the goldfish pays itself (additional costs) does not count) and `p50_lethal_turn` (median first lethal turn, null when never). **Best-case goldfish, unblocked: an upper bound; real games have blockers, removal, and life gain.** |
 | `wincons` | life drained per turn (burn/drain engines; ×3 for "each opponent" in commander, ×1 in 60-card formats), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct, infinite-mana suspicion pct |
 | `interaction` | P(interaction in hand AND affordable with spare mana) per turn — instant-speed copies, spare mana while ready ("mana held"), instant vs sorcery by copy count. **Capacity, not events**: no opponent event is claimed |
 | `color_screw` | per-color share of games with a pip-blocked cast (WUBRG) |
@@ -378,9 +402,12 @@ drawn. It measures the mana base; the hand adds the draw dependency.
 
 `mana_base` compares the deck's counts against research-derived bands
 (EDHREC average decks, 46 average decks across 11 commanders, fetched
-2026-09; Sam Black's cEDH land-count guidance in the Commander's Herald).
-A deck outside its band gets a "trim/add lands" verdict — the same signal
-an AI deckbuilding agent sees, so "add lands" is never the only lever.
+2026-09; Sam Black's cEDH land-count guidance in the Commander's Herald;
+Frank Karsten's 60-card land-count method). A deck outside its band gets
+a "trim/add lands" verdict — the same signal an AI deckbuilding agent
+sees, so "add lands" is never the only lever.
+
+Commander-family decks (a COMMANDER section) use bracket bands:
 
 | Bracket | Lands | Ramp (rocks + dorks + ramp spells) |
 | --- | --- | --- |
@@ -388,6 +415,20 @@ an AI deckbuilding agent sees, so "add lands" is never the only lever.
 | 3 (upgraded) | 33–38 | 8–11 |
 | 4 (optimized) | 32–36 | 9–12 |
 | 5 (cEDH) | 25–31 | 10–16 |
+
+60-card constructed decks use bands derived from the deck's average
+mana value (Karsten's method):
+
+| Average nonland MV | Lands |
+| --- | --- |
+| < 2.0 (aggro) | 20–22 |
+| 2.0–3.0 (midrange) | 22–25 |
+| ≥ 3.0 (control / big mana) | 25–28 |
+
+Every four cheap (cost ≤ 2) draw or cantrip spells count as one land,
+capped at 2. 60-card decks report `bracket: null`, skip bracket
+inference, and carry `bracket_target_ramp: [0, 0]` (no separate ramp
+verdict).
 
 Without an explicit `--bracket` the bracket is inferred from the Game
 Changer census (0 GC → 2, 1–3 → 3, 4+ → 4); `mana_base.bracket` reports
@@ -399,11 +440,41 @@ deck with 9 rocks reads "on target" at bracket 3; a 44-land deck reads
 "trim 6 lands"; a 44-land deck floods in ~35% of games (expectation
 ~35%), while the old drops-made detector read it as 0.0%.
 
+### Colored sources (static audit)
+
+The `colored_sources` JSON block (and the standalone `stm deck mana`
+command, which runs the same math with no simulation) audits the mana
+base against Karsten's requirement floors. It is static math on the
+deck's census: weighted sources per color, per-card requirements, and
+deficits. Source: Frank Karsten, "How Many Sources Do You Need to
+Consistently Cast Your Spells? A 2022 Update".
+
+Weights: lands 1.0 per producible color (fetches credit their fetchable
+basics; any-color lands credit every deck color), mana dorks 0.5, mana
+rocks 0.75, cheap cantrips 0.25 per effect (capped at 10 effects).
+Land/spell MDFCs count 0.4 land each (0.75 mythic, by the rarity
+column — shared with the sim's mana-base block) in the land count.
+Tap lands count as sources but not as untapped turn-1 sources; the block
+reports both (`sources`, `untapped_t1_sources`, `tapland_count`).
+
+Requirements: commander decks use the 99-card floors (12/17/21 sources
+for 1/2/3 pips of one color); 60-card decks use the Karsten 2022
+pip-shape table keyed on (generic pips, total colored pips, max
+same-color pips) — 1 pip 13, CC 21, 1CC 18, CCC 23, 2CCC 22, CCCC 24 —
+corrected for the deck's land count (±1 near 20 lands, +2 at 28+).
+Unlisted shapes fall back to the same-pip floor (14/13/21/23/24) less
+one source per generic pip. Gold cards add +1 per
+additional color requirement. Each nonland card with colored pips gets a
+`requirements` row (`needs`/`have`/`deficit`/`ok`); `worst_deficits`
+formats the top lines ("Wrath of God: need 16 W, have 14.0") and the
+human view suggests categories ("add 2-3 more white sources"), never
+card names.
+
 ### Findings (exit 1)
 
 | Kind | Trigger | Suggestion pattern |
 | --- | --- | --- |
-| `mana_screw` | ≥20% of games ≤2 lands by t4 | magnitude-scaled "add {N} land slots" — or "add two-mana rocks" when the deck has fewer than 6 nonland ramp sources (rock-heavy decks must not read as land-screwed) |
+| `mana_screw` | ≥20% of games ≤2 lands by t4 | magnitude-scaled "add {N} land slots" — commander decks with fewer than 6 nonland ramp sources read "add two-mana rocks" instead (rock-heavy decks must not read as land-screwed); 60-card decks always get land slots |
 | `mana_flood` | rate exceeds its velocity-adjusted expectation by >10pp | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check the plan before trimming |
 | `commander_late` | <60% castable on curve | "add 2-3 ramp sources" |
 | `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts |
@@ -464,8 +535,17 @@ Two test layers cover the simulator:
   wheel execution, cast-trigger dedupe, commander upkeep drain + no
   double draw, combined-numeral sagas, chapter IV + leave-board, Helix
   X-sink counters, token-count bodies, once-per-turn engines (no
-  infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
-  consumption, X-entry counters, and the Vivi no-double-count parse.
+   infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
+   consumption, X-entry counters, and the Vivi no-double-count parse.
+   Phase-1 truth-fix tests pin: ETB draws never double count as cast
+   riders, protection spells stay out of Removal, wipes count as
+   interaction with the targeted/wipes deck-shape split, 2-damage burn
+   and bounce read as interaction, the modern "triggers only once each
+   turn" phrasing bounds engines, Treasure banking requires the
+   Treasure clause on the token-creating card, "draws X" and the
+   reveal-permanents and counter-power X classes, the one-shot +X/+X
+   board buff, ability-word prefix stripping, board-count scaling draw
+   engines, and split-card on-cast-credit suppression.
   Dedicated archetype tests live in the per-format deck test files
   (commander/standard/modern) for every fixture that was previously
   invariants-only, plus degradation-fixture problem assertions.
@@ -496,9 +576,13 @@ Everything the model cannot execute is dropped at parse time, and the
   never fire. Readiness is capacity, not events.
 - **Draw engines fire on a fixed delay.** An engine draws its amount once
   per turn from the turn after it enters, regardless of board state. A
-  "draw for each artifact" engine draws 1. Commanders add a synthetic
-  engine only for unconditional (upkeep/end-step) draw triggers; attack-
-  gated and opponent-gated commander draws fire no engine.
+  "draw a card for each enchantment/artifact/land/creature you control"
+  engine draws the matching permanent count instead (capped at 8;
+  uncountable shapes fall back to 1). ETB draws parse as triggers only:
+  an enter-trigger draw never also reads as a cast rider, so the
+  double-count is gone. Commanders add a synthetic engine only for
+  unconditional (upkeep/end-step) draw triggers; attack-gated and
+  opponent-gated commander draws fire no engine.
 - **Mill feeds velocity and the graveyard census, not replay quality.**
   Milled cards count as cards seen and fill the graveyard log; graveyard
   return fires once per card (no recursion chains).
@@ -540,9 +624,33 @@ Everything the model cannot execute is dropped at parse time, and the
   lands tap for one mana of any color (the choice is the player's). Static
   grants on other lands (The World Tree) do not model.
 - **X-costs pay the leftover pool.** A `{X}` spell with a drain/draw/
-  mill/tokens scaling effect converts the whole floatable pool into X at
-  cast; the effect scales with it. Spells with unmodeled X effects
-  (damage at creatures, X-counters) pay X = 1 and do nothing extra.
+  mill/tokens/reveal-permanents/counter-power scaling effect converts the
+  whole floatable pool into X at cast; the effect scales with it. Spells
+  with unmodeled X effects pay X = 1 and do nothing extra.
+- **Split cards cast one face.** A "Fire // Ice" card pays the cheaper
+  face; the union text feeds roles, triggers, and interaction, but
+  one-shot on-cast credits (draw, mana, tokens, drain) do not fire — the
+  face that made them was not cast.
+- **Land/spell MDFCs have two modes.** One face is a Land, the other a
+  castable spell. The card is a `SimCard` with both: the spell face
+  carries the role and cast cost; the land face carries the tap yield
+  and enters-tapped state. Play rule (deliberately simple): during the
+  land phase, an MDFC plays as the land only when the hand holds no
+  other land; otherwise it stays a castable spell. The mulligan policy
+  counts an MDFC as land-able. In the mana base an MDFC counts 0.4 land
+  (0.75 mythic); the colored-source audit counts the land face as 0.8
+  source of its color.
+- **Cascade casts the cheapest cheaper card.** Casting a card with
+  Cascade (or battle-cascade wording) also casts the cheapest castable
+  card from the library whose cost is cheaper (ties keep the deeper
+  library position), for free, once per cascade trigger
+  (cap 1; no chaining cascade into cascade). Creature hits join the
+  battlefield and their ETB triggers fire; noncreature hits contribute
+  their on-cast effects only. Per-cast engines fire, and the card
+  leaves the library into the seen census.
+- **"+X/+X where X is the number of creatures you control" is a one-shot
+  entering board buff.** On the turn the buff body enters, each attacker
+  gets +X (X = the body count, capped at 20). The buff does not persist.
 - **Kicker pays from spare mana.** Only drain amounts scale with the
   kick; other kicker riders are inert.
 - **Per-cast mana engines fire per spell.** Vivi-class "add one mana for
@@ -607,8 +715,10 @@ Everything the model cannot execute is dropped at parse time, and the
 - **Seed baselines are version-local.** An upgrade may reshuffle
   identically-seeded decks; regenerate the baseline JSON after upgrading
   before diffing.
-- **London mulligan bottoms at random.** The 60-card policy redraws and
-  bottoms one random card per mulligan taken; no keep-choice evaluation.
+- **London mulligan is a single redraw.** Karsten's model redraws 0/1/
+  6/7-land 7-card hands once and the redrawn hand bottoms one card
+  toward 3 lands (a land at 4+ lands, else a spell); kept hands stay at
+  7 cards. No keep-choice evaluation and no second redraw.
   Commander-family decks keep the single free redraw.
 - **Combo assembly is a consistency diagnostic.** Store-backed Spellbook
   rows measure how often pieces reach their zones, never whether the

@@ -1,3 +1,4 @@
+use super::store_show::round2;
 // `stm deck buylist`: missing copies as a plain `2x Name` list (generic
 // default) or a store CSV for Card Kingdom / TCGPlayer, plus a JSON view.
 //
@@ -211,6 +212,7 @@ pub fn buylist(
     if json {
         let v = serde_json::json!({
             "store": store.name(),
+            "currency": crate::output::CURRENCY,
             "rows": rows.iter().map(|r| serde_json::json!({
                 "name": r.name,
                 "set": r.set_code,
@@ -220,9 +222,9 @@ pub fn buylist(
                 "foil": r.foil,
                 "quantity": r.quantity,
                 "sections": r.sections,
-                "price_usd": r.price_usd,
+                "price": r.price_usd,
             })).collect::<Vec<_>>(),
-            "total_usd": round2(total),
+            "total": round2(total),
         });
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else {
@@ -263,11 +265,6 @@ pub fn buylist(
         );
     }
     Ok(crate::cli::codes::OK)
-}
-
-/// Round to two decimals for money output.
-fn round2(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0
 }
 
 /// Rarity of one print (for the TCGPlayer Mass Entry column).

@@ -110,6 +110,7 @@ fn stats_json_shape() {
     assert_eq!(v["unique_cards"], 2);
     assert_eq!(v["total_cards"], 5);
     assert_eq!(v["total_value"], 1.23);
+    assert_eq!(v["currency"], "USD");
 }
 
 #[test]

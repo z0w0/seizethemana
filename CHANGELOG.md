@@ -35,6 +35,20 @@ breaking changes land in this section.
 
 ### Changed
 
+- Simulator numbers changed; regenerate baseline reports after
+  upgrading. The 60-card London mulligan now follows Karsten's model
+  (redraw 0/1/6/7-land openers once; only the redrawn hand bottoms one
+  card toward 3 lands — a land at 4+ lands, else a spell — so kept hands
+  stay at 7 cards), so screw, flood, and velocity rates shift from saved
+  baselines. Land/spell MDFCs (Valakut Awakening class) play as a land
+  only when the hand holds no other land and count 0.4 land (0.75
+  mythic, by the rarity column) in the mana base. Cascade casts the
+  cheapest cheaper card from the library for free, once. The simulate
+  report gains a best-case kill-turn census (`wincons.p50_lethal_turn`);
+  combat damage there is cumulative and life the goldfish pays itself
+  (additional costs) no longer counts as damage dealt. The 60-card mana
+  audit's pip table is keyed on the full cost shape (2CCC now reads its
+  Karsten floor of 22 instead of the unkeyed row).
 - Daily data files (cards and tags) re-download when older than a day, so
   price and tag refreshes actually pick up new data instead of reusing
   yesterday's file.
@@ -45,6 +59,18 @@ breaking changes land in this section.
   them). Human output reads `100 cards + 15 sideboard`.
 
 ### Fixed
+
+- `--max-price` applied after the result cut, so a tight cap returned
+  fewer rows than `--limit` even when affordable candidates existed. The
+  cap is now a store-level filter on `query` and `collection query` and
+  over-fetches then caps before the limit cut on `deck suggest`; unpriced
+  and above-cap cards are excluded in all paths. `--max-price` rejects
+  negative values at parse time.
+- The curve histogram collapsed zero-mana and one-mana cards into one
+  slot; the JSON `curve.histogram` is now 7 slots indexed MV 0..6+ and
+  the human line reads the same shape. Commander curve targets follow
+  the average MV (three bands) instead of one fixed sentence, and the
+  `deck show --json` `curve.target` matches the human line's format.
 
 - Legendary Vehicles and Spacecraft with a printed power/toughness box are
   accepted as commanders, per the Edge of Eternities Commander rules

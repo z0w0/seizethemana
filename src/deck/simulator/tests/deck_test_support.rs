@@ -393,6 +393,12 @@ pub(super) fn sim(
         .iter()
         .filter(|c| c.role == super::model::Role::Removal)
         .count();
+    stats.removal_wipes = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == super::model::Role::Removal && c.wipe)
+        .count();
+    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats
 }
 

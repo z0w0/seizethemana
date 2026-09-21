@@ -1,7 +1,8 @@
 // Tests for the simulator aggregate module.
 
 /// A minimal card row for tests.
-use super::aggregate::{aggregate, find_problems};
+use super::aggregate::aggregate;
+use super::findings::find_problems;
 use super::game::run_game;
 use super::model::*;
 use super::parse::*;
@@ -109,17 +110,32 @@ fn percentile_nearest_rank() {
 
 #[test]
 fn reactive_spells_classify_as_removal() {
-    // Fog, regeneration, and protection texts are interaction: they count
+    // Fog, regeneration, and tap-down texts are interaction: they count
     // toward role_access and are exempt from dead_cards.
     for text in [
         "Prevent all combat damage that would be dealt this turn.",
         "{G}: Regenerate target creature.",
-        "Target creature gains hexproof and indestructible until end of turn.",
         "Creatures with power 4 or greater can't attack or block.",
     ] {
         let row = card("Test Card", "{1}{G}", "Instant", text);
         let sim = super::parse::parse_sim_card(&row);
         assert_eq!(sim.role, Role::Removal, "text: {text}");
+    }
+}
+
+#[test]
+fn protection_spells_are_not_removal() {
+    // Protection grants answer nothing in a goldfish: they are inert
+    // reactive text, not removal. They must not inflate removal counts.
+    for text in [
+        "Target creature gains hexproof and indestructible until end of turn.",
+        "Target creature gains hexproof until end of turn.",
+        "Permanents you control gain hexproof and indestructible until end of turn.",
+    ] {
+        let row = card("Test Card", "{1}{G}", "Instant", text);
+        let sim = super::parse::parse_sim_card(&row);
+        assert_ne!(sim.role, Role::Removal, "text: {text}");
+        assert!(!sim.is_interaction, "text: {text}");
     }
 }
 

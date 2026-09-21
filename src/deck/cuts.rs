@@ -29,6 +29,9 @@ pub struct CutRow {
     pub name: String,
     /// Copies in the deck.
     pub qty: i64,
+    /// Copies the paired `deck update --remove` should take (full qty for
+    /// pins, a partial count for scored cuts).
+    pub remove_qty: i64,
     /// Ranked cut reasons, most decisive first.
     pub reasons: Vec<CutReason>,
     /// Composite expendability score in `[0, 1]` (higher = safer to cut).
@@ -62,7 +65,7 @@ pub struct FillPair {
     pub candidates: Vec<String>,
 }
 
-/// Knobs for a `deck cuts` run (the command takes 8 flags; one struct
+/// Knobs for a `deck cuts` run (the command takes 9 flags; one struct
 /// keeps the entry point under the argument-count lint).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CutOptions<'a> {
@@ -72,6 +75,8 @@ pub struct CutOptions<'a> {
     pub for_role: Option<&'a str>,
     /// Game Changer cap pinning bracket.
     pub bracket: Option<u8>,
+    /// Pinned format (legality and cut-quantity rules).
+    pub format: Option<&'a str>,
     /// Emit JSON.
     pub json: bool,
 }
@@ -89,15 +94,31 @@ pub fn cut_rows(
     role: Option<Role>,
     count: usize,
     bracket: Option<u8>,
+    format: Option<&str>,
 ) -> anyhow::Result<Vec<CutRow>> {
+    // The deck's format: the pinned flag, else commander when the deck is
+    // commander-shaped. The legality pin and copy-count rules read it.
+    let is_commander = match format {
+        Some(f) => matches!(
+            f.to_ascii_lowercase().as_str(),
+            "commander" | "brawl" | "oathbreaker"
+        ),
+        None => super::legal::is_commander(deck, None),
+    };
     // Castability: a fast sim on the deck (small runs; the ranking needs
-    // signal, not precision).
-    let sim_deck = super::simulator::deck::build_sim_deck(deck, cards_by_name, None);
+    // signal, not precision). Turn count follows the format's default.
+    let format_key = format.unwrap_or(if is_commander {
+        "commander"
+    } else {
+        "constructed"
+    });
+    let sim_deck = super::simulator::deck::build_sim_deck(deck, cards_by_name, Some(format_key));
+    let turns = sim_deck.rules.default_turns;
     let mut rng = rand::SeedableRng::seed_from_u64(42);
     let logs: Vec<_> = (0..2000)
-        .map(|_| super::simulator::game::run_game(&sim_deck, &mut rng, 10))
+        .map(|_| super::simulator::game::run_game(&sim_deck, &mut rng, turns))
         .collect();
-    let stats = super::simulator::aggregate::aggregate(&logs, &sim_deck, 10);
+    let stats = super::simulator::aggregate::aggregate(&logs, &sim_deck, turns);
     // Castability signal with the dead-cards exemptions applied: reactive
     // removal never fires in a goldfish and improvise/affinity cards cast
     // far earlier in real games, so both measure the mana base, not the
@@ -161,6 +182,10 @@ pub fn cut_rows(
         .map(|i| deck.sections[i].1.iter().map(|e| e.name.as_str()).collect())
         .unwrap_or_default();
 
+    // The deck's colors from its card faces (loop-invariant; off-color
+    // land detection below reads it).
+    let deck_colors = super::suggest::deck_color_letters(deck, cards_by_name);
+
     // Filler spell prices (one batched lookup).
     let names: Vec<String> = {
         let mut seen = std::collections::HashSet::new();
@@ -210,12 +235,47 @@ pub fn cut_rows(
             });
             pinned = true;
         }
-        if !crate::deck::suggest::card_is_commander_legal(card) {
+        // Legality pin on the deck's actual format: a commander-banned
+        // card is only a must-cut in a commander deck. With no pin and a
+        // 60-card deck, the gate is "legal in some 60-card format" (the
+        // same default `deck suggest` uses).
+        let illegal = if is_commander {
+            !crate::deck::suggest::card_is_commander_legal(card)
+        } else {
+            match format {
+                Some(_) => !crate::deck::suggest::card_legal_in(card, Some(format_key)),
+                None => !crate::deck::suggest::card_legal_in_any_60(card),
+            }
+        };
+        if illegal {
             reasons.push(CutReason {
                 kind: "illegal",
-                detail: "banned in commander".to_string(),
+                detail: if is_commander {
+                    "banned in commander".to_string()
+                } else if format.is_some() {
+                    format!("not legal in {format_key}")
+                } else {
+                    "not legal in any 60-card format".to_string()
+                },
             });
             pinned = true;
+        }
+        // Off-color lands: a land producing nothing the deck can use (or
+        // a partial fetch in a mono-color deck) is a basic's worse twin.
+        if crate::deck::land_colors::land_is_off_color(card, &deck_colors) {
+            reasons.push(CutReason {
+                kind: "off_color_land",
+                detail: "produces none of this deck's colors; a basic is strictly better"
+                    .to_string(),
+            });
+            score += 0.5;
+        } else if crate::deck::land_colors::land_fetches_off_color(card, &deck_colors) {
+            reasons.push(CutReason {
+                kind: "off_color_land",
+                detail: "fetches colors this deck does not use; run a basic unless duals of the other color are present"
+                    .to_string(),
+            });
+            score += 0.2;
         }
         if castability
             .get(entry.name.as_str())
@@ -248,7 +308,7 @@ pub fn cut_rows(
         {
             reasons.push(CutReason {
                 kind: "price",
-                detail: format!("a ${range:.2} one-off with no castability fault"),
+                detail: format!("a {range:.2} USD one-off with no castability fault"),
             });
             score += 0.1;
         }
@@ -261,9 +321,26 @@ pub fn cut_rows(
         if reasons.is_empty() {
             continue;
         }
+        // Copy-count rule: pins always take the full qty; scored cuts take
+        // 1 copy of a 1-2-of and half (rounded up) of a 3-4-of. Commander
+        // decks are singleton, so qty 1 always.
+        let remove_qty = if pinned || !is_commander {
+            // 60-card non-commander: remove 1 of a 2-of, half of a 3-4-of.
+            let qty = entry.quantity;
+            if pinned {
+                qty
+            } else if qty <= 2 {
+                1
+            } else {
+                (qty + 1) / 2
+            }
+        } else {
+            entry.quantity
+        };
         rows.push(CutRow {
             name: entry.name.clone(),
             qty: entry.quantity,
+            remove_qty,
             reasons,
             score: score.clamp(0.0, 1.0),
             pinned,
@@ -309,6 +386,7 @@ pub fn cuts(
         count,
         for_role,
         bracket,
+        format,
         json,
     } = *options;
     // Parse the requested role for `--for` discounting + fills (before
@@ -334,7 +412,7 @@ pub fn cuts(
         return Ok(crate::cli::codes::NO_RESULTS);
     }
 
-    let rows = cut_rows(conn, &deck, &cards_by_name, role, count, bracket)?;
+    let rows = cut_rows(conn, &deck, &cards_by_name, role, count, bracket, format)?;
 
     if json {
         println!("{}", serde_json::to_string_pretty(&rows)?);
@@ -360,12 +438,17 @@ pub fn cuts(
         ))
     );
     for row in &rows {
+        let copies_note = if row.remove_qty == row.qty {
+            format!("({}x)", row.qty)
+        } else {
+            format!("(cut {} of {} copies)", row.remove_qty, row.qty)
+        };
         println!(
-            "  {:>2}. {:<30} score {:>4.2}  ({}x){}",
+            "  {:>2}. {:<30} score {:>4.2}  {}{}",
             row.rank,
             styles.card_name(&row.name),
             row.score,
-            row.qty,
+            styles.dim(&copies_note),
             if row.pinned {
                 styles.dim("  pinned")
             } else {

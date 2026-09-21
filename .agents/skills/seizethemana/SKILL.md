@@ -20,7 +20,7 @@ wants an existing deck improved.
 
 | Command | Purpose |
 | --- | --- |
-| `stm query "<text>" [filters]` | whole-oracle semantic search (BM25 + vectors) |
+| `stm query "<text>" [filters] [--max-price X]` | whole-oracle semantic search (BM25 + vectors) |
 | `stm card <name> [--json]` | one card's full detail: price, rank, tags, legalities |
 | `stm card similar <name> [--owned]` | cards that play like the exemplar |
 | `stm card combos <name> --json` | Spellbook combos a card appears in |
@@ -29,11 +29,12 @@ wants an existing deck improved.
 | `stm collection import <csv>` | load a collection CSV (ownership only) |
 | `stm deck create/import/show/export` | decklist lifecycle |
 | `stm deck update <name> [flags]` | edit a list (`--add --remove --set --move --from`) |
-| `stm deck suggest <name> [--role R | "q" | --commander] --json` | ranked fill candidates |
+| `stm deck suggest <name> [--role R | "q" | --commander] [--format F] [--max-price X] --json` | ranked fill candidates |
 | `stm deck legal <name> [--format F] [--bracket 1-5]` | legality + bracket checklist |
+| `stm deck mana <name> [--format F]` | static colored-source audit (Karsten floors; no simulation) |
 | `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
 | `stm deck combos <name> [--bracket B] --json` | Spellbook combo audit, split by section |
-| `stm deck cuts <name> [--for ROLE] --json` | ranked expendability list, cut+fill pairing |
+| `stm deck cuts <name> [--for ROLE] [--format F] --json` | ranked expendability list, cut+fill pairing |
 | `stm deck diff <A> <B-or-file> [--markdown] --json` | exact change instructions between two lists |
 | `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
 | `stm deck primer <name> --set <file>` | replace the primer markdown |
@@ -47,21 +48,23 @@ each. `--offline` skips the background refresh check.
   read command prints stable snake_case JSON and nothing else.
 - **Prefer `--json | jq` when `jq` is available.** JSON plus jq is the
   most reliable read path for scripts and agents: no prose to parse, no
-  ANSI, stable keys. Check `command -v jq` once; if present, wrap every
+  ANSI, stable keys. Every price field is a number in US dollars; a
+  `currency` key (or `<USD>` in help text) names the unit. Check
+  `command -v jq` once; if present, wrap every
   programmatic read. Common shapes:
 
   ```sh
   # Names only
   stm query "counterspell" --limit 10 --json | jq -r '.[].name'
   # Cheapest price of the top hit
-  stm card "Sol Ring" --json | jq -r '.price_usd'
+  stm card "Sol Ring" --json | jq -r '.price'
   # Deck lines you still need to buy (owned < quantity)
   stm deck show Froggy --json | jq -r '
     .sections[].cards[] | select(.owned < .quantity) |
-    "\(.quantity - .owned)x \(.name) @ \(.price_usd // "unpriced")"'
+    "\(.quantity - .owned)x \(.name) @ \(.price // "unpriced")"'
   # Top hits sorted by score, name + score + price as TSV
   stm query "sacrifice outlet" --limit 10 --json | jq -r '
-    sort_by(-.score) | .[] | "\(.score)\t\(.name)\t\(.price_usd)"'
+    sort_by(-.score) | .[] | "\(.score)\t\(.name)\t\(.price)"'
   # Deck totals without parsing text
   stm deck show Froggy --json | jq -r '"\(.cards) cards, missing $\(.missing_cost)"'
   ```
@@ -113,7 +116,14 @@ reciprocal rank fusion; the `score` is 0–1. Meaning wins on intent
 `query` and `collection query`): `--type` `--color` (subset of WUBRG)
 `--color-identity` `--cmc` `--power` `--toughness` (comparisons
 `<= < = > >=`) `--rarity` `--set` `--keyword` `--oracle-text` `--format`.
-`--limit` default 20, cap 100.
+`--limit` default 20, cap 100. `--max-price <USD>` (query, deck suggest)
+keeps only cards priced at or under the cap;
+**unpriced cards are excluded** (strict budget reading). The cap
+applies before the limit cut, so the result fills up to `--limit` with
+under-cap cards. Suggest's human output notes what the cap hid
+("candidates capped at $2; 3 unpriced or above-cap cards hidden");
+query paths hint "raise --max-price" when the cap empties the results.
+`collection query` has no cap: it lists cards you already own.
 
 Card detail (legalities, EDHREC rank, Game Changer flag, release date,
 price, Tagger role labels):
@@ -142,7 +152,7 @@ full card fields + `score` (0–1, like `query`) + `shared_count` +
 `shared_tags`. Use this when a known
 exemplar exists; use `stm query` when describing an intent with no
 exemplar. **Shared-tag count measures role overlap, not power.** Always
-cross-check `edhrec_rank` (lower is more played) and `price_usd` in the JSON
+cross-check `edhrec_rank` (lower is more played) and `price` in the JSON
 before proposing a hit; prefer hits with better ranks than the seed.
 
 ### Query combos for a card
@@ -222,7 +232,7 @@ by editing the file.
 ```sh
 stm deck list                        # decklists + collection decks with no list
 stm deck create Froggy               # new empty deck (enough for suggest --commander)
-stm deck show Stationz               # contents with (own N/M) per line + To-buy block
+stm deck show Stationz               # contents with (own N/M) per line + To-buy block + curve score
 stm deck Stationz --json             # sugar; JSON sections + covered_by per line
 stm deck update Froggy --add "1 Phyrexian Vault" --add "sideboard:2 Bolt"
 stm deck update Froggy --remove "1 Bolt" --set "0 Breya"   # --set 0 deletes the line
@@ -231,7 +241,7 @@ stm deck update Froggy --from /tmp/batch.txt --allow-partial  # batch; skips mis
 stm deck dedupe Froggy               # merge duplicate lines; collapse over-singleton quantities in commander decks
 stm deck import Froggy ~/Downloads/Froggy.txt   # upsert the decklist by name
 stm deck delete Froggy               # remove the decklist; ownership is kept
-stm deck export Froggy /tmp/out.txt --force
+stm deck export Froggy /tmp/out.txt --force  # --format names = plain "2x Name" lines
 stm deck primer Froggy                       # print the primer markdown to stdout
 stm deck primer Froggy --set /tmp/primer.md  # replace the primer from a file
 stm deck buylist Froggy                      # what to buy: `2x Name` lines
@@ -400,7 +410,8 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   commander). Commander rules in the model: commander starts in the command
   zone with the full pip check (a {W}{U}{B}{R}{G} commander needs one of
   each), one free mulligan when the opener has <2 or >6 lands (commander
-  only; constructed redraws a zero-land opener). Pass `--format <60-card
+  only; constructed plays Karsten's London mulligan — redraw 0/1/6/7-land
+  openers once, bottom one card toward 3 lands). Pass `--format <60-card
   format>` (e.g. `--format modern`) to simulate a commander list as a
   flat library instead.
 - Card model: oracle-text driven — the full mechanic inventory lives in
@@ -413,6 +424,12 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   online; plus abilities that create tokens register as repeatable
   engines from their first activation). "Create N tokens" sorceries and
   additional costs (sacrifice a creature / pay N life) execute on cast.
+  Land/spell MDFCs play as a land only when the hand holds no other
+  land, else they wait as castable spells; they count 0.4 land (0.75
+  mythic) in `mana_base`. Cascade casts the cheapest cheaper card from
+  the library for free, once, with ETB and per-cast credits. The report
+  carries `wincons.p50_lethal_turn` — the best-case goldfish kill turn
+  (unblocked; an upper bound, labeled as such).
 - **Keyword and effect signals (goldfish-aligned).** Haste attacks the
   entry turn. Landfall triggers run as real engines (draw/token/mana/ramp;
   "+1/+1 counter" shapes join attack power). Attack power per turn + p90
@@ -492,10 +509,11 @@ deck change. For full-detail comparison keep the `--json` diff form.
 - `card <name> --json` → card object: `name mana_cost cmc type_line colors
   color_identity keywords power toughness loyalty oracle_text rarity
   edhrec_rank legalities game_changer set collector_number scryfall_id
-  released_at tags price_usd price_usd_foil max_price_usd
-  max_price_usd_foil`. The `price_usd*` fields are the **cheapest** released
-  English printing per finish; the `max_price_usd*` fields the most
-  expensive. All null when no print is priced. Use `price_usd` for budget
+  released_at tags price price_foil max_price max_price_foil`. All
+  prices are US dollars; `currency` names the unit. The `price*` fields
+  are the **cheapest** released
+  English printing per finish; the `max_price*` fields the most
+  expensive. All null when no print is priced. Use `price` for budget
   math instead of parsing human output.
 - `card similar <name> --json` → array of hits: full card fields +
   `score shared_count shared_tags` (score semantics above; `null` score
@@ -506,9 +524,10 @@ deck change. For full-detail comparison keep the `--json` diff form.
 - `query --json` → array of hits: the same full card object as
   `card <name> --json` plus `score` (0–1, semantics above). Empty result
   prints `[]` with exit 3.
-- `collection --json` → `unique_cards total_cards foils total_value
-  purchase_total color_identity curve rarity top_sets by_universe
-  by_franchise locations`. `total_value` prices every owned copy by its
+- `collection --json` → `unique_cards total_cards foils currency
+  total_value purchase_total color_identity curve rarity top_sets
+  by_universe by_franchise locations`. All money fields are US dollars;
+  `currency` names the unit. `total_value` prices every owned copy by its
   exact printing. `top_sets` rows are `{set, set_name, cards}`.
   `by_universe` splits copies into `multiverse` / `beyond` buckets, each
   `{cards, value}`; `by_franchise` subdivides the beyond bucket the same
@@ -521,14 +540,18 @@ deck change. For full-detail comparison keep the `--json` diff form.
   and combo completions count copies across binders **and** deck
   assignments (a card owned only inside a deck reports its count there).
 - `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
-  owned_value, missing_cost, universe_census?, sections: [{section, cards:
+  currency, owned_value, missing_cost, curve: {avg_mv, histogram (MV
+  0..6+, 7 slots), target}, universe_census?, sections: [{section, cards:
   [{quantity, name, set, set_name?, set_type?, block?, universe?,
   collector_number, foil, owned, assigned_to_this_deck, owned_elsewhere,
-  covered_by, missing_reason?, basic_land, price_usd}]}]}`. `cards` is the
+  covered_by, missing_reason?, basic_land, price}]}]}`. `cards` is the
   maindeck count (the legal deck); `sideboard_cards` reports the sideboard
-  separately. `primer` is the file path; read the primer's contents
+  separately. `target` is one of six curve sentences: commander decks by
+  average MV (< 2.0 "comes together by t4-t6", < 3.0 "by t6-t8", else
+  "by t8-t10"); 60-card decks (< 2.0 "does its thing by t4", < 3.0
+  "by t4-t6", else "by t6"). `primer` is the file path; read the primer's contents
   with `stm deck primer <name>` (plain markdown on stdout; an empty
-  primer prints a note instead). `price_usd` is the cheapest printing
+  primer prints a note instead). `price` is the cheapest printing
   (foil entries price at the cheapest foil print when one exists).
   **`owned` = copies available to this deck** (assigned here + binders);
   it never contradicts `covered_by`. `assigned_to_this_deck` is the
@@ -555,14 +578,21 @@ deck change. For full-detail comparison keep the `--json` diff form.
   it as part of any bracket review ("no infinite combo in a bracket-3
   main deck" is the standard check).
 - `deck cuts <name> --json` → ranked cut rows
-  `[{name, qty, reasons: [{kind, detail}], score (0–1), pinned, rank,
+  `[{name, qty, remove_qty, reasons: [{kind, detail}], score (0–1), pinned, rank,
   replace_with?: {role, candidates}}]`. Kinds: `game_changer` (over the
-  bracket allowance), `illegal`, `castability` (rarely castable on
-  curve), `curve` (CMC outlier), `price`. Basics and the commander never
-  appear; illegal cards and Game Changers over the bracket cap pin to
-  the top (`pinned: true`, rank 1.. regardless of score). `--for
-  <role>` pairs every cut with fill candidates for the deficit role
-  (owned first) and discounts incumbents already serving that role.
+  bracket allowance), `illegal` (not legal in the deck's format — pin),
+  `off_color_land` (produces or fetches nothing the deck can use; not a
+  pin), `castability` (rarely castable on curve), `curve` (CMC outlier),
+  `price`. Basics and the commander never appear; illegal cards and Game
+  Changers over the bracket cap pin to the top (`pinned: true`, rank 1..
+  regardless of score). `remove_qty` is the copy count for the paired
+  `deck update --remove` (full qty for pins, 1 of a 2-of, half of a
+  3-4-of; human output prints "cut N of M copies"). `--count <N>` caps
+  the rows (default 5). `--format <fmt>`
+  judges legality against a pinned format (default: inferred from the
+  deck's sections). `--for <role>` pairs every cut with fill candidates
+  for the deficit role (owned first) and discounts incumbents already
+  serving that role.
 - `deck diff <A> <B-or-file> --json` →
   `[{section, removed: [{name, qty}], added: [{name, qty}], changed:
   [{name, from, to}]}]`. Both operands accept a deck name or a ManaBox
@@ -577,6 +607,19 @@ deck change. For full-detail comparison keep the `--json` diff form.
   collection decks whose list is not imported).
 - `deck legal <name> --json` → `{name, format, format_assumed, bracket,
   legal, violations, advisories, notes, summary}`.
+- `deck mana <name> --json` → static colored-source audit (no
+  simulation): `{format, lands, sources: {W,U,B,R,G}, credits:
+  {lands, dorks, rocks, cantrips} per color, requirements:
+  [{name, mana_cost, cmc, needs, have, deficit, ok}],
+  worst_deficits: ["Wrath of God: need 16 W, have 14.0"],
+  tapland_count, untapped_t1_sources}`. Sources are Karsten-weighted
+  (lands 1.0, rocks 0.75, dorks 0.5, 2-mana ramp-class 0.75, cantrips
+  0.25 capped at 10 effects, MDFC land faces 0.4/0.75 in the land
+  count); requirements use the Karsten 2022 floors (commander 12/17/21
+  by pips; 60-card by the full pip-shape table, corrected for land
+  count). Human output prints the per-color table, the worst 3
+  deficits, and "add 2-3 more <color> sources". `deck simulate --json`
+  carries the same block as `colored_sources`.
 - `deck simulate <name> --json` → `{name, format, runs, turns, seed,
   deck_shape, assumptions, opening_hand, land_drops, mana_base,
   mana_base_bracket_inferred, commander,
@@ -590,10 +633,14 @@ deck change. For full-detail comparison keep the `--json` diff form.
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
   **`mana_base` = `{lands, rocks, dorks, ramp_spells, total_sources,
   bracket_target_lands: [min, max], bracket_target_ramp: [min, max],
-  bracket, verdict}`** — the deck's counts against the bracket band.
-  Without `--bracket` the bracket is inferred from the Game Changer
-  census (0 GC → 2, 1–3 → 3, 4+ → 4); the report carries
-  `mana_base_bracket_inferred: true` when that happened. The verdict is the norm anchor:
+  bracket, verdict}`** — the deck's counts against the target band.
+  Commander decks use bracket bands (without `--bracket` the bracket is
+  inferred from the Game Changer census: 0 GC → 2, 1–3 → 3, 4+ → 4;
+  the report carries `mana_base_bracket_inferred: true` when that
+  happened). 60-card decks use Karsten-style bands from the deck's
+  average mana value — under 2.0: 20–22 lands, 2.0–3.0: 22–25, 3.0+:
+  25–28, minus up to 2 for every four cheap cantrips — and report
+  `bracket: null` with `bracket_target_ramp: [0, 0]`. The verdict is the norm anchor:
   "add/trim lands", "add ramp", or "on target". Check it before acting on
   any land suggestion: `land_drops.flood_pct_6plus_lands_seen_in_11`
   counts lands *seen* by end of turn 4 (opener + draws + cantrips), and
@@ -634,7 +681,7 @@ deck change. For full-detail comparison keep the `--json` diff form.
   Exit 1 only when a problem is *new*; identical or improved decks exit 0.
   Use it in the fix loop instead of saving and diffing JSON by hand.
 - `deck suggest <name> --json` → array of `{name, oracle_id, mana_cost,
-  cmc, type_line, edhrec_rank, game_changer, owned, price_usd, score,
+  cmc, type_line, edhrec_rank, game_changer, owned, price, score,
   tags, oracle_text, color_identity}`. Ranked by fit: semantic search and
   tag matches fuse (reciprocal rank fusion, same as `query`), EDHREC rank
   breaks ties; owned cards list first, then unowned, each group in fit
@@ -644,7 +691,14 @@ deck change. For full-detail comparison keep the `--json` diff form.
   legendary Vehicle/Spacecraft with a P/T box) ranked by theme fit to the
   deck. `--format <fmt>` pins the legality filter (cards legal in that
   format only); without it, commander-shaped decks filter to commander and
-  the commander's colors, and other decks take any format. With no query
+  the commander's colors, and other decks gate to cards legal in at
+  least one 60-card format (a `note:` advises passing `--format` for a
+  precise gate). Non-commander decks demote suggestions sharing zero
+  colors with the deck, and lands rank by color relevance (basics and
+  on-color fixing first, off-color fetches last). Commander decks
+  exclude lands producing nothing in the color identity, and mono-color
+  decks rank partial fetches below on-color lands unless the deck
+  already runs duals of the extra color. With no query
   and no role the pool is one-card-away Spellbook
   completions ranked by variants completed, win-the-game, popularity,
   EDHREC; each row carries `combo` (`{pieces, bracket_tag, produces,
@@ -653,8 +707,9 @@ deck change. For full-detail comparison keep the `--json` diff form.
   format with `--format` to filter to one). `--bracket 1-2` filters
   Game Changers out (their allowance is zero); brackets 3-5 do not
   filter (deck legal counts the deck's allowance).
-- `deck buylist <name> --json` → `{store, rows: [{name, set, set_name,
-  collector_number, scryfall_id, foil, quantity, price_usd}], total_usd}`.
+- `deck buylist <name> --json` → `{store, currency, rows: [{name, set,
+  set_name, collector_number, scryfall_id, foil, quantity, price}],
+  total}`. All prices are US dollars.
   `rows` = cheapest released English printing of the right finish for the
   missing copies.
 
@@ -714,13 +769,17 @@ question rounds in either mode. No jumping to a finished list.
 - **Small batches.** Propose at most 3–5 cards at a time. Present them as a
   table: card, role, price, own/buy, one line on why it fits. Wait for the
   user's confirmation before applying anything with `deck update`.
-- **Budget rules everything; cost every batch before presenting it.** For
-  each to-buy card: `stm card <name> --json` → `price_usd` (or
-  `price_usd_foil` for a foil entry). Sum the to-buy prices, present the
-  batch only when it fits the remaining budget (otherwise show cheaper
-  alternatives in the same table), and track the running spend after
-  every batch ("$34 of $50 used"). Cards the user own cost $0; pull
-  `owned` and `price_usd` from `deck show --json`, never from memory.
+- **Budget rules everything; cost every batch before presenting it.**
+  First pricing pass: run the fill with `--max-price` set to the
+  remaining per-card budget — the cap drops over-priced and unpriced
+  candidates before ranking, so the pool is already affordable. Then,
+  per to-buy card in the final table: `stm card <name> --json` →
+  `price` (or `price_foil` for a foil entry). Sum the to-buy
+  prices, present the batch only when it fits the remaining budget
+  (otherwise show cheaper alternatives in the same table), and track the
+  running spend after every batch ("$34 of $50 used"). Cards the user
+  owns cost $0; pull `owned` and `price` from `deck show --json`,
+  never from memory.
 - **One question minimum per batch.** After each confirmed batch, ask at
   least one question: which direction to push next, whether a choice felt
   right, what to cut. Build the deck with the user, not for them.
@@ -756,6 +815,9 @@ question rounds in either mode. No jumping to a finished list.
 5. Playstyle: aggro / control / combo / value? Speed preference?
 6. Anything off-limits: cards the user refuses to play, hate pieces
    ("stax"), proxies, or a "don't buy singles above $X" rule.
+7. **60-card formats only: the expected metagame.** What will they face —
+   aggro-heavy local scene, combo-prone FNM? The answers name the
+   sideboard targets and the interaction split.
 
 If the user wants suggestions for 4–6, offer 2–3 commander/theme candidates
 with a one-line pitch each. Two search paths, in order:
@@ -777,15 +839,27 @@ with a one-line pitch each. Two search paths, in order:
 "Powerful" is verifiable. After each fill round, check the deck against
 these counts (using `stm deck show`'s ramp/curve overview and the deck
 list) and name the deficit when a category is short, e.g. "5 of ~10 draw
-pieces, need 3–5 more in the next batch":
+pieces, need 3–5 more in the next batch".
 
-| Category (commander) | Bracket 1–2 | Bracket 3–4 | Bracket 5 (cEDH) |
+**Commander targets** (brackets 1–2 baseline; average-deck template):
+
+| Category | Target | Notes |
+| --- | --- | --- |
+| Lands | 37–38 | 30 lands leave ~31% of openers unplayable; 38 lands leave ~17% |
+| Ramp | 10–12 | Rocks and dorks; prefer 2-mana ramp |
+| Card draw | 10–12 | Prefer repeatable engines over one-shots |
+| Targeted removal | 10–12 | At least 3–5 at instant speed |
+| Board wipes | 2–3 (go-wide) / 3–4 (board-builders) / 5–6 (control, aristocrats) | Counted separately from targeted removal |
+| Win conditions | 2–3 distinct routes | One route is too fragile |
+
+Bracket modifiers:
+
+| Bracket | Lands | Ramp | Other |
 | --- | --- | --- | --- |
-| Lands | 34–40 | 32–38 (bracket 3: 33–38) | 25–31 |
-| Ramp (rocks, dorks, ramp spells) | 7–12 | 8–12 | 10–16 |
-| Card draw | 8–10 | 8–12 | 10+ |
-| Interaction (removal, wipes, countermagic) | 8–10 | 10–14 | 12+ |
-| Win conditions | 3–5 | 3–5 | 2–4 (fast) |
+| 1–2 (casual) | 34–40 | 7–12 | baseline table above |
+| 3 (upgraded) | 33–38 | 8–11 | interaction 10–14 |
+| 4 (optimized) | 32–36 | 9–12 | interaction 10–14 |
+| 5 (cEDH) | 25–31 | 10–16 | interaction 12+, fast wincons 2–4 |
 
 The land and ramp rows are research-derived (EDHREC average decks: 46
 average decks across 11 commanders; Sam Black's cEDH land-count article),
@@ -794,11 +868,37 @@ the check, so a deck at 44 lands with no lands-matter theme reads "trim 6
 lands" and an AI agent should treat "add lands" suggestions as "add rocks"
 first when the deck already has fewer than 6 nonland ramp sources.
 
-For 60-card formats: 20–24 lands (more for control), 4-ofs for core pieces,
-a curve that lets the deck do its thing by turns 3–4 (aggro) or 4–6
-(midrange/control). Targets flex for archetype: a control deck runs more
-interaction and fewer creatures; a go-wide deck counts its payoffs as win
-conditions. Say when you are deviating and why.
+**60-card targets** (Karsten's land-count method; archetype consensus):
+
+| Archetype | Lands | Tap lands | Interaction |
+| --- | --- | --- | --- |
+| Aggro | 20–22 | at most 3 when playing one-drops | 4–8 targeted, few or no sweepers |
+| Midrange | 23–25 | up to ~9 without one-drops | 6–10 |
+| Control | 25–28 | — | 8–12 incl. 4–6 sweepers main |
+| Combo | 20–24 | — | 4–6 protection pieces |
+
+Additional 60-card rules: run 4-ofs for core pieces; the deck should do
+its thing by turn 3–4 (aggro) or 4–6 (midrange/control); plan a 15-card
+sideboard against the expected metagame; run 8–12 effective copies of the
+win condition. Combo decks count 3–4 cheap draw/ramp spells as one land.
+
+**Archetype adjustments** (community consensus; SpellArmory's template):
+
+| Archetype | Adjustment |
+| --- | --- |
+| Control | 12–15 removal, 5–7 wipes, fewer plan cards |
+| Aggro | 5–6 removal, lower curve |
+| Combo | More draw, 4–6 protection pieces, less removal |
+| Tokens | 2–3 wipes |
+| Aristocrats | 5–7 wipes |
+
+Build priority: enabler > payoff > enhancer. Too many enhancers (anthems,
+lords, payoffs' boosters) fill hands with cards that do nothing alone —
+`dead_cards` catches this after a sim.
+
+**Mana-curve targets:** commander nonlands spread ≈ 9/18/15/10/5/5 across
+MV 1–6+, average MV near 3. 60-card decks scale the same shape to the
+archetype; aggro averages near 2.
 
 **Simulation verifies these counts** (see Part 1's fix loop): static
 counts say the deck *contains* 10 ramp pieces; the sim says whether the
@@ -807,9 +907,53 @@ comes down on curve (`commander.on_curve_pct`), and whether the curve is
 playable (`card_castability`). Run it after the skeleton and after every
 confirmed batch, and let `problems[]` drive the next batch.
 
+### Colored sources (mana-base sanity check)
+
+Before the sim, check the mana base against Karsten's source floors
+(Frank Karsten, "How Many Sources Do You Need to Consistently Cast Your
+Spells? A 2022 Update"). Count each land's producible colors; partial
+credits: mana dorks ×0.5, mana rocks ×0.75, 2-mana land-ramp spells ×0.75
+(for spells of MV 3+), fetches ×1 in two-color decks / ×0.67 in three or
+more colors, cheap cantrips ×0.25–0.5.
+
+Commander (99-card deck, 37–41 lands):
+
+| Pips in the cost | Sources needed |
+| --- | --- |
+| 1 (e.g. `1WW` → W) | ~12 |
+| 2 (e.g. `WW`) | ~17 |
+| 3 (e.g. `WWW`) | ~21 |
+
+60-card deck (24–25 lands):
+
+| Requirement | Sources needed |
+| --- | --- |
+| 5C / 4C | 9 |
+| 3C | 10 |
+| 2C (e.g. `1CC`) | 12 |
+| 1C | 13–14 |
+| CC (e.g. `UU`) | 16–21 |
+| 2CC | 22 |
+| 1CC | 18 |
+| CCC | 23 |
+
+Gold cards (a cost requiring two different colors, e.g. `GW`): add +1
+source per additional color requirement. A category short of its floor is
+a named deficit in the next batch, same as a missing role. `stm deck mana
+<name>` computes all of this for you: run it before buying lands and fix
+every deficit line before the first simulate.
+
 **Round 2 — skeleton (get confirmation).** Once round 1 is answered:
 
 1. `stm collection --json` to see the collection's shape and value.
+2. **Research the archetype before the skeleton** (manual, web — no API):
+   - Commander: look the commander up on EDHREC (web). Note the average
+     list's land count, ramp count, and the top themes. Compare against
+     the power-target tables above; say where you deviate and why.
+   - 60-card formats: check the metagame pages on MTGGoldfish (web) for
+     the format. Note the top archetypes, their land counts and curves,
+     and the cards the expected opponents will play — this feeds both the
+     curve targets and the sideboard plan.
 2. Pick the commander (or core theme cards). For commander, verify color
    identity implications early; everything must fit it.
 3. Propose the mana base plan (how many basics, which duals/fetches owned
@@ -831,7 +975,9 @@ each card:
 - **`stm deck suggest <name> --role <name> --json` is the one-call fill
   tool**: it searches owned first, matches Scryfall Tagger labels,
   filters to the deck's legality, and ranks by fused fit (semantic +
-  tag match, EDHREC rank tiebreak). Any of the 69 known role names works
+  tag match, EDHREC rank tiebreak). Pass `--max-price <USD>` as the
+  first pricing pass — the cap drops over-priced and unpriced candidates
+  before ranking. Any of the 69 known role names works
   — the CLI prints the full list on an unknown role (draw, cantrip,
   wheel, mill, ramp, mana-rock, mana-dork, removal, board-wipe,
   counterspell, stax, sacrifice, reanimate, token, anthem, equipment,
@@ -856,7 +1002,9 @@ each card:
 **Round 4 — lands, review, finish.** Fill the mana base. Basics are free,
 so the budget rule for lands: cover colors with basics first, then check
 what the user already owns (`stm collection query "land" --type "Land"
---json`) before proposing anything. Tap lands, pain lands, and
+--json`) before proposing anything. Run `stm deck mana <name>` before
+buying lands and fix every deficit line before the first simulate — the
+audit is static, so it runs instantly. Tap lands, pain lands, and
 enter-tapped lands the user owns beat buying fetches/shocks. When the
 strength target justifies fast mana, price the upgrade gap explicitly
 ("fetches would cost $45; the owned tap lands play fine at bracket 2") and
@@ -887,7 +1035,9 @@ exceed it.
    precon). Then `stm deck show <name> --json` (curve,
    ramp, prices, ownership) and `stm deck legal <name> --bracket <b>` once
    the user names a target bracket. **Run `stm deck simulate <name>
-   --json` too** — its `problems[]` are the primary diagnosis input. Report:
+   --json` too** — its `problems[]` are the primary diagnosis input. Run
+   `stm deck mana <name>` first (static, instant): every deficit line is
+   a concrete mana-base fix. Report:
    total value, missing cost, any violations, gaps against the power
    targets, and the simulation findings (screw/flood, commander timing,
    starved categories, dead cards).
@@ -913,6 +1063,21 @@ exceed it.
    | `dead_cards` | 3+ spells cast late | cut/discount late cards, or add ramp (check `card_castability`) |
    | `category_starved` | removal/wincons rarely in hand | fill the starved role (`deck suggest --role`) |
    | `interaction_unready` | answers seen but unaffordable | add cheaper instant-speed answers |
+
+   **60-card reading notes** (these apply when the deck is not
+   commander-shaped):
+
+   - `mana_screw`: the fix is "add lands" (never rocks — no ramp verdict
+     for 60-card decks; `mana_base.bracket` is `null` and there is no
+     ramp band).
+   - `interaction_unready`: read against the deck's instant count.
+   - Bracket fields (`bracket`, `mana_base_bracket_inferred`) are absent
+     for 60-card decks; ignore bracket advice.
+   - Sideboard slots are part of tuning: reserve ~15 slots against the
+     expected metagame instead of widening the main deck.
+   - `deck simulate` runs 8 turns and London mulligans for 60-card
+     decks; read findings on that scale (a t6 finding is late-half, not
+     endgame).
 3. **Optional research.** If the user asks or the problems are unclear,
    search online (EDHREC primer for the commander, bracket guides) and
    summarize findings with sources before proposing anything.

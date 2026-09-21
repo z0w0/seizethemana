@@ -133,3 +133,94 @@ fn compute_empty_deck() {
     assert_eq!(stats.avg_cmc, 0.0);
     assert!(stats.curve.is_empty());
 }
+
+#[test]
+fn curve_json_histogram_matches_fixture() {
+    use crate::deck::grammar::{Deck, DeckEntry};
+    let mut cards: HashMap<String, CardRow> = HashMap::new();
+    let land = card("Island", 0.0, "Basic Land — Island", "", "");
+    cards.insert("Island".into(), land);
+    for (name, cmc) in [
+        ("One", 1.0),
+        ("Two", 2.0),
+        ("TwoB", 2.0),
+        ("Six", 6.0),
+        ("Seven", 8.0),
+    ] {
+        let mut c = card(name, cmc, "Creature", "", "");
+        c.mana_cost = format!("{{{}}}", cmc as i64);
+        cards.insert(name.into(), c);
+    }
+    let deck = Deck {
+        sections: vec![(
+            "DECK".into(),
+            vec![
+                DeckEntry {
+                    quantity: 10,
+                    name: "Island".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+                DeckEntry {
+                    quantity: 3,
+                    name: "One".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+                DeckEntry {
+                    quantity: 5,
+                    name: "Two".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+                DeckEntry {
+                    quantity: 4,
+                    name: "TwoB".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+                DeckEntry {
+                    quantity: 2,
+                    name: "Six".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+                DeckEntry {
+                    quantity: 1,
+                    name: "Seven".into(),
+                    set_code: None,
+                    collector_number: None,
+                    foil: false,
+                },
+            ],
+        )],
+    };
+    let stats = compute(&deck, &cards);
+    let v = curve_json(&stats, false);
+    // Histogram indexed MV 0..6+: MV1 in slot 1, MV2 in slot 2, MV6 and
+    // the MV8 copy share slot 6.
+    assert_eq!(v["histogram"][0], 0, "no MV-0 cards in the fixture");
+    assert_eq!(v["histogram"][1], 3);
+    assert_eq!(v["histogram"][2], 9);
+    assert_eq!(
+        v["histogram"][6], 3,
+        "MV6 (2 copies) + MV8 (1) in the last slot"
+    );
+    let avg = v["avg_mv"].as_f64().unwrap();
+    assert!((avg - (3.0 * 1.0 + 9.0 * 2.0 + 2.0 * 6.0 + 8.0) / 15.0).abs() < 0.05);
+}
+
+#[test]
+fn curve_target_is_archetype_aware() {
+    assert_eq!(curve_target(true, 1.5), "target: comes together by t4-t6");
+    assert_eq!(curve_target(true, 2.5), "target: comes together by t6-t8");
+    assert_eq!(curve_target(true, 3.5), "target: comes together by t8-t10");
+    assert_eq!(curve_target(false, 1.5), "target: does its thing by t4");
+    assert_eq!(curve_target(false, 2.5), "target: does its thing by t4-t6");
+    assert_eq!(curve_target(false, 3.5), "target: does its thing by t6");
+}

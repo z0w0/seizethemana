@@ -47,233 +47,77 @@ fn curve_bucket(cmc: u32) -> &'static str {
 }
 
 /// The model-limit list shipped with every report.
+///
+/// Reader-facing: an AI agent (or a human) uses these lines to interpret
+/// the numbers. Each line states one assumption or constraint of the
+/// simulation model, in plain sentences. Implementation names, module
+/// names, and code identifiers stay out; the JSON field names the list
+/// itself refers to (like `infinite_mana_pct`) are the report's own
+/// keys, which the reader sees in the same report.
 pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
     let mut list = vec![
-        "lands enter per their oracle text (enters-tapped honored, untapped when none)".to_string(),
-        "no opponents, no counters or protection spells fire".to_string(),
-        "draw engines fire once per turn on a fixed delay, not from full board state".to_string(),
-        "opponent-dependent mana sources (Fellwar Stone) read as any-color from turn 2, nothing on turn 1".to_string(),
-        "hybrid pips pay from any of their colors".to_string(),
-        "body power uses the printed power when known, else flat 2 (tokens stay flat)".to_string(),
-        "improvise/affinity/warp approximate to cost cuts; improvise/affinity discounts grow with the artifact count on the battlefield".to_string(),
-        "X-cost spells pay the leftover mana pool as X (drain/draw/mill/tokens scale with it)".to_string(),
-        "kicker pays from leftover mana when affordable; only drain amounts scale with the kick; multikicker pays once".to_string(),
-        "additional costs (sacrifice a creature, pay N life) execute with the cast; only the first sacrifice shape is modeled".to_string(),
-        "drain resolves x3 life in commander (three opponents), x1 in 60-card formats (combat-damage drains included)".to_string(),
-        "token effects create their stated count of flat bodies (capped at 8); Treasure creators bank pips instead of bodies".to_string(),
-        "mill fills the graveyard census and counts as cards seen; graveyard replay fires once per card, no recursion chains".to_string(),
-        "wheels discard the hand into the graveyard census, then draw seven; loot is draw-N discard-N".to_string(),
-        "spend-restricted mana (creature-only lands) pays creature casts only".to_string(),
-        "sacrifice outlets (Ashnod's Altar class) consume real untapped bodies; with no body available they do not fire".to_string(),
-        "blink effects re-fire the host's ETB triggers once, the turn after".to_string(),
-        "planeswalkers fire one loyalty ability per turn; plus abilities gain loyalty, minus abilities spend it; ultimates only flag online; plus abilities that create tokens register as repeatable engines from their first activation".to_string(),
-        "sagas advance one chapter per turn; parsed chapter abilities fire (combined numeral lines fill every chapter); the saga leaves the battlefield after its final chapter".to_string(),
-        "per-cast mana engines (Vivi class) add their yield per spell cast every turn the host is on the battlefield; their own tap clause does not double count; 'for each' token counts cap at 8".to_string(),
-        "zero-cost mana engines that out-produce their cost are capped and flagged (infinite_mana_pct); 'activate only once each turn' engines fire once per turn without flagging".to_string(),
-        "equipment buffs only their equipped host after the equip cost is paid; aura buffs are not modeled".to_string(),
-        "extra turns replay a land drop, a draw, and upkeep engines; no full-turn replay".to_string(),
-        "energy, metalcraft, converge, proliferate, and replay mechanics (flashback, rebound) are not modeled".to_string(),
-        "static type-grant abilities on other lands (The World Tree) are not modeled".to_string(),
-        "seed baselines are version-local: an upgrade may reshuffle identically-seeded decks, so regenerate the baseline JSON after upgrading".to_string(),
+        "This is a best-case solitaire simulation. There are no opponents: nothing is countered, no removal is cast, no attacker is blocked, and board wipes never fire.".to_string(),
+        "Lands enter the battlefield as their card text says. Cards that may enter untapped by paying life do so.".to_string(),
+        "A creature's attack power uses its printed power when known; unknown powers and tokens count as 2.".to_string(),
+        "Each draw engine draws its stated amount once per turn from the turn after it enters, no matter what is on the battlefield.".to_string(),
+        "A draw engine that scales with the board ('draw a card for each enchantment you control') draws the number of matching permanents, at most 8. Shapes it cannot count draw 1.".to_string(),
+        "A card that enters and draws ('When this creature enters, draw a card') draws only once per entry. It is a trigger, not an extra cast effect.".to_string(),
+        "X-cost spells spend all leftover mana as X. Drain, draw, mill, tokens, reveal-permanents, and counter-power effects scale with that X.".to_string(),
+        "X spells the model cannot execute pay X = 1 and do nothing extra.".to_string(),
+        "A split card such as 'Fire // Ice' is cast as its cheaper face. The other face counts for deck categories but its cast effects never happen.".to_string(),
+        "One optional kicker cost is paid when spare mana covers it. Only drain amounts grow with the kick.".to_string(),
+        "Casts that sacrifice a creature or pay life as an extra cost pay it; the body really leaves the battlefield.".to_string(),
+        "Cards that create tokens create that many 2/2 bodies, at most 8 per effect. Card effects that create Treasure tokens bank the tokens as mana instead of bodies.".to_string(),
+        "Treasure banking needs the Treasure clause on the card that makes the tokens. A Treasure maker elsewhere in the deck does not convert other cards' tokens.".to_string(),
+        "Damage and life loss aimed at a player resolves three times in commander (three opponents) and once in 60-card formats.".to_string(),
+        "The lethal census sums combat damage and burn/drain effects against the full table life (120 in commander, 20 in 60-card). It is an upper bound: real games have blockers, removal, and life gain.".to_string(),
+        "Mill and discard fill the graveyard census and count as cards seen. A card returns from the graveyard at most once; no loops.".to_string(),
+        "A wheel discards the whole hand, then draws seven. Loot is draw N, then discard N.".to_string(),
+        "Removal is measured as capacity: how often an answer is in hand and affordable. Counterspells, targeted removal, bounce, and board wipes all count; wipes never resolve.".to_string(),
+        "The removal count splits into targeted removal and board wipes in the deck shape.".to_string(),
+        "Lands that may tap only for creature spells pay creature casts only.".to_string(),
+        "A sacrifice outlet consumes a real untapped creature. With no creature available it does nothing.".to_string(),
+        "A blink effect ('exile, then return') re-fires the card's enter triggers exactly once, the next turn.".to_string(),
+        "Planeswalkers use one loyalty ability per turn: plus abilities gain loyalty, minus abilities spend it. Ultimates only report the turn they become affordable; they do not resolve.".to_string(),
+        "Sagas resolve one chapter per turn and leave the battlefield after the last chapter.".to_string(),
+        "Mana engines that produce per spell cast ('add one mana for each spell you've cast this turn') pay out once per spell cast each turn while untapped.".to_string(),
+        "A zero-cost mana engine that produces more than it costs is capped after 24 activations per turn and flagged in the report (suspected infinite engine). Engines limited to once per turn are not flagged.".to_string(),
+        "Equipment boosts only the creature it equips, after the equip cost is paid. Auras and other continuous buffs are not modeled.".to_string(),
+        "A one-shot board buff ('creatures you control get +X/+X where X is the number of creatures you control') boosts that combat phase only, on the turn it enters, capped at 20 creatures.".to_string(),
+        "Extra turns replay a land drop, a draw, and upkeep engines. They are not full turns: no casts, no combat.".to_string(),
+        "Not modeled: energy, metalcraft, converge, proliferate, and replay mechanics such as flashback and rebound. Cards with only these effects play as vanilla.".to_string(),
+        "A cascade cast also casts the cheapest cheaper nonland card in the library, once, with no cascade chaining. Only creature hits join the battlefield.".to_string(),
+        "A land/spell MDFC (e.g. Valakut Awakening) is played as its land face when no other land drop is available, and cast as its spell face otherwise. Non-mythic MDFCs count 0.4 land, mythic 0.75.".to_string(),
+        "Cards whose text the parser cannot read play as plain cards with no abilities. Their mana cost still gates the cast.".to_string(),
+        "Seeded baselines change between versions. Regenerate any saved baseline report after upgrading.".to_string(),
     ];
     if deck.commanders.is_empty() {
-        list.push("no commander zone; the whole deck is shuffled".to_string());
+        list.push("The whole deck is shuffled; there is no commander zone.".to_string());
         list.push(
-            "London mulligan: ship when the opener has fewer than 1 land, redraw and bottom one random card per mulligan (no keep choice)"
+            "London mulligan: a hand ships only when it has 0, 1, 6, or 7 lands. It redraws a full seven and bottoms one chosen card toward three lands, keeping six. Kept hands stay at seven."
                 .to_string(),
         );
     } else {
-        list.push("commander starts in the command zone, no recast tax".to_string());
         list.push(
-            "one free mulligan when the opener has <2 or >6 lands (commander family)".to_string(),
+            "The commander starts the game in the command zone and never costs extra to recast."
+                .to_string(),
         );
         list.push(
-            "unconditional commander draw triggers (upkeep, end step) fire once per turn from the turn after it is cast; attack-gated draws wait for animation and combat".to_string(),
+            "One free mulligan when the opening hand has fewer than 2 or more than 6 lands."
+                .to_string(),
+        );
+        list.push(
+            "The commander's upkeep and end-step draw triggers fire once per turn from the turn after it is cast. Draws gated on attacking wait for combat."
+                .to_string(),
         );
     }
     list.push(
-        "combo assembly (Spellbook) measures how often pieces reach their zones; exile-zone pieces are excluded, library-zone pieces read as hand-seen".to_string(),
+        "Combo assembly measures how often each combo piece reaches the zone its combo needs. Exile-zone pieces are skipped; library pieces count as seen when drawn."
+            .to_string(),
     );
     list
 }
 
-/// Human output for `--combo` pair access.
-pub fn print_combo_access(out: &Output, rows: &[super::aggregate::ComboAccess]) {
-    let s = out.styles();
-    println!();
-    println!("{}", s.header("Combo assembly (both pieces in hand)"));
-    for row in rows {
-        println!(
-            "  {}  {}  {:.0}% of games",
-            s.card_name(&row.pair),
-            s.dim(&format!("by t{}", row.target_turn)),
-            row.pct_games * 100.0
-        );
-    }
-}
-
-/// JSON payload for store-backed combo assembly, capped per direction.
-pub fn combos_json(assembly: &super::combos::Assembly, limit: usize) -> serde_json::Value {
-    serde_json::json!({
-        "source": "commanderspellbook",
-        "variants_considered": assembly.variants_considered,
-        "complete": &assembly.complete[..assembly.complete.len().min(limit)],
-        "near_misses": &assembly.near_misses[..assembly.near_misses.len().min(limit)],
-    })
-}
-
-/// Human output for store-backed combos: complete combos with assembly
-/// rates, then near-misses (one card away). Combo rows never create
-/// problems: they are opportunities, not violations.
-/// Spellbook features that win the game, for the win-path filter.
-const WIN_FEATURES: [&str; 6] = [
-    "Win the game",
-    "Infinite damage",
-    "Infinite turns",
-    "Infinite mana",
-    "Infinite card draw",
-    "Infinite storm",
-];
-
-/// True when the combo produces a win feature.
-fn is_win_path(produces: &[String]) -> bool {
-    produces
-        .iter()
-        .any(|p| WIN_FEATURES.iter().any(|f| p.contains(f)))
-}
-
-/// Win-path rows: complete combos that produce a win feature.
-pub fn win_paths_json(assembly: &super::combos::Assembly, limit: usize) -> serde_json::Value {
-    let paths: Vec<&super::combos::ComboAccess> = assembly
-        .complete
-        .iter()
-        .filter(|r| is_win_path(&r.produces))
-        .take(limit)
-        .collect();
-    serde_json::json!({
-        "count": paths.len(),
-        "paths": paths,
-    })
-}
-
-/// Human win-path block: compact, only when win paths exist.
-pub fn print_win_paths(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
-    let s = out.styles();
-    let paths: Vec<&super::combos::ComboAccess> = assembly
-        .complete
-        .iter()
-        .filter(|r| is_win_path(&r.produces))
-        .take(limit)
-        .collect();
-    if paths.is_empty() {
-        return;
-    }
-    println!();
-    println!("{}", s.header("Win paths"));
-    for row in paths {
-        let feature = row
-            .produces
-            .iter()
-            .find(|p| is_win_path(std::slice::from_ref(p)))
-            .map(String::as_str)
-            .unwrap_or("");
-        println!(
-            "  {}  {}  {:.0}% of games",
-            s.card_name(&row.combo),
-            s.dim(&format!("{feature} by t{}", row.target_turn)),
-            row.pct_games * 100.0
-        );
-    }
-}
-
-pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
-    let s = out.styles();
-    println!();
-    println!(
-        "{} {}",
-        s.header("Combo assembly (Spellbook)"),
-        s.dim(&format!(
-            "{} variants in the deck",
-            assembly.variants_considered
-        ))
-    );
-    for row in assembly.complete.iter().take(limit) {
-        let tags = row
-            .produces
-            .first()
-            .map(|p| format!(" → {p}"))
-            .unwrap_or_default();
-        let bracket = row
-            .bracket_tag
-            .as_deref()
-            .map(|b| format!(" [{b}]"))
-            .unwrap_or_default();
-        println!(
-            "  {}  {}  {:.0}% of games{}{}",
-            s.card_name(&row.combo),
-            s.dim(&format!("by t{}", row.target_turn)),
-            row.pct_games * 100.0,
-            s.dim(&tags),
-            s.dim(&bracket)
-        );
-    }
-    let misses: Vec<&super::combos::ComboAccess> =
-        assembly.near_misses.iter().take(limit).collect();
-    if !misses.is_empty() {
-        println!("{}", s.header("One card away"));
-        for row in misses {
-            println!(
-                "  {}  {}  {}{}",
-                s.card_name(row.missing.first().map(String::as_str).unwrap_or("?")),
-                s.dim(&format!("completes {}", row.combo)),
-                s.dim(&format!("by t{}", row.target_turn)),
-                row.bracket_tag
-                    .as_deref()
-                    .map(|b| s.dim(&format!(" [{b}]")))
-                    .unwrap_or_default()
-            );
-        }
-    }
-}
-
-// Exact-probability ceilings (`--hypgeo`): print the top gaps between the
-// Monte Carlo castability and the hypergeometric ceiling, so a mana-base
-// problem separates from a draw problem.
-pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
-    let s = out.styles();
-    let Some(cards) = payload.get("cards").and_then(|c| c.as_array()) else {
-        return;
-    };
-    println!();
-    println!(
-        "{}",
-        s.header("Cast-on-curve ceilings (exact hypergeometric)")
-    );
-    for row in cards.iter().take(5) {
-        let name = row
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("?")
-            .to_string();
-        let target = row.get("target_turn").and_then(|v| v.as_u64()).unwrap_or(0);
-        let ceiling = row
-            .get("pct_castable_ceiling")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0);
-        println!(
-            "    {}  {}  ceiling {:.0}%",
-            s.card_name(&name),
-            s.dim(&format!("by t{target}")),
-            ceiling * 100.0
-        );
-    }
-    println!(
-        "{}",
-        s.note("ceiling = exact upper bound on the real cast rate; sim castability is draw-agnostic and sits above it")
-    );
-}
-
-/// Round to 2 decimals.
 fn round2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0
 }
@@ -310,11 +154,7 @@ fn turn_map(values: &[f64]) -> serde_json::Map<String, serde_json::Value> {
 }
 
 /// One-line summary of the run.
-fn summary_line(
-    stats: &SimStats,
-    deck: &SimDeck,
-    problems: &[super::aggregate::Problem],
-) -> String {
+fn summary_line(stats: &SimStats, deck: &SimDeck, problems: &[super::findings::Problem]) -> String {
     let cmd_part = deck.commanders.first().map(|cmd| {
         let by = stats.commander_castable_by[(cmd.cost.total() as usize).min(12)];
         format!(" · commander on curve {:.0}%", by * 100.0)
@@ -337,9 +177,9 @@ pub fn json_report(
     deck: &SimDeck,
     name: &str,
     seed: u64,
-    problems: &[super::aggregate::Problem],
+    problems: &[super::findings::Problem],
     sideboard_cards: i64,
-    mana_base: &super::aggregate::ManaBase,
+    mana_base: &super::findings::ManaBase,
 ) -> serde_json::Value {
     let turns = stats.turns as usize;
     let lands = deck.cards.iter().filter(|c| c.role == Role::Land).count() as i64;
@@ -412,6 +252,8 @@ pub fn json_report(
             "ramp_spells": ramp,
             "draw_sources": stats.draw_count as i64,
             "removal": stats.removal_count as i64,
+            "removal_targeted": stats.removal_targeted as i64,
+            "removal_wipes": stats.removal_wipes as i64,
             "wincons": stats.wincon_count as i64,
             "locks": lock_count(deck),
             "boosters": booster_count(deck),
@@ -479,6 +321,11 @@ pub fn json_report(
             "win_threshold_pct": pct2(stats.win_threshold_pct),
             "ultimate_online_pct": pct2(stats.ultimate_online_pct),
             "infinite_mana_pct": pct2(stats.infinite_mana_pct),
+            "lethal_damage_by_turn": pct_turn_map(
+                &stats.lethal_damage_by_turn[..turns],
+            ),
+            "p50_lethal_turn": stats.p50_lethal_turn,
+            "lethal_note": "best-case goldfish, unblocked: an upper bound; real games have blockers, removal, and life gain",
         },
         "interaction": {
             "ready_pct_by_turn": pct_turn_map(&stats.interaction_ready_by_turn[..turns]),
@@ -588,8 +435,8 @@ pub fn print_report(
     name: &str,
     deck: &SimDeck,
     stats: &SimStats,
-    problems: &[super::aggregate::Problem],
-    mana_base: &super::aggregate::ManaBase,
+    problems: &[super::findings::Problem],
+    mana_base: &super::findings::ManaBase,
 ) {
     let s = out.styles();
     let turns = stats.turns as usize;
@@ -629,10 +476,8 @@ pub fn print_report(
             stats.screw_pct * 100.0,
             stats.flood_pct * 100.0
         );
-        println!(
-            "  {}  {}  {}",
-            s.dim("mana base"),
-            s.dim(&format!(
+        let mana_base_line = match mana_base.bracket {
+            Some(bracket) => format!(
                 "{} lands · {} ramp · target {}-{} lands + {}-{} ramp · bracket {}",
                 mana_base.lands,
                 mana_base.rocks + mana_base.dorks + mana_base.ramp_spells,
@@ -640,8 +485,20 @@ pub fn print_report(
                 mana_base.bracket_target_lands[1],
                 mana_base.bracket_target_ramp[0],
                 mana_base.bracket_target_ramp[1],
-                mana_base.bracket,
-            )),
+                bracket,
+            ),
+            None => format!(
+                "{} lands · {} ramp · target {}-{} lands",
+                mana_base.lands,
+                mana_base.rocks + mana_base.dorks + mana_base.ramp_spells,
+                mana_base.bracket_target_lands[0],
+                mana_base.bracket_target_lands[1],
+            ),
+        };
+        println!(
+            "  {}  {}  {}",
+            s.dim("mana base"),
+            s.dim(&mana_base_line),
             s.note(&mana_base.verdict)
         );
     }
@@ -722,6 +579,16 @@ pub fn print_report(
             t6 + 1
         );
     }
+    if let Some(p50) = stats.p50_lethal_turn {
+        println!(
+            "  {}  {}  {}",
+            s.bar(1.0, 10),
+            s.dim("best-case lethal"),
+            s.note(&format!(
+                "t{p50} (p50) — goldfish, unblocked: an upper bound"
+            ))
+        );
+    }
     if stats.extra_turns_pct > 0.0 {
         println!(
             "  {}  {}  {:.1}% of games",
@@ -800,293 +667,3 @@ pub fn print_report(
 
 // Baseline diffing for `deck simulate --baseline`: only the deltas between
 // a prior JSON report and the fresh run print, so a deck edit's effect is
-// readable at a glance.
-
-/// One metric delta: dot path, old value, new value.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Delta {
-    /// Dot path into the report (e.g. "commander.on_curve_pct").
-    pub path: String,
-    /// Prior value.
-    pub old: serde_json::Value,
-    /// New value.
-    pub new: serde_json::Value,
-}
-
-/// Problem kinds that appeared or disappeared between the two runs.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ProblemDelta {
-    /// "resolved" (in baseline, gone now) or "new" (absent before).
-    pub change: &'static str,
-    /// The problem's kind + detail.
-    pub kind: String,
-    pub detail: String,
-}
-
-/// The full diff between two reports.
-#[derive(Debug, Default, PartialEq)]
-pub struct ReportDiff {
-    pub metrics: Vec<Delta>,
-    pub problems: Vec<ProblemDelta>,
-    /// Deck-shape count changes (name, old, new).
-    pub shape: Vec<(String, String, String)>,
-}
-
-/// Diff two report payloads: scalar metrics at known paths, problem lists,
-/// and deck-shape counts. Identical inputs yield an empty diff.
-pub fn diff_reports(baseline: &serde_json::Value, current: &serde_json::Value) -> ReportDiff {
-    let mut diff = ReportDiff::default();
-
-    // Scalar metrics: (dot path) pairs worth tracking.
-    for path in METRIC_PATHS {
-        if let (Some(old), Some(new)) = (lookup(baseline, path), lookup(current, path))
-            && old != new
-        {
-            diff.metrics.push(Delta {
-                path: (*path).to_string(),
-                old: old.clone(),
-                new: new.clone(),
-            });
-        }
-    }
-
-    // Deck shape counts.
-    let old_shape = baseline.get("deck_shape");
-    let new_shape = current.get("deck_shape");
-    if let (Some(old), Some(new)) = (old_shape, new_shape)
-        && (old.is_object() && new.is_object())
-    {
-        for key in [
-            "total_cards",
-            "lands",
-            "rocks",
-            "dorks",
-            "ramp_spells",
-            "draw_sources",
-            "removal",
-            "wincons",
-        ] {
-            let old_v = old.get(key).cloned().unwrap_or_default();
-            let new_v = new.get(key).cloned().unwrap_or_default();
-            if old_v != new_v {
-                diff.shape.push((
-                    key.to_string(),
-                    value_display(&old_v),
-                    value_display(&new_v),
-                ));
-            }
-        }
-    }
-
-    // Problems: match by kind+color; report kind+detail changes and
-    // appear/disappear as problems entries.
-    let old_problems = baseline
-        .get("problems")
-        .and_then(|p| p.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let new_problems = current
-        .get("problems")
-        .and_then(|p| p.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let key = |p: &serde_json::Value| {
-        format!(
-            "{}|{}",
-            p.get("kind").and_then(|k| k.as_str()).unwrap_or(""),
-            p.get("color").and_then(|c| c.as_str()).unwrap_or("")
-        )
-    };
-    for p in &new_problems {
-        if !old_problems.iter().any(|o| key(o) == key(p)) {
-            diff.problems.push(ProblemDelta {
-                change: "new",
-                kind: string_field(p, "kind"),
-                detail: string_field(p, "detail"),
-            });
-        }
-    }
-    for p in &old_problems {
-        if !new_problems.iter().any(|n| key(n) == key(p)) {
-            diff.problems.push(ProblemDelta {
-                change: "resolved",
-                kind: string_field(p, "kind"),
-                detail: string_field(p, "detail"),
-            });
-        }
-    }
-    // Detail changes for still-present kinds (severity shifts).
-    for p in &new_problems {
-        if let Some(old) = old_problems.iter().find(|o| key(o) == key(p)) {
-            let old_detail = string_field(old, "detail");
-            let new_detail = string_field(p, "detail");
-            if old_detail != new_detail {
-                diff.metrics.push(Delta {
-                    path: format!("problems[{}].detail", string_field(p, "kind")),
-                    old: serde_json::json!(old_detail),
-                    new: serde_json::json!(new_detail),
-                });
-            }
-        }
-    }
-    diff
-}
-
-/// Tracked scalar metric paths (dot-separated).
-const METRIC_PATHS: &[&str] = &[
-    "commander.on_curve_pct",
-    "commander.avg_first_cast_turn",
-    "land_drops.screw_pct_2_or_fewer_by_t4",
-    "land_drops.flood_pct_6plus_lands_seen_in_11",
-    "land_drops.flood_expectation",
-    "mana.pct_games_floated_3plus_t6",
-    "draw.pct_starved_0_by_t6",
-    "role_access.removal_pct_seen_by_5",
-    "role_access.draw_pct_seen_by_6",
-    "role_access.creature_pct_seen_by_3",
-    "role_access.wincon_pct_seen_by_8",
-    "color_screw.W",
-    "color_screw.U",
-    "color_screw.B",
-    "color_screw.R",
-    "color_screw.G",
-];
-
-/// Follow a dot path through JSON objects.
-fn lookup(value: &serde_json::Value, path: &str) -> Option<serde_json::Value> {
-    let mut current = value;
-    for part in path.split('.') {
-        current = current.get(part)?;
-    }
-    Some(current.clone())
-}
-
-/// String field of a problem object.
-fn string_field(value: &serde_json::Value, key: &str) -> String {
-    value
-        .get(key)
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string()
-}
-
-/// Display string for a JSON value in diff output.
-fn value_display(value: &serde_json::Value) -> String {
-    match value {
-        serde_json::Value::Number(n) => n.to_string(),
-        serde_json::Value::String(s) => s.clone(),
-        other => other.to_string(),
-    }
-}
-
-/// Render the diff for humans: shape changes, metric deltas, problems.
-pub fn print_diff(out: &Output, diff: &ReportDiff) {
-    let s = out.styles();
-    if diff.is_empty() {
-        println!("{}", s.success("no changes vs baseline"));
-        return;
-    }
-    println!("{}", s.header("Deltas vs baseline"));
-    if !diff.shape.is_empty() {
-        println!("{}", s.header("Shape"));
-        for (name, old, new) in &diff.shape {
-            println!("    {name}: {old} → {new}");
-        }
-    }
-    if !diff.metrics.is_empty() {
-        println!("{}", s.header("Metrics"));
-        for d in &diff.metrics {
-            println!("    {}: {} → {}", d.path, d.old, d.new);
-        }
-    }
-    if !diff.problems.is_empty() {
-        println!("{}", s.header("Problems"));
-        for p in &diff.problems {
-            match p.change {
-                // Bare signs: "+" = new problem (red), "-" = resolved
-                // (green). error()/success() would print "error: +".
-                "new" => println!(
-                    "    {} {}: {}",
-                    s.glyph("+", crate::output::GlyphKind::Bad),
-                    p.kind,
-                    p.detail
-                ),
-                _ => println!(
-                    "    {} {}: {}",
-                    s.glyph("-", crate::output::GlyphKind::Good),
-                    p.kind,
-                    p.detail
-                ),
-            }
-        }
-    }
-}
-
-impl ReportDiff {
-    /// True when nothing changed between the two reports.
-    pub fn is_empty(&self) -> bool {
-        self.shape.is_empty() && self.metrics.is_empty() && self.problems.is_empty()
-    }
-}
-
-#[cfg(test)]
-mod diff_tests {
-    use super::*;
-
-    fn base_report() -> serde_json::Value {
-        serde_json::json!({
-            "deck_shape": {"total_cards": 100, "lands": 44, "removal": 4, "wincons": 3},
-            "commander": {"on_curve_pct": 0.77, "avg_first_cast_turn": 4.0},
-            "role_access": {"removal_pct_seen_by_5": 0.5, "draw_pct_seen_by_6": 0.94},
-            "color_screw": {"W": 0.0, "U": 0.31, "B": 0.0, "R": 0.0, "G": 0.22},
-            "problems": [
-                {"kind": "color_screw", "severity": "high", "color": "U", "detail": "U pips missed 31%"},
-                {"kind": "dead_cards", "severity": "high", "detail": "3 cards slow"}
-            ],
-        })
-    }
-
-    #[test]
-    fn identical_reports_diff_to_empty() {
-        let base = base_report();
-        let diff = diff_reports(&base, &base);
-        assert!(diff.is_empty());
-    }
-
-    #[test]
-    fn metric_deltas_and_shape_changes_report() {
-        let mut current = base_report();
-        current["commander"]["on_curve_pct"] = serde_json::json!(0.82);
-        current["color_screw"]["U"] = serde_json::json!(0.20);
-        current["deck_shape"]["lands"] = serde_json::json!(42);
-        let diff = diff_reports(&base_report(), &current);
-        assert_eq!(diff.metrics.len(), 2);
-        assert_eq!(diff.metrics[0].path, "commander.on_curve_pct");
-        assert_eq!(diff.shape.len(), 1);
-        assert_eq!(diff.shape[0].0, "lands");
-        assert_eq!(diff.shape[0].1, "44");
-        assert_eq!(diff.shape[0].2, "42");
-        assert!(diff.problems.is_empty());
-    }
-
-    #[test]
-    fn new_and_resolved_problems_report() {
-        let mut current = base_report();
-        // Resolved: dead_cards gone. New: mana_flood appears.
-        current["problems"] = serde_json::json!([
-            {"kind": "color_screw", "severity": "high", "color": "U", "detail": "U pips missed 31%"},
-            {"kind": "mana_flood", "severity": "medium", "detail": "22% flooded"}
-        ]);
-        let diff = diff_reports(&base_report(), &current);
-        let kinds: Vec<(&str, &str)> = diff
-            .problems
-            .iter()
-            .map(|p| (p.change, p.kind.as_str()))
-            .collect();
-        assert!(kinds_contains(&kinds, &("resolved", "dead_cards")));
-    }
-
-    fn kinds_contains(list: &[(&str, &str)], want: &(&str, &str)) -> bool {
-        list.iter().any(|p| p == want)
-    }
-}

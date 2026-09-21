@@ -95,9 +95,21 @@ fn rows_for(
     count: usize,
     bracket: Option<u8>,
 ) -> Vec<CutRow> {
+    rows_for_format(conn, deck_text, role, count, bracket, None)
+}
+
+/// [`rows_for`] with an explicit format pin.
+fn rows_for_format(
+    conn: &mut Connection,
+    deck_text: &str,
+    role: Option<Role>,
+    count: usize,
+    bracket: Option<u8>,
+    format: Option<&str>,
+) -> Vec<CutRow> {
     let deck = super::super::Deck::parse(deck_text).unwrap();
     let cards_by_name = super::super::stats::lookup_names(conn, &deck);
-    cut_rows(conn, &deck, &cards_by_name, role, count, bracket).unwrap()
+    cut_rows(conn, &deck, &cards_by_name, role, count, bracket, format).unwrap()
 }
 
 #[test]
@@ -365,7 +377,16 @@ fn for_role_pairs_fills_and_discounts_serving_cards() {
     let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Repeatable Draw Engine\n1 Big Dumb Finisher\n10 Island\n";
     let deck = super::super::Deck::parse(deck_text).unwrap();
     let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-    let rows = cut_rows(&conn, &deck, &cards_by_name, Some(Role::Draw), 5, Some(3)).unwrap();
+    let rows = cut_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        Some(Role::Draw),
+        5,
+        Some(3),
+        None,
+    )
+    .unwrap();
     // The serving draw engine is not suggested for cutting.
     assert!(rows.iter().all(|r| r.name != "Repeatable Draw Engine"));
     // Every cut row carries the fill pairing with the deficit role.
@@ -404,7 +425,7 @@ fn json_shape_carries_reasons_score_and_pins() {
     let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Slow Wall\n10 Island\n";
     let deck = super::super::Deck::parse(deck_text).unwrap();
     let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-    let rows = cut_rows(&conn, &deck, &cards_by_name, None, 5, Some(3)).unwrap();
+    let rows = cut_rows(&conn, &deck, &cards_by_name, None, 5, Some(3), None).unwrap();
     assert_eq!(rows.len(), 1);
     let json = serde_json::to_value(&rows[0]).unwrap();
     assert!(json["name"].is_string());
@@ -438,6 +459,157 @@ fn unknown_role_is_usage_error() {
     )
     .unwrap();
     assert_eq!(code, crate::cli::codes::USAGE);
+}
+
+#[test]
+fn modern_deck_does_not_pin_commander_banned_cards() {
+    let (_tmp, mut conn) = seeded_conn();
+    // A card banned in commander but legal in modern: a modern deck keeps
+    // it, no pin.
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+        5.0,
+        None,
+        Some(10),
+    );
+    insert_card(
+        &conn,
+        "Commander Banned",
+        "Creature — Beast",
+        "Haste.",
+        8.0,
+        None,
+        Some(900),
+    );
+    insert_banned(&conn, "Commander Banned");
+    // Its modern legality stays legal.
+    conn.execute(
+        "UPDATE cards SET legalities = '{\"commander\":\"banned\",\"modern\":\"legal\"}'
+         WHERE name = 'Commander Banned'",
+        [],
+    )
+    .unwrap();
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Commander Banned\n10 Island\n";
+    // Pinned format "modern": the banned-in-commander card is fine.
+    let rows = rows_for_format(&mut conn, deck_text, None, 5, Some(3), Some("modern"));
+    assert!(
+        rows.iter()
+            .all(|r| !(r.pinned && r.name == "Commander Banned")),
+        "a modern deck does not pin commander bans"
+    );
+    // The same deck judged as commander pins the card.
+    let rows = rows_for(&mut conn, deck_text, None, 5, Some(3));
+    let banned = rows.iter().find(|r| r.name == "Commander Banned");
+    assert!(
+        banned.is_some_and(|r| r.pinned),
+        "the commander deck pins the banned card"
+    );
+}
+
+#[test]
+fn sixty_card_cut_rows_carry_remove_qty() {
+    let (_tmp, mut conn) = seeded_conn();
+    // A 60-card deck (no COMMANDER section) with a 4-of curve outlier and
+    // a 2-of curve outlier.
+    for (name, mana, cmc) in [
+        ("Curve Topend", "{7}{G}{G}", 9.0),
+        ("Topend Pair", "{6}{G}{G}", 8.0),
+    ] {
+        insert_card_cost(&conn, name, "Creature — Giant", "Haste.", mana, cmc);
+        conn.execute(
+            "UPDATE cards SET legalities = '{\"commander\":\"legal\",\"modern\":\"legal\"}'
+             WHERE name = ?1",
+            rusqlite::params![name],
+        )
+        .unwrap();
+    }
+    insert_island(&conn, 1);
+    let deck_text = "// DECK\n4 Curve Topend\n2 Topend Pair\n20 Island\n";
+    let rows = rows_for_format(&mut conn, deck_text, None, 5, None, Some("modern"));
+    let four_of = rows.iter().find(|r| r.name == "Curve Topend");
+    assert_eq!(
+        four_of.map(|r| r.remove_qty),
+        Some(2),
+        "a 3-4-of scored cut removes half (rounded up)"
+    );
+    let two_of = rows.iter().find(|r| r.name == "Topend Pair");
+    assert_eq!(
+        two_of.map(|r| r.remove_qty),
+        Some(1),
+        "a 2-of scored cut removes 1 copy"
+    );
+    assert!(
+        four_of.is_none_or(|r| !r.pinned),
+        "a curve outlier is a scored cut, not a pin"
+    );
+}
+
+#[test]
+fn sixty_card_deck_without_format_pins_only_non_60_legal_cards() {
+    let (_tmp, mut conn) = seeded_conn();
+    // A card legal in no 60-card format (commander-only): the default
+    // unpinned gate must pin it.
+    insert_card(
+        &conn,
+        "Commander Only",
+        "Creature — Beast",
+        "Haste.",
+        8.0,
+        None,
+        Some(900),
+    );
+    // A card banned in commander but legal in modern: no pin, and the
+    // unpinned 60-card path must not flag it as illegal.
+    insert_card(
+        &conn,
+        "Commander Banned",
+        "Creature — Beast",
+        "Haste.",
+        2.0,
+        None,
+        Some(50),
+    );
+    insert_banned(&conn, "Commander Banned");
+    conn.execute(
+        "UPDATE cards SET legalities = '{\"commander\":\"banned\",\"modern\":\"legal\"}'
+         WHERE name = 'Commander Banned'",
+        [],
+    )
+    .unwrap();
+    // A card banned in every 60-card format: pins on the default path.
+    insert_card(
+        &conn,
+        "Modern Banned Too",
+        "Creature — Beast",
+        "Haste.",
+        8.0,
+        None,
+        Some(900),
+    );
+    conn.execute(
+        "UPDATE cards SET legalities = '{\"commander\":\"legal\",\"modern\":\"banned\",\"legacy\":\"banned\",\"vintage\":\"banned\",\"pauper\":\"banned\",\"pioneer\":\"banned\",\"standard\":\"banned\"}'
+         WHERE name = 'Modern Banned Too'",
+        [],
+    )
+    .unwrap();
+    insert_island(&conn, 1);
+    let deck_text =
+        "// DECK\n1 Commander Only\n1 Commander Banned\n1 Modern Banned Too\n40 Island\n";
+    let rows = rows_for(&mut conn, deck_text, None, 10, None);
+    let pinned: Vec<&str> = rows
+        .iter()
+        .filter(|r| r.pinned)
+        .map(|r| r.name.as_str())
+        .collect();
+    assert_eq!(
+        pinned,
+        vec!["Commander Only", "Modern Banned Too"],
+        "the default 60-card gate pins cards illegal in every 60-card format, and only those"
+    );
 }
 
 #[test]
@@ -491,5 +663,84 @@ fn bracket_4_game_changers_never_pin_and_sideboard_gcs_do_not_count() {
         rows.iter().filter(|r| r.pinned).count(),
         2,
         "sideboard Game Changers do not add to the census"
+    );
+}
+
+#[test]
+fn mono_color_deck_cuts_off_color_lands() {
+    let (_tmp, mut conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+        5.0,
+        None,
+        Some(10),
+    );
+    // Mono-B: the commander and a Swamp carry the deck's printed colors.
+    conn.execute(
+        "UPDATE cards SET colors = '[\"B\"]' WHERE name = 'Test Commander'",
+        [],
+    )
+    .unwrap();
+    // Mono-B deck holding a W/G fetch: zero intersection → off_color_land.
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+            color_identity, keywords, oracle_text, rarity, legalities,
+            set_code, collector_number, scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Windswept Heath', 'oid-wh', '', 0, 'Land', '[]', '[]', '[]',
+            '{T}, Pay 1 life: Search your library for a Plains or Forest card, put it onto the battlefield, then shuffle.',
+            'rare', '{\"commander\":\"legal\"}', 'tst', '1', 'sid-wh', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    // A partial fetch for the deck's own color (Polluted Delta in mono-B).
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+            color_identity, keywords, oracle_text, rarity, legalities,
+            set_code, collector_number, scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Polluted Delta', 'oid-pd', '', 0, 'Land', '[]', '[]', '[]',
+            '{T}, Pay 1 life: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.',
+            'rare', '{\"commander\":\"legal\"}', 'tst', '1', 'sid-pd', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    insert_island(&conn, 1);
+    conn.execute(
+        "UPDATE cards SET colors = '[\"B\"]' WHERE name = 'Island'",
+        [],
+    )
+    .unwrap();
+    let deck_text =
+        "// COMMANDER\n1 Test Commander\n// DECK\n1 Windswept Heath\n1 Polluted Delta\n10 Island\n";
+    let rows = rows_for(&mut conn, deck_text, None, 10, None);
+    let heath = rows.iter().find(|r| r.name == "Windswept Heath");
+    let delta = rows.iter().find(|r| r.name == "Polluted Delta");
+    let off_color = |r: Option<&CutRow>| {
+        r.map(|row| {
+            row.reasons
+                .iter()
+                .any(|reason| reason.kind == "off_color_land")
+        })
+        .unwrap_or(false)
+    };
+    assert!(
+        off_color(heath),
+        "a zero-overlap fetch carries off_color_land"
+    );
+    assert!(
+        off_color(delta),
+        "a partial fetch in a mono-color deck carries off_color_land"
+    );
+    assert!(
+        heath.is_none_or(|r| !r.pinned),
+        "off-color lands rank high but are not pinned"
+    );
+    let heath_score = heath.map(|r| r.score).unwrap_or(0.0);
+    let delta_score = delta.map(|r| r.score).unwrap_or(0.0);
+    assert!(
+        heath_score > delta_score,
+        "zero-overlap lands score above partial fetches ({heath_score} vs {delta_score})"
     );
 }

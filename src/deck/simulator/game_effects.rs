@@ -30,13 +30,13 @@ pub(crate) fn apply_effect_at(
     mill_opp: bool,
     source: Option<usize>,
 ) {
+    // Treasure banking requires the token effect's own card to create
+    // Treasures ("create a Treasure token" on the same card). A deck-wide
+    // blanket would convert unrelated token effects into pips.
     let treasure_source = source
         .and_then(|i| deck.cards.get(i))
         .map(|c| c.treasures_on_token)
-        .unwrap_or(false)
-        || source.is_none()
-            && (deck.cards.iter().any(|c| c.treasures_on_token)
-                || deck.commanders.iter().any(|c| c.treasures_on_token));
+        .unwrap_or(false);
     match effect {
         Effect::Draw(n) => {
             for _ in 0..*n {

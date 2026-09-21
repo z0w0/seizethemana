@@ -4,7 +4,7 @@
 
 use super::model::{Ability, Effect, TapYield, draw_amount};
 pub use super::trigger_activated::mill_amount;
-use super::trigger_activated::{activated_trigger, etb_shape, trigger_for};
+use super::trigger_activated::{activated_trigger, etb_shape, once_each_turn, trigger_for};
 use super::trigger_landfall::landfall_trigger;
 pub use super::trigger_landfall::token_amount;
 
@@ -122,6 +122,7 @@ fn upkeep_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         out.push(Ability {
             trigger: super::model::Trigger::OnUpkeep,
             effect: Effect::Draw(draw_amount(lower).max(1)),
+            once_per_turn: once_each_turn(lower),
             ..Ability::default()
         });
         return true;
@@ -329,6 +330,9 @@ fn cast_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         out.push(Ability {
             trigger: super::model::Trigger::OnCastSpell,
             effect,
+            // "This ability triggers only once each turn" bounds the
+            // engine (no per-cast looping past one draw).
+            once_per_turn: once_each_turn(lower),
             ..Ability::default()
         });
         return true;
@@ -377,6 +381,51 @@ fn wheel_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
     false
 }
 
+/// Strip a leading ability-word prefix ("Constellation — When …") so
+/// the trigger families see the real shape. Ability words are italic
+/// flavor keywords; they never change the trigger itself.
+pub(super) fn strip_ability_word(seg: &str) -> &str {
+    if let Some((head, rest)) = seg.split_once(" — ") {
+        let head_clean = head.trim();
+        let single_word = !head_clean.contains(' ');
+        let known = matches!(
+            head_clean,
+            "Constellation"
+                | "Landfall"
+                | "Raid"
+                | "Revolt"
+                | "Battle cry"
+                | "Spectacle"
+                | "Alliance"
+                | "Training"
+                | "Heroic"
+                | "Inspired"
+                | "Delirium"
+                | "Magecraft"
+                | "Descend"
+                | "Forge"
+                | "Commit"
+                | "Will"
+                | "Spellcraft"
+                | "Start your engines"
+                | "Renown"
+                | "Afflict"
+                | "Battalion"
+                | "Bloodrush"
+                | "Channel"
+                | "Conspire"
+        );
+        if (single_word || known)
+            && (rest.starts_with("When")
+                || rest.starts_with("Whenever")
+                || rest.starts_with("At the beginning"))
+        {
+            return rest.trim();
+        }
+    }
+    seg
+}
+
 /// The trigger parser the oracle scan calls: segments the text, then runs
 /// each family helper.
 pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
@@ -388,7 +437,7 @@ pub fn parse_triggers(oracle_text: &str) -> Vec<Ability> {
     let segments: Vec<&str> = oracle_text.split('\n').map(str::trim).collect();
     let mut i = 0;
     while i < segments.len() {
-        let mut seg = segments[i].trim().to_string();
+        let mut seg = strip_ability_word(segments[i].trim()).to_string();
         // Merge following short continuation sentences into the segment.
         while i + 1 < segments.len()
             && let next = segments[i + 1].trim().to_ascii_lowercase()

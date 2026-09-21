@@ -460,7 +460,7 @@ fn sideboard_game_changers_ignore_bracket_count() {
         "sideboard Game Changers must not count: {violations:?}"
     );
     // The no-bracket checklist reports maindeck Game Changers only.
-    let checklist = game_changer_checklist(&deck, &cards);
+    let checklist = crate::deck::bracket::game_changer_checklist(&deck, &cards);
     assert!(checklist[0].contains("GC One"));
     assert!(
         !checklist[0].contains("GC Four"),

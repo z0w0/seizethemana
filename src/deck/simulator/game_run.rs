@@ -15,6 +15,60 @@ use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
+/// Karsten's London mulligan for a 7-card opener outside the 2-5 land
+/// keep band: redraw a fresh 7, then bottom one card toward 3 lands (a
+/// land at 4+ lands, a spell below that). Only the redrawn hand bottoms;
+/// kept hands stay at 7 cards. Returns the 6-card hand and its land
+/// count.
+pub(super) fn london_mulligan(
+    deck: &SimDeck,
+    library: &mut Vec<usize>,
+    rng: &mut ChaCha8Rng,
+) -> (Vec<usize>, u8) {
+    let mut hand = take_n(library, OPENING_HAND);
+    let opener_lands = count_lands_in(deck, &hand);
+    let pos = bottom_position(deck, &hand, opener_lands);
+    let card = hand.remove(pos);
+    let at = rng.random_range(0..=library.len());
+    library.insert(at, card);
+    (hand, opener_lands)
+}
+
+/// Position of the card to bottom from a redrawn 7-card hand: a land at
+/// 4+ lands (shed the flood), a spell below that (a land/spell MDFC
+/// counts as land-able and is not bottomed for its spell face).
+pub(super) fn bottom_position(deck: &SimDeck, hand: &[usize], opener_lands: u8) -> usize {
+    if opener_lands >= 4 {
+        hand.iter()
+            .position(|i| deck.cards[*i].role == Role::Land)
+            .unwrap_or(0)
+    } else {
+        hand.iter()
+            .position(|i| deck.cards[*i].role != Role::Land && !deck.cards[*i].is_mdfc_spell)
+            .unwrap_or(0)
+    }
+}
+
+/// Draw n cards off the bottom of the shuffled library.
+fn take_n(library: &mut Vec<usize>, n: usize) -> Vec<usize> {
+    let n = n.min(library.len());
+    library.split_off(library.len() - n)
+}
+
+#[cfg(test)]
+pub(super) fn take_for_test(library: &mut Vec<usize>) -> Vec<usize> {
+    take_n(library, OPENING_HAND)
+}
+
+/// Land-able count of a hand: lands plus MDFCs (a land/spell MDFC
+/// plays as a land when nothing else is available, so the mulligan
+/// policy counts it land-able).
+pub(super) fn count_lands_in(deck: &SimDeck, hand: &[usize]) -> u8 {
+    hand.iter()
+        .filter(|i| deck.cards[**i].role == Role::Land || deck.cards[**i].is_mdfc_spell)
+        .count() as u8
+}
+
 pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     let turns = turns.max(1) as usize;
     let mut library: Vec<usize> = (0..deck.cards.len()).collect();
@@ -23,21 +77,13 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         library.swap(i, j);
     }
     // Draw the opening hand from the bottom of the shuffled vec.
-    let take = |library: &mut Vec<usize>, n: usize| -> Vec<usize> {
-        let n = n.min(library.len());
-        library.split_off(library.len() - n)
-    };
+    let take = |library: &mut Vec<usize>, n: usize| -> Vec<usize> { take_n(library, n) };
     let mut hand = take(&mut library, OPENING_HAND);
 
     // Mulligan policy comes from the format rules: commander family
     // redraws once outside its land band; constructed plays London
-    // mulligans (redraw, then bottom the same count at random).
-    let count_lands = |hand: &[usize], deck: &SimDeck| -> u8 {
-        hand.iter()
-            .filter(|i| deck.cards[**i].role == Role::Land)
-            .count() as u8
-    };
-    let mut opener_lands = count_lands(&hand, deck);
+    // mulligans (redraw, then bottom one chosen card, keeping six).
+    let mut opener_lands = count_lands_in(deck, &hand);
     let mut mulliganed = false;
     match deck.rules.mulligan {
         super::format::MulliganPolicy::FreeRedraw {
@@ -46,28 +92,14 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             if !(lo..=hi).contains(&opener_lands) {
                 mulliganed = true;
                 hand = take(&mut library, OPENING_HAND);
-                opener_lands = count_lands(&hand, deck);
+                opener_lands = count_lands_in(deck, &hand);
             }
         }
-        super::format::MulliganPolicy::London { ship_lands } => {
-            // London mulligans are bounded by hand size: each mulligan
-            // draws one fewer card, so a hand smaller than the ship
-            // threshold cannot improve and the loop must stop.
-            let mut bottomed = 0usize;
-            while opener_lands < ship_lands && hand.len() > ship_lands as usize {
+        super::format::MulliganPolicy::London => {
+            let redraw = !(2..=5).contains(&opener_lands) && hand.len() >= OPENING_HAND;
+            if redraw {
                 mulliganed = true;
-                bottomed += 1;
-                hand = take(&mut library, OPENING_HAND - bottomed);
-                opener_lands = count_lands(&hand, deck);
-            }
-            // Bottom one random card per mulligan taken (no keep choice).
-            for _ in 0..bottomed {
-                if hand.is_empty() {
-                    break;
-                }
-                let idx = rng.random_range(0..hand.len());
-                let card = hand.swap_remove(idx);
-                library.insert(0, card);
+                (hand, opener_lands) = london_mulligan(deck, &mut library, rng);
             }
         }
     }
@@ -85,6 +117,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         milled_self: 0,
         milled_opp: 0,
         drained: 0,
+        life_paid: 0,
         awareness_cards: 0,
         extra_turns_queued: 0,
         prowess_casts: 0,
@@ -128,6 +161,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     let mut opp_milled = vec![0u32; turns];
     let mut awareness = vec![0.0f64; turns];
     let mut drain_total = vec![0u32; turns];
+    let mut player_damage = vec![0u32; turns];
     let mut extra_turns = vec![0u32; turns];
     let mut win_threshold_turn: Option<u32> = None;
     let mut ultimate_online: Option<u32> = None;
@@ -243,7 +277,31 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             for effect in &upkeep_effects {
                 match effect {
                     Effect::Draw(n) => {
-                        for _ in 0..*n {
+                        // Scaling draw engines ("draw a card for each
+                        // enchantment you control") draw the matching
+                        // permanent count, capped at 8. The count reads
+                        // from the host card's class.
+                        let host_card_ref = deck.cards.get(host_card);
+                        let scaled = host_card_ref
+                            .and_then(|c| c.draws_per_matching)
+                            .map(|kind| {
+                                let matches = |card: &super::model::SimCard| match kind {
+                                    super::model::DrawMatch::Enchantments => card.is_enchantment,
+                                    super::model::DrawMatch::Artifacts => card.is_artifact,
+                                    super::model::DrawMatch::Lands => card.role == Role::Land,
+                                    super::model::DrawMatch::Creatures => card.is_creature,
+                                };
+                                st.battlefield
+                                    .iter()
+                                    .filter(|p| {
+                                        p.card < usize::MAX - 1 && matches(&deck.cards[p.card])
+                                    })
+                                    .count()
+                                    .min(8) as u32
+                            })
+                            .filter(|c| *c > 0)
+                            .unwrap_or(*n);
+                        for _ in 0..scaled {
                             if let Some(i) = st.library.pop() {
                                 st.hand.push(i);
                                 st.seen += 1;
@@ -692,6 +750,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         opp_milled[turn - 1] = st.milled_opp;
         awareness[turn - 1] = f64::from(st.awareness_cards) / (deck.cards.len() as f64).max(1.0);
         drain_total[turn - 1] = st.drained;
+        player_damage[turn - 1] = if turn > 1 { player_damage[turn - 2] } else { 0 } + combat.power;
         extra_turns[turn - 1] = st.extra_turns_queued;
         bodies[turn - 1] = st
             .battlefield
@@ -764,7 +823,31 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                         .unwrap_or_default();
                     for effect in &effects {
                         if let Effect::Draw(n) = effect {
-                            for _ in 0..*n {
+                            // Scaling engines scale here too.
+                            let scaled = deck
+                                .cards
+                                .get(card_idx)
+                                .and_then(|c| c.draws_per_matching)
+                                .map(|kind| {
+                                    let matches = |card: &super::model::SimCard| match kind {
+                                        super::model::DrawMatch::Enchantments => {
+                                            card.is_enchantment
+                                        }
+                                        super::model::DrawMatch::Artifacts => card.is_artifact,
+                                        super::model::DrawMatch::Lands => card.role == Role::Land,
+                                        super::model::DrawMatch::Creatures => card.is_creature,
+                                    };
+                                    st.battlefield
+                                        .iter()
+                                        .filter(|p| {
+                                            p.card < usize::MAX - 1 && matches(&deck.cards[p.card])
+                                        })
+                                        .count()
+                                        .min(8) as u32
+                                })
+                                .filter(|c| *c > 0)
+                                .unwrap_or(*n);
+                            for _ in 0..scaled {
                                 if let Some(i) = st.library.pop() {
                                     st.hand.push(i);
                                     st.seen += 1;
@@ -817,6 +900,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         opp_milled,
         awareness,
         drain_total,
+        player_damage,
         extra_turns,
         win_threshold_turn,
         ultimate_online,

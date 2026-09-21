@@ -67,6 +67,7 @@ pub struct BracketNote {
 }
 
 /// Result of guessing the deck's format from its sections.
+#[derive(Debug, Clone, PartialEq)]
 pub enum InferredFormat {
     /// A `// COMMANDER` section exists: commander.
     Commander,
@@ -83,6 +84,17 @@ pub fn infer_format(deck: &Deck) -> InferredFormat {
     }
 }
 
+/// True when the deck plays as commander: an explicit `--format
+/// commander` pin, or no pin at all and the deck has a `// COMMANDER`
+/// section. A pinned non-commander format is never commander. The one
+/// shared predicate for every format-aware branch.
+pub fn is_commander(deck: &Deck, pinned_format: Option<&str>) -> bool {
+    match pinned_format {
+        Some(fmt) => fmt.eq_ignore_ascii_case("commander"),
+        None => infer_format(deck) == InferredFormat::Commander,
+    }
+}
+
 /// Count copies per card name across all sections (sideboard included).
 fn copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
     copies_in_sections(deck, |_| true)
@@ -92,7 +104,7 @@ fn copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
 ///
 /// For commander-style formats the sideboard is a wishlist, not a legal
 /// zone, so rules that bind the deck itself read this count.
-fn maindeck_copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
+pub(super) fn maindeck_copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
     copies_in_sections(deck, |s| !s.eq_ignore_ascii_case("SIDEBOARD"))
 }
 
@@ -473,15 +485,6 @@ fn game_changer_limit(bracket: u8) -> Option<u8> {
     }
 }
 
-/// Scan the deck's oracle text for the bracket's judgment-call signals.
-///
-/// Deterministic text search: library searchers (hard tutors vs soft
-/// searchers), extra turns, mass land destruction, and "you win the game"
-/// lines. Verdicts are PASS (no hits), CHECK (genuine bracket conflict),
-/// or ADVISE (soft signal, official rules treat it as a judgment call).
-/// Lines that start with any verdict prefix also land in the JSON
-/// `advisories`/`notes` split. The Game Changer count is the hard check
-/// elsewhere.
 pub fn scan_bracket_signals(
     deck: &Deck,
     cards: &HashMap<String, CardRow>,
@@ -804,7 +807,7 @@ pub fn legal(
                 Some(BracketNote { checks })
             }
             None => Some(BracketNote {
-                checks: game_changer_checklist(&deck, &cards),
+                checks: super::bracket::game_changer_checklist(&deck, &cards),
             }),
         }
     } else if format == "constructed" {
@@ -864,7 +867,7 @@ pub fn legal(
         });
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else {
-        print_report(
+        super::bracket::print_report(
             out,
             name,
             &format,
@@ -882,125 +885,6 @@ pub fn legal(
         crate::cli::codes::ERROR
     })
 }
-
-/// Checklist items listing the deck's own Game Changers, so the reader can
-/// decide a bracket without re-querying every card.
-fn game_changer_checklist(deck: &Deck, cards: &HashMap<String, CardRow>) -> Vec<String> {
-    let changers = game_changer_names(deck, cards);
-    if changers.is_empty() {
-        vec!["this deck has no Game Changers".to_string()]
-    } else {
-        vec![format!(
-            "Game Changers in this deck: {}",
-            changers.join(", ")
-        )]
-    }
-}
-
-/// Names of the deck's maindeck Game Changers, in first-seen deck order.
-///
-/// Sideboard Game Changers are excluded: the sideboard is a commander
-/// wishlist, not part of the deck.
-pub fn game_changer_names(deck: &Deck, cards: &HashMap<String, CardRow>) -> Vec<String> {
-    maindeck_copies_by_name(deck)
-        .into_iter()
-        .filter(|(name, _)| cards.get(name).is_some_and(is_game_changer))
-        .map(|(name, _)| name)
-        .collect()
-}
-
-/// Human report on stdout.
-///
-/// Violations print as `error: <rule>: <detail>` with the offending card
-/// names indented below; the non-deterministic checklist prints as a
-/// `note:` block. Both are results on stdout, not stderr diagnostics —
-/// the whole block is the command's answer.
-#[allow(clippy::too_many_arguments)]
-fn print_report(
-    out: &crate::output::Output,
-    name: &str,
-    format: &str,
-    assumed: bool,
-    bracket: Option<u8>,
-    legal: bool,
-    violations: &[Violation],
-    note: &Option<BracketNote>,
-    summary: &str,
-) {
-    let styles = out.styles();
-    let mut format_line = format.to_string();
-    if assumed {
-        format_line.push_str(" (assumed; pass --format to override)");
-    }
-    println!(
-        "{}  {}  {}",
-        styles.header(name),
-        styles.dim(&format_line),
-        styles.dim(summary),
-    );
-    if let Some(bracket) = bracket {
-        println!("  {} {bracket}", styles.dim("bracket"));
-    }
-    println!();
-    if legal {
-        println!("{}", styles.success("legal"));
-    } else {
-        println!(
-            "{}",
-            styles.error(&format!(
-                "not legal ({} violation{})",
-                violations.len(),
-                if violations.len() == 1 { "" } else { "s" }
-            ))
-        );
-        for v in violations {
-            println!("  {}", styles.error(&format!("{}: {}", v.rule, v.detail)));
-            for card in &v.cards {
-                println!("    {}", styles.card_name(card));
-            }
-        }
-    }
-    if let Some(note) = note {
-        println!();
-        let has_verdicts = note
-            .checks
-            .iter()
-            .any(|c| c.starts_with("PASS ") || c.starts_with("CHECK ") || c.starts_with("ADVISE "));
-        if has_verdicts {
-            println!("{}", styles.note("bracket checks:"));
-            for check in &note.checks {
-                if let Some(rest) = check.strip_prefix("PASS ") {
-                    // Bare verdict glyph; success() would double the ✓.
-                    println!(
-                        "  {} {}",
-                        styles.glyph("✓", crate::output::GlyphKind::Good),
-                        rest
-                    );
-                } else if let Some(rest) = check.strip_prefix("CHECK ") {
-                    println!(
-                        "  {} {}",
-                        styles.glyph("!", crate::output::GlyphKind::Warn),
-                        rest
-                    );
-                } else if let Some(rest) = check.strip_prefix("ADVISE ") {
-                    println!(
-                        "  {} {}",
-                        styles.glyph("ℹ", crate::output::GlyphKind::Info),
-                        rest
-                    );
-                } else {
-                    println!("  - {check}");
-                }
-            }
-        } else {
-            println!("{}", styles.note("not checked automatically:"));
-            for check in &note.checks {
-                println!("  - {check}");
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 #[path = "tests/legal_tests.rs"]
 mod legal_tests;

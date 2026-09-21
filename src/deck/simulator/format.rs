@@ -15,14 +15,11 @@ pub enum MulliganPolicy {
         /// Inclusive land-count band for keeping the opener.
         land_band: (u8, u8),
     },
-    /// 60-card London mulligan: one free mulligan, then ship-and-bottom.
-    /// Outside the ship threshold the hand is redrawn and the same number
-    /// of cards is bottomed at random (the sim cannot evaluate keep
-    /// choices; documented in the output assumptions).
-    London {
-        /// Land count that ships the opener (fewer than this redraws).
-        ship_lands: u8,
-    },
+    /// 60-card London mulligan: 7-card hands with 0, 1, 6, or 7 lands
+    /// redraw once; only the redrawn hand bottoms one card toward 3
+    /// lands (Karsten 2022). The sim cannot evaluate keep choices;
+    /// documented in the output assumptions.
+    London,
 }
 
 /// Rules the simulator needs per format.
@@ -45,6 +42,9 @@ const TABLE: &[FormatRules] = &[
         key: "commander",
         shape: Format::Commander,
         default_turns: 10,
+        // Karsten's commander model redraws 0-2 and 6-7 on the free
+        // mulligan; the 2-6 band is close and changing it would churn
+        // commander baselines for little gain.
         mulligan: MulliganPolicy::FreeRedraw { land_band: (2, 6) },
     },
     FormatRules {
@@ -63,37 +63,37 @@ const TABLE: &[FormatRules] = &[
         key: "standard",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
     FormatRules {
         key: "pioneer",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
     FormatRules {
         key: "modern",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
     FormatRules {
         key: "legacy",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
     FormatRules {
         key: "vintage",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
     FormatRules {
         key: "pauper",
         shape: Format::Constructed,
         default_turns: 8,
-        mulligan: MulliganPolicy::London { ship_lands: 1 },
+        mulligan: MulliganPolicy::London,
     },
 ];
 
@@ -107,7 +107,7 @@ pub fn rules_for(key: &str) -> FormatRules {
             key: "constructed",
             shape: Format::Constructed,
             default_turns: 8,
-            mulligan: MulliganPolicy::London { ship_lands: 1 },
+            mulligan: MulliganPolicy::London,
         })
 }
 
@@ -165,7 +165,7 @@ mod tests {
             assert_eq!(rules.shape, Format::Constructed);
             assert_eq!(rules.default_turns, 8);
             assert!(
-                matches!(rules.mulligan, MulliganPolicy::London { ship_lands: 1 }),
+                matches!(rules.mulligan, MulliganPolicy::London),
                 "{key} lost its London policy"
             );
         }

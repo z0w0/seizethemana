@@ -18,6 +18,7 @@ pub(crate) mod aggregate;
 mod cast_phase;
 mod combos;
 pub(crate) mod deck;
+mod findings;
 mod format;
 pub(crate) mod game;
 mod game_combat;
@@ -31,6 +32,7 @@ mod parse_cost;
 mod parse_keywords;
 mod parse_land;
 mod report;
+mod report_view;
 mod trigger_activated;
 mod trigger_landfall;
 mod triggers;
@@ -51,8 +53,14 @@ mod deck_test_support;
 #[path = "tests/deck_tests.rs"]
 mod deck_tests;
 #[cfg(test)]
+#[path = "tests/game_mechanic_tests.rs"]
+mod game_mechanic_tests;
+#[cfg(test)]
 #[path = "tests/game_tests.rs"]
 mod game_tests;
+#[cfg(test)]
+#[path = "tests/lethal_tests.rs"]
+mod lethal_tests;
 #[cfg(test)]
 #[path = "tests/mana_base_tests.rs"]
 mod mana_base_tests;
@@ -65,6 +73,12 @@ mod model_tests;
 #[cfg(test)]
 #[path = "tests/modern_deck_tests.rs"]
 mod modern_deck_tests;
+#[cfg(test)]
+#[path = "tests/mulligan_tests.rs"]
+mod mulligan_tests;
+#[cfg(test)]
+#[path = "tests/parse_mechanic_tests.rs"]
+mod parse_mechanic_tests;
 #[cfg(test)]
 #[path = "tests/parse_tests.rs"]
 mod parse_tests;
@@ -100,7 +114,6 @@ fn load_store_combos(
     Some(candidates)
 }
 
-/// True when the store carries combo data at all.
 /// True when the store carries combo data at all (public for the
 /// `deck combos` audit).
 pub fn store_has_combos_pub(conn: &rusqlite::Connection) -> bool {
@@ -156,6 +169,8 @@ use rand_chacha::ChaCha8Rng;
 /// (the result is the answer, not a crash). A missing deck file is the
 /// shared deck-not-found error from the dispatcher. `baseline` (when given)
 /// diffs the fresh report against that prior JSON and prints deltas only.
+// The 12 parameters mirror the CLI surface one to one; a struct would
+// move the clap plumbing without removing any argument.
 #[allow(clippy::too_many_arguments)]
 pub fn simulate(
     paths: &crate::paths::Paths,
@@ -210,6 +225,12 @@ pub fn simulate(
         .iter()
         .filter(|c| c.role == model::Role::Removal)
         .count();
+    stats.removal_wipes = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Removal && c.wipe)
+        .count();
+    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats.wincon_count = sim_deck
         .cards
         .iter()
@@ -225,14 +246,19 @@ pub fn simulate(
         .iter()
         .filter(|c| c.role == model::Role::Land)
         .count();
-    let problems = aggregate::find_problems(&stats, &sim_deck);
+    let problems = findings::find_problems(&stats, &sim_deck);
     // Bracket for the mana-base band: explicit flag, else inferred from the
-    // Game Changer census (the same signals `deck legal` checks).
-    let (inferred_bracket, bracket) = match bracket {
-        Some(b) => (false, b),
-        None => (true, infer_bracket(&deck, &cards)),
+    // Game Changer census (the same signals `deck legal` checks). 60-card
+    // decks skip bracket inference entirely (Karsten bands by curve).
+    let (inferred_bracket, bracket) = if sim_deck.format == model::Format::Constructed {
+        (false, 0)
+    } else {
+        match bracket {
+            Some(b) => (false, b),
+            None => (true, infer_bracket(&deck, &cards)),
+        }
     };
-    let mana_base = aggregate::mana_base(&sim_deck, bracket, inferred_bracket);
+    let mana_base = findings::mana_base(&sim_deck, bracket, inferred_bracket);
 
     // Combo assembly, two sources:
     // 1. Explicit "A + B" pairs (--combo, repeatable, measured always).
@@ -246,7 +272,7 @@ pub fn simulate(
             Some((a.trim().to_string(), b.trim().to_string()))
         })
         .collect();
-    let combo_rows = aggregate::piece_pair_access(&logs, &sim_deck, &combo_pairs, turns);
+    let combo_rows = findings::piece_pair_access(&logs, &sim_deck, &combo_pairs, turns);
     let combo_limit = combo_limit.unwrap_or(DEFAULT_COMBO_LIMIT);
     let combo_report = load_store_combos(conn, &sim_deck, sim_deck.rules.key).map(|candidates| {
         let mut assembly = combos::measure(&candidates, &logs, &sim_deck, turns);
@@ -269,11 +295,23 @@ pub fn simulate(
         {
             obj.insert("combo_access".into(), serde_json::json!(combo_rows));
         }
+        // Static colored-source audit on the same census the sim loaded.
+        if let Ok(audit) = super::mana::mana_audit_for(conn, &deck)
+            && let Some(obj) = v.as_object_mut()
+        {
+            obj.insert(
+                "colored_sources".into(),
+                super::mana_audit::colored_sources_json(&audit),
+            );
+        }
         if let (Some(assembly), Some(obj)) = (&combo_report, v.as_object_mut()) {
-            obj.insert("combos".into(), report::combos_json(assembly, combo_limit));
+            obj.insert(
+                "combos".into(),
+                report_view::combos_json(assembly, combo_limit),
+            );
             obj.insert(
                 "win_paths".into(),
-                report::win_paths_json(assembly, combo_limit),
+                report_view::win_paths_json(assembly, combo_limit),
             );
         }
         if hypgeo {
@@ -297,8 +335,8 @@ pub fn simulate(
             sideboard_cards,
             &mana_base,
         );
-        let diff = report::diff_reports(&baseline, &current);
-        report::print_diff(out, &diff);
+        let diff = report_view::diff_reports(&baseline, &current);
+        report_view::print_diff(out, &diff);
         // Diff mode exits on the delta: empty diff or only resolved
         // problems is clean; any new problem exits 1.
         if diff.problems.iter().any(|p| p.change == "new") {
@@ -308,18 +346,18 @@ pub fn simulate(
     } else {
         report::print_report(out, name, &sim_deck, &stats, &problems, &mana_base);
         if !combo_rows.is_empty() {
-            report::print_combo_access(out, &combo_rows);
+            report_view::print_combo_access(out, &combo_rows);
         }
         match &combo_report {
             Some(assembly) => {
-                report::print_store_combos(out, assembly, combo_limit);
-                report::print_win_paths(out, assembly, combo_limit);
+                report_view::print_store_combos(out, assembly, combo_limit);
+                report_view::print_win_paths(out, assembly, combo_limit);
             }
             None if !combos.is_empty() || store_has_combos(conn) => {}
             None => {}
         }
         if hypgeo {
-            report::print_hypgeo(out, &hypgeo::cast_ceilings(&sim_deck, turns));
+            report_view::print_hypgeo(out, &hypgeo::cast_ceilings(&sim_deck, turns));
         }
     }
     if problems.is_empty() {

@@ -630,6 +630,7 @@ fn stats_json(stats: &Stats) -> serde_json::Value {
     };
     serde_json::json!({
         "unique_cards": stats.unique_cards,
+        "currency": crate::output::CURRENCY,
         "total_cards": stats.total_cards,
         "foils": stats.foils,
         "total_value": round2(stats.total_value),
@@ -837,6 +838,7 @@ pub fn run_query(
         }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
+    let owned: std::collections::HashSet<String> = owned.into_iter().collect();
     let hits = crate::query::run_search(
         paths,
         conn,
@@ -870,7 +872,7 @@ pub fn run_query(
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let names: Vec<String> = out_hits.iter().map(|h| h.card.name.clone()).collect();
         // One batched query per finish kind instead of four per card name.
-        let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
+        let ranges = crate::prints::price_ranges(conn, &names)?;
         let items: Vec<serde_json::Value> = out_hits
             .iter()
             .map(|h| {

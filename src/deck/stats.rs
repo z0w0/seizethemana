@@ -219,8 +219,51 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
     stats
 }
 
-/// True when the oracle text produces mana.
-///
+/// The curve-target sentence for the deck: format/archetype-aware from
+/// the Phase 2 average-MV bands, three-way in both formats. Commander
+/// decks anchor on the singleton turn scale; 60-card decks on the
+/// Karsten band class.
+pub fn curve_target(is_commander: bool, avg_cmc: f64) -> &'static str {
+    if is_commander {
+        if avg_cmc < 2.0 {
+            "target: comes together by t4-t6"
+        } else if avg_cmc < 3.0 {
+            "target: comes together by t6-t8"
+        } else {
+            "target: comes together by t8-t10"
+        }
+    } else if avg_cmc < 2.0 {
+        "target: does its thing by t4"
+    } else if avg_cmc < 3.0 {
+        "target: does its thing by t4-t6"
+    } else {
+        "target: does its thing by t6"
+    }
+}
+
+/// The curve histogram indexed MV 0..6+ (7 slots; 6 and 7+ collapse
+/// into the last slot). Shared by the human line and the JSON block.
+pub fn curve_histogram(stats: &DeckStats) -> Vec<u32> {
+    let mut histogram = vec![0u32; 7];
+    for bucket in &stats.curve {
+        let label = bucket.label.trim_end_matches('+');
+        let mv: usize = label.parse().unwrap_or(6);
+        let idx = mv.clamp(0, 6);
+        histogram[idx] += bucket.count as u32;
+    }
+    histogram
+}
+
+/// The curve JSON block: average nonland MV and the histogram indexed
+/// MV 0..6+. The target sentence follows the deck's format.
+pub fn curve_json(stats: &DeckStats, is_commander: bool) -> serde_json::Value {
+    serde_json::json!({
+        "avg_mv": (stats.avg_cmc * 10.0).round() / 10.0,
+        "histogram": curve_histogram(stats),
+        "target": curve_target(is_commander, stats.avg_cmc),
+    })
+}
+
 /// Matches the `{T}: Add {…}` shape plus prose forms like "Add one mana of
 /// any color" (Birds of Paradise) and "adds one mana of any one color", which
 /// the pip pattern misses.

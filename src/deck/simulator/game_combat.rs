@@ -60,6 +60,20 @@ pub(super) fn combat_phase(
     let mut evasive: u32 = 0;
     // Spells cast this turn feed prowess (the cast path counts them).
     let prowess_bumps = st.prowess_casts;
+    // One-shot board buffs that entered this turn ("+X/+X where X is the
+    // number of creatures you control"): each attacker gets +X for this
+    // turn only, X = the body count, capped at 20.
+    let board_buff_x = if st.battlefield.iter().any(|p| {
+        p.entered_turn == turn && p.card < usize::MAX - 1 && card_of(deck, p).buffs_board_on_enter
+    }) {
+        st.battlefield
+            .iter()
+            .filter(|p| card_of(deck, p).is_creature || p.animated)
+            .count()
+            .min(20) as i32
+    } else {
+        0
+    };
     for (pi, perm) in st.battlefield.clone().iter().enumerate() {
         let attacks = perm.animated
             || perm.crewed
@@ -73,6 +87,11 @@ pub(super) fn combat_phase(
             evasive += 1;
         }
         let mut power = card.printed_power.unwrap_or(BODY_POWER) as i32;
+        // Counter-powered bodies: the entered +1/+1 counters join the
+        // attack power.
+        if card.counters_are_power {
+            power += perm.counters as i32;
+        }
         if card.is_station_card && !perm.animated && !perm.crewed {
             power = 0;
         }
@@ -89,6 +108,9 @@ pub(super) fn combat_phase(
             let start = perm.entered_turn.min(turns - 1);
             let drops_after: u32 = land_drops[start..turn].iter().map(|d| u32::from(*d)).sum();
             power += drops_after as i32;
+        }
+        if board_buff_x > 0 {
+            power += board_buff_x;
         }
         if card.prowess {
             power += prowess_bumps as i32;

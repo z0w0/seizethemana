@@ -116,8 +116,9 @@ fn split_card_faces_take_cheapest_face() {
         2,
         "Adventure creature face is the playable face"
     );
-    // MDFC spell/land ("Instant // Land") plays as a land in the model:
-    // one physical card, dominant use is the land face in a goldfish.
+    // MDFC spell/land ("Instant // Land") is one card with two uses: the
+    // sim models the spell face (role + cast cost), and the land rule
+    // plays the land face when no other land is in hand.
     let row3 = card(
         "Sink into Stupor // Soporific Springs",
         "{1}{U}{U} // ",
@@ -125,12 +126,13 @@ fn split_card_faces_take_cheapest_face() {
         "",
     );
     let sim3 = parse_sim_card(&row3);
+    assert!(sim3.is_mdfc_spell, "MDFC spell+land detected");
     assert_eq!(
         sim3.role,
-        super::model::Role::Land,
-        "MDFC spell+land plays as a land"
+        super::model::Role::Other,
+        "MDFC spell face carries the spell role"
     );
-    assert_eq!(sim3.cost.total(), 0, "lands cost nothing");
+    assert_eq!(sim3.cost.total(), 3, "the spell face is the cast");
 }
 
 // Tap yields: choice vs fixed vs any vs colorless

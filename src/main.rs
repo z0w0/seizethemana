@@ -118,12 +118,15 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
         Command::Query {
             query,
             filters,
+            max_price,
             limit,
             json,
             ..
         } => {
             revalidate_if_stale(&paths, &mut conn, out);
-            query::run_query(&paths, &mut conn, out, query, filters, *limit, *json)
+            query::run_query(
+                &paths, &mut conn, out, query, filters, *max_price, *limit, *json,
+            )
         }
         Command::Collection { json, command, .. } => {
             run_collection(&paths, &mut conn, out, *json, command)
@@ -190,6 +193,9 @@ fn run_deck(
             Some(name) => deck::show(paths, conn, out, name, *json),
             None => deck::list(paths, conn, out, *json),
         },
+        Some(DeckCommand::Mana { name, format, json }) => {
+            deck::mana(paths, conn, out, name, format.as_deref(), *json)
+        }
         Some(DeckCommand::Update {
             name,
             add,
@@ -219,6 +225,7 @@ fn run_deck(
             commander,
             format,
             bracket,
+            max_price,
             limit,
             json,
         }) => {
@@ -235,6 +242,7 @@ fn run_deck(
                 *commander,
                 format.as_deref(),
                 *bracket,
+                *max_price,
                 *limit,
                 *json,
             )
@@ -281,6 +289,7 @@ fn run_deck(
             count,
             for_role,
             bracket,
+            format,
             json,
         }) => deck::cuts(
             paths,
@@ -291,6 +300,7 @@ fn run_deck(
                 count: *count as usize,
                 for_role: for_role.as_deref(),
                 bracket: *bracket,
+                format: format.as_deref(),
                 json: *json,
             },
         ),

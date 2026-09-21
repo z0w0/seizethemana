@@ -137,6 +137,10 @@ pub enum Command {
         /// Maximum results (default 20, max 100)
         #[arg(long, default_value_t = 20, value_parser = clap::value_parser!(u32).range(1..=100))]
         limit: u32,
+        /// Keep only cards priced at or under this cap in US dollars (USD);
+        /// unpriced cards are excluded
+        #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
+        max_price: Option<f64>,
         /// Emit JSON
         #[arg(long)]
         json: bool,
@@ -228,6 +232,18 @@ pub enum DeckCommand {
         json: bool,
     },
 
+    /// Static colored-source audit (Karsten requirement floors; no simulation)
+    Mana {
+        /// Deck name
+        name: String,
+        /// Pin the format (default: inferred from the deck's sections)
+        #[arg(long)]
+        format: Option<String>,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Update a deck (add/remove/set/move quantities, per section)
     Update {
         name: String,
@@ -292,6 +308,10 @@ pub enum DeckCommand {
         /// 1-2 allow no Game Changers)
         #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]
         bracket: Option<u8>,
+        /// Budget cap: drop candidates priced above this amount in US
+        /// dollars (USD); unpriced candidates are excluded before ranking
+        #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
+        max_price: Option<f64>,
         /// Maximum results (default 10)
         #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..=50))]
         limit: u32,
@@ -371,6 +391,10 @@ pub enum DeckCommand {
         /// the top
         #[arg(long, value_parser = clap::value_parser!(u8).range(1..=5))]
         bracket: Option<u8>,
+        /// Format to judge legality against (default: inferred from the
+        /// deck's sections)
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
         /// Emit JSON
         #[arg(long)]
         json: bool,
@@ -446,6 +470,18 @@ pub enum DeckCommand {
         #[arg(long, value_name = "FILE")]
         set: Option<std::path::PathBuf>,
     },
+}
+
+/// Parse `--max-price`: reject negative caps at parse time (a negative
+/// budget hides everything; the user meant a smaller positive cap).
+fn parse_max_price(s: &str) -> Result<f64, String> {
+    let v: f64 = s
+        .parse()
+        .map_err(|_| format!("`{s}` is not a USD amount"))?;
+    if v < 0.0 {
+        return Err("--max-price must be zero or positive".to_string());
+    }
+    Ok(v)
 }
 
 /// Structured filters shared by `query` and `collection query`.
