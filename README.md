@@ -158,7 +158,7 @@ if you want to see exactly what the assistant will be told.
 | `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first; works in any format |
 | `stm deck simulate <name> [--seed N]` | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation)) |
 | `stm deck combos <name> [--bracket B]` | Spellbook combo audit, split by section; flags bracket-breaking combos |
-| `stm deck cuts <name> [--for ROLE]` | Rank the deck's cards by expendability, with cut/fill pairing |
+| `stm deck cuts <name> [--for ROLE] [--bracket N]` | Rank the deck's cards by expendability, with cut/fill pairing; pass `--bracket` so Game Changers over the cap pin to the top |
 | `stm deck diff <A> <B> --markdown` | Exact change instructions between two lists (either side a deck name or a file) |
 | `stm deck export <name> <file> --format names` | Plain `qty Name` export (no set decorations) |
 | `stm deck primer <name> [--set <file>]` | Read or write a deck's strategy notes |

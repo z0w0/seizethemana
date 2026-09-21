@@ -181,7 +181,7 @@ pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
 }
 
 /// One metric delta: dot path, old value, new value.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Delta {
     /// Dot path into the report (e.g. "commander.on_curve_pct").
     pub path: String,
@@ -192,7 +192,7 @@ pub struct Delta {
 }
 
 /// Problem kinds that appeared or disappeared between the two runs.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct ProblemDelta {
     /// "resolved" (in baseline, gone now) or "new" (absent before).
     pub change: &'static str,
@@ -202,12 +202,23 @@ pub struct ProblemDelta {
 }
 
 /// The full diff between two reports.
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, serde::Serialize)]
 pub struct ReportDiff {
     pub metrics: Vec<Delta>,
     pub problems: Vec<ProblemDelta>,
     /// Deck-shape count changes (name, old, new).
-    pub shape: Vec<(String, String, String)>,
+    pub shape: Vec<ShapeDelta>,
+}
+
+/// One deck-shape count change between the baseline and current reports.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct ShapeDelta {
+    /// Deck-shape key (e.g. "lands", "draw_sources").
+    pub name: String,
+    /// Prior value.
+    pub old: String,
+    /// New value.
+    pub new: String,
 }
 
 /// Diff two report payloads: scalar metrics at known paths, problem lists,
@@ -247,11 +258,11 @@ pub fn diff_reports(baseline: &serde_json::Value, current: &serde_json::Value) -
             let old_v = old.get(key).cloned().unwrap_or_default();
             let new_v = new.get(key).cloned().unwrap_or_default();
             if old_v != new_v {
-                diff.shape.push((
-                    key.to_string(),
-                    value_display(&old_v),
-                    value_display(&new_v),
-                ));
+                diff.shape.push(ShapeDelta {
+                    name: key.to_string(),
+                    old: value_display(&old_v),
+                    new: value_display(&new_v),
+                });
             }
         }
     }
@@ -367,8 +378,8 @@ pub fn print_diff(out: &Output, diff: &ReportDiff) {
     println!("{}", s.header("Deltas vs baseline"));
     if !diff.shape.is_empty() {
         println!("{}", s.header("Shape"));
-        for (name, old, new) in &diff.shape {
-            println!("    {name}: {old} → {new}");
+        for d in &diff.shape {
+            println!("    {}: {} → {}", d.name, d.old, d.new);
         }
     }
     if !diff.metrics.is_empty() {
@@ -441,9 +452,9 @@ mod diff_tests {
         assert_eq!(diff.metrics.len(), 2);
         assert_eq!(diff.metrics[0].path, "commander.on_curve_pct");
         assert_eq!(diff.shape.len(), 1);
-        assert_eq!(diff.shape[0].0, "lands");
-        assert_eq!(diff.shape[0].1, "44");
-        assert_eq!(diff.shape[0].2, "42");
+        assert_eq!(diff.shape[0].name, "lands");
+        assert_eq!(diff.shape[0].old, "44");
+        assert_eq!(diff.shape[0].new, "42");
         assert!(diff.problems.is_empty());
     }
 

@@ -264,6 +264,18 @@ pub fn curve_json(stats: &DeckStats, is_commander: bool) -> serde_json::Value {
     })
 }
 
+/// The ramp JSON block: the deck's mana-source census (lands, rocks,
+/// dorks, other producers) as the machine-readable counterpart of the
+/// human overview's `Ramp` lines.
+pub fn ramp_json(stats: &DeckStats) -> serde_json::Value {
+    serde_json::json!({
+        "lands": stats.ramp.0,
+        "rocks": stats.ramp.1,
+        "dorks": stats.ramp.2,
+        "other": stats.ramp.3,
+    })
+}
+
 /// Matches the `{T}: Add {…}` shape plus prose forms like "Add one mana of
 /// any color" (Birds of Paradise) and "adds one mana of any one color", which
 /// the pip pattern misses.

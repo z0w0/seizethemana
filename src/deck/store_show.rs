@@ -461,6 +461,7 @@ pub fn show(
                 "curve".into(),
                 super::stats::curve_json(&stats, is_commander),
             );
+            obj.insert("ramp".into(), super::stats::ramp_json(&stats));
         }
         if let Some(obj) = v.as_object_mut()
             && let Some(census) = universe_census

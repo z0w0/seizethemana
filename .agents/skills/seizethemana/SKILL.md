@@ -34,8 +34,8 @@ wants an existing deck improved.
 | `stm deck mana <name> [--format F]` | static colored-source audit (Karsten floors; no simulation) |
 | `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
 | `stm deck combos <name> [--bracket B] --json` | Spellbook combo audit, split by section |
-| `stm deck cuts <name> [--for ROLE] [--format F] --json` | ranked expendability list, cut+fill pairing |
-| `stm deck diff <A> <B-or-file> [--markdown] --json` | exact change instructions between two lists |
+| `stm deck cuts <name> [--for ROLE] [--format F] [--bracket B] --json` | ranked expendability list, cut+fill pairing; pass `--bracket` or Game Changer over-cap cards never pin |
+| `stm deck diff <A> <B-or-file> [--markdown] --json` | change instructions from A to B (A = original: `removed` = in A only, `added` = in B only) |
 | `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
 | `stm deck primer <name> --set <file>` | replace the primer markdown |
 
@@ -502,7 +502,11 @@ stm deck simulate <name> --seed 42 --baseline /tmp/base.json
 ```
 
 Identical seeds = identical shuffle baselines, so differences isolate the
-deck change. For full-detail comparison keep the `--json` diff form.
+deck change. Add `--json` to the diff run for the same deltas as JSON
+(`{metrics: [{path, old, new}], shape: [{name, old, new}], problems:
+[{change, kind, detail}]}`) — with `--baseline` set, `--json` prints the
+delta object, not the full report. Without `--baseline`, `--json` prints
+the full report as before.
 
 ### JSON shapes (stable)
 
@@ -541,7 +545,8 @@ deck change. For full-detail comparison keep the `--json` diff form.
   assignments (a card owned only inside a deck reports its count there).
 - `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
   currency, owned_value, missing_cost, curve: {avg_mv, histogram (MV
-  0..6+, 7 slots), target}, universe_census?, sections: [{section, cards:
+  0..6+, 7 slots), target}, ramp: {lands, rocks, dorks, other},
+  universe_census?, sections: [{section, cards:
   [{quantity, name, set, set_name?, set_type?, block?, universe?,
   collector_number, foil, owned, assigned_to_this_deck, owned_elsewhere,
   covered_by, missing_reason?, basic_land, price}]}]}`. `cards` is the
@@ -585,7 +590,10 @@ deck change. For full-detail comparison keep the `--json` diff form.
   pin), `castability` (rarely castable on curve), `curve` (CMC outlier),
   `price`. Basics and the commander never appear; illegal cards and Game
   Changers over the bracket cap pin to the top (`pinned: true`, rank 1..
-  regardless of score). `remove_qty` is the copy count for the paired
+  regardless of score). **Pass `--bracket <B>` when reviewing against a
+  bracket** — without it the Game Changer cap is unknown, so no GC card
+  ever pins (there is no bracket inference here, unlike `deck
+  simulate`). `remove_qty` is the copy count for the paired
   `deck update --remove` (full qty for pins, 1 of a 2-of, half of a
   3-4-of; human output prints "cut N of M copies"). `--count <N>` caps
   the rows (default 5). `--format <fmt>`
@@ -595,7 +603,9 @@ deck change. For full-detail comparison keep the `--json` diff form.
   serving that role.
 - `deck diff <A> <B-or-file> --json` →
   `[{section, removed: [{name, qty}], added: [{name, qty}], changed:
-  [{name, from, to}]}]`. Both operands accept a deck name or a ManaBox
+  [{name, from, to}]}]`. `A` is the original, `B` the target: `removed`
+  holds cards in A only (take them out), `added` holds cards in B only
+  (put them in). Both operands accept a deck name or a ManaBox
   txt file path, so `stm deck diff ~/Downloads/Original.txt Optimized
   --markdown` diffs the file first. Basics and quantity changes collapse
   to `changed` rows (`Forest: 16 → 12`); `--exact` diffs by print
@@ -675,11 +685,12 @@ deck change. For full-detail comparison keep the `--json` diff form.
   share of games that hit every drop through that turn.
   `commander` is `{name, cmc, pct_castable_by_turn, avg_first_cast_turn,
   p50_cast_turn, p95_cast_turn, on_curve_pct}`.
-- `deck simulate <name> --baseline prior.json` (human output) diffs the
+- `deck simulate <name> --baseline prior.json` diffs the
   fresh run against that JSON and prints deltas only — shape counts,
   metric lines (`path: old → new`), and problems (`+` new, `-` resolved).
   Exit 1 only when a problem is *new*; identical or improved decks exit 0.
-  Use it in the fix loop instead of saving and diffing JSON by hand.
+  Add `--json` for the same deltas as the JSON delta object (see the
+  fix loop in Part 1). Use it instead of saving and diffing JSON by hand.
 - `deck suggest <name> --json` → array of `{name, oracle_id, mana_cost,
   cmc, type_line, edhrec_rank, game_changer, owned, price, score,
   tags, oracle_text, color_identity}`. Ranked by fit: semantic search and
@@ -837,7 +848,8 @@ with a one-line pitch each. Two search paths, in order:
 ### Power targets (the quality bar)
 
 "Powerful" is verifiable. After each fill round, check the deck against
-these counts (using `stm deck show`'s ramp/curve overview and the deck
+these counts (using `stm deck show --json`'s `ramp` and `curve` blocks
+and the deck
 list) and name the deficit when a category is short, e.g. "5 of ~10 draw
 pieces, need 3–5 more in the next batch".
 
@@ -977,7 +989,9 @@ each card:
   filters to the deck's legality, and ranks by fused fit (semantic +
   tag match, EDHREC rank tiebreak). Pass `--max-price <USD>` as the
   first pricing pass — the cap drops over-priced and unpriced candidates
-  before ranking. Any of the 69 known role names works
+  before ranking. `--limit N` widens the candidate pool past the default
+  10 (max 50) when the top hits all fail the budget or the bracket.
+  Any of the 69 known role names works
   — the CLI prints the full list on an unknown role (draw, cantrip,
   wheel, mill, ramp, mana-rock, mana-dork, removal, board-wipe,
   counterspell, stax, sacrifice, reanimate, token, anthem, equipment,
@@ -1012,7 +1026,7 @@ let the user decide. Then run `stm deck
 show <name> --json`, check the power targets above, and present the final:
 total cards, curve, ramp counts, owned/total, **total spend vs budget**, and
 `stm deck legal` output (including the bracket checklist review). Run a
-final `stm deck simulate <name> --json` and present its `problems[]`
+final `stm deck simulate <name> --seed 42 --json` and present its `problems[]`
 (or "no findings") as the deck's consistency report. Write a
 short primer with `stm
 deck primer <name> --set`. The primer describes the deck **as it stands
@@ -1085,8 +1099,10 @@ exceed it.
    deck.** Import the original as `"<name> Original"` (or leave the
    user's list as-is) and build the improved list as `"<name>"
    (Optimized)`. Produce the change log with one command:
-   `stm deck diff <optimized> <original-file-or-deck> --markdown >
-   decks/<name>.changes.md`, and verify the change log matches the two
+   `stm deck diff <original-file-or-deck> <optimized> --markdown >
+   decks/<name>.changes.md` (the original is the first operand: removed =
+   cards to take out, added = cards to put in), and verify the change log
+   matches the two
    lists (removed + added counts reconcile against the diff JSON). This
    replaces hand-written Perl diff scripts.
 5. **Change batches like Mode A.** For each problem, propose swaps: remove
@@ -1103,7 +1119,8 @@ exceed it.
       the file format takes `add/remove/set/move` lines and `#`
       comments).
    4. `stm deck simulate <name> --seed <same> --baseline <prev.json>
-      --json` → report the deltas.
+       --json` → the JSON delta object (`metrics`/`shape`/`problems`);
+       exit 1 only when a problem is new. Report the deltas.
    5. One question per batch → next batch.
 
    Loop tools: `deck simulate` (diagnose) → `deck suggest` (fill) →
@@ -1111,9 +1128,10 @@ exceed it.
 6. **Apply and verify.** `stm deck update` per confirmed batch. After each
    batch, re-simulate with the same seed and show the metric deltas (the
    fix loop in Part 1) — a batch is working when its target metric moved
-   and no new `problems[]` appeared. `deck cuts --for <role>` makes room
-   for a fill: it ranks incumbents by expendability (castability faults,
-   Game Changer over-cap, curve outliers) and pairs each cut with fill
+    and no new `problems[]` appeared. `deck cuts --for <role>
+    --bracket <b>` makes room
+    for a fill: it ranks incumbents by expendability (castability faults,
+    Game Changer over-cap, curve outliers) and pairs each cut with fill
    candidates owned first; never cut the commander or basics (cuts never
    suggests them). Then a final `stm deck show` +
    `stm deck legal` + primer update (current state, not build history).

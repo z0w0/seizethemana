@@ -139,7 +139,8 @@ Conventions:
   Scryfall Tagger labels + role keyword scan, fused by reciprocal rank
   fusion (EDHREC breaks ties), grouped owned cards first with each group
   in fit order, annotated with ownership (copy count), price, and Game
-  Changer flags. `--role` accepts ~41 structured roles (draw, ramp,
+  Changer   flags. `--role` accepts 69 known role names (aliases mapping to 42
+  structured roles: draw, ramp,
   board-wipe, sacrifice, voltron, spellslinger, typal, group-hug, ...).
   `--format <fmt>` pins the legality filter; commander-shaped decks default
   to the commander's color identity and commander legality, other decks
@@ -156,10 +157,12 @@ Conventions:
   worst-3 slow-to-cast cards, and `error:` problem lines with a category +
   magnitude suggestion (`→ add 2-3 draw engines`). Exit 1 when problems
   were found (the result, not a crash); `--seed` makes runs reproducible
-  so agents can diff a deck edit's effect. `--baseline prior.json` (human
-  output) prints deltas only — shape counts, metric lines, problems
-  (`+` new / `-` resolved) — and exits 1 only when a problem is new.
-  `--json` is the full detail:
+  so agents can diff a deck edit's effect. `--baseline prior.json` prints
+  deltas only — shape counts, metric lines, problems (`+` new / `-`
+  resolved) — and exits 1 only when a problem is new. With `--json` the
+  same baseline prints the delta object (`metrics`, `shape`, `problems`)
+  instead of the full report. Without a baseline, `--json` is the full
+  detail:
   opening-hand distribution, land-drop curve + percentiles, commander
   timing (with the full pip check for multicolor commanders), station
   online metrics, bodies and engines per turn, unspent mana, velocity +

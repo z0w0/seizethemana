@@ -168,7 +168,9 @@ use rand_chacha::ChaCha8Rng;
 /// Exit 0 when no problems were found, exit 1 when the report has findings
 /// (the result is the answer, not a crash). A missing deck file is the
 /// shared deck-not-found error from the dispatcher. `baseline` (when given)
-/// diffs the fresh report against that prior JSON and prints deltas only.
+/// diffs the fresh report against that prior JSON: human output prints
+/// deltas only; `--json` prints the `ReportDiff` as JSON. Either way the
+/// exit code keys on new problems, not the raw problem list.
 // The 12 parameters mirror the CLI surface one to one; a struct would
 // move the clap plumbing without removing any argument.
 #[allow(clippy::too_many_arguments)]
@@ -281,6 +283,28 @@ pub fn simulate(
     });
 
     if json {
+        if let Some(baseline_path) = baseline {
+            // JSON diff mode: print the ReportDiff as JSON so agents can
+            // gate on new problems without hand-diffing full reports.
+            let baseline: serde_json::Value = read_baseline_json(baseline_path)?;
+            let current = report::json_report(
+                &stats,
+                &sim_deck,
+                name,
+                seed,
+                &problems,
+                sideboard_cards,
+                &mana_base,
+            );
+            let diff = report_view::diff_reports(&baseline, &current);
+            println!("{}", serde_json::to_string_pretty(&diff)?);
+            // Diff mode exits on the delta: empty diff or only resolved
+            // problems is clean; any new problem exits 1.
+            if diff.problems.iter().any(|p| p.change == "new") {
+                return Ok(crate::cli::codes::ERROR);
+            }
+            return Ok(crate::cli::codes::OK);
+        }
         let mut v = report::json_report(
             &stats,
             &sim_deck,
@@ -323,9 +347,7 @@ pub fn simulate(
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else if let Some(baseline_path) = baseline {
         // Diff mode: load the prior report and print only the deltas.
-        let baseline_text = read_baseline(baseline_path)?;
-        let baseline: serde_json::Value = serde_json::from_str(&baseline_text)
-            .with_context(|| format!("parsing baseline {}", baseline_path.display()))?;
+        let baseline = read_baseline_json(baseline_path)?;
         let current = report::json_report(
             &stats,
             &sim_deck,
@@ -367,7 +389,9 @@ pub fn simulate(
     }
 }
 
-/// Read a baseline report file.
-fn read_baseline(path: &std::path::Path) -> anyhow::Result<String> {
-    std::fs::read_to_string(path).with_context(|| format!("reading baseline {}", path.display()))
+/// Read and parse a baseline report file as JSON.
+fn read_baseline_json(path: &std::path::Path) -> anyhow::Result<serde_json::Value> {
+    let text = std::fs::read_to_string(path)
+        .with_context(|| format!("reading baseline {}", path.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("parsing baseline {}", path.display()))
 }
