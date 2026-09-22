@@ -1,5 +1,5 @@
 use anyhow::Context;
-use rusqlite::Connection;
+use rusqlite::{Connection, OptionalExtension};
 
 // Print storage and lookups.
 //
@@ -167,9 +167,6 @@ pub fn price_for_kind(print: &Print, foil: &str) -> Option<f64> {
     }
 }
 
-/// Read the released-English-prints filter: buyable/sellable only.
-use rusqlite::OptionalExtension;
-
 /// Cheapest and most expensive released English printings of one card name.
 ///
 /// A card with no priced prints (e.g. only unreleased reprints in the bulk)
@@ -186,23 +183,25 @@ pub fn price_range(conn: &Connection, name: &str) -> anyhow::Result<PrintRange> 
              WHERE name = ?1 AND lang = 'en'
                AND (released_at = '' OR released_at <= ?2)
                AND {price_col} IS NOT NULL
-             ORDER BY card_prints.{price_col} ASC LIMIT 1"
+             ORDER BY card_prints.{price_col} ASC, card_prints.scryfall_id ASC LIMIT 1"
         );
         let cheapest = conn
             .prepare(&query)?
             .query_row(rusqlite::params![name, today], map_print)
-            .ok();
+            .optional()
+            .context("reading cheapest print")?;
         let query = format!(
             "SELECT {PRINT_COLUMNS} FROM card_prints
              WHERE name = ?1 AND lang = 'en'
                AND (released_at = '' OR released_at <= ?2)
                AND {price_col} IS NOT NULL
-             ORDER BY card_prints.{price_col} DESC LIMIT 1"
+             ORDER BY card_prints.{price_col} DESC, card_prints.scryfall_id ASC LIMIT 1"
         );
         let priciest = conn
             .prepare(&query)?
             .query_row(rusqlite::params![name, today], map_print)
-            .ok();
+            .optional()
+            .context("reading priciest print")?;
         Ok((cheapest, priciest))
     };
     let (cheapest, priciest) = pick(false)?;
@@ -247,13 +246,15 @@ pub fn price_ranges(
             // Two window functions rank cheapest and priciest per name under
             // the released-English filter; keeping rn_cheap = 1 or
             // rn_expensive = 1 yields the same picks `price_range` makes.
+            // `scryfall_id` breaks price ties deterministically, so the
+            // pick does not depend on row order.
             let query = format!(
                 "SELECT name, rn_cheap, rn_expensive, {PRINT_COLUMNS} FROM (
                     SELECT *, ROW_NUMBER() OVER (
-                        PARTITION BY name ORDER BY {finish} ASC
+                        PARTITION BY name ORDER BY {finish} ASC, scryfall_id ASC
                     ) AS rn_cheap,
                     ROW_NUMBER() OVER (
-                        PARTITION BY name ORDER BY {finish} DESC
+                        PARTITION BY name ORDER BY {finish} DESC, scryfall_id ASC
                     ) AS rn_expensive
                     FROM card_prints
                     WHERE name IN ({placeholders})
@@ -374,8 +375,8 @@ pub fn prints_by_name(
 /// Price of one owned collection row: exact print by (name, set, cn) with a
 /// finish-kind fallback.
 ///
-/// Returns None when the snapshot lacks the printing or the print is
-/// unpriced for the requested finish.
+/// Returns None when the snapshot lacks the printing, or when the print and
+/// every fallback finish are unpriced.
 ///
 /// # Errors
 /// Propagates SQLite failures.
@@ -391,6 +392,7 @@ pub fn price_for_owned(
             &format!(
                 "SELECT {PRINT_COLUMNS} FROM card_prints
              WHERE name = ?1 AND set_code = ?2 AND collector_number = ?3
+               AND lang = 'en'
              LIMIT 1"
             ),
             rusqlite::params![name, set_code.to_ascii_lowercase(), collector_number],
@@ -402,6 +404,68 @@ pub fn price_for_owned(
         .optional()
         .context("reading owned print price")?
         .flatten())
+}
+
+/// One owned-printing key and its USD price lookup result.
+pub type OwnedPriceMap = std::collections::HashMap<(String, String, String, String), Option<f64>>;
+
+/// USD prices for many owned collection rows at once (one SQL statement).
+///
+/// Keyed by `(name, set_code, collector_number, foil)`; the finish-kind
+/// fallback matches [`price_for_owned`]. Rows missing from the snapshot are
+/// absent from the map.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn prices_for_owned(
+    conn: &Connection,
+    keys: &[(String, String, String, String)],
+) -> anyhow::Result<OwnedPriceMap> {
+    let mut map = std::collections::HashMap::new();
+    if keys.is_empty() {
+        return Ok(map);
+    }
+    let keys_json = serde_json::to_string(
+        &keys
+            .iter()
+            .map(|(n, s, c, f)| serde_json::json!([n, s.to_ascii_lowercase(), c, f]))
+            .collect::<Vec<_>>(),
+    )?;
+    // Duplicate (name, set, cn) rows exist in Scryfall data (variant
+    // rows sharing a collector number). The GROUP BY picks an arbitrary
+    // row; aggregate MIN over the price keys so the pick is stable.
+    let mut stmt = conn.prepare(
+        "SELECT json_extract(je.value, '$[0]'), json_extract(je.value, '$[1]'),
+                json_extract(je.value, '$[2]'), json_extract(je.value, '$[3]'),
+                MIN(
+                    CASE json_extract(je.value, '$[3]')
+                        WHEN 'foil' THEN COALESCE(p.usd_foil, p.usd)
+                        WHEN 'etched' THEN COALESCE(p.usd_etched, p.usd_foil, p.usd)
+                        ELSE p.usd
+                    END
+                )
+         FROM json_each(?1) je
+         JOIN card_prints p
+           ON p.name = json_extract(je.value, '$[0]')
+          AND p.set_code = json_extract(je.value, '$[1]')
+          AND p.collector_number = json_extract(je.value, '$[2]')
+          AND p.lang = 'en'
+         GROUP BY je.key",
+    )?;
+    let rows = stmt.query_map([&keys_json], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+            row.get::<_, String>(3)?,
+            row.get::<_, Option<f64>>(4)?,
+        ))
+    })?;
+    for row in rows {
+        let (name, set_code, collector_number, foil, price) = row?;
+        map.insert((name, set_code, collector_number, foil), price);
+    }
+    Ok(map)
 }
 
 #[cfg(test)]
@@ -678,6 +742,54 @@ mod tests {
         // Wrong collector number → no row.
         let missing = price_for_owned(&conn, "Bolt", "m11", "999", "normal").unwrap();
         assert_eq!(missing, None);
+    }
+
+    #[test]
+    fn prices_for_owned_batches_with_finish_fallback() {
+        let conn = conn();
+        seed(
+            &conn,
+            "a",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            Some(0.5),
+            Some(9.0),
+            "en",
+            "2010-01-01",
+        );
+        let keys = vec![
+            (
+                "Bolt".to_string(),
+                "m11".to_string(),
+                "148".to_string(),
+                "foil".to_string(),
+            ),
+            (
+                "Bolt".to_string(),
+                "m11".to_string(),
+                "148".to_string(),
+                "normal".to_string(),
+            ),
+            (
+                "Bolt".to_string(),
+                "m11".to_string(),
+                "999".to_string(),
+                "normal".to_string(),
+            ),
+        ];
+        let prices = prices_for_owned(&conn, &keys).unwrap();
+        assert_eq!(
+            prices.get(&("Bolt".into(), "m11".into(), "148".into(), "foil".into())),
+            Some(&Some(9.0))
+        );
+        assert_eq!(
+            prices.get(&("Bolt".into(), "m11".into(), "148".into(), "normal".into())),
+            Some(&Some(0.5))
+        );
+        // Missing printing is absent from the map.
+        assert_eq!(prices.len(), 2);
     }
 
     #[test]

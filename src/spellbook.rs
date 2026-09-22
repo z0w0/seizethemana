@@ -15,17 +15,21 @@ use rusqlite::Connection;
 pub const VARIANTS_URL: &str = "https://json.commanderspellbook.com/variants.json.gz";
 
 /// One card reference in the bulk payload.
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct SpellbookCardRef {
     name: String,
 }
 
 /// One piece requirement in the bulk payload.
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct SpellbookUse {
+    /// The card the combo needs.
     pub card: SpellbookCardRef,
+    /// Zones the card must sit in when the combo starts (hand, battlefield,
+    /// graveyard, ...); absent from the bulk reads as empty.
     #[serde(default, rename = "zoneLocations")]
     pub zone_locations: Vec<String>,
+    /// True when the card must be the deck's commander.
     #[serde(default, rename = "mustBeCommander")]
     pub must_be_commander: bool,
 }
@@ -65,20 +69,30 @@ pub struct SpellbookVariant {
 /// A combo piece flattened for storage: faces split, zones kept.
 #[derive(Debug, PartialEq)]
 pub struct ParsedPiece {
+    /// Card (or face) name.
     pub name: String,
+    /// Zones the combo needs the card in.
     pub zones: Vec<String>,
+    /// True when the card must be the deck's commander.
     pub must_be_commander: bool,
 }
 
 /// One parsed variant ready for the store.
 #[derive(Debug, PartialEq)]
 pub struct ParsedVariant {
+    /// Spellbook variant id.
     pub id: String,
+    /// Feature names the combo produces.
     pub produces: Vec<String>,
+    /// Mana value the combo needs available.
     pub mana_value_needed: u32,
+    /// Spellbook bracket tag ("S", "K", ...), when tagged.
     pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
     pub popularity: Option<i64>,
+    /// Format-legality map serialized as JSON.
     pub legalities: String,
+    /// The combo's pieces.
     pub pieces: Vec<ParsedPiece>,
 }
 
@@ -129,8 +143,10 @@ fn split_faces(name: &str) -> Vec<String> {
 pub fn ensure_fresh_variants(
     dest: &std::path::Path,
     out: &mut crate::output::Output,
+    force: bool,
 ) -> anyhow::Result<bool> {
-    if let Ok(meta) = std::fs::metadata(dest)
+    if !force
+        && let Ok(meta) = std::fs::metadata(dest)
         && let Ok(modified) = meta.modified()
         && let Ok(age) = modified.elapsed()
         && age <= crate::sync::STALE_AFTER.to_std()?

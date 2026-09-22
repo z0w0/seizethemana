@@ -198,18 +198,27 @@ fn deficits_rank_and_format_for_display() {
 
 #[test]
 fn taplands_count_and_hold_t1_sources() {
+    // Unconditional tapland.
     let tap = card(
-        "Hallowed Fountain enters tapped unless you pay 2 life",
+        "Temple of Silence",
+        "",
+        "Land",
+        "Temple of Silence enters the battlefield tapped.",
+        0.0,
+    );
+    // Shock land: the tapped clause is conditional, so it never counts.
+    let shock = card(
+        "Hallowed Fountain",
         "",
         "Land — Plains Island",
         "As Hallowed Fountain enters the battlefield, you may pay 2 life. If you don't, it enters the battlefield tapped.",
         0.0,
     );
     let untapped = card("Plains", "", "Basic Land — Plains", "", 0.0);
-    let rows = vec![(tap, 3.0), (untapped, 10.0)];
+    let rows = vec![(tap, 3.0), (shock, 3.0), (untapped, 10.0)];
     let c = census(&rows, "W");
     assert_eq!(c.tapland_count, 3);
-    assert_eq!(c.untapped_t1[idx('W')], 10.0);
+    assert_eq!(c.untapped_t1[idx('W')], 13.0);
 }
 
 #[test]

@@ -1,6 +1,7 @@
 // Tests for owned-search location scoping.
 
 use super::*;
+use crate::collection_conflicts::locations_for;
 
 fn conn() -> (tempfile::TempDir, Connection) {
     let tmp = tempfile::tempdir().unwrap();

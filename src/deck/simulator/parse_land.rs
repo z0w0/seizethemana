@@ -304,7 +304,6 @@ pub fn parse_gates(oracle_text: &str) -> Vec<&'static str> {
     gates
 }
 
-/// Enters-tapped oracle check for lands.
 /// Enters-tapped oracle check for lands. Best-case reading: the shock-dual
 /// life-payment clause ("you may pay 2 life") stays untapped; unconditional
 /// "enters tapped" texts are tapped.

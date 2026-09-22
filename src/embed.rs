@@ -198,6 +198,12 @@ pub fn doc_for_row(row: &crate::db::CardRow, index: &crate::tags::TagIndex) -> S
     )
 }
 
+/// Intra-op threads for ONNX Runtime.
+///
+/// 8 measured fastest on a 12-core machine (139/s @4 → 188/s @8); more
+/// threads plateau and slightly regress.
+pub const INTRA_THREADS: usize = 8;
+
 /// Load the embedding model, cached under `cache_dir`.
 ///
 /// First call downloads the quantized ONNX model (~35MB); later calls load
@@ -205,12 +211,6 @@ pub fn doc_for_row(row: &crate::db::CardRow, index: &crate::tags::TagIndex) -> S
 ///
 /// # Errors
 /// Propagates model load/download failures.
-/// Intra-op threads for ONNX Runtime.
-///
-/// 8 measured fastest on a 12-core machine (139/s @4 → 188/s @8); more
-/// threads plateau and slightly regress.
-pub const INTRA_THREADS: usize = 8;
-
 pub fn load_model(
     cache_dir: &std::path::Path,
     show_progress: bool,
@@ -645,7 +645,8 @@ mod tests {
         assert_eq!(owned.meta.names, vec!["Bolt", "New"]);
     }
 
-    /// Write the matching status.json for a store, mirroring setup step 5.
+    /// Write the status.json that marks the store ready, matching what
+    /// setup produces for a fully embedded store.
     fn write_status(store: &VectorStore, dir: &std::path::Path) {
         crate::paths::Status {
             setup_complete: true,

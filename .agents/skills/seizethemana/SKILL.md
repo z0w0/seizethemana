@@ -7,8 +7,8 @@ description: Use when building MTG decks, improving existing decks or precons, s
 
 `stm` (seizethemana) semantically searches every MTG card, manages a
 binder/deck collection with live USD prices, and reads/writes ManaBox
-formats. Results land on stdout as JSON; exit codes carry the control flow.
-Parse nothing you don't have to.
+formats. Read commands print JSON with `--json` and human text otherwise;
+exit codes carry the control flow. Parse nothing you don't have to.
 
 Read Part 1 once for the tooling contract. Part 2 is the deckbuilding
 workflow; follow it step by step whenever the user asks for a new deck or
@@ -26,21 +26,32 @@ wants an existing deck improved.
 | `stm card combos <name> --json` | Spellbook combos a card appears in |
 | `stm collection [--json]` | collection value, curve, rarity overview |
 | `stm collection query "<text>" [--json]` | search the owned pool |
+| `stm collection conflicts [--json]` | cards wanted by more decks than you own copies (with buy cost) |
 | `stm collection import <csv>` | load a collection CSV (ownership only) |
-| `stm deck create/import/show/export` | decklist lifecycle |
+| `stm deck create/import/show/export` | decklist lifecycle (import/export understand ManaBox, Moxfield, Archidekt, Arena, names; import also takes `--url` for Archidekt deck URLs — the only fetchable host) |
+| `stm deck hand <name> [--seed N] [--count N]` | sample opening hands + keep/mull advice (seed = sim game #1's opener; count = hands to deal, 1-10, default 3) |
 | `stm deck update <name> [flags]` | edit a list (`--add --remove --set --move --from`) |
-| `stm deck suggest <name> [--role R | "q" | --commander] [--format F] [--max-price X] --json` | ranked fill candidates |
+| `stm deck update <name> [ops] --dry-run [--sim] [--legal] [--json]` | preview a change: list diff + cost + same-seed sim delta (`--sim`) + post-change legality verdict (`--legal`); nothing written. Apply = re-run without --dry-run |
+| `stm deck suggest <name> [--role R | "q" | --commander] [--format F] [--bracket B] [--max-price X] [--owned] [--exclude N|FILE|-] --json` | ranked fill candidates (`--format`/`--bracket` also apply with `--commander`; `--owned` keeps only cards the collection owns; `--exclude` takes card names, a file of names (one per line, `#` comments allowed), or `-` to read the name list from stdin; excluded cards are never suggested) |
 | `stm deck legal <name> [--format F] [--bracket 1-5]` | legality + bracket checklist |
 | `stm deck mana <name> [--format F]` | static colored-source audit (Karsten floors; no simulation) |
 | `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
 | `stm deck combos <name> [--bracket B] --json` | Spellbook combo audit, split by section |
-| `stm deck cuts <name> [--for ROLE] [--format F] [--bracket B] --json` | ranked expendability list, cut+fill pairing; pass `--bracket` or Game Changer over-cap cards never pin |
-| `stm deck diff <A> <B-or-file> [--markdown] --json` | change instructions from A to B (A = original: `removed` = in A only, `added` = in B only) |
+| `stm deck cuts <name> [--for ROLE] [--format F] [--bracket B] [--max-price X] --json` | ranked expendability list, cut+fill pairing; pass `--bracket` or Game Changer over-cap cards never pin; `--max-price` caps the `--for` fill candidates |
+| `stm deck diff <A> <B-or-file> [--markdown] [--as-update] --json` | change instructions from A to B (`--as-update` prints `deck update --from` op lines; see the JSON shapes section for diff orientation) |
 | `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
-| `stm deck primer <name> --set <file>` | replace the primer markdown |
+| `stm deck copy <src> <dst> [--force]` | duplicate a decklist + primer under a new name (ownership rows are never copied) |
+| `stm deck primer <name> --set <file|->` | replace the primer markdown (a file path, or `-` for stdin) |
 
-Every command also takes `--json`; the JSON shapes section below lists
-each. `--offline` skips the background refresh check.
+Read commands take `--json` (`card`, `card similar`, `card combos`,
+`query`, `collection`, `collection query`, `collection conflicts`,
+`deck hand`, `deck show`, `deck list`, `deck legal`, `deck mana`,
+`deck simulate`, `deck combos`, `deck cuts`, `deck diff`, `deck suggest`,
+`deck buylist`, `deck dedupe`, and `deck update` — for `update` it is
+the dry-run preview or the update summary); the JSON shapes section
+below lists each. Write commands (`setup`, `sync`, `collection import`,
+`deck create/delete/export/import`, `deck primer --set`) do not take
+`--json`. `--offline` skips the background refresh check.
 
 ### Contract (read first)
 
@@ -121,7 +132,7 @@ keeps only cards priced at or under the cap;
 **unpriced cards are excluded** (strict budget reading). The cap
 applies before the limit cut, so the result fills up to `--limit` with
 under-cap cards. Suggest's human output notes what the cap hid
-("candidates capped at $2; 3 unpriced or above-cap cards hidden");
+("candidates capped at $2.00 USD; 3 unpriced or above-cap cards hidden");
 query paths hint "raise --max-price" when the cap empties the results.
 `collection query` has no cap: it lists cards you already own.
 
@@ -232,25 +243,29 @@ by editing the file.
 ```sh
 stm deck list                        # decklists + collection decks with no list
 stm deck create Froggy               # new empty deck (enough for suggest --commander)
+stm deck copy Orig Improved          # duplicate decklist + primer under a new name (--force overwrites)
 stm deck show Stationz               # contents with (own N/M) per line + To-buy block + curve score
 stm deck Stationz --json             # sugar; JSON sections + covered_by per line
 stm deck update Froggy --add "1 Phyrexian Vault" --add "sideboard:2 Bolt"
 stm deck update Froggy --remove "1 Bolt" --set "0 Breya"   # --set 0 deletes the line
-stm deck update Froggy --move "1 Bolt to:sideboard"       # atomic deck→sideboard move
+stm deck update Froggy --move "1 Bolt to:sideboard"        # atomic deck→sideboard move
 stm deck update Froggy --from /tmp/batch.txt --allow-partial  # batch; skips misses, exits 1 when anything missed
 stm deck dedupe Froggy               # merge duplicate lines; collapse over-singleton quantities in commander decks
 stm deck import Froggy ~/Downloads/Froggy.txt   # upsert the decklist by name
 stm deck delete Froggy               # remove the decklist; ownership is kept
-stm deck export Froggy /tmp/out.txt --force  # --format names = plain "2x Name" lines
+stm deck export Froggy /tmp/out.txt --force  # --format names = plain `qty Name` lines
 stm deck primer Froggy                       # print the primer markdown to stdout
 stm deck primer Froggy --set /tmp/primer.md  # replace the primer from a file
+stm deck primer Froggy --set -               # replace the primer from stdin
 stm deck buylist Froggy                      # what to buy: `2x Name` lines
 stm deck buylist Froggy --store cardkingdom  # CK CSV (Name,Edition,Foil,Qty)
 stm deck legal Froggy                          # format legality
 stm deck legal Froggy --format commander --bracket 3
 stm deck suggest Froggy --role draw --json     # role fills: owned first, then by fit
+stm deck suggest Froggy --role draw --owned --json  # role fills restricted to owned cards
 stm deck suggest Froggy "frog payoff" --json   # semantic query for theme cards
 stm deck suggest Froggy --commander --json     # commander candidates for the deck
+stm deck suggest Froggy --commander --bracket 2 --json  # bracket-safe commanders (--format/--bracket now honored with --commander)
 stm deck suggest Froggy                        # combo completions: one card away from a Spellbook combo
 stm deck suggest Froggy --bracket 2            # completions filtered to no Game Changers
 # --limit N widens the candidate pool beyond the default 10 (max 50)
@@ -295,7 +310,11 @@ unknown name exits 3 naming it (with "did you mean" candidates when close);
 fix the name and retry. Tokens are added with a warning, not an error.
 
 **`deck update` takes `--add`, `--remove`, `--set`, `--move`, `--from`,
-and `--allow-partial`.** Never invent other flags for it. Unreleased
+`--allow-partial`, `--dry-run`, `--sim`, `--legal`, `--backfill-basics`,
+and `--json`.** These are the only update flags. `--backfill-basics` adds
+basic lands after the ops until the deck reaches its size (100 for
+commander, 60 otherwise), picking the basic from the color identity's
+first color (colorless decks get Wastes). Unreleased
 cards cannot be referenced because the store never holds them; a card
 shows up once its set releases.
 
@@ -362,7 +381,7 @@ stm deck legal <name> --format commander --bracket 3
   unlimited for 4–5).
 - Exit 0 = legal, exit 1 = violations. JSON always prints:
   `{name, format, format_assumed, bracket, legal, violations: [{rule,
-  cards, detail}], notes, summary}`.
+  cards, detail}], advisories, notes, summary}`.
 - **Official bracket semantics (WotC, Feb 2025).** The only hard limit is
   the Game Changer count: 0 for brackets 1–2, at most 3 for bracket 3,
   unlimited for 4–5. Everything else is advisory. `deck legal` enforces
@@ -430,26 +449,32 @@ stm deck simulate <name> --seed 42 --json       # full detail for diffing
   the library for free, once, with ETB and per-cast credits. The report
   carries `wincons.p50_lethal_turn` — the best-case goldfish kill turn
   (unblocked; an upper bound, labeled as such).
-- **Keyword and effect signals (goldfish-aligned).** Haste attacks the
-  entry turn. Landfall triggers run as real engines (draw/token/mana/ramp;
-  "+1/+1 counter" shapes join attack power). Attack power per turn + p90
-  by t8 counts static buffs, paid-equipment buffs (one body each),
-  double strike, prowess, and landfall; trample/flying/menace show as an
-  evasion census; combat-damage triggers fire per connecting attacker.
-  Burn/drain accumulate into `drain_total_by_turn` (×3 commander, ×1
-  60-card). X-cost drain/draw/mill/token spells pay the leftover pool as
-  X. Kicker pays from spare mana and bumps the rider. Per-cast mana
-  engines (Vivi) fire once per spell cast (their own tap clause does not
-  double count). "Additional land" grants a second drop. Sagas fire
-  parsed chapters (combined "I, II, III —" lines fill every chapter;
-  the saga leaves the board after its final chapter). Extra turns replay
-  a land drop, a draw, and upkeep engines. Zero-cost untapped mana
-  engines cap out and flag `wincons.infinite_mana_pct`; "Activate only
-  once each turn" engines do not. Win-threshold engines (Darksteel
-  Reactor, Helix Pinnacle's {X} sink) and planeswalker ultimates report
-  a first-online share. Scry/surveil give zero draw credit — they feed
-  `library_awareness_by_turn`; surveil puts the cards in the graveyard.
-  Imprint and blocking are not modeled.
+- **Keyword and effect signals (goldfish-aligned).**
+  - Haste attacks the entry turn.
+  - Landfall triggers run as real engines (draw/token/mana/ramp);
+    "+1/+1 counter" shapes join attack power.
+  - Attack power per turn + p90 by t8 counts static buffs,
+    paid-equipment buffs (one body each), double strike, prowess, and
+    landfall; trample/flying/menace show as an evasion census.
+  - Combat-damage triggers fire per connecting attacker.
+  - Burn/drain accumulate into `drain_total_by_turn` (×3 commander,
+    ×1 60-card).
+  - X-cost drain/draw/mill/token spells pay the leftover pool as X.
+    Kicker pays from spare mana and bumps the rider.
+  - Per-cast mana engines (Vivi) fire once per spell cast (their own tap
+    clause does not double count).
+  - "Additional land" grants a second drop.
+  - Sagas fire parsed chapters (combined "I, II, III —" lines fill every
+    chapter; the saga leaves the board after its final chapter).
+  - Extra turns replay a land drop, a draw, and upkeep engines.
+  - Zero-cost untapped mana engines cap out and flag
+    `wincons.infinite_mana_pct`; "Activate only once each turn" engines
+    do not.
+  - Win-threshold engines (Darksteel Reactor, Helix Pinnacle's {X} sink)
+    and planeswalker ultimates report a first-online share.
+  - Scry/surveil give zero draw credit — they feed
+    `library_awareness_by_turn`; surveil puts the cards in the graveyard.
+  - Imprint and blocking are not modeled.
 - **Interaction readiness is capacity, not events.** The goldfish never
   fires answers; it measures instant-speed interaction in hand **and**
   affordable with spare mana (`interaction.ready_pct_by_turn` +
@@ -512,7 +537,8 @@ the full report as before.
 
 - `card <name> --json` → card object: `name mana_cost cmc type_line colors
   color_identity keywords power toughness loyalty oracle_text rarity
-  edhrec_rank legalities game_changer set collector_number scryfall_id
+  edhrec_rank legalities game_changer oracle_id set set_name set_type
+  block universe franchise collector_number scryfall_id
   released_at tags price price_foil max_price max_price_foil`. All
   prices are US dollars; `currency` names the unit. The `price*` fields
   are the **cheapest** released
@@ -543,11 +569,26 @@ the full report as before.
   copy count (0 = none) on every command that reports it. `deck suggest`
   and combo completions count copies across binders **and** deck
   assignments (a card owned only inside a deck reports its count there).
+- `collection conflicts --json` → `{rows: [{name, owned, demanded,
+  decks: [{name, quantity}], gap, buy_cost_usd}], unverified_decks:
+  [names]}`. Rows = cards whose total slot demand across all decklists
+  exceeds owned copies, priced at the cheapest printing × gap, sorted by
+  cost. `unverified_decks` names collection decks with no decklist (their
+  demand is unknown). Always exit 0 (informational).
+- `deck hand <name> --json` → `{seed, hands: [{cards: [{name, mana_cost,
+  cmc, type_line}], lands, mulliganed, advice}]}`. Same shuffle + mulligan
+  rules as the sim; seed N's first hand = sim game #1's opener.
+  `advice` is the keep/mull sentence; show hands to the user as-is.
+- `deck update <name> --dry-run --json` → `{name, dry_run, changes
+  (SectionDiff rows), cost: {to_buy: {items: [{name, quantity,
+  price_usd, owned}], total_usd}, freed_usd, net_usd}, sim}`
+  (`sim` = the ReportDiff with `--sim`, else null). Exit 1 with `--sim`
+  only when the edit introduces a new problem. Nothing is written.
 - `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
   currency, owned_value, missing_cost, curve: {avg_mv, histogram (MV
   0..6+, 7 slots), target}, ramp: {lands, rocks, dorks, other},
   universe_census?, sections: [{section, cards:
-  [{quantity, name, set, set_name?, set_type?, block?, universe?,
+  [{quantity, name, set, set_name?,
   collector_number, foil, owned, assigned_to_this_deck, owned_elsewhere,
   covered_by, missing_reason?, basic_land, price}]}]}`. `cards` is the
   maindeck count (the legal deck); `sideboard_cards` reports the sideboard
@@ -595,16 +636,18 @@ the full report as before.
   ever pins (there is no bracket inference here, unlike `deck
   simulate`). `remove_qty` is the copy count for the paired
   `deck update --remove` (full qty for pins, 1 of a 2-of, half of a
-  3-4-of; human output prints "cut N of M copies"). `--count <N>` caps
-  the rows (default 5). `--format <fmt>`
-  judges legality against a pinned format (default: inferred from the
-  deck's sections). `--for <role>` pairs every cut with fill candidates
-  for the deficit role (owned first) and discounts incumbents already
-  serving that role.
+   3-4-of; human output prints "cut N of M copies"). `--count <N>` caps
+   the rows (default 5). `--format <fmt>`
+   judges legality against a pinned format (default: inferred from the
+   deck's sections). `--for <role>` pairs every cut with fill candidates
+   for the deficit role (owned first; cap them with `--max-price <USD>`
+   so the pairing honors the batch budget) and discounts incumbents already
+   serving that role.
 - `deck diff <A> <B-or-file> --json` →
   `[{section, removed: [{name, qty}], added: [{name, qty}], changed:
-  [{name, from, to}]}]`. `A` is the original, `B` the target: `removed`
-  holds cards in A only (take them out), `added` holds cards in B only
+  [{name, from, to}]}]`. **Diff orientation:** `A` is the original,
+  `B` the target: `removed` holds cards in A only (take them out), `added`
+  holds cards in B only
   (put them in). Both operands accept a deck name or a ManaBox
   txt file path, so `stm deck diff ~/Downloads/Original.txt Optimized
   --markdown` diffs the file first. Basics and quantity changes collapse
@@ -622,14 +665,23 @@ the full report as before.
   {lands, dorks, rocks, cantrips} per color, requirements:
   [{name, mana_cost, cmc, needs, have, deficit, ok}],
   worst_deficits: ["Wrath of God: need 16 W, have 14.0"],
-  tapland_count, untapped_t1_sources}`. Sources are Karsten-weighted
+  tapland_count, untapped_t1_sources}`. `format` holds only
+  `"commander"` or `"constructed"` (a shape, not a real format key).
+  Sources are Karsten-weighted
   (lands 1.0, rocks 0.75, dorks 0.5, 2-mana ramp-class 0.75, cantrips
   0.25 capped at 10 effects, MDFC land faces 0.4/0.75 in the land
   count); requirements use the Karsten 2022 floors (commander 12/17/21
   by pips; 60-card by the full pip-shape table, corrected for land
   count). Human output prints the per-color table, the worst 3
-  deficits, and "add 2-3 more <color> sources". `deck simulate --json`
-  carries the same block as `colored_sources`.
+  deficits, and "add 2-3 more <color> sources".
+- `deck simulate <name> --json` carries two mana-source blocks from
+  `deck mana`: `colored_sources` is the Karsten audit block (the same
+  shape `deck mana --json` returns), and `color_sources` is a static
+  census of land tap yields per color (`fixed_source_lands`
+  dedicated single-color, `choice_source_lands`
+  multi-color pickers, `flexible_nonland_sources` rocks/dorks,
+  `scaling_sources` per-color/per-counter growers) — read
+  `color_sources` next to `color_screw` to pick fixes.
 - `deck simulate <name> --json` → `{name, format, runs, turns, seed,
   deck_shape, assumptions, opening_hand, land_drops, mana_base,
   mana_base_bracket_inferred, commander,
@@ -643,7 +695,9 @@ the full report as before.
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
   **`mana_base` = `{lands, rocks, dorks, ramp_spells, total_sources,
   bracket_target_lands: [min, max], bracket_target_ramp: [min, max],
-  bracket, verdict}`** — the deck's counts against the target band.
+  bracket, verdict, bracket_inferred}`** — the deck's counts against the
+  target band. `bracket_inferred` duplicates the top-level
+  `mana_base_bracket_inferred` flag.
   Commander decks use bracket bands (without `--bracket` the bracket is
   inferred from the Game Changer census: 0 GC → 2, 1–3 → 3, 4+ → 4;
   the report carries `mana_base_bracket_inferred: true` when that
@@ -663,26 +717,34 @@ the full report as before.
   `combat` carries `attack_power_avg_by_turn`, `attack_power_p90_by_t8`,
   `attackers_by_turn`, `evasive_by_turn`. `wincons` carries
   `drain_total_by_turn`, `extra_turns_pct`, `win_threshold_p50_turn`,
-  `win_threshold_pct`, `ultimate_online_pct`, `infinite_mana_pct`.
+  `win_threshold_pct`, `ultimate_online_pct`, `infinite_mana_pct`,
+  `lethal_damage_by_turn`, `p50_lethal_turn`, `lethal_note`
+  (`p50_lethal_turn` is the best-case goldfish kill turn, labeled as an
+  upper bound).
   `interaction` carries `ready_pct_by_turn`, `mana_held_avg`,
   `instant_speed_count`, and the note "capacity, not events".
-  `color_sources` is a static census of land tap yields per color
-  (`fixed_source_lands` dedicated single-color, `choice_source_lands`
-  multi-color pickers, `flexible_nonland_sources` rocks/dorks,
-  `scaling_sources` per-color/per-counter growers) — read it
-  next to `color_screw` to pick fixes. `pip_blocks` names the worst
+  For the two mana-source blocks (`colored_sources` Karsten audit,
+  `color_sources` tap-yield census) see the `deck mana` bullet above.
+  `pip_blocks` names the worst
   card×color offenders (which card's cast got pip-blocked).
   `problems` is an array of `{kind, severity, pct_games, color, detail,
-  suggestion}`; severity is `high` (≥20% games), `medium` (10–20%), or
-  `low` for game-share problems; `dead_cards` and `mana_unused` severity
-  scales with their counts instead (and their `pct_games` is null).
+  suggestion, offenders}`; severity is `high` (≥20% games), `medium`
+  (10–20%), or `low` for game-share problems; `dead_cards` and
+  `mana_unused` severity scales with their counts instead (and their
+  `pct_games` is null). `offenders` carries the cards or counts behind
+  the finding (`{name, detail, pct_games?}`) — the human Problems block
+  is plain English and names these cards; quote it directly to users
+  instead of re-deriving findings from raw metrics.
   Every `pct_*` field in the report is 0–100 percent at two decimals.
   Color-screw details name the dedicated source count and shape.
   `card_castability` rows are `{name, cmc, target_turn,
   pct_castable_by_target, avg_first_castable_turn}` (one row per card
   copy: a 4-of reports four rows; the `dead_cards` problem dedups
-  distinct names). `land_drops` is an object keyed `"1".."N"` with the
-  share of games that hit every drop through that turn.
+  distinct names). `land_drops` is flat: `screw_pct_2_or_fewer_by_t4`,
+  `flood_pct_6plus_lands_seen_in_11`, `flood_expectation`,
+  `p50_drops_by_4`, `p95_drops_by_4`, plus `hit_all_by_turn`, an
+  object keyed `"1".."N"` with the share of games that hit every drop
+  through that turn.
   `commander` is `{name, cmc, pct_castable_by_turn, avg_first_cast_turn,
   p50_cast_turn, p95_cast_turn, on_curve_pct}`.
 - `deck simulate <name> --baseline prior.json` diffs the
@@ -697,11 +759,16 @@ the full report as before.
   tag matches fuse (reciprocal rank fusion, same as `query`), EDHREC rank
   breaks ties; owned cards list first, then unowned, each group in fit
   order. `tags` carries the Tagger labels that matched; `owned` is a copy
-  count (0 = none); `score` is the fused fit 0–1. `--commander` swaps the pool to
+  count (0 = none); `score` is the fused fit 0–1. `--owned` keeps only
+  cards the collection owns (the "$0 budget" mode; drop it to see the
+  whole oracle). `--commander` swaps the pool to
   commander-legal legendaries (legendary creatures/planeswalkers, plus
   legendary Vehicle/Spacecraft with a P/T box) ranked by theme fit to the
   deck. `--format <fmt>` pins the legality filter (cards legal in that
-  format only); without it, commander-shaped decks filter to commander and
+  format only); with `--commander`, `--format` gates the candidates to
+  that format and `--bracket` drops Game Changers the allowance cannot
+  hold. Without
+  `--format`, commander-shaped decks filter to commander and
   the commander's colors, and other decks gate to cards legal in at
   least one 60-card format (a `note:` advises passing `--format` for a
   precise gate). Non-commander decks demote suggestions sharing zero
@@ -719,8 +786,9 @@ the full report as before.
   Game Changers out (their allowance is zero); brackets 3-5 do not
   filter (deck legal counts the deck's allowance).
 - `deck buylist <name> --json` → `{store, currency, rows: [{name, set,
-  set_name, collector_number, scryfall_id, foil, quantity, price}],
-  total}`. All prices are US dollars.
+  set_name, collector_number, scryfall_id, foil, quantity, price,
+  sections}], total}`. All prices are US dollars. `sections` names where
+  the copies live (e.g. `["DECK", "SIDEBOARD"]`).
   `rows` = cheapest released English printing of the right finish for the
   missing copies.
 
@@ -800,6 +868,19 @@ question rounds in either mode. No jumping to a finished list.
   slot; offer the upgrade as an option with the price gap, not as a
   requirement. When a proposed card is too expensive, `stm card similar
   <name> --owned` finds cheaper owned cards that play the same role.
+- **Shared copies first.** Run `stm collection conflicts` once per
+  session before filling: a card demanded by more decks than copies is
+  short. Never propose pulling that copy out of another deck — propose
+  buying the gap (with the cost) or an owned substitute instead, and say
+  when a fill competes with another deck.
+- **Show real hands.** When advising land-count or ramp changes, show one
+  or two `stm deck hand <name> --seed N` hands so the user sees what the
+  change does to real openers, not only percentages.
+- **Dry-run before applying.** For any non-trivial batch, run
+  `stm deck update <name> ... --dry-run --sim --json` first and show the
+  user the cost and consistency delta. Apply on confirm by re-running the
+  same command without `--dry-run`. Never apply and hope: the preview is
+  the review.
 - **Basic lands are free and unlimited.** Never count them toward budget,
   ownership, or the 4-copy limit. Add whatever the mana base needs.
 - **Confirm legality.** After the deck is complete (or at the user's
@@ -845,7 +926,9 @@ with a one-line pitch each. Two search paths, in order:
    pin the identity, and `--owned` is not available here — check
    ownership with `stm collection query "<name>"` per candidate.
 
-### Power targets (the quality bar)
+### Reference — read when needed
+
+#### Power targets (the quality bar)
 
 "Powerful" is verifiable. After each fill round, check the deck against
 these counts (using `stm deck show --json`'s `ramp` and `curve` blocks
@@ -869,8 +952,7 @@ Bracket modifiers:
 | Bracket | Lands | Ramp | Other |
 | --- | --- | --- | --- |
 | 1–2 (casual) | 34–40 | 7–12 | baseline table above |
-| 3 (upgraded) | 33–38 | 8–11 | interaction 10–14 |
-| 4 (optimized) | 32–36 | 9–12 | interaction 10–14 |
+| 3–4 (upgraded / optimized) | 33–38 (3) / 32–36 (4) | 8–11 (3) / 9–12 (4) | interaction 10–14 |
 | 5 (cEDH) | 25–31 | 10–16 | interaction 12+, fast wincons 2–4 |
 
 The land and ramp rows are research-derived (EDHREC average decks: 46
@@ -919,7 +1001,7 @@ comes down on curve (`commander.on_curve_pct`), and whether the curve is
 playable (`card_castability`). Run it after the skeleton and after every
 confirmed batch, and let `problems[]` drive the next batch.
 
-### Colored sources (mana-base sanity check)
+#### Colored sources (mana-base sanity check)
 
 Before the sim, check the mana base against Karsten's source floors
 (Frank Karsten, "How Many Sources Do You Need to Consistently Cast Your
@@ -966,14 +1048,14 @@ every deficit line before the first simulate.
      the format. Note the top archetypes, their land counts and curves,
      and the cards the expected opponents will play — this feeds both the
      curve targets and the sideboard plan.
-2. Pick the commander (or core theme cards). For commander, verify color
+3. Pick the commander (or core theme cards). For commander, verify color
    identity implications early; everything must fit it.
-3. Propose the mana base plan (how many basics, which duals/fetches owned
+4. Propose the mana base plan (how many basics, which duals/fetches owned
    vs to buy) and the ramp plan for the bracket (e.g. bracket 2 wants ~8–10
    sources; cEDH wants more). Show owned vs to-buy with prices.
-4. Show the skeleton to the user, state the projected spend, and get an OK
+5. Show the skeleton to the user, state the projected spend, and get an OK
    before writing anything.
-5. Once the skeleton is written, sanity-check it with `stm deck simulate
+6. Once the skeleton is written, sanity-check it with `stm deck simulate
    <name> --seed 42 --json`: commander on-curve and land-drop rates should
    already look sane at this stage, and `mana_base.verdict` should read
    "on target" (or the lands-matter note) for the target bracket; fix the
@@ -991,16 +1073,9 @@ each card:
   first pricing pass — the cap drops over-priced and unpriced candidates
   before ranking. `--limit N` widens the candidate pool past the default
   10 (max 50) when the top hits all fail the budget or the bracket.
-  Any of the 69 known role names works
-  — the CLI prints the full list on an unknown role (draw, cantrip,
-  wheel, mill, ramp, mana-rock, mana-dork, removal, board-wipe,
-  counterspell, stax, sacrifice, reanimate, token, anthem, equipment,
-  evasion, burn, lifegain, tutor, wincon, combo, storm, extra-turn,
-  blink, landfall, voltron, spellslinger, typal, politics, interaction,
-  mana-sink, tax, drain, pinger, flicker, tribal, wrath, loot,
-  sac-outlet, aristocrats, pillow-fort, graveyard-hate, mana-fixing,
-  go-wide, pump, tapper, lands-matter, card-selection, and more). Pass a
-  free-text query for theme fills (`"frog payoff"`). `stm collection
+  Any of the 69 known role names works — on an
+  unknown role the error prints a hint list of all 69 role names. Pass a
+   free-text query for theme fills (`"frog payoff"`). `stm collection
   query "<role>"
   --color-identity <CI> --format commander --json` and `stm query` remain
   the fallbacks for deep browsing. When a
@@ -1097,11 +1172,11 @@ exceed it.
    summarize findings with sources before proposing anything.
 4. **Keep the original untouched; build the optimized list as a separate
    deck.** Import the original as `"<name> Original"` (or leave the
-   user's list as-is) and build the improved list as `"<name>"
-   (Optimized)`. Produce the change log with one command:
-   `stm deck diff <original-file-or-deck> <optimized> --markdown >
-   decks/<name>.changes.md` (the original is the first operand: removed =
-   cards to take out, added = cards to put in), and verify the change log
+   user's list as-is) and build the improved list as `"<name> Improved"`.
+   Produce the change log with one command:
+   `stm deck diff <original-file-or-deck> <improved> --markdown >
+   decks/<name>.changes.md` (the original is the first operand; for diff
+   orientation see the JSON shapes section), and verify the change log
    matches the two
    lists (removed + added counts reconcile against the diff JSON). This
    replaces hand-written Perl diff scripts.
@@ -1137,9 +1212,12 @@ exceed it.
    `stm deck legal` + primer update (current state, not build history).
    Present spend vs budget and what
    changed per problem the user named. **Keep commander decks at exactly
-   100 cards** (60-card formats at 60): after a trim, backfill to the
-   required size with basics or cheap fillers, then re-run
+   100 cards** (60-card formats at 60): after a trim, run
+   `stm deck update <name> --backfill-basics` to reach the required size
+   with an on-identity basic (or add basics/fillers yourself), then re-run
    `deck legal` — the legality check enforces the exact count.
+   To apply a reviewed `deck diff`, run `stm deck diff A B --as-update`
+   and pipe the op lines to a file for `stm deck update <name> --from`.
 7. **Ownership before proposing buys.** Check `missing_reason` on
    `deck show --json`: `held_elsewhere` means the card is owned but
    parked in another deck — propose swapping it out of that deck or

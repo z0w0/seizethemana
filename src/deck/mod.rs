@@ -29,11 +29,15 @@ pub mod combos;
 pub mod cuts;
 pub mod diff;
 pub mod grammar;
+pub mod hand;
 pub mod io;
+pub mod io_external;
 pub mod land_colors;
 pub mod legal;
+pub mod maintain;
 pub mod mana;
 pub mod mana_audit;
+pub mod ops;
 pub mod ownership;
 pub mod role;
 pub mod simulator;
@@ -43,15 +47,17 @@ pub mod store_show;
 pub mod suggest;
 pub mod suggest_combo;
 pub mod update;
+pub mod url_fetch;
 
 // Command entry points, re-exported flat for `deck::<cmd>` dispatch.
 pub use buylist::buylist;
 pub use combos::combos;
 pub use cuts::cuts;
-pub use diff::diff;
+pub use diff::{diff, diff_as_update};
+pub use hand::hand;
 pub use io::{export, import, primer};
 pub use mana::{mana, mana_audit_for};
-pub use store::{create, delete, list};
+pub use store::{copy, create, delete, list};
 pub use store_show::show;
 pub use update::update;
 

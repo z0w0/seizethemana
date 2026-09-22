@@ -1,10 +1,12 @@
 use anyhow::Context;
 use rusqlite::Connection;
 
-// Collection: ManaBox CSV import, stats, and owned-only semantic search.
-// CSV rows key by (binder name, binder type ∈ {binder, deck}, name, set, cn,
-// foil); quantity aggregates on that key. Deck rows project onto
-// `decks/<name>.txt` during import; `list` (wishlist) rows are ignored.
+// Collection: ManaBox CSV import and owned-only semantic search.
+// Stats live in `collection_stats`; the cross-deck conflict report in
+// `collection_conflicts`. CSV rows key by (binder name, binder type ∈
+// {binder, deck}, name, set, cn, foil); quantity aggregates on that key.
+// Deck rows project onto `decks/<name>.txt` during import; `list`
+// (wishlist) rows are ignored.
 
 /// One parsed ManaBox row.
 #[derive(Debug, Clone, PartialEq)]
@@ -18,6 +20,7 @@ pub struct CsvRow {
     /// `normal`, `foil`, or `etched`.
     pub foil: String,
     pub quantity: i64,
+    /// Row total for the row (ManaBox's per-copy price × quantity).
     pub purchase_price: f64,
     pub scryfall_id: String,
 }
@@ -47,7 +50,10 @@ impl BinderType {
 /// # Errors
 /// Fails on unreadable files, missing required headers, or unparseable
 /// quantity values.
-pub fn parse_csv(path: &std::path::Path) -> anyhow::Result<(Vec<CsvRow>, usize)> {
+pub fn parse_csv(
+    path: &std::path::Path,
+    out: &mut crate::output::Output,
+) -> anyhow::Result<(Vec<CsvRow>, usize)> {
     let file =
         std::fs::File::open(path).with_context(|| format!("cannot open {}", path.display()))?;
     let mut reader = csv::Reader::from_reader(file);
@@ -65,23 +71,27 @@ pub fn parse_csv(path: &std::path::Path) -> anyhow::Result<(Vec<CsvRow>, usize)>
 
     let mut rows = Vec::new();
     let mut skipped_list_rows = 0usize;
+    let mut unknown_binder_rows = 0usize;
+    let mut purchase_warns = 0usize;
     for record in reader.records() {
         let record = record.with_context(|| format!("parsing {}", path.display()))?;
-        let kind = match record
+        let binder_type_text = record
             .get(c_type)
             .unwrap_or_default()
             .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
+            .to_ascii_lowercase();
+        let kind = match binder_type_text.as_str() {
             "binder" => BinderType::Binder,
             "deck" => BinderType::Deck,
             "list" => {
                 skipped_list_rows += 1;
                 continue;
             }
-            other => {
-                anyhow::bail!("unknown binder type {other:?} in {}", path.display());
+            // Unknown binder types skip like wishlist rows instead of
+            // failing the whole import.
+            _ => {
+                unknown_binder_rows += 1;
+                continue;
             }
         };
         let foil = match record.get(c_foil).unwrap_or_default().trim() {
@@ -108,8 +118,22 @@ pub fn parse_csv(path: &std::path::Path) -> anyhow::Result<(Vec<CsvRow>, usize)>
         );
         let purchase_price = c_price
             .and_then(|i| record.get(i))
-            .and_then(|p| p.trim().parse::<f64>().ok())
-            .unwrap_or(0.0);
+            .and_then(|text| {
+                let text = text.trim();
+                if text.is_empty() {
+                    Some(0.0)
+                } else {
+                    let parsed = parse_locale_price(text);
+                    // Locale-formatted values ("1.234,50") do not parse;
+                    // warn so silent zero-priced rows are visible.
+                    if parsed.is_none() {
+                        purchase_warns += 1;
+                    }
+                    parsed
+                }
+            })
+            .unwrap_or(0.0)
+            * quantity as f64;
         rows.push(CsvRow {
             binder: record.get(c_binder).unwrap_or_default().trim().to_string(),
             binder_type: kind,
@@ -125,10 +149,21 @@ pub fn parse_csv(path: &std::path::Path) -> anyhow::Result<(Vec<CsvRow>, usize)>
                 .to_string(),
         });
     }
+    if unknown_binder_rows > 0 {
+        out.warning(&format!(
+            "{unknown_binder_rows} CSV rows with an unknown Binder Type were skipped (expected 'binder', 'deck', or 'list')"
+        ));
+    }
+    if purchase_warns > 0 {
+        out.warning(&format!(
+            "{purchase_warns} unparseable purchase prices read as 0 (plain numbers only, e.g. '12.50')"
+        ));
+    }
     Ok((rows, skipped_list_rows))
 }
 
 /// Aggregate CSV rows onto the collection key (duplicate rows add up).
+/// `purchase_price` is a per-row total, so merges add it linearly.
 pub fn aggregate(rows: &[CsvRow]) -> Vec<CsvRow> {
     let mut map: std::collections::BTreeMap<
         (String, String, String, String, String, &'static str),
@@ -187,7 +222,6 @@ pub fn import(
     out: &mut crate::output::Output,
     file: &std::path::Path,
     add: bool,
-    _force: bool,
 ) -> anyhow::Result<i32> {
     if !paths.is_setup() {
         out.error("card index not built yet; import needs the oracle to match names");
@@ -196,7 +230,7 @@ pub fn import(
     }
     let started = std::time::Instant::now();
     out.status("Importing", &format!("collection from {}", file.display()));
-    let (parsed, skipped_list_rows) = parse_csv(file)?;
+    let (parsed, skipped_list_rows) = parse_csv(file, out)?;
     let aggregated = aggregate(&parsed);
     out.status(
         "Read",
@@ -209,8 +243,10 @@ pub fn import(
 
     // Resolve card names against the oracle (case-insensitive). Rows that
     // name a known token/art/emblem (recorded from the bulk) skip silently;
-    // genuinely unknown names warn so the user can spot data problems.
+    // ambiguous names warn as ambiguous (the card exists — the user can
+    // spell it out); genuinely unknown names warn as unknown.
     let mut unknown: Vec<String> = Vec::new();
+    let mut ambiguous: Vec<String> = Vec::new();
     let mut skipped_tokens = 0usize;
     let mut resolved: Vec<CsvRow> = Vec::new();
     for row in &aggregated {
@@ -220,6 +256,14 @@ pub fn import(
                 row.name = card.name;
                 resolved.push(row);
             }
+            crate::db::NameMatch::Ambiguous { candidates, .. } => {
+                ambiguous.push(format!(
+                    "{} (matches {}+ oracle names, e.g. {})",
+                    row.name,
+                    candidates.len(),
+                    candidates.first().cloned().unwrap_or_default()
+                ));
+            }
             _ => {
                 if crate::db::is_token_name(conn, &row.name)? {
                     skipped_tokens += 1;
@@ -228,6 +272,11 @@ pub fn import(
                 }
             }
         }
+    }
+    for name in &ambiguous {
+        out.warning(&format!(
+            "{name} is ambiguous; name it in full (use 'stm card <name>' to resolve the spelling)"
+        ));
     }
     if !unknown.is_empty() {
         out.warning(&format!(
@@ -310,7 +359,7 @@ pub fn import(
     // step (importing the decklist) is obvious; skip the second note when
     // every deck already has a decklist (no nagging).
     if summary.decks > 0 {
-        let deck_names = deck_names_from_aggregated(&aggregated);
+        let deck_names = deck_names_from_resolved(&resolved);
         let copies: i64 = resolved
             .iter()
             .filter(|r| r.binder_type == BinderType::Deck)
@@ -340,8 +389,8 @@ pub fn import(
 }
 
 /// Deck names seen in the parsed CSV (sorted, deduped).
-fn deck_names_from_aggregated(aggregated: &[CsvRow]) -> Vec<String> {
-    let mut decks: Vec<String> = aggregated
+fn deck_names_from_resolved(resolved: &[CsvRow]) -> Vec<String> {
+    let mut decks: Vec<String> = resolved
         .iter()
         .filter(|r| r.binder_type == BinderType::Deck)
         .map(|r| r.binder.clone())
@@ -387,410 +436,6 @@ fn missing_list_note(
         ));
     }
     Ok(false)
-}
-
-/// Whole-collection aggregates for `stm collection`.
-#[derive(Debug, Default)]
-pub struct Stats {
-    pub unique_cards: usize,
-    pub total_cards: i64,
-    pub foils: i64,
-    pub total_value: f64,
-    pub purchase_total: f64,
-    pub color_identity: std::collections::BTreeMap<String, i64>,
-    pub curve: std::collections::BTreeMap<String, i64>,
-    pub rarity: std::collections::BTreeMap<String, i64>,
-    /// Most-represented sets: (full name, code, copies). The name is the
-    /// code when the store has no set metadata yet.
-    pub top_sets: Vec<(String, String, i64)>,
-    pub binders: Vec<(String, String, i64, i64)>,
-    /// Cards + value per universe ("multiverse" / "beyond"), then per
-    /// franchise inside the beyond bucket.
-    pub by_universe: std::collections::BTreeMap<String, Bucket>,
-    pub by_franchise: std::collections::BTreeMap<String, Bucket>,
-}
-
-/// One census bucket: copies and their value at the owned printings.
-#[derive(Debug, Default, Clone)]
-pub struct Bucket {
-    /// Copies in the bucket.
-    pub cards: i64,
-    /// Their value from the exact owned printings' price snapshots.
-    pub value: f64,
-}
-
-/// Aggregate the whole collection (binders and decks).
-///
-/// Card metadata (colors, cmc, rarity) joins on name; each owned copy prices
-/// by its exact printing via `card_prints`. Prints not in the snapshot are
-/// still counted in totals but contribute no metadata or value.
-///
-/// # Errors
-/// Propagates SQLite failures.
-pub fn compute_stats(conn: &Connection) -> anyhow::Result<Stats> {
-    let mut stats = Stats::default();
-    let mut stmt = conn.prepare(
-        "SELECT c.name, c.binder, c.binder_type, c.foil, c.quantity,
-                c.purchase_price, k.type_line, k.colors, k.color_identity, k.cmc,
-                k.rarity, c.set_code, c.collector_number
-         FROM collection c LEFT JOIN cards k ON k.name = c.name
-         ORDER BY c.name",
-    )?;
-    let rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, i64>(4)?,
-            row.get::<_, f64>(5)?,
-            row.get::<_, Option<String>>(6)?,
-            row.get::<_, Option<String>>(7)?,
-            row.get::<_, Option<String>>(8)?,
-            row.get::<_, Option<f64>>(9)?,
-            row.get::<_, Option<String>>(10)?,
-            row.get::<_, String>(11)?,
-            row.get::<_, String>(12)?,
-        ))
-    })?;
-    let mut sets: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
-    let mut by_universe: std::collections::BTreeMap<String, Bucket> = Default::default();
-    let mut by_franchise: std::collections::BTreeMap<String, Bucket> = Default::default();
-    let mut binder_totals: std::collections::BTreeMap<(String, String), i64> =
-        std::collections::BTreeMap::new();
-    let mut unique_names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
-    for row in rows {
-        let (
-            name,
-            binder,
-            binder_type,
-            foil,
-            quantity,
-            purchase,
-            type_line,
-            colors,
-            identity,
-            cmc,
-            rarity,
-            set_code,
-            collector_number,
-        ) = row.context("reading collection row")?;
-        stats.total_cards += quantity;
-        stats.purchase_total += purchase;
-        unique_names.insert(name.clone());
-        if foil != "normal" {
-            stats.foils += quantity;
-        }
-        *binder_totals
-            .entry((binder.clone(), binder_type.clone()))
-            .or_insert(0) += quantity;
-        if let Some(colors_json) = &colors {
-            if let Ok(colors) = serde_json::from_str::<Vec<String>>(colors_json) {
-                let key: String = color_key(&colors);
-                *stats.color_identity.entry(key).or_insert(0) += quantity;
-            }
-            if let Some(cmc) = cmc {
-                let bucket = if cmc >= 7.0 {
-                    "7+".to_string()
-                } else {
-                    (cmc as i64).to_string()
-                };
-                *stats.curve.entry(bucket).or_insert(0) += quantity;
-            }
-            if let Some(rarity) = rarity {
-                *stats.rarity.entry(rarity).or_insert(0) += quantity;
-            }
-            *sets.entry(set_code.clone()).or_insert(0) += quantity;
-            // Value from the exact owned printing's price snapshot.
-            let unit =
-                crate::prints::price_for_owned(conn, &name, &set_code, &collector_number, &foil)
-                    .ok()
-                    .flatten()
-                    .unwrap_or(0.0);
-            stats.total_value += unit * quantity as f64;
-            // Universe bucket: UB decision spans every print of the name.
-            // Copies and value both roll up (the plan's "cards + value").
-            let (universe_key, franchise) = universe_bucket(conn, &name, &set_code);
-            let bucket = by_universe.entry(universe_key.to_string()).or_default();
-            bucket.cards += quantity;
-            bucket.value += unit * quantity as f64;
-            if let Some(f) = franchise {
-                let bucket = by_franchise.entry(f).or_default();
-                bucket.cards += quantity;
-                bucket.value += unit * quantity as f64;
-            }
-        }
-        let _ = (type_line, identity);
-    }
-    stats.unique_cards = unique_names.len();
-    let mut top: Vec<(String, i64)> = sets.into_iter().collect();
-    top.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
-    // Full set names beside the codes (JSON keeps the code as the key and
-    // gains `set_name`; the human line prints the full name).
-    stats.top_sets = top
-        .into_iter()
-        .take(5)
-        .map(|(code, n)| {
-            let name = conn
-                .query_row(
-                    "SELECT set_name FROM sets WHERE set_code = ?1",
-                    [&code.to_ascii_lowercase()],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok()
-                .unwrap_or_else(|| code.clone());
-            (name, code, n)
-        })
-        .collect();
-    stats.by_universe = by_universe;
-    stats.by_franchise = by_franchise;
-    stats.binders = binder_totals
-        .into_iter()
-        .map(|((name, kind), cards)| (name, kind, cards, 0))
-        .collect();
-    Ok(stats)
-}
-
-/// Universe bucket for one collection row: `("beyond", Some(franchise))`
-/// when every stored print of the name is UB (franchise only when the set
-/// maps to one), else `("multiverse", None)`.
-fn universe_bucket(
-    conn: &Connection,
-    name: &str,
-    set_code: &str,
-) -> (&'static str, Option<String>) {
-    let meta = crate::universe::card_universe(conn, name, set_code).unwrap_or_default();
-    match meta.universe {
-        "beyond" => ("beyond", meta.franchise),
-        _ => ("multiverse", None),
-    }
-}
-
-/// WUBRG-sorted color key for grouping ("G,U" style).
-fn color_key(colors: &[String]) -> String {
-    let mut chars: Vec<char> = colors
-        .iter()
-        .filter_map(|c| c.chars().next())
-        .filter(|c| "WUBRG".contains(*c))
-        .collect();
-    let order = ['W', 'U', 'B', 'R', 'G'];
-    chars.sort_by_key(|c| order.iter().position(|o| o == c).unwrap_or(5));
-    if chars.is_empty() {
-        "C".to_string()
-    } else {
-        chars.into_iter().collect()
-    }
-}
-
-/// Show collection stats (text or JSON).
-pub fn show_stats(
-    paths: &crate::paths::Paths,
-    conn: &mut Connection,
-    out: &mut crate::output::Output,
-    json: bool,
-) -> anyhow::Result<i32> {
-    if !paths.is_setup() {
-        out.error("card index not built yet");
-        out.hint("run 'stm setup' first");
-        return Ok(crate::cli::codes::ERROR);
-    }
-    let count: i64 = conn
-        .query_row("SELECT COUNT(*) FROM collection", [], |r| r.get(0))
-        .context("counting collection")?;
-    if count == 0 {
-        out.error("collection is empty");
-        out.hint("import a ManaBox CSV: stm collection import <file>");
-        return Ok(crate::cli::codes::NO_RESULTS);
-    }
-    let stats = compute_stats(conn)?;
-    if json {
-        println!("{}", serde_json::to_string_pretty(&stats_json(&stats))?);
-    } else {
-        print_stats(out, &stats);
-    }
-    Ok(crate::cli::codes::OK)
-}
-
-fn bucket_map(
-    m: &std::collections::BTreeMap<String, Bucket>,
-) -> serde_json::Map<String, serde_json::Value> {
-    serde_json::Map::<String, serde_json::Value>::from_iter(m.iter().map(|(k, b)| {
-        (
-            k.clone(),
-            serde_json::json!({"cards": b.cards, "value": round2(b.value)}),
-        )
-    }))
-}
-
-fn stats_json(stats: &Stats) -> serde_json::Value {
-    let map = |m: &std::collections::BTreeMap<String, i64>| {
-        serde_json::Map::<String, serde_json::Value>::from_iter(
-            m.iter().map(|(k, v)| (k.clone(), serde_json::json!(v))),
-        )
-    };
-    serde_json::json!({
-        "unique_cards": stats.unique_cards,
-        "currency": crate::output::CURRENCY,
-        "total_cards": stats.total_cards,
-        "foils": stats.foils,
-        "total_value": round2(stats.total_value),
-        "purchase_total": round2(stats.purchase_total),
-        "color_identity": map(&stats.color_identity),
-        "curve": map(&stats.curve),
-        "rarity": map(&stats.rarity),
-        "top_sets": stats
-            .top_sets
-            .iter()
-            .map(|(name, code, n)| {
-                serde_json::json!({"set": code, "set_name": name, "cards": n})
-            })
-            .collect::<Vec<_>>(),
-        "by_universe": bucket_map(&stats.by_universe),
-        "by_franchise": bucket_map(&stats.by_franchise),
-        "locations": stats.binders.iter().map(|(name, kind, cards, _)| serde_json::json!({
-            "name": name, "type": kind, "cards": cards,
-        })).collect::<Vec<_>>(),
-    })
-}
-
-fn round2(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0
-}
-
-/// Human collection overview: aligned label column, colored counts,
-/// histogram bars, and a locations list. Layout targets ~70 columns so it
-/// stays readable on small terminals.
-fn print_stats(out: &crate::output::Output, stats: &Stats) {
-    let styles = out.styles();
-    let label = |text: &str| -> String {
-        if text.is_empty() {
-            styles.dim(&" ".repeat(10))
-        } else {
-            styles.dim(&format!("{text:>9} "))
-        }
-    };
-    let mut max_count: i64 = 1;
-    for n in stats.color_identity.values().chain(stats.curve.values()) {
-        max_count = max_count.max(*n);
-    }
-    let bar = |n: i64| styles.bar(n as f64 / max_count as f64, 12);
-
-    println!(
-        "{}: {} unique cards, {} total, {} foils",
-        styles.header("Collection"),
-        styles.thousands(stats.unique_cards as i64),
-        styles.thousands(stats.total_cards),
-        styles.thousands(stats.foils),
-    );
-    println!(
-        "{}{} now (paid {})",
-        label("Value"),
-        styles.money(stats.total_value),
-        styles.dim(&styles.money(stats.purchase_total)),
-    );
-
-    // Colors: WUBRG order with per-color pip styling.
-    let order = ["W", "U", "B", "R", "G", "C"];
-    let mut colors: Vec<(String, i64)> = stats
-        .color_identity
-        .iter()
-        .map(|(k, n)| (k.clone(), *n))
-        .collect();
-    colors.sort_by_key(|(k, _)| {
-        k.chars().next().map_or(6, |c| {
-            order.iter().position(|o| o.starts_with(c)).unwrap_or(6)
-        })
-    });
-    if !colors.is_empty() {
-        for (i, (key, n)) in colors.iter().enumerate() {
-            println!(
-                "{}{} {} {}",
-                if i == 0 { label("Colors") } else { label("") },
-                bar(*n),
-                styles.color_letters(key),
-                styles.thousands(*n),
-            );
-        }
-    }
-
-    // Mana curve, ascending CMC buckets.
-    let mut curve: Vec<(String, i64)> = stats.curve.iter().map(|(k, n)| (k.clone(), *n)).collect();
-    curve.sort_by_key(|(k, _)| k.parse::<u64>().unwrap_or(u64::MAX));
-    if !curve.is_empty() {
-        for (i, (bucket, n)) in curve.iter().enumerate() {
-            println!(
-                "{}{} {} {}",
-                if i == 0 { label("Curve") } else { label("") },
-                bar(*n),
-                styles.dim(&format!("{bucket:>2}")),
-                styles.thousands(*n),
-            );
-        }
-    }
-
-    // Rarity, most-played first, with rarity colors.
-    let rarity_order = ["mythic", "rare", "uncommon", "common"];
-    let mut rarities: Vec<(String, i64)> =
-        stats.rarity.iter().map(|(k, n)| (k.clone(), *n)).collect();
-    rarities.sort_by_key(|(k, _)| {
-        rarity_order
-            .iter()
-            .position(|o| o.eq_ignore_ascii_case(k))
-            .unwrap_or(4)
-    });
-    if !rarities.is_empty() {
-        for (i, (kind, n)) in rarities.iter().enumerate() {
-            println!(
-                "{}{} {} {}",
-                if i == 0 { label("Rarity") } else { label("") },
-                bar(*n),
-                styles.rarity(kind),
-                styles.thousands(*n),
-            );
-        }
-    }
-
-    if !stats.top_sets.is_empty() {
-        let sets: Vec<String> = stats
-            .top_sets
-            .iter()
-            .map(|(name, code, n)| {
-                format!(
-                    "{} {}",
-                    styles.dim(&format!("{name} ({code})")),
-                    styles.thousands(*n)
-                )
-            })
-            .collect();
-        println!("{}{}", label("Top sets"), sets.join(" · "));
-    }
-    if !stats.by_universe.is_empty() {
-        let bits: Vec<String> = stats
-            .by_universe
-            .iter()
-            .map(|(k, b)| format!("{} {}", styles.dim(k), styles.thousands(b.cards)))
-            .collect();
-        println!("{}{}", label("Universes"), bits.join(" · "));
-        let bits: Vec<String> = stats
-            .by_franchise
-            .iter()
-            .map(|(k, b)| format!("{} {}", styles.dim(k), styles.thousands(b.cards)))
-            .collect();
-        if !bits.is_empty() {
-            println!("{}{}", label(""), bits.join(" · "));
-        }
-    }
-
-    println!("{}{}", label("Locations"), styles.dim("binder / deck"));
-    for (name, kind, cards, _) in &stats.binders {
-        println!(
-            "{}  {} {} {}",
-            label(""),
-            styles.card_name(name),
-            styles.dim(&format!("({kind})")),
-            styles.thousands(*cards),
-        );
-    }
 }
 
 /// One owned-search hit: card, score, and every location that owns it.
@@ -850,7 +495,8 @@ pub fn run_query(
     )?;
     let mut out_hits: Vec<OwnedHit> = Vec::new();
     for hit in hits {
-        let locations = locations_for(conn, &hit.card.name, binders, decks)?;
+        let locations =
+            crate::collection_conflicts::locations_for(conn, &hit.card.name, binders, decks)?;
         let owned_qty: i64 = locations.iter().map(|(_, _, q)| q).sum();
         if owned_qty == 0 {
             continue;
@@ -865,6 +511,9 @@ pub fn run_query(
     if out_hits.is_empty() {
         if json {
             println!("[]");
+        } else {
+            out.error("no cards matched");
+            out.hint("try broader words, or drop filters");
         }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
@@ -935,7 +584,7 @@ fn owned_names(
         "SELECT DISTINCT name FROM collection
          WHERE (binder_type = 'binder'
                 AND (?1 = 0 OR binder IN (SELECT value FROM json_each(?2))))
-            OR (?3 > 0 AND binder IN (SELECT value FROM json_each(?4)))",
+            OR (?3 > 0 AND binder_type = 'deck' AND binder IN (SELECT value FROM json_each(?4)))",
     )?;
     let rows = stmt.query_map(
         rusqlite::params![
@@ -989,43 +638,13 @@ pub fn owned_counts_all(
     Ok(counts)
 }
 
-/// Collection rows for one card within the queried scope:
-/// (location, type, quantity), binders first. `binders`/`decks` mirror the
-/// query's filters so a `--binder` search does not advertise deck rows and
-/// a bare search does not advertise deck assignments at all.
-fn locations_for(
-    conn: &Connection,
-    name: &str,
-    binders: &[String],
-    decks: &[String],
-) -> anyhow::Result<Vec<(String, String, i64)>> {
-    let mut stmt = conn.prepare(
-        "SELECT binder, binder_type, quantity FROM collection
-         WHERE name = ?1
-           AND (binder_type = 'binder'
-                AND (?2 = 0 OR binder IN (SELECT value FROM json_each(?3))))
-            OR (name = ?1 AND binder_type = 'deck'
-                AND binder IN (SELECT value FROM json_each(?4)))",
-    )?;
-    let rows = stmt
-        .query_map(
-            rusqlite::params![
-                name,
-                binders.len() as i64,
-                serde_json::to_string(binders)?,
-                serde_json::to_string(decks)?,
-            ],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, i64>(2)?,
-                ))
-            },
-        )?
-        .collect::<Result<Vec<_>, _>>()
-        .context("reading locations")?;
-    Ok(rows)
+/// Unlimited-copy basic land names (the same exemption `deck update`'s
+/// singleton guard and the sim's findings use).
+pub(crate) fn is_basic_name(name: &str) -> bool {
+    matches!(
+        name,
+        "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
+    ) || name.starts_with("Snow-Covered")
 }
 
 #[cfg(test)]
@@ -1035,3 +654,40 @@ mod collection_tests;
 #[cfg(test)]
 #[path = "tests/collection_location_tests.rs"]
 mod collection_location_tests;
+
+#[cfg(test)]
+#[path = "tests/collection_conflict_tests.rs"]
+mod collection_conflict_tests;
+
+/// Parse a ManaBox purchase-price cell as a plain decimal.
+///
+/// Locale-formatted values ("1.234,50" = 1234.50 in de-DE, or "1,234" with
+/// a thousands comma) parse as `None`: a naive parse reads "1.234" as
+/// 1.234 — a 1000x error — so any value carrying more than one separator,
+/// or a comma, is rejected and the row prices as 0.0 with a visible
+/// warning instead of a silently wrong total.
+fn parse_locale_price(text: &str) -> Option<f64> {
+    let commas = text.matches(',').count();
+    let dots = text.matches('.').count();
+    if commas > 0 && dots > 0 {
+        return None;
+    }
+    if commas == 1 {
+        // "1,50" reads as 1.50 only when the tail is 1-2 digits; a
+        // 3-digit tail is a thousands separator ("1,234"), which is
+        // ambiguous by eye and rejected outright.
+        let (head, tail) = text.split_once(',')?;
+        if tail.len() <= 2
+            && !tail.is_empty()
+            && head.chars().all(|c| c.is_ascii_digit())
+            && tail.chars().all(|c| c.is_ascii_digit())
+        {
+            return text.replace(',', ".").parse::<f64>().ok();
+        }
+        return None;
+    }
+    if dots > 1 {
+        return None;
+    }
+    text.parse::<f64>().ok()
+}

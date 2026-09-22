@@ -558,11 +558,10 @@ pub fn run_search(
     let cards = db::load_all_cards(conn)?;
     let cards_by_name: std::collections::HashMap<&str, &CardRow> =
         cards.iter().map(|c| (c.name.as_str(), c)).collect();
-    let names_by_id: std::collections::HashMap<i64, usize> = cards
-        .iter()
-        .enumerate()
-        .map(|(i, _)| (i as i64 + 1, i))
-        .collect();
+    // FTS returns the cards.rowid; map it to a position through the actual
+    // ids (rowids are not guaranteed to be dense or position-aligned).
+    let names_by_id: std::collections::HashMap<i64, usize> =
+        db::card_ids(conn)?.into_iter().zip(0..).collect();
     let depth = fusion_depth(limit);
     // One filter pass over the store up front: leg closures read this mask
     // instead of re-running the JSON-backed filter checks per card per leg.
@@ -581,6 +580,19 @@ pub fn run_search(
     let mut model = embed::load_model(&paths.models_dir(), false)?;
     let query = store.embed_query(&mut model, &expanded)?;
     let mut scored: Vec<(usize, f32)> = Vec::with_capacity(cards.len());
+    // The vector rows must stay aligned with the loaded card list: row i
+    // scores cards[i]. A shorter store is guarded by the length check
+    // below; when lengths match, the names must too.
+    debug_assert!(
+        store.meta.names.len() != cards.len()
+            || store
+                .meta
+                .names
+                .iter()
+                .zip(cards.iter())
+                .all(|(a, b)| a == &b.name),
+        "vector rows out of alignment with loaded cards"
+    );
     for (i, allowed_i) in allowed.iter().enumerate() {
         if *allowed_i && i < store.meta.names.len() {
             let row = store.row(i);
@@ -716,13 +728,13 @@ pub fn run_query(
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let items: Vec<serde_json::Value> = hits
             .iter()
-            .filter_map(|h| {
-                let range = ranges.get(&h.card.name)?;
+            .map(|h| {
+                let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
                 let universe = crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)
                     .unwrap_or_default();
-                let mut v = crate::card::card_json(&h.card, &tag_index, range, &universe);
+                let mut v = crate::card::card_json(&h.card, &tag_index, &range, &universe);
                 v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
-                Some(v)
+                v
             })
             .collect();
         print_json(items)?;
@@ -738,18 +750,20 @@ fn print_json(items: Vec<serde_json::Value>) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Print results as a styled table.
+/// Print results as numbered lines with score, cost, and type line.
 fn print_text(out: &Output, hits: &[Hit]) {
     let styles = out.styles();
+    let rank_width = hits.len().to_string().len().max(2);
     for (i, hit) in hits.iter().enumerate() {
         let line = format!(
-            "{:>2}. {} {} {} {} {}",
+            "{:>width$}. {} {} {} {} {}",
             i + 1,
             styles.card_name(&hit.card.name),
             styles.mana_pips(&hit.card.mana_cost),
             styles.rarity(&hit.card.rarity),
             styles.dim(&hit.card.type_line),
             styles.dim(&format!("({:.3})", hit.score)),
+            width = rank_width,
         );
         println!("{line}");
     }

@@ -13,14 +13,20 @@
 //   8 THRESHOLD station tiers unlock (permanent); crew reverts at end
 //   9 COMBAT    bodies attack; attack triggers fire
 //  10 END       hand-limit discard
+//  11 EXTRA TURNS  queued extra turns replay a land drop, a draw, and
+//               upkeep engines once (not full turns)
 
 use super::game_effects::apply_effect;
-use super::model::{Ability, Effect, Role, SimDeck, TapYield, Trigger};
+use super::model::{Ability, Effect, Restriction, Role, SimDeck, TapYield, Trigger};
 use std::collections::HashMap;
 
 /// One permanent on the battlefield.
 #[derive(Debug, Clone)]
 pub struct InPlay {
+    /// Stable identity for the permanent, unique within one game.
+    /// Engine and ETB bookkeeping key on this so removals shifting
+    /// battlefield positions never alias another card.
+    pub uid: u32,
     /// Index into `SimDeck.cards` (`usize::MAX` for the cast commander).
     pub card: usize,
     /// Tapped this turn (one tap per turn per permanent).
@@ -81,11 +87,12 @@ pub struct GameLog {
     pub opener_lands: u8,
     /// True when the opening hand was redrawn.
     pub mulliganed: bool,
-    /// Lands seen by turn 4 (for the screw/flood buckets).
+    /// Sum of land drops made in turns 1-4 (the screw metric's input).
     pub lands_by_4: u8,
-    /// Lands *seen* by turn 11 (hand + battlefield): the flood metric's
-    /// input. Drops made are the wrong lens — a land drawn and never
-    /// dropped still floods.
+    /// Lands seen (hand + battlefield) by end of turn 4: the flood
+    /// metric's measured value. 11 is the nominal card window that
+    /// expectation compares against (opener + 4 draws); draw engines
+    /// widen the window, which `cards_seen_by_4` records.
     pub lands_seen_by_11: u32,
     /// Cards seen by end of turn 4: the flood window's actual size.
     /// Draw engines widen it beyond the nominal 11, and the flood
@@ -153,6 +160,8 @@ pub struct GameLog {
 pub(super) struct Activation {
     /// Battlefield position of the source.
     pub(super) pos: usize,
+    /// Stable uid of the source (survives battlefield shifts).
+    pub(super) uid: u32,
     /// The ability that fired (cloned so re-lookup is exact).
     pub(super) ability: Ability,
     /// Total activation cost.
@@ -180,6 +189,12 @@ pub(super) struct Pool {
     pub(super) colorless: u32,
     /// Creature-only yield bucket (Secluded Courtyard-style lands).
     pub(super) creature_only: u32,
+    /// Legendary-only yield bucket (Plaza of Heroes-style lands).
+    pub(super) legendary_only: u32,
+    /// Artifact-only yield bucket (Steelswarm Operator-style lands).
+    pub(super) artifact_only: u32,
+    /// Instant/sorcery-only yield bucket.
+    pub(super) instant_sorcery_only: u32,
 }
 
 /// Mutable per-game state the effect helpers share: one battlefield, the
@@ -226,22 +241,46 @@ pub(super) struct GameState {
     /// it cost this game (Basalt Monolith-class engine loop). A census
     /// flag, not a resolution: the sim caps the loop.
     pub(super) infinite_mana_suspected: bool,
+    /// Monotone uid source for battlefield permanents.
+    pub(super) next_uid: u32,
+}
+
+/// Reserve the next permanent uid.
+pub(super) fn take_uid(st: &mut GameState) -> u32 {
+    st.next_uid += 1;
+    st.next_uid
 }
 
 impl Pool {
     /// Total mana available (a choice source still produces one mana);
-    /// creature-only yield pays creature casts only.
+    /// restricted yield pays only its cast class.
     pub(super) fn total(&self) -> u32 {
-        self.fixed.iter().sum::<u32>() + self.flexible + self.colorless + self.creature_only
+        self.fixed.iter().sum::<u32>()
+            + self.flexible
+            + self.colorless
+            + self.creature_only
+            + self.legendary_only
+            + self.artifact_only
+            + self.instant_sorcery_only
+    }
+
+    /// Mana reachable for a cast of the given restricted class: the
+    /// general pool plus the class's own bucket. A restricted bucket
+    /// never pays another cast class.
+    pub(super) fn usable_for(&self, restriction: Restriction) -> u32 {
+        let general = self.fixed.iter().sum::<u32>() + self.flexible + self.colorless;
+        general
+            + match restriction {
+                Restriction::Creature => self.creature_only,
+                Restriction::Legendary => self.legendary_only,
+                Restriction::Artifact => self.artifact_only,
+                Restriction::InstantSorcery => self.instant_sorcery_only,
+            }
     }
 }
 
-/// Fold a tap yield into the pool. Multi-color and any-color choice
-/// sources become flexible; single-color choice sources pin to their
-/// color as a fixed pip; fixed sets stay fixed; `{C}` stays colorless.
-/// Alternative-mode sources (several tap abilities on one permanent)
-/// yield exactly one mana: one choice/any color or one colorless.
-/// Land families the sim recognizes as fetches ("search … for a … land").
+/// True when the land's name marks a card the sim recognizes as a fetch
+/// ("search … for a … land"): playing it searches up another land.
 pub(super) fn fetches_land_text(card: &super::model::SimCard) -> bool {
     let name = card.name.to_ascii_lowercase();
     [
@@ -258,6 +297,7 @@ pub(super) fn fetches_land_text(card: &super::model::SimCard) -> bool {
         "verdant catacombs",
         "prismatic vista",
         "terramorphic expanse",
+        "evolving wilds",
         "escape tunnel",
     ]
     .iter()
@@ -297,6 +337,7 @@ pub(super) fn land_types(name: &str) -> &'static [&'static str] {
         | "Verdant Catacombs"
         | "Fabled Passage"
         | "Terramorphic Expanse"
+        | "Evolving Wilds"
         | "Escape Tunnel" => &["Plains", "Island", "Swamp", "Mountain", "Forest"],
         _ => &[],
     }
@@ -307,16 +348,23 @@ pub(super) fn land_types(name: &str) -> &'static [&'static str] {
 pub(super) const BODY_POWER: u32 = 2;
 
 /// Static card data for a battlefield permanent. The cast commander
-/// (`usize::MAX`) resolves through `deck.commanders[0]`; token bodies
-/// (`usize::MAX - 1`) are 2/2 bodies with no abilities.
+/// (`usize::MAX`) resolves through `deck.commanders[commander_slot]`;
+/// token bodies (`usize::MAX - 1`) are 2/2 bodies with no abilities.
+/// A commander permanent with no matching commander entry (empty
+/// commanders list) resolves as a token body instead of panicking.
 pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &InPlay) -> &'a super::model::SimCard {
     if perm.is_commander {
-        // `is_commander` is only set when a commander exists.
-        &deck.commanders[perm.commander_slot.min(deck.commanders.len() - 1)]
+        match deck.commanders.get(perm.commander_slot) {
+            Some(cmd) => cmd,
+            None => token_body_card(),
+        }
     } else if perm.card >= usize::MAX - 1 {
         token_body_card()
     } else {
-        &deck.cards[perm.card]
+        match deck.cards.get(perm.card) {
+            Some(card) => card,
+            None => token_body_card(),
+        }
     }
 }
 
@@ -325,26 +373,26 @@ pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &InPlay) -> &'a super::model:
 /// A loyalty-gain activation that creates tokens is once-per-turn token
 /// fuel (Liliana, Dreadhorde General class): it feeds sacrifice engines
 /// and body counts every turn after the first activation. The engine is
-/// zero-draw (no card draw) and keyed to the battlefield position so it
+/// zero-draw (no card draw) and keyed to the permanent's uid so it
 /// drops out when the permanent leaves.
 pub(super) fn register_loyalty_token_engines(
     deck: &SimDeck,
     st: &GameState,
     pos: usize,
-    engines: &mut Vec<(usize, u32)>,
+    engines: &mut Vec<(u32, u32)>,
 ) {
-    if engines.iter().any(|(p, _)| *p == pos) {
-        return;
-    }
     let Some(perm) = st.battlefield.get(pos) else {
         return;
     };
+    if engines.iter().any(|(u, _)| *u == perm.uid) {
+        return;
+    }
     let card = card_of(deck, perm);
     let is_token_engine = card
         .abilities()
         .any(|a| a.loyalty_gain > 0 && matches!(a.effect, super::model::Effect::Tokens(_)));
     if is_token_engine {
-        engines.push((pos, 0));
+        engines.push((perm.uid, 0));
     }
 }
 
@@ -364,9 +412,17 @@ pub(super) fn token_body_card() -> &'static super::model::SimCard {
     BODY.get_or_init(token_body)
 }
 
-/// A new battlefield permanent from a card index.
-pub(super) fn new_perm(deck: &SimDeck, card: usize, turn: u32, tapped: bool) -> InPlay {
+/// A new battlefield permanent with a pre-reserved uid (call sites that
+/// hold another borrow of the state reserve it via [`take_uid`] first).
+pub(super) fn new_perm_with(
+    uid: u32,
+    deck: &SimDeck,
+    card: usize,
+    turn: u32,
+    tapped: bool,
+) -> InPlay {
     InPlay {
+        uid,
         card,
         tapped,
         sick: deck.cards[card].is_creature && !deck.cards[card].has_haste,
@@ -387,11 +443,26 @@ pub(super) fn new_perm(deck: &SimDeck, card: usize, turn: u32, tapped: bool) -> 
 
 /// Fire OnEnter triggers for the permanent at `pos`. Token payoffs become
 /// small battlefield bodies. Upkeep engines register at the call site.
+/// `deferred` marks the turn-start blink re-fire: that firing never
+/// re-arms, so a blink re-fires exactly once (no chains).
 pub(super) fn fire_on_enter(deck: &SimDeck, st: &mut GameState, pos: usize, turn: u32) {
+    fire_on_enter_opts(deck, st, pos, turn, false)
+}
+
+/// Fire OnEnter triggers with control over blink re-arming; see
+/// `fire_on_enter`.
+pub(super) fn fire_on_enter_opts(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pos: usize,
+    turn: u32,
+    deferred: bool,
+) {
     let Some(perm) = st.battlefield.get(pos) else {
         return;
     };
     let perm_card = perm.card;
+    let perm_uid = perm.uid;
     let has_real_etb = card_of(deck, perm)
         .abilities()
         .any(|a| a.trigger == Trigger::OnEnter);
@@ -404,14 +475,16 @@ pub(super) fn fire_on_enter(deck: &SimDeck, st: &mut GameState, pos: usize, turn
     for effect in &etb_effects {
         apply_effect(deck, effect, st, turn, mill_opp);
         // Blink-shaped ETBs ("exile … return it to the battlefield")
-        // re-fire the host's OnEnter triggers once, next turn.
-        if matches!(effect, Effect::ExtraLand)
+        // re-fire the host's OnEnter triggers once, next turn. The
+        // deferred firing does not re-arm: one re-fire per entry. The
+        // uid (not the card index) keys the re-arm: with two copies of
+        // the blink card in play, the host copy re-arms itself, never a
+        // sibling.
+        if !deferred
+            && matches!(effect, Effect::ExtraLand)
             && has_real_etb
             && perm_card < usize::MAX - 1
-            && let Some(p) = st
-                .battlefield
-                .iter_mut()
-                .find(|p| p.card == perm_card && p.card < usize::MAX - 1)
+            && let Some(p) = st.battlefield.iter_mut().find(|p| p.uid == perm_uid)
         {
             p.blink_pending = true;
         }

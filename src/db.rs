@@ -4,13 +4,13 @@ use rusqlite_migration::{M, Migrations};
 
 // SQLite layer: connection bootstrap, schema migrations, and the card row
 // type shared by every module. Collection access lives in `collection.rs`,
-// price access in `prices.rs`; both use this module's connection helpers.
+// price access in `prints.rs`; both use this module's connection helpers.
 
 /// One stored card, deserialized from the `cards` table.
 ///
 /// JSON columns (colors, legalities…) are kept as raw JSON strings; consumers
-/// parse what they need. Live prices live in the `prices` table
-/// (`src/prices.rs`), keyed by `scryfall_id`.
+/// parse what they need. Per-print prices live in the `card_prints` table
+/// (`src/prints.rs`), keyed by `scryfall_id`.
 #[derive(Debug, Clone)]
 pub struct CardRow {
     pub name: String,
@@ -41,6 +41,19 @@ pub struct CardRow {
     /// True when the card is on the Commander Game Changer list (bracket
     /// signal for `deck legal`). Null when the bulk did not say.
     pub game_changer: Option<bool>,
+}
+
+/// All card ids in insertion (bulk) order, aligned with [`load_all_cards`].
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn card_ids(conn: &Connection) -> anyhow::Result<Vec<i64>> {
+    let ids = conn
+        .prepare("SELECT id FROM cards ORDER BY id")?
+        .query_map([], |row| row.get(0))?
+        .collect::<Result<Vec<i64>, _>>()
+        .context("reading card ids")?;
+    Ok(ids)
 }
 
 /// All cards in insertion (bulk) order.
@@ -105,8 +118,13 @@ pub fn get_card(conn: &Connection, name: &str) -> anyhow::Result<Option<CardRow>
 pub enum NameMatch {
     /// Found a card.
     Found(Box<CardRow>),
-    /// Prefix matched several names; candidates are listed for the user.
-    Ambiguous(Vec<String>),
+    /// Prefix matched several names. `candidates` is a sample of real
+    /// card names; `total` is the full match count (oracle names plus
+    /// flavor-name aliases).
+    Ambiguous {
+        candidates: Vec<String>,
+        total: usize,
+    },
     /// Nothing matched.
     NotFound,
 }
@@ -141,6 +159,17 @@ pub fn resolve_name(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch>
             .replace('%', "\\%")
             .replace('_', "\\_")
     );
+    // Count the full prefix space first so the ambiguity report states
+    // the real match count (the candidate lists are samples, not sums).
+    let total: i64 = conn
+        .prepare(
+            "SELECT
+                (SELECT COUNT(*) FROM cards WHERE name LIKE ?1 ESCAPE '\\' COLLATE NOCASE) +
+                (SELECT COUNT(DISTINCT name) FROM card_prints
+                 WHERE flavor_name LIKE ?1 ESCAPE '\\' COLLATE NOCASE)",
+        )?
+        .query_row([&pattern], |row| row.get(0))
+        .context("counting name matches")?;
     let mut stmt = conn.prepare(
         "SELECT name FROM cards WHERE name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
          ORDER BY name LIMIT 2",
@@ -149,8 +178,6 @@ pub fn resolve_name(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch>
     let first = rows.next().transpose().context("reading name")?;
     match first {
         Some(_) => {
-            // Re-run with a higher limit to collect candidates for the error.
-            rows.next().transpose().context("reading name")?;
             let mut candidates = conn
                 .prepare(
                     "SELECT name FROM cards WHERE name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
@@ -159,31 +186,35 @@ pub fn resolve_name(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch>
                 .query_map([&pattern], |row| row.get::<_, String>(0))?
                 .collect::<Result<Vec<_>, _>>()
                 .context("reading names")?;
-            // Flavor-name aliases join the same prefix space, so "Godzilla"
-            // lists alongside oracle names; a unique alias prefix resolves.
+            // Flavor-name aliases join the same prefix space; each alias
+            // maps back to the oracle card of the print carrying them, so a
+            // unique alias prefix resolves.
             candidates.extend(
                 conn.prepare(
-                    "SELECT DISTINCT flavor_name FROM card_prints
+                    "SELECT DISTINCT name FROM card_prints
                      WHERE flavor_name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
-                     ORDER BY flavor_name LIMIT 6",
+                     ORDER BY name LIMIT 6",
                 )?
                 .query_map([&pattern], |row| row.get::<_, String>(0))?
                 .collect::<Result<Vec<_>, _>>()
                 .context("reading aliases")?,
             );
-            if candidates.len() == 1 {
+            if candidates.len() == 1 && total == 1 {
                 return resolve_candidate(conn, &candidates[0]);
             }
             candidates.sort_unstable();
-            Ok(NameMatch::Ambiguous(candidates))
+            candidates.dedup();
+            let total = total.max(candidates.len() as i64) as usize;
+            Ok(NameMatch::Ambiguous { candidates, total })
         }
         None => {
             // Whole-string alias: the flavor name of some print ("Godzilla,
-            // King of the Monsters" → Zilortha). DISTINCT keeps the pick
-            // deterministic when prints disagree.
+            // King of the Monsters" → Zilortha). ORDER BY name makes the
+            // pick deterministic when prints of one flavor name map to
+            // different oracle cards; the alphabetically first name wins.
             let mut stmt = conn.prepare(
                 "SELECT DISTINCT name FROM card_prints
-                 WHERE flavor_name = ?1 COLLATE NOCASE LIMIT 2",
+                 WHERE flavor_name = ?1 COLLATE NOCASE ORDER BY name LIMIT 1",
             )?;
             let mut rows = stmt.query_map([typed], |row| row.get::<_, String>(0))?;
             match rows.next().transpose().context("reading alias")? {
@@ -592,8 +623,9 @@ mod tests {
             other => panic!("expected unique prefix, got {other:?}"),
         }
         match resolve_name(&conn, "Lightning").expect("resolve") {
-            NameMatch::Ambiguous(names) => {
-                assert_eq!(names.len(), 3);
+            NameMatch::Ambiguous { candidates, total } => {
+                assert_eq!(candidates.len(), 3);
+                assert_eq!(total, 3);
             }
             other => panic!("expected ambiguity, got {other:?}"),
         }

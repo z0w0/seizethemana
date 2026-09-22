@@ -1,4 +1,4 @@
-use super::store_show::round2;
+use crate::output::round2;
 // `stm deck buylist`: missing copies as a plain `2x Name` list (generic
 // default) or a store CSV for Card Kingdom / TCGPlayer, plus a JSON view.
 //
@@ -74,38 +74,44 @@ pub struct BuylistRow {
 /// Copies available to fill this deck's slots: assigned to the deck plus
 /// copies in binders. Other decks' copies do not count. Shared with
 /// `deck show` through `ownership::available_map`.
-use super::ownership::available_map;
+use super::ownership::available_map_by_finish;
 
 /// Missing rows with the available-copy map already computed.
 ///
 /// Same-name entries across sections aggregate; basic lands are excluded
-/// (unlimited supply); foil entries prefer the cheapest foil printing.
-/// Returns rows sorted by name (BTreeMap order), or empty when nothing is
-/// missing.
+/// (unlimited supply); the foil/nonfoil need aggregates per finish, so one
+/// foil line no longer prices the whole purchase as foil. Unknown card
+/// names (not in the oracle) are reported through the returned warning
+/// instead of being skipped silently. Returns rows sorted by name
+/// (BTreeMap order), or empty when nothing is missing.
 pub(super) fn missing_rows(
     conn: &Connection,
     deck: &super::Deck,
     cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
-    available: &std::collections::HashMap<String, i64>,
-) -> anyhow::Result<Vec<BuylistRow>> {
+    available: &std::collections::HashMap<(String, bool), i64>,
+) -> anyhow::Result<(Vec<BuylistRow>, Vec<String>)> {
     let mut needed: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
-    let mut wants_foil: std::collections::BTreeMap<String, bool> =
+    // Per-finish need: each deck line contributes its copies to the finish
+    // that line asked for; a card wanted in both finishes gets two rows.
+    let mut needed_foil: std::collections::BTreeMap<String, i64> =
         std::collections::BTreeMap::new();
+    let mut unknown_names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     let mut sections: std::collections::BTreeMap<String, Vec<String>> =
         std::collections::BTreeMap::new();
     for (section, entries) in &deck.sections {
         for entry in entries {
             let Some(card) = cards_by_name.get(&entry.name) else {
+                unknown_names.insert(entry.name.clone());
                 continue;
             };
             if super::stats::is_basic_land(card) {
                 continue;
             }
-            *needed.entry(entry.name.clone()).or_insert(0) += entry.quantity;
-            wants_foil
-                .entry(entry.name.clone())
-                .and_modify(|f| *f = *f || entry.foil)
-                .or_insert(entry.foil);
+            if entry.foil {
+                *needed_foil.entry(entry.name.clone()).or_insert(0) += entry.quantity;
+            } else {
+                *needed.entry(entry.name.clone()).or_insert(0) += entry.quantity;
+            }
             let seen = sections.entry(entry.name.clone()).or_default();
             if !seen.contains(section) {
                 seen.push(section.clone());
@@ -115,54 +121,79 @@ pub(super) fn missing_rows(
     let mut rows = Vec::new();
     let missing_names: Vec<String> = needed
         .iter()
-        .filter(|(name, qty)| {
-            let owned = available.get(*name).copied().unwrap_or(0);
-            **qty - owned > 0
-        })
+        .chain(needed_foil.iter())
         .map(|(name, _)| name.clone())
+        .collect::<std::collections::BTreeSet<_>>()
+        .into_iter()
         .collect();
     // One batched query per finish kind instead of four per card name.
     let ranges = crate::prints::price_ranges(conn, &missing_names)?;
-    for (name, qty) in &needed {
-        let owned = available.get(name).copied().unwrap_or(0);
-        let missing = qty - owned;
-        if missing <= 0 {
-            continue;
+    // Owned copies fill this deck's slots by finish: a foil line is
+    // filled by owned foil/etched copies, a nonfoil line by nonfoil
+    // copies. When a finish's owned pool runs dry, leftover owned copies
+    // of the other finish fill the remainder (any printing sleeves the
+    // same); the leftover pool is shared per name, foil lines first.
+    let mut leftover: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+    for (need, foil) in [(&needed_foil, true), (&needed, false)] {
+        for (name, qty) in need.iter() {
+            let owned = available.get(&(name.clone(), foil)).copied().unwrap_or(0);
+            *leftover.entry(name.clone()).or_insert(0) += (owned - qty).max(0);
         }
-        let range = match ranges.get(name) {
-            Some(range) => range,
-            None => continue,
-        };
-        let print = if wants_foil[name] {
-            range
-                .cheapest_foil
-                .clone()
-                .or_else(|| range.cheapest.clone())
-        } else {
-            range.cheapest.clone()
-        };
-        let Some(print) = print else {
-            // No released English printing priced in the snapshot; skip with
-            // no line rather than a zero-priced line.
-            continue;
-        };
-        rows.push(BuylistRow {
-            name: name.clone(),
-            set_code: print.set_code,
-            set_name: Some(print.set_name).filter(|s| !s.is_empty()),
-            collector_number: print.collector_number,
-            scryfall_id: print.scryfall_id,
-            foil: wants_foil[name],
-            quantity: missing,
-            sections: sections.get(name).cloned().unwrap_or_default(),
-            price_usd: if wants_foil[name] {
-                print.usd_foil.or(print.usd)
-            } else {
-                print.usd
-            },
-        });
     }
-    Ok(rows)
+    for (need, foil) in [(&needed_foil, true), (&needed, false)] {
+        for (name, qty) in need.iter() {
+            let owned = available.get(&(name.clone(), foil)).copied().unwrap_or(0);
+            let missing = qty - owned;
+            if missing <= 0 {
+                continue;
+            }
+            // Borrow same-name copies surplus in the other finish. The
+            // entry exists: the first pass inserted every needed name.
+            let borrowable = leftover.get(name).copied().unwrap_or(0);
+            let pool = leftover
+                .get_mut(name)
+                .expect("leftover pool holds every needed name");
+            let covered = borrowable.min(missing);
+            *pool -= covered;
+            let still_missing = missing - covered;
+            if still_missing <= 0 {
+                continue;
+            }
+            let range = match ranges.get(name) {
+                Some(range) => range,
+                None => continue,
+            };
+            let print = if foil {
+                range
+                    .cheapest_foil
+                    .clone()
+                    .or_else(|| range.cheapest.clone())
+            } else {
+                range.cheapest.clone()
+            };
+            let Some(print) = print else {
+                // No released English printing priced in the snapshot; skip
+                // with no line rather than a zero-priced line.
+                continue;
+            };
+            rows.push(BuylistRow {
+                name: name.clone(),
+                set_code: print.set_code,
+                set_name: Some(print.set_name).filter(|s| !s.is_empty()),
+                collector_number: print.collector_number,
+                scryfall_id: print.scryfall_id,
+                foil,
+                quantity: still_missing,
+                sections: sections.get(name).cloned().unwrap_or_default(),
+                price_usd: if foil {
+                    print.usd_foil.or(print.usd)
+                } else {
+                    print.usd
+                },
+            });
+        }
+    }
+    Ok((rows, unknown_names.into_iter().collect()))
 }
 
 /// Entry point for `stm deck buylist <name>`.
@@ -188,12 +219,31 @@ pub fn buylist(
             return Ok(crate::cli::codes::USAGE);
         }
     };
-    let cards_by_name = super::stats::lookup_names(conn, &deck);
-    let available = available_map(conn, name)?;
-    let rows = missing_rows(conn, &deck, &cards_by_name, &available)?;
+    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
+    let available = available_map_by_finish(conn, name)?;
+    let (rows, unknown) = missing_rows(conn, &deck, &cards_by_name, &available)?;
+    for name in &unknown {
+        out.warning(&format!(
+            "{name} is not in the card index; skipped in the buylist"
+        ));
+    }
     if rows.is_empty() {
-        out.error("no missing cards; the deck is fully covered");
-        out.hint("check 'stm deck show' for the ownership breakdown");
+        if json {
+            // Empty contract on stdout, matching the other read commands:
+            // `[]` with exit 3 signaling "nothing to buy".
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "store": store.name(),
+                    "currency": crate::output::CURRENCY,
+                    "rows": [],
+                    "total": 0.0,
+                }))?
+            );
+        } else {
+            out.error("no missing cards; the deck is fully covered");
+            out.hint("check 'stm deck show' for the ownership breakdown");
+        }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     if let Store::CardKingdom = store {
@@ -209,6 +259,10 @@ pub fn buylist(
         .iter()
         .map(|r| r.price_usd.unwrap_or(0.0) * r.quantity as f64)
         .sum();
+    // One prepared rarity statement reused for all rows (an N-prepare
+    // query loop would be slower); the TCGplayer Mass Entry column
+    // needs rarity per row on a 500-line export.
+    let rarities = rarities_for(conn, &rows)?;
     if json {
         let v = serde_json::json!({
             "store": store.name(),
@@ -251,30 +305,51 @@ pub fn buylist(
                     row.collector_number,
                     row.set_code.to_ascii_uppercase(),
                     if row.foil { "Foil" } else { "Normal" },
-                    row_rarity(conn, &row.scryfall_id),
+                    rarities
+                        .get(&row.scryfall_id)
+                        .map(String::as_str)
+                        .unwrap_or(""),
                 ),
             }
         }
-        out.status(
-            "Total",
-            &format!(
-                "{} missing copies, est. market {}",
-                rows.iter().map(|r| r.quantity).sum::<i64>(),
-                out.styles().money(total)
-            ),
+        // The total is a result: it stays on stdout so the piped
+        // `| pbcopy` flow keeps the copyable CSV and the cost line.
+        let styles = out.styles();
+        println!(
+            "{} {} missing copies, est. market {}",
+            styles.glyph("Total", crate::output::GlyphKind::Dim),
+            rows.iter().map(|r| r.quantity).sum::<i64>(),
+            styles.money(total)
         );
     }
     Ok(crate::cli::codes::OK)
 }
 
-/// Rarity of one print (for the TCGPlayer Mass Entry column).
-fn row_rarity(conn: &Connection, scryfall_id: &str) -> String {
-    conn.query_row(
-        "SELECT rarity FROM card_prints WHERE scryfall_id = ?1",
-        [scryfall_id],
-        |row| row.get::<_, String>(0),
-    )
-    .unwrap_or_default()
+/// Rarity of one print (for the TCGPlayer Mass Entry column). An
+/// unpriced lookup yields an empty cell, not a failed export.
+///
+/// # Errors
+/// Propagates SQLite failures; callers treat a failed export as broken
+/// rather than silently missing rarity cells.
+fn rarities_for(
+    conn: &Connection,
+    rows: &[BuylistRow],
+) -> anyhow::Result<std::collections::HashMap<String, String>> {
+    let mut map = std::collections::HashMap::new();
+    let mut stmt = conn.prepare("SELECT rarity FROM card_prints WHERE scryfall_id = ?1")?;
+    for row in rows {
+        let rarity: Option<String> = stmt
+            .query_row([&row.scryfall_id], |r| r.get(0))
+            .map(Some)
+            .or_else(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => Ok(None),
+                err => Err(err),
+            })?;
+        if let Some(rarity) = rarity {
+            map.insert(row.scryfall_id.clone(), rarity);
+        }
+    }
+    Ok(map)
 }
 
 /// Quote a CSV field when it contains a comma or quote.
@@ -389,10 +464,15 @@ mod tests {
         collection(&conn, "Collect", "binder", "Bolt", 3);
         collection(&conn, "Other", "deck", "Bolt", 5);
         let deck = super::super::Deck::parse("// DECK\n8 Bolt\n").unwrap();
-        let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-        let available = available_map(&conn, "Buy").unwrap();
-        assert_eq!(available.get("Bolt"), Some(&5), "own deck + binder only");
-        let rows = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+        let available = available_map_by_finish(&conn, "Buy").unwrap();
+        assert_eq!(
+            available.get(&("Bolt".to_string(), false)),
+            Some(&5),
+            "own deck + binder only"
+        );
+        let (rows, unknown) = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        assert!(unknown.is_empty());
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].quantity, 3, "8 needed - 5 available");
         assert_eq!(rows[0].set_code, "m11");
@@ -415,9 +495,10 @@ mod tests {
         );
         collection(&conn, "Collect", "binder", "Bolt", 4);
         let deck = super::super::Deck::parse("// DECK\n4 Bolt\n").unwrap();
-        let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-        let available = available_map(&conn, "Deck").unwrap();
-        let rows = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+        let available = available_map_by_finish(&conn, "Deck").unwrap();
+        let (rows, unknown) = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        assert!(unknown.is_empty());
         assert!(rows.is_empty());
     }
 
@@ -441,9 +522,10 @@ mod tests {
             None,
         );
         let deck = super::super::Deck::parse("// DECK\n20 Mountain\n2 Bolt\n").unwrap();
-        let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-        let available = available_map(&conn, "Deck").unwrap();
-        let rows = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+        let available = available_map_by_finish(&conn, "Deck").unwrap();
+        let (rows, unknown) = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        assert!(unknown.is_empty());
         assert_eq!(rows.len(), 1, "only the non-basic card is listed");
         assert_eq!(rows[0].name, "Bolt");
     }
@@ -463,9 +545,10 @@ mod tests {
             None,
         );
         let deck = super::super::Deck::parse("// DECK\n2 Bolt\n// SIDEBOARD\n3 Bolt\n").unwrap();
-        let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-        let available = available_map(&conn, "Deck").unwrap();
-        let rows = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+        let available = available_map_by_finish(&conn, "Deck").unwrap();
+        let (rows, unknown) = missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+        assert!(unknown.is_empty());
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].quantity, 5);
         assert_eq!(rows[0].sections, vec!["DECK", "SIDEBOARD"]);

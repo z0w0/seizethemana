@@ -38,7 +38,9 @@ pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u
         if pips > 0 {
             match restriction {
                 Restriction::Creature => pool.creature_only += pips,
-                _ => pool.flexible += pips,
+                Restriction::Legendary => pool.legendary_only += pips,
+                Restriction::Artifact => pool.artifact_only += pips,
+                Restriction::InstantSorcery => pool.instant_sorcery_only += pips,
             }
         } else {
             pool.colorless += y.colorless;
@@ -91,16 +93,16 @@ pub(super) fn add_yield_turns(
     };
     if let Some(restriction) = y.restriction {
         // Restricted buckets pay their own cast class; each pip still
-        // picks any color the source could produce. The sim honors only
-        // the creature split in payment; other restrictions land in the
-        // flexible pool (their casts go through the normal pool).
+        // picks any color the source could produce.
         let pips = any_pips
             + scale_pips
             + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
         if pips > 0 {
             match restriction {
                 Restriction::Creature => pool.creature_only += pips,
-                _ => pool.flexible += pips,
+                Restriction::Legendary => pool.legendary_only += pips,
+                Restriction::Artifact => pool.artifact_only += pips,
+                Restriction::InstantSorcery => pool.instant_sorcery_only += pips,
             }
         } else {
             pool.colorless += y.colorless;
@@ -136,39 +138,94 @@ pub(super) fn payable(cost: &super::model::Cost, pool: &Pool) -> bool {
     pool.total() >= cost.total()
 }
 
-/// True when every monocolor pip is covered by fixed pips plus flexible
-/// sources (each flexible source pays any one pip).
+/// True when every monocolor pip is covered. The flexible pool is ONE
+/// shared resource: a pip is covered by a fixed pip of that color or a
+/// flexible pip, and the check requires the total unmet pips across all
+/// colors (counted after fixed pips of each color) to fit inside the
+/// flexible pool, with colorless covering only generic/flex costs —
+/// never a monocolor pip. This mirrors how `pay_cost` spends: each
+/// flexible source is consumed at most once.
 pub(super) fn pips_ok(cost: &super::model::Cost, pool: &Pool) -> bool {
-    let flex = pool.flexible;
-    cost.pips
+    // Generic + flex pips and colorless needs draw from flexible and
+    // colorless mana first (see `pay_cost`), so monocolor pips compete
+    // for the flexible pool only when generic needs are small. The
+    // conservative sound check: the pip shortfall across colors must
+    // fit in the flexible pool, and total cost must fit in the pool.
+    let pip_shortfall: u32 = cost
+        .pips
         .iter()
         .enumerate()
-        .all(|(i, need)| pool.fixed[i] + flex >= u32::from(*need))
+        .map(|(i, need)| u32::from(*need).saturating_sub(pool.fixed[i]))
+        .sum();
+    let flex = pool.flexible;
+    if pip_shortfall > flex {
+        return false;
+    }
+    // Generic and flex pips: paid from remaining flexible, then
+    // colorless, then spare fixed pips (mirroring `pay_cost`'s order).
+    let mut generic_left = cost.generic + cost.flex_pips;
+    let flexible_left = flex.saturating_sub(pip_shortfall);
+    let from_flex = generic_left.min(flexible_left);
+    generic_left -= from_flex;
+    generic_left = generic_left.saturating_sub(pool.colorless);
+    // Spare fixed pips over-pay colors legally.
+    let mut spare = 0u32;
+    for i in 0..5 {
+        spare += pool.fixed[i].saturating_sub(u32::from(cost.pips[i]));
+    }
+    generic_left.saturating_sub(spare) == 0
 }
 
-/// Mana a creature spell can reach: everything except the
-/// creature-only bucket (which is its own budget).
+/// Mana a non-restricted cast can reach: the general pool only (each
+/// restricted bucket is its own budget).
 pub(super) fn usable_for_noncreature(pool: &Pool) -> u32 {
     pool.fixed.iter().sum::<u32>() + pool.flexible + pool.colorless
 }
 
-/// Mana a creature spell can reach, creature-only yield included.
-pub(super) fn usable_for_creature(pool: &Pool) -> u32 {
-    usable_for_noncreature(pool) + pool.creature_only
+/// The spend restriction of a card's cast class, or `None` for an
+/// unrestricted cast. The instant/sorcery class reads the interaction
+/// flag's type-line gate: Instant or Sorcery only (flash creatures are
+/// not instant casts).
+pub(super) fn cast_restriction(card: &super::model::SimCard) -> Option<Restriction> {
+    if card.is_artifact && card.role != Role::Land {
+        Some(Restriction::Artifact)
+    } else if card.is_interaction {
+        Some(Restriction::InstantSorcery)
+    } else {
+        None
+    }
 }
 
-/// Consume from the creature-only bucket first (spend it before it
-/// expires), then the general pool.
-pub(super) fn pay_creature_cost(cost: &super::model::Cost, pool: &mut Pool) {
-    let from_restricted = pool.creature_only.min(cost.total());
-    pool.creature_only -= from_restricted;
+/// Pay a restricted cast's cost: the class's own bucket spends first
+/// (its mana is one color of the source's choice, so it can pay
+/// generic, flex pips, and monocolor pips), then the general pool
+/// pays the rest. Any unused bucket stays for a later cast of the
+/// same class.
+pub(super) fn pay_restricted_cost(
+    cost: &super::model::Cost,
+    pool: &mut Pool,
+    restriction: Restriction,
+) {
+    let bucket = match restriction {
+        Restriction::Creature => &mut pool.creature_only,
+        Restriction::Legendary => &mut pool.legendary_only,
+        Restriction::Artifact => &mut pool.artifact_only,
+        Restriction::InstantSorcery => &mut pool.instant_sorcery_only,
+    };
+    let mut paid = (*bucket).min(cost.total());
+    *bucket -= paid;
     let mut rest = cost.clone();
-    rest.generic = rest.generic.saturating_sub(from_restricted);
-    // Pips stay; the restricted bucket pays generic first (its mana is
-    // one color of the source's choice; the pool's fixed pips cover
-    // color needs either way).
-    if rest.generic == 0 && rest.total() == from_restricted.min(cost.total()) {
-        return;
+    rest.generic = rest.generic.saturating_sub(paid);
+    paid = paid.saturating_sub(cost.generic);
+    rest.flex_pips = rest.flex_pips.saturating_sub(paid);
+    paid = paid.saturating_sub(cost.flex_pips);
+    for pip in rest.pips.iter_mut() {
+        if paid == 0 {
+            break;
+        }
+        let spent = u32::from(*pip).min(paid);
+        *pip -= spent as u8;
+        paid -= spent;
     }
     pay_cost(&rest, pool);
 }

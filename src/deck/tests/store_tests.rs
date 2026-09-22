@@ -89,9 +89,10 @@ fn delete_removes_files_keeps_ownership() {
         )
         .unwrap();
     assert_eq!(copies, 2);
-    // Deleting again fails with no-results.
+    // Deleting again is a missing-deck error (exit 1, matching the other
+    // deck subcommands' deck-not-found handling).
     let code = delete(&paths, &conn, &mut out, "Froggy").unwrap();
-    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+    assert_eq!(code, crate::cli::codes::ERROR);
 }
 
 #[test]
@@ -159,22 +160,29 @@ fn missing_cost_matches_buylist_total() {
     let deck = crate::deck::Deck::parse("// DECK\n3 Lightning Bolt\n").unwrap();
     std::fs::write(paths.deck_file("TestDeck"), deck.to_text()).unwrap();
 
-    let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-    let prices = crate::deck::store_show::deck_prices(&conn, &deck);
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let prices = crate::deck::store_show::deck_prices(
+        &conn,
+        &deck,
+        &mut crate::output::Output::new(true, false, false),
+    );
     let available = ownership::available_map(&conn, "TestDeck").unwrap();
+    let available_by_finish = ownership::available_map_by_finish(&conn, "TestDeck").unwrap();
     let (_, missing_cost) =
         crate::deck::store_show::deck_value(&deck, &cards_by_name, &prices, &available);
 
     // Buylist path over the same collection state.
-    let rows =
-        super::super::buylist::missing_rows(&conn, &deck, &cards_by_name, &available).unwrap();
+    let (rows, unknown) =
+        super::super::buylist::missing_rows(&conn, &deck, &cards_by_name, &available_by_finish)
+            .unwrap();
+    assert!(unknown.is_empty());
     let buylist_total: f64 = rows
         .iter()
         .map(|r| r.price_usd.unwrap_or(0.0) * r.quantity as f64)
         .sum();
     assert_eq!(
-        crate::deck::store_show::round2(missing_cost),
-        crate::deck::store_show::round2(buylist_total),
+        crate::output::round2(missing_cost),
+        crate::output::round2(buylist_total),
         "show missing_cost must equal buylist total"
     );
     assert_eq!(rows.len(), 1);
@@ -270,7 +278,7 @@ mod universe_tests {
         "// COMMANDER\n1 Iron Test\n// DECK\n2 Both Prints\n1 Bolt\n// SIDEBOARD\n1 Iron Test\n",
     )
     .unwrap();
-        let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck);
+        let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck).unwrap();
         let census =
             crate::deck::store_show::universe_census(&conn, &deck, &cards_by_name).unwrap();
         // Iron Test: all-UB → beyond. Both Prints: any in-universe print wins.

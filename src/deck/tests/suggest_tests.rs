@@ -164,9 +164,14 @@ fn card_is_commander_legal_blocks_banned() {
     banned.legalities = r#"{"commander": "banned"}"#.to_string();
     assert!(!card_is_commander_legal(&banned));
     let legal = card("Good", "Creature", "G", "", None);
+    assert!(!card_is_commander_legal(&legal));
+    let mut legal = legal;
+    legal.legalities = r#"{"commander": "legal"}"#.to_string();
     assert!(card_is_commander_legal(&legal));
-    // Unknown legality passes (deck legal reports it separately).
-    assert!(card_is_commander_legal(&card(
+    // Unknown legality fails: suggest must not recommend a card whose
+    // legality the snapshot does not assert (a missing key would let
+    // `deck legal` reject the recommendation).
+    assert!(!card_is_commander_legal(&card(
         "Mystery", "Creature", "G", "", None
     )));
 }
@@ -302,7 +307,16 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
     .unwrap();
     let mut out = crate::output::Output::new(true, false, false);
     let code = crate::deck::suggest_combo::run_combo_suggest(
-        &paths, &mut conn, &mut out, "CDeck", None, None, None, 10, true,
+        &paths,
+        &mut conn,
+        &mut out,
+        "CDeck",
+        None,
+        None,
+        None,
+        10,
+        &[],
+        true,
     )
     .unwrap();
     assert_eq!(code, crate::cli::codes::OK);
@@ -340,7 +354,10 @@ fn combo_suggest_ranks_missing_card_and_filters_identity() {
     let deck =
         crate::deck::Deck::parse("// COMMANDER\n1 Frog Wizard\n// DECK\n1 Held A\n1 Held B\n")
             .unwrap();
-    let identity = commander_identity(&deck, &crate::deck::stats::lookup_names(&conn, &deck));
+    let identity = commander_identity(
+        &deck,
+        &crate::deck::stats::lookup_names(&conn, &deck).unwrap(),
+    );
     assert!(!identity_ok(&off_color, &identity));
 }
 
@@ -404,7 +421,16 @@ fn combo_suggest_excludes_commander_required_for_constructed() {
     let mut out = crate::output::Output::new(true, false, false);
     // JSON output carries the per-completion rows the assertions read.
     let code = crate::deck::suggest_combo::run_combo_suggest(
-        &paths, &mut conn, &mut out, "Modern", None, None, None, 10, true,
+        &paths,
+        &mut conn,
+        &mut out,
+        "Modern",
+        None,
+        None,
+        None,
+        10,
+        &[],
+        true,
     )
     .unwrap();
     assert_eq!(code, crate::cli::codes::OK);
@@ -598,7 +624,7 @@ fn deck_show_json_curve_block_reports_commander_target() {
     // deck, detect its format, build the JSON block. (Calling `show`
     // itself would print; the store has no stdout capture.)
     let (_p, deck) = crate::deck::store::load_deck(&paths, "CDeck").unwrap();
-    let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck);
+    let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck).unwrap();
     let stats = crate::deck::stats::compute(&deck, &cards_by_name);
     let is_commander = crate::deck::legal::is_commander(&deck, None);
     assert!(is_commander, "COMMANDER section marks the deck");
@@ -618,7 +644,7 @@ fn deck_show_json_curve_block_reports_commander_target() {
     .unwrap();
     std::fs::write(paths.deck_file("Standard"), "// DECK\n20 Forest\n").unwrap();
     let (_p, deck) = crate::deck::store::load_deck(&paths, "Standard").unwrap();
-    let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck);
+    let cards_by_name = crate::deck::stats::lookup_names(&conn, &deck).unwrap();
     let stats = crate::deck::stats::compute(&deck, &cards_by_name);
     let is_commander = crate::deck::legal::is_commander(&deck, None);
     assert!(!is_commander);
@@ -715,6 +741,7 @@ fn combo_suggest_price_cap_excludes_unpriced_and_above_cap() {
         None,
         Some(2.0),
         10,
+        &[],
         true,
     )
     .unwrap();
@@ -821,6 +848,8 @@ fn commander_search_truncates_to_limit() {
         None,
         None,
         3,
+        false,
+        &[],
         true,
     )
     .unwrap();
@@ -837,12 +866,147 @@ fn commander_search_truncates_to_limit() {
         &deck,
         Some("frog"),
         None,
+        None,
+        None,
         3,
+        &[],
     )
     .unwrap();
     assert_eq!(
         ranked.len(),
         3,
         "the commander path truncates to --limit (6 candidates in the store)"
+    );
+}
+
+#[test]
+fn exclude_resolves_files_and_filters_candidates() {
+    // Names and a file of names both resolve; the retained list drops
+    // excluded cards by name.
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("banned.txt");
+    std::fs::write(&file, "# never suggest these\nHeld A\nHeld B\n").unwrap();
+    let excluded =
+        resolve_exclusions(&["Wanted".to_string(), file.to_str().unwrap().to_string()]).unwrap();
+    assert_eq!(
+        excluded,
+        ["Wanted", "Held A", "Held B"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+    );
+    let ranked = vec![
+        (
+            card("Wanted", "Creature", "GU", "text", Some(10)),
+            Vec::<String>::new(),
+            0.9f32,
+        ),
+        (
+            card("Held A", "Creature", "GU", "text", Some(50)),
+            Vec::new(),
+            0.5,
+        ),
+        (
+            card("Kept", "Creature", "GU", "text", Some(60)),
+            Vec::new(),
+            0.4,
+        ),
+    ];
+    let mut ranked = ranked;
+    retain_unexcluded(&mut ranked, &excluded);
+    assert_eq!(ranked.len(), 1);
+    assert_eq!(ranked[0].0.name, "Kept");
+}
+
+#[test]
+fn exclude_dash_reads_names_from_stdin() {
+    // "-" reads the name list from stdin: one per line, `#` comments
+    // allowed, same as a file.
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("pipedin.txt");
+    std::fs::write(&file, "# comments skipped\nPiped Name\n").unwrap();
+    let mut piped = std::fs::File::open(&file).unwrap();
+    let excluded = resolve_exclusions_with(&["-".to_string(), "Kept".to_string()], &mut piped);
+    assert_eq!(
+        excluded.unwrap(),
+        ["Piped Name", "Kept"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn exclude_before_limit_keeps_full_result_count() {
+    // Excluded cards never consume limit slots: excluding 2 of 6
+    // commanders still returns the full --limit of 3 non-excluded rows.
+    let dir = tempfile::tempdir().unwrap();
+    let conn = crate::db::open(&dir.path().join("t.db")).unwrap();
+    for i in 0..6 {
+        let name = format!("Frog Chief {i}");
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at)
+             VALUES (?1, ?2, '', 4, 'Legendary Creature — Frog', '[]', '[\"G\"]',
+                '[]', 'text', 'rare', '{\"commander\":\"legal\"}', 'tst', '1',
+                ?2, '2020-01-01')",
+            rusqlite::params![name, format!("oid-{i}")],
+        )
+        .unwrap();
+    }
+    conn.execute(
+        "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'commander', 'commander', 1)",
+        [],
+    )
+    .unwrap();
+    for i in 0..6 {
+        conn.execute(
+            "INSERT INTO card_tags (oracle_id, tag_id) VALUES (?1, 't1')",
+            rusqlite::params![format!("oid-{i}")],
+        )
+        .unwrap();
+    }
+    let paths = crate::paths::Paths::new(dir.path().to_path_buf());
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 6,
+        embedded_cards: 6,
+        model: "m".into(),
+        dim: 384,
+        names: vec![],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    std::fs::write(paths.root().join("vectors.bin"), Vec::<u8>::new()).unwrap();
+    let deck = super::super::Deck::parse("// DECK\n1 Forest\n").unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    // The top-2 fused ranks are the first candidates; excluding them must
+    // not shrink the result: 3 non-excluded rows still come back.
+    let excluded = ["Frog Chief 0".to_string(), "Frog Chief 1".to_string()];
+    let ranked = super::super::suggest::commander_candidates(
+        &paths,
+        &conn,
+        &mut out,
+        &deck,
+        Some("frog"),
+        None,
+        None,
+        None,
+        3,
+        &excluded,
+    )
+    .unwrap();
+    assert_eq!(
+        ranked.len(),
+        3,
+        "exclusions drop before the limit cut; the limit is still filled"
+    );
+    assert!(
+        !ranked.iter().any(|(c, _, _)| excluded.contains(&c.name)),
+        "no excluded card survives"
     );
 }

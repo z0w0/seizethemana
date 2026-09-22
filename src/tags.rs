@@ -28,10 +28,12 @@ pub struct TagRecord {
 }
 
 /// One card-tag association.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub struct Tagging {
+    /// Oracle id of the tagged card; empty entries are skipped at ingest.
     #[serde(default)]
     pub oracle_id: String,
+    /// Association strength ("0"-"3"), stored as given.
     #[serde(default)]
     pub weight: String,
 }
@@ -253,8 +255,16 @@ pub fn ingest(
         let mut ct_stmt = conn.prepare(
             "INSERT OR IGNORE INTO card_tags (oracle_id, tag_id, weight) VALUES (?1, ?2, ?3)",
         )?;
+        let mut seen_ids: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
         for tag in &records {
-            let use_count = tag.taggings.len() as i64;
+            seen_ids.insert(tag.id.clone());
+            // use_count counts real associations: taggings with an empty
+            // oracle_id are skipped at insert and stay out of the count.
+            let use_count = tag
+                .taggings
+                .iter()
+                .filter(|tg| !tg.oracle_id.is_empty())
+                .count() as i64;
             tag_stmt.execute(rusqlite::params![tag.id, tag.slug, tag.label, use_count])?;
             for tg in &tag.taggings {
                 if tg.oracle_id.is_empty() {
@@ -265,6 +275,18 @@ pub fn ingest(
         }
         drop(ct_stmt);
         drop(tag_stmt);
+        // Tags absent from the incoming file are gone from the source;
+        // drop them (and their card_tags) so stale labels stop matching.
+        // An empty incoming file is a corrupt/partial bulk, not a wipe:
+        // keep the previous tags in that case.
+        if !seen_ids.is_empty() {
+            conn.execute(
+                "DELETE FROM tags WHERE id NOT IN (
+                    SELECT value FROM json_each(?1)
+                )",
+                rusqlite::params![serde_json::to_string(&seen_ids)?],
+            )?;
+        }
         Ok(TagIngestSummary {
             tags: records.len(),
             tagged_cards: tagged_cards.len(),

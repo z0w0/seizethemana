@@ -43,6 +43,7 @@ fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &
 /// A deck text with one section.
 fn test_perm(card_idx: usize) -> super::game::InPlay {
     super::game::InPlay {
+        uid: 0,
         card: card_idx,
         tapped: false,
         sick: false,

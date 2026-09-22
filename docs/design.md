@@ -79,21 +79,28 @@ stm query <QUERY> [filters] [--limit N] [--json]
 stm collection [--json]                           # stats/overview
 stm collection import <file> [--add] [--force]    # replace default; --add merges
 stm collection query <QUERY> [filters] [--binder NAME]... [--deck NAME]... [--json]
+stm collection conflicts [--json]                 # cards wanted by more decks than owned copies
 
 stm deck create <name>
 stm deck list [--json]                            # decklists + unimported collection decks
 stm deck show <name> [--json]                     # `stm deck <name>` sugar
-stm deck update <name> [--add SPEC]... [--remove SPEC]... [--set SPEC]... [--from FILE]
+stm deck hand <name> [--seed S] [--count N] [--json]   # sample opening hands (sim's deal rules)
+stm deck update <name> [--add SPEC]... [--remove SPEC]... [--set SPEC]... [--move SPEC]...
+            [--from FILE] [--allow-partial] [--dry-run [--sim]] [--legal]
+            [--backfill-basics] [--json]
 stm deck dedupe <name> [--json]                   # merge duplicate same-name lines
-stm deck suggest <name> [--query TEXT] [--role ROLE] [--commander] [--format FMT] [--limit N] [--json]
+stm deck suggest <name> [--query TEXT] [--role ROLE] [--commander] [--format FMT]
+            [--owned] [--exclude NAME|FILE]... [--max-price USD] [--limit N] [--json]
 stm deck legal <name> [--format FMT] [--bracket 1-5] [--json]
 stm deck simulate <name> [--runs N] [--turns N] [--seed S] [--format FMT] [--baseline FILE] [--bracket 1-5] [--json]
 stm deck combos <name> [--format FMT] [--bracket 1-5] [--json]   # Spellbook combo audit, per section
 stm deck cuts <name> [--count N] [--for ROLE] [--bracket 1-5] [--json]   # ranked expendability + cut/fill pairing
-stm deck diff <A> <B-or-file> [--exact] [--json] [--markdown]     # original -> optimized change instructions
-stm deck import <name> <file>                     # upsert the decklist from ManaBox deck txt
+stm deck diff <A> <B-or-file> [--exact] [--json] [--markdown] [--as-update]   # change instructions
+stm deck import <name> <file|none> [--url URL] [--format FMT]  # upsert the decklist (auto-detect or pinned format)
 stm deck delete <name>                            # decklist only; ownership is kept
-stm deck export <name> <file> [--force] [--format manabox|names]
+stm deck mana <name> [--json]                     # mana-base audit against the bracket band
+stm deck copy <name> <new-name>
+stm deck export <name> <file> [--force] [--format manabox|names|moxfield|archidekt|arena]
 stm deck buylist <name> [--store generic|cardkingdom|tcgplayer] [--json]
 stm deck primer <name> [--set FILE]               # no --set prints the primer markdown
 ```
@@ -106,7 +113,9 @@ Conventions:
   (`--type --color --color-identity --cmc --power --toughness --rarity
   --set --keyword --oracle-text --format`); numeric filters take comparison
   operators (`<=`, `<`, `=`, `>`, `>=`).
-- `--limit` defaults to 20, capped at 100.
+- `--limit` defaults to 20, capped at 100, except `deck suggest` (default
+  10, capped at 50 — suggestion rows are long) and `deck cuts --count`
+  (default 5, capped at 50).
 - `query` and `collection query` are hybrid: SQLite full-text (BM25)
   and vector (semantic) legs, fused by reciprocal rank fusion. The
   printed and JSON `score` is the fused score normalized to 0–1, not raw
@@ -118,8 +127,9 @@ Conventions:
   toward lower EDHREC rank.
 - `--json` works on every read command. `--data-dir/--no-color/
   --offline/--verbose` are global.
-- When card data or prices are more than 24h old, the command quietly
-  refreshes first; `--offline` skips that.
+- When card data or prices are more than 24h old, the command refreshes
+  before it runs (synchronous: a stale store makes the read block for a
+  full sync); `--offline` skips that.
 - Two import paths, two concepts. `stm collection import` is the only
   collection-CSV path and writes ownership only; it never touches deck
   files and points at the decklist step with a `note:`. `stm deck import`
@@ -134,7 +144,13 @@ Conventions:
   effects) naming the offenders.
 - `stm deck update` warns (not fails) when an op would push a non-basic
   card past one copy in a commander-shaped deck; `stm deck dedupe` merges
-  accidental duplicates. `--from FILE` reads batch specs, one op per line.
+  accidental duplicates. Cards whose oracle text allows any number of
+  copies ("a deck can have any number of cards named ...") are exempt
+  from the singleton guard, the warning, and the dedupe collapse, exactly
+  as `deck legal` exempts them. `--backfill-basics` pads to the deck's
+  format size (100 commander / 60 brawl / 59 oathbreaker / 60 others)
+  with the commander's first identity color. `--from FILE` reads batch
+  specs, one op per line.
 - `stm deck suggest` fills roles or finds theme cards: semantic search +
   Scryfall Tagger labels + role keyword scan, fused by reciprocal rank
   fusion (EDHREC breaks ties), grouped owned cards first with each group
@@ -152,6 +168,29 @@ Conventions:
   automatically for 60-card formats. Human view: `A + B (commander) →
   produces [bracket] pop N legal: …`. Exit 3 when the card appears in no
   combo.
+- `stm deck update --dry-run` validates the ops exactly like a real
+  update (oracle names, singleton guard) and applies them to a copy in
+  memory only. Human output prints three blocks: the change list
+  (`-`/`+`/`~` rows), the cost impact (new to-buy slots at the cheapest
+  printing, money freed by removals, net spend), and with `--sim` a
+  same-seed before/after consistency delta (shape counts, metric lines,
+  problems `+` new / `-` resolved; exit 1 only on a new problem). Nothing
+  is written; the closing note says to re-run without `--dry-run` to
+  apply. `--json` carries `{name, dry_run, changes, cost, sim}` where
+  `cost` is `{to_buy: {items: [{name, quantity, price_usd,
+  owned}], total_usd}, freed_usd, net_usd}` and `sim` is the
+  `ReportDiff` (null without `--sim`). `--json` also works on real
+  updates (the one-line summary as JSON).
+- `stm collection conflicts` compares every decklist's slot demand
+  against owned copies: rows only where demand exceeds supply (basics
+  excluded), each with the competing decks and the cheapest-printing cost
+  to close the gap. Informational: always exit 0. Decks registered in the
+  collection but missing a decklist print once as "unverified".
+- `stm deck hand <name> [--seed S] [--count N]` deals sample opening
+  hands with the simulator's shuffle + mulligan rules: seed N's first
+  hand is sim game #1's opener, so advice and sim runs never disagree.
+  Each hand prints with a keep/mull sentence (land count vs the keep
+  band, early plays); `--json` wraps `{seed, hands}`.
 - `stm deck simulate` runs Monte Carlo goldfish games (default 10,000 —
   ±0.5pp on percentages) and prints an overview block of aggregates, the
   worst-3 slow-to-cast cards, and `error:` problem lines with a category +
@@ -203,7 +242,8 @@ Conventions:
   incumbents already serving that role.
 - `stm deck diff <A> <B>` prints per-section change instructions
   (removed / added / quantity changed; basics and quantity shifts
-  collapse to `Name: N → M` rows). `--markdown` renders the change-log
+  collapse to `Name: N → M` rows). `--as-update` emits `deck update
+  --from` spec lines instead (print suffixes stripped so the ops parse). `--markdown` renders the change-log
   instruction table for `decks/<name>.changes.md` (basics read
   "Remove 4 Forests and 2 Islands"); `--exact` diffs by print identity
   instead of card name. Both operands are a deck name or a ManaBox txt
@@ -211,7 +251,19 @@ Conventions:
 - `stm deck export --format names` writes plain `qty Name` lines (no
   set/collector-number decorations) — the shim-free feed for external
   tools and diffs. `manabox` (default) stays the ManaBox-compatible
-  format.
+  format. `moxfield` (`2x Name (set) cn *F*`), `archidekt`
+  (`1x Name [set] cn *F*`), and `arena` (bare-word headers) render the
+  other sites' txt shapes; unknown prints export bare in every format.
+- `stm deck import` reads every format above plus `names`, auto-detecting
+  the shape unless `--format` pins one. `--url <URL>` fetches an
+  Archidekt deck instead of reading a file (the only deck host whose API
+  serves unauthenticated JSON to a non-browser agent; Scryfall has no
+  public deck API and Moxfield blocks bots). Requests send a
+  `seizethemana/<version>` user agent. Fetched decks render to ManaBox
+  txt first, so the commander-inference + primer + ownership pipeline
+  runs unchanged. Moxfield and other sites still import fine as exported
+  txt files. Network errors name the host and carry a hint; `--offline`
+  refuses `--url` up front with a usage error.
 - `stm card similar` ranks cards by reciprocal-rank fusion of shared
   Tagger oracle tags and stored-vector cosine to the seed (tags-only with
   a note when the seed has no stored vector; `score` is `null` then).
@@ -259,3 +311,9 @@ hint: run 'stm setup' first
   `--no-color`. ANSI in parsed output is a bug.
 - No extra verbosity in `--json`. The JSON is the contract; text is the
   decoration.
+- The simulator stays solitaire (goldfish). It never models opponents,
+  blockers, or interaction resolving — findings measure capacity, not
+   events.
+- No jargon in user-facing sim strings. Findings say what they mean in
+  plain English; the machine-readable `kind` values are the only place
+  the shorthand lives.

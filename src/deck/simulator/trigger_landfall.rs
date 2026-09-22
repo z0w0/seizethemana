@@ -10,7 +10,10 @@ use super::model::{Ability, Effect, draw_amount};
 pub(super) fn landfall_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
     let landfall = lower.contains("landfall")
         || (lower.contains("whenever a land") && lower.contains("enters"));
-    if !landfall || lower.contains("opponent") {
+    if !landfall
+        || lower.contains("opponent")
+        || lower.contains("land enters the battlefield tapped")
+    {
         return false;
     }
     if (lower.contains("add one mana") || lower.contains("add {")) && !lower.contains("draw") {

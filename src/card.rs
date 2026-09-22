@@ -3,6 +3,26 @@ use anyhow::Context;
 // `stm card`: full detail for one card by (fuzzy) name, plus tag-overlap
 // neighbors (`stm card similar`).
 
+/// Report an ambiguous name: sample candidates plus the real match count.
+fn ambiguous_error(
+    out: &mut crate::output::Output,
+    typed: &str,
+    candidates: &[String],
+    total: usize,
+) -> anyhow::Result<i32> {
+    out.error(&format!(
+        "{typed:?} matches {total} cards; be more specific"
+    ));
+    let listed: Vec<&str> = candidates.iter().take(12).map(String::as_str).collect();
+    let mut hint = format!("did you mean: {}", listed.join(", "));
+    let shown = listed.len();
+    if total > shown {
+        hint.push_str(&format!(" (+{} more)", total - shown));
+    }
+    out.hint(&hint);
+    Ok(crate::cli::codes::NO_RESULTS)
+}
+
 /// Entry point for `stm card <name>`.
 ///
 /// Resolution is exact → case-insensitive → unique prefix; ambiguous prefixes
@@ -21,13 +41,8 @@ pub fn run_card(
     }
     let card = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
         crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous(candidates) => {
-            out.error(&format!(
-                "{typed:?} matches {} cards; be more specific",
-                candidates.len()
-            ));
-            out.hint(&format!("did you mean: {}", candidates.join(", ")));
-            return Ok(crate::cli::codes::NO_RESULTS);
+        crate::db::NameMatch::Ambiguous { candidates, total } => {
+            return ambiguous_error(out, typed, &candidates, total);
         }
         crate::db::NameMatch::NotFound => {
             out.error(&format!("no card named {typed:?}"));
@@ -39,15 +54,13 @@ pub fn run_card(
     if json {
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let ranges = crate::prints::price_ranges(conn, std::slice::from_ref(&card.name))
-            .ok()
-            .unwrap_or_default();
+            .context("reading card price range")?;
         let range = ranges.get(&card.name).cloned().unwrap_or_default();
         let universe = crate::universe::card_universe(conn, &card.name, &card.set_code)?;
         print_json(&card, &tag_index, &range, &universe)?;
     } else {
-        let range = crate::prints::price_range(conn, &card.name)
-            .ok()
-            .unwrap_or_default();
+        let range =
+            crate::prints::price_range(conn, &card.name).context("reading card price range")?;
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let universe = crate::universe::card_universe(conn, &card.name, &card.set_code)?;
         print_text(out, &card, &range, &tag_index, &universe);
@@ -127,7 +140,7 @@ pub fn card_json(
 /// Render a framed magic-card-style view on stdout.
 ///
 /// Box width follows the terminal (clamped to 40..=100); falls back to the
-/// same frame at width 72 when the terminal size is unknown. The plain (no
+/// same frame at width 80 when the terminal size is unknown. The plain (no
 /// color) path keeps the frame — it still reads as a card.
 fn print_text(
     out: &crate::output::Output,
@@ -153,24 +166,40 @@ fn print_text(
     let blank = line(String::new());
 
     println!("{}", styles.dim(&top));
-    // Header: name left, mana cost right.
+    // Header: name left, mana cost right — the real card's top row.
     let name = styles.card_name(&card.name);
     let cost = styles.mana_pips(&card.mana_cost);
     let gap = inner.saturating_sub(measure(&name) + measure(&cost));
     println!("│ {name}{}{cost} │", " ".repeat(gap));
     println!("{}", blank);
+    // Type + rarity, styled like the printed frame: the rarity reads as
+    // its expansion symbol color.
+    let rarity_glyph = match card.rarity.as_str() {
+        "mythic" => "◆",
+        "rare" => "◆",
+        "uncommon" => "◆",
+        "common" => "◆",
+        _ => "",
+    };
     println!(
         "{}",
         line(format!(
-            "{}  {}",
+            "{}  {}{}",
             styles.dim(&card.type_line),
-            styles.rarity(&card.rarity)
+            styles.rarity(&card.rarity),
+            styles.rarity(rarity_glyph)
         ))
     );
+    // Stat box: P/T bottom-right on a real creature card; loyalty for a
+    // planeswalker. Rendered right-aligned like the printed layout.
     if let (Some(p), Some(t)) = (&card.power, &card.toughness) {
-        println!("{}", line(format!("P/T: {p}/{t}")));
+        let pt = styles.dim(&format!("{} / {}", p, t));
+        let pad = inner.saturating_sub(measure(&pt));
+        println!("│ {}{pt} │", " ".repeat(pad));
     } else if let Some(loyalty) = &card.loyalty {
-        println!("{}", line(format!("Loyalty: {loyalty}")));
+        let pt = styles.rarity(&format!("+{loyalty}"));
+        let pad = inner.saturating_sub(measure(&pt));
+        println!("│ {}{pt} │", " ".repeat(pad));
     }
     // Community role labels from Tagger (omitted when the card has none).
     let labels = tag_index.labels_for(&card.oracle_id);
@@ -276,11 +305,8 @@ fn print_text(
         let text_lines = crate::output::Styles::wrap(&format!("Legal in: {joined}"), inner);
         for (i, text_line) in text_lines.into_iter().enumerate() {
             let content = if i == 0 {
-                format!(
-                    "{} {}",
-                    styles.dim("Legal in:"),
-                    styles.dim(&text_line["Legal in: ".len()..])
-                )
+                let rest = text_line.strip_prefix("Legal in: ").unwrap_or(&text_line);
+                format!("{} {}", styles.dim("Legal in:"), styles.dim(rest))
             } else {
                 styles.dim(&format!("           {text_line}"))
             };
@@ -608,7 +634,9 @@ fn seed_vector(
 
 /// Cosine ranks against the seed's stored vector: `(name, score)` pairs,
 /// best first, excluding the seed row. Rows are unit-normalized, so dot
-/// product is cosine.
+/// product is cosine. When `restrict` is set the filter applies BEFORE
+/// ranking, matching `run_search`: ranks drive RRF, so a filtered-out
+/// store must not inflate the rank distance of the survivors.
 fn vector_leg(
     store: &crate::embed::VectorStore,
     seed_row: usize,
@@ -618,6 +646,10 @@ fn vector_leg(
 ) -> Vec<(String, f64)> {
     let mut scored: Vec<(usize, f32)> = (0..store.meta.names.len())
         .filter(|i| *i != seed_row)
+        .filter(|i| {
+            let name = &store.meta.names[*i];
+            restrict.is_none_or(|set| set.contains(name))
+        })
         .map(|i| {
             let row = store.row(i);
             let dot: f32 = seed.iter().zip(row).map(|(q, v)| q * v).sum();
@@ -627,10 +659,6 @@ fn vector_leg(
     scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
     scored
         .into_iter()
-        .filter(|(i, _)| {
-            let name = &store.meta.names[*i];
-            restrict.is_none_or(|set| set.contains(name))
-        })
         .take(depth)
         .map(|(i, score)| (store.meta.names[i].clone(), score as f64))
         .collect()
@@ -657,13 +685,8 @@ pub fn run_similar(
     }
     let seed = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
         crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous(candidates) => {
-            out.error(&format!(
-                "{typed:?} matches {} cards; be more specific",
-                candidates.len()
-            ));
-            out.hint(&format!("did you mean: {}", candidates.join(", ")));
-            return Ok(crate::cli::codes::NO_RESULTS);
+        crate::db::NameMatch::Ambiguous { candidates, total } => {
+            return ambiguous_error(out, typed, &candidates, total);
         }
         crate::db::NameMatch::NotFound => {
             out.error(&format!("no card named {typed:?}"));
@@ -721,10 +744,12 @@ pub fn run_similar(
     let mut vector_names: Vec<&str> = vector_hits.iter().map(|(n, _)| n.as_str()).collect();
     vector_names.sort_unstable();
     vector_names.dedup();
-    let vector_rows: Vec<crate::db::CardRow> = vector_names
-        .iter()
-        .filter_map(|name| crate::db::get_card(conn, name).ok().flatten())
-        .collect();
+    let mut vector_rows: Vec<crate::db::CardRow> = Vec::new();
+    for name in &vector_names {
+        if let Some(card) = crate::db::get_card(conn, name)? {
+            vector_rows.push(card);
+        }
+    }
     for card in &vector_rows {
         if let Some(rank) = card.edhrec_rank {
             ranks.entry(card.name.as_str()).or_insert(rank);
@@ -735,7 +760,9 @@ pub fn run_similar(
     });
     // Re-attach cards + tags to the fused ranking. Vector-only names
     // (no shared tags) carry `shared_count: 0` / empty tags so the fused
-    // window never shrinks below `--limit`.
+    // window never shrinks below `--limit`. A fused name with no card row
+    // (store ahead of the oracle) still keeps its slot with a stub card so
+    // the result count stays stable.
     let mut hits: Vec<SimilarHit> = fused
         .into_iter()
         .filter_map(|(name, score)| {
@@ -744,7 +771,11 @@ pub fn run_similar(
                 hit.score = Some(score);
                 return Some(hit);
             }
-            let card = vector_rows.iter().find(|c| c.name == name)?.clone();
+            let card = vector_rows
+                .iter()
+                .find(|c| c.name == name)
+                .cloned()
+                .or_else(|| crate::db::get_card(conn, name.as_str()).ok().flatten())?;
             Some(SimilarHit {
                 card,
                 shared_count: 0,
@@ -780,11 +811,11 @@ fn finish_similar(
         let tag_index = crate::tags::TagIndex::load(conn)?;
         let names: Vec<String> = hits.iter().map(|hit| hit.card.name.clone()).collect();
         // One batched query per finish kind instead of four per card name.
-        let ranges = crate::prints::price_ranges(conn, &names).unwrap_or_default();
+        let ranges = crate::prints::price_ranges(conn, &names)?;
         let items: Vec<serde_json::Value> = hits
             .iter()
-            .filter_map(|hit| {
-                let range = ranges.get(&hit.card.name)?;
+            .map(|hit| {
+                let range = ranges.get(&hit.card.name).cloned().unwrap_or_default();
                 let universe =
                     crate::universe::card_universe(conn, &hit.card.name, &hit.card.set_code)
                         .unwrap_or(crate::universe::CardUniverse {
@@ -794,7 +825,7 @@ fn finish_similar(
                             set_type: None,
                             block: None,
                         });
-                let mut v = card_json(&hit.card, &tag_index, range, &universe);
+                let mut v = card_json(&hit.card, &tag_index, &range, &universe);
                 // Null score when the seed had no stored vector (tags-only
                 // ranking); agents can tell "no score" from "unranked".
                 v["score"] = match hit.score {
@@ -805,7 +836,7 @@ fn finish_similar(
                 };
                 v["shared_count"] = serde_json::json!(hit.shared_count);
                 v["shared_tags"] = serde_json::json!(hit.shared_tags);
-                Some(v)
+                v
             })
             .collect();
         println!("{}", serde_json::to_string_pretty(&items)?);
@@ -899,13 +930,8 @@ pub fn run_combos(
     }
     let seed = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
         crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous(candidates) => {
-            out.error(&format!(
-                "{typed:?} matches {} cards; be more specific",
-                candidates.len()
-            ));
-            out.hint(&format!("did you mean: {}", candidates.join(", ")));
-            return Ok(crate::cli::codes::NO_RESULTS);
+        crate::db::NameMatch::Ambiguous { candidates, total } => {
+            return ambiguous_error(out, typed, &candidates, total);
         }
         crate::db::NameMatch::NotFound => {
             out.error(&format!("no card named {typed:?}"));

@@ -9,6 +9,7 @@
 
 use crate::db::CardRow;
 use crate::deck::Deck;
+use anyhow::Context;
 use std::collections::HashMap;
 
 /// Mana curve bucket for a nonland card's CMC (`"0"`..`"6"`, `"7+"`).
@@ -78,11 +79,15 @@ pub struct DeckStats {
 /// Card rows for every deck entry name, keyed by name.
 ///
 /// Names not in the oracle are absent from the map, so the overview shows
-/// them as data-less copies only.
+/// them as data-less copies only. SQL failures propagate as errors; they
+/// never silently empty the map and mark every card unknown.
 ///
 /// # Errors
 /// Propagates SQLite failures.
-pub fn lookup_names(conn: &rusqlite::Connection, deck: &Deck) -> HashMap<String, CardRow> {
+pub fn lookup_names(
+    conn: &rusqlite::Connection,
+    deck: &Deck,
+) -> anyhow::Result<HashMap<String, CardRow>> {
     let mut map = HashMap::new();
     // Chunked IN-lookups over the deck's own names instead of materializing
     // every card in the store; a 40-card deck reads 40 rows, not 33,000.
@@ -97,7 +102,7 @@ pub fn lookup_names(conn: &rusqlite::Connection, deck: &Deck) -> HashMap<String,
         unique
     };
     if names.is_empty() {
-        return map;
+        return Ok(map);
     }
     const CHUNK: usize = 400;
     let row_sql = "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
@@ -106,41 +111,43 @@ pub fn lookup_names(conn: &rusqlite::Connection, deck: &Deck) -> HashMap<String,
                 game_changer
          FROM cards WHERE name IN";
     for chunk in names.chunks(CHUNK) {
-        let placeholders = chunk.iter().map(|_| "?").collect::<Vec<_>>().join(", ");
-        let mut stmt = match conn.prepare(&format!("{row_sql} ({placeholders})")) {
-            Ok(stmt) => stmt,
-            Err(_) => return map,
-        };
-        let rows = stmt.query_map(rusqlite::params_from_iter(chunk.iter()), |row| {
-            Ok(CardRow {
-                name: row.get(0)?,
-                oracle_id: row.get(1)?,
-                mana_cost: row.get(2)?,
-                cmc: row.get(3)?,
-                type_line: row.get(4)?,
-                colors: row.get(5)?,
-                color_identity: row.get(6)?,
-                keywords: row.get(7)?,
-                power: row.get(8)?,
-                toughness: row.get(9)?,
-                loyalty: row.get(10)?,
-                oracle_text: row.get(11)?,
-                rarity: row.get(12)?,
-                edhrec_rank: row.get(13)?,
-                legalities: row.get(14)?,
-                set_code: row.get(15)?,
-                collector_number: row.get(16)?,
-                scryfall_id: row.get(17)?,
-                released_at: row.get(18)?,
-                game_changer: row.get(19)?,
+        let mut stmt = conn
+            .prepare(&format!(
+                "{row_sql} ({})",
+                chunk.iter().map(|_| "?").collect::<Vec<_>>().join(", ")
+            ))
+            .context("preparing card lookup")?;
+        let rows = stmt
+            .query_map(rusqlite::params_from_iter(chunk.iter()), |row| {
+                Ok(CardRow {
+                    name: row.get(0)?,
+                    oracle_id: row.get(1)?,
+                    mana_cost: row.get(2)?,
+                    cmc: row.get(3)?,
+                    type_line: row.get(4)?,
+                    colors: row.get(5)?,
+                    color_identity: row.get(6)?,
+                    keywords: row.get(7)?,
+                    power: row.get(8)?,
+                    toughness: row.get(9)?,
+                    loyalty: row.get(10)?,
+                    oracle_text: row.get(11)?,
+                    rarity: row.get(12)?,
+                    edhrec_rank: row.get(13)?,
+                    legalities: row.get(14)?,
+                    set_code: row.get(15)?,
+                    collector_number: row.get(16)?,
+                    scryfall_id: row.get(17)?,
+                    released_at: row.get(18)?,
+                    game_changer: row.get(19)?,
+                })
             })
-        });
-        let Ok(rows) = rows else { return map };
+            .context("reading card rows")?;
         for row in rows.flatten() {
             map.insert(row.name.clone(), row);
         }
     }
-    map
+    Ok(map)
 }
 
 /// Compute the overview stats for a deck joined to card metadata.
@@ -220,7 +227,7 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
 }
 
 /// The curve-target sentence for the deck: format/archetype-aware from
-/// the Phase 2 average-MV bands, three-way in both formats. Commander
+/// the average-MV bands, three-way in both formats. Commander
 /// decks anchor on the singleton turn scale; 60-card decks on the
 /// Karsten band class.
 pub fn curve_target(is_commander: bool, avg_cmc: f64) -> &'static str {

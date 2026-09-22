@@ -2,107 +2,31 @@
 // to keep files small. Pure apart from the passed RNG.
 
 use super::cast_phase::{cast_phase, play_land};
+use super::deal::{Opener, deal_opener};
 use super::game::{
-    GameLog, GameState, HAND_LIMIT, InPlay, OPENING_HAND, Pool, card_of, fire_on_enter, land_types,
-    new_perm, register_loyalty_token_engines,
+    GameLog, GameState, HAND_LIMIT, InPlay, Pool, card_of, fire_on_enter, fire_on_enter_opts,
+    land_types, new_perm_with, register_loyalty_token_engines, take_uid,
 };
 use super::game_effects::{apply_effect, spend_leftover, tap_budget};
 use super::game_mana::{
     add_yield, add_yield_turns, effective_min_cost, pay_cost, payable, pips_ok,
 };
 use super::model::{Effect, Role, Scale, SimDeck, Trigger};
-use rand::Rng;
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
-/// Karsten's London mulligan for a 7-card opener outside the 2-5 land
-/// keep band: redraw a fresh 7, then bottom one card toward 3 lands (a
-/// land at 4+ lands, a spell below that). Only the redrawn hand bottoms;
-/// kept hands stay at 7 cards. Returns the 6-card hand and its land
-/// count.
-pub(super) fn london_mulligan(
-    deck: &SimDeck,
-    library: &mut Vec<usize>,
-    rng: &mut ChaCha8Rng,
-) -> (Vec<usize>, u8) {
-    let mut hand = take_n(library, OPENING_HAND);
-    let opener_lands = count_lands_in(deck, &hand);
-    let pos = bottom_position(deck, &hand, opener_lands);
-    let card = hand.remove(pos);
-    let at = rng.random_range(0..=library.len());
-    library.insert(at, card);
-    (hand, opener_lands)
-}
-
-/// Position of the card to bottom from a redrawn 7-card hand: a land at
-/// 4+ lands (shed the flood), a spell below that (a land/spell MDFC
-/// counts as land-able and is not bottomed for its spell face).
-pub(super) fn bottom_position(deck: &SimDeck, hand: &[usize], opener_lands: u8) -> usize {
-    if opener_lands >= 4 {
-        hand.iter()
-            .position(|i| deck.cards[*i].role == Role::Land)
-            .unwrap_or(0)
-    } else {
-        hand.iter()
-            .position(|i| deck.cards[*i].role != Role::Land && !deck.cards[*i].is_mdfc_spell)
-            .unwrap_or(0)
-    }
-}
-
-/// Draw n cards off the bottom of the shuffled library.
-fn take_n(library: &mut Vec<usize>, n: usize) -> Vec<usize> {
-    let n = n.min(library.len());
-    library.split_off(library.len() - n)
-}
-
-#[cfg(test)]
-pub(super) fn take_for_test(library: &mut Vec<usize>) -> Vec<usize> {
-    take_n(library, OPENING_HAND)
-}
-
-/// Land-able count of a hand: lands plus MDFCs (a land/spell MDFC
-/// plays as a land when nothing else is available, so the mulligan
-/// policy counts it land-able).
-pub(super) fn count_lands_in(deck: &SimDeck, hand: &[usize]) -> u8 {
-    hand.iter()
-        .filter(|i| deck.cards[**i].role == Role::Land || deck.cards[**i].is_mdfc_spell)
-        .count() as u8
-}
-
+/// Play one goldfish game and return its log. Pure apart from the
+/// passed RNG: same deck + same seed = same game. The log carries the
+/// per-turn census the aggregate/report layers read.
 pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     let turns = turns.max(1) as usize;
-    let mut library: Vec<usize> = (0..deck.cards.len()).collect();
-    for i in (1..library.len()).rev() {
-        let j = rng.random_range(0..=i);
-        library.swap(i, j);
-    }
-    // Draw the opening hand from the bottom of the shuffled vec.
-    let take = |library: &mut Vec<usize>, n: usize| -> Vec<usize> { take_n(library, n) };
-    let mut hand = take(&mut library, OPENING_HAND);
-
-    // Mulligan policy comes from the format rules: commander family
-    // redraws once outside its land band; constructed plays London
-    // mulligans (redraw, then bottom one chosen card, keeping six).
-    let mut opener_lands = count_lands_in(deck, &hand);
-    let mut mulliganed = false;
-    match deck.rules.mulligan {
-        super::format::MulliganPolicy::FreeRedraw {
-            land_band: (lo, hi),
-        } => {
-            if !(lo..=hi).contains(&opener_lands) {
-                mulliganed = true;
-                hand = take(&mut library, OPENING_HAND);
-                opener_lands = count_lands_in(deck, &hand);
-            }
-        }
-        super::format::MulliganPolicy::London => {
-            let redraw = !(2..=5).contains(&opener_lands) && hand.len() >= OPENING_HAND;
-            if redraw {
-                mulliganed = true;
-                (hand, opener_lands) = london_mulligan(deck, &mut library, rng);
-            }
-        }
-    }
+    let opener = deal_opener(deck, rng);
+    let Opener {
+        hand,
+        library,
+        lands: opener_lands,
+        mulliganed,
+    } = opener;
 
     // Leyline-style openers begin the game on the battlefield.
     let mut st = GameState {
@@ -122,20 +46,29 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         extra_turns_queued: 0,
         prowess_casts: 0,
         infinite_mana_suspected: false,
+        next_uid: 0,
     };
+    let mut leyline_idx: Vec<usize> = Vec::new();
     st.hand.retain(|&idx| {
         if deck.cards[idx].opens_in_play {
-            st.battlefield_seen.entry(idx).or_insert(0);
-            st.battlefield.push(new_perm(deck, idx, 0, false));
+            leyline_idx.push(idx);
             false
         } else {
             true
         }
     });
-    st.seen = st.hand.len() as u32;
+    for idx in leyline_idx {
+        st.battlefield_seen.entry(idx).or_insert(0);
+        let uid = take_uid(&mut st);
+        st.battlefield.push(new_perm_with(uid, deck, idx, 0, false));
+    }
+    // Leyline openers count as seen: they left the hand zone.
+    st.seen = (st.hand.len() + st.battlefield.len()) as u32;
 
-    // Draw engines in play: (battlefield position, draws per turn).
-    let mut engines: Vec<(usize, u32)> = Vec::new();
+    // Draw engines in play: (permanent uid, draws per turn). The uid
+    // resolves to a battlefield position at fire time, so removals
+    // (sacrifice outlets, saga completion) never alias another card.
+    let mut engines: Vec<(u32, u32)> = Vec::new();
     let mut land_drops = vec![0u8; turns];
     let mut mana_available = vec![0.0f64; turns];
     let mut mana_spent = vec![0.0f64; turns];
@@ -174,39 +107,51 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
     // The commander's synthetic engine tier (upkeep/end-step draws only)
     // comes from deck construction. Attack-gated draws live in real tiers
     // and fire through the combat path once the spacecraft animates.
-    let commander_engine_draws = deck.commanders.first().map(|cmd| {
-        cmd.station_tiers
-            .iter()
-            .filter(|t| t.at == 0)
-            .flat_map(|t| t.abilities.iter())
-            .filter(|a| a.trigger == Trigger::OnUpkeep)
-            .filter_map(|a| match a.effect {
-                Effect::Draw(n) => Some(n),
-                _ => None,
-            })
-            .sum::<u32>()
-    });
+    // Per-commander: each partner registers its own upkeep engine, so a
+    // partner pair never shares (or doubles) a firing.
+    let commander_engine_draws: Vec<Option<u32>> = deck
+        .commanders
+        .iter()
+        .map(|cmd| {
+            Some(
+                cmd.station_tiers
+                    .iter()
+                    .filter(|t| t.at == 0)
+                    .flat_map(|t| t.abilities.iter())
+                    .filter(|a| a.trigger == Trigger::OnUpkeep)
+                    .filter_map(|a| match a.effect {
+                        Effect::Draw(n) => Some(n),
+                        _ => None,
+                    })
+                    .sum::<u32>(),
+            )
+        })
+        .collect();
     // Commanders with any other OnUpkeep engine (drain, mill, tokens,
     // recursion) register a zero-draw engine: the upkeep loop runs the
     // real parsed abilities for a pushed slot.
-    let commander_engine_other = deck.commanders.first().is_some_and(|cmd| {
-        cmd.station_tiers
-            .iter()
-            .filter(|t| t.at == 0)
-            .flat_map(|t| t.abilities.iter())
-            .any(|a| {
-                a.trigger == Trigger::OnUpkeep
-                    && matches!(
-                        a.effect,
-                        Effect::Mill(_)
-                            | Effect::ReturnFromGraveyard { .. }
-                            | Effect::Drain(_)
-                            | Effect::Tokens(_)
-                            | Effect::Wheel
-                            | Effect::Loot(_)
-                    )
-            })
-    });
+    let commander_engine_other: Vec<bool> = deck
+        .commanders
+        .iter()
+        .map(|cmd| {
+            cmd.station_tiers
+                .iter()
+                .filter(|t| t.at == 0)
+                .flat_map(|t| t.abilities.iter())
+                .any(|a| {
+                    a.trigger == Trigger::OnUpkeep
+                        && matches!(
+                            a.effect,
+                            Effect::Mill(_)
+                                | Effect::ReturnFromGraveyard { .. }
+                                | Effect::Drain(_)
+                                | Effect::Tokens(_)
+                                | Effect::Wheel
+                                | Effect::Loot(_)
+                        )
+                })
+        })
+        .collect();
     let commander_station_at = deck.commanders.first().and_then(|cmd| cmd.animate_at());
 
     for turn in 1..=turns {
@@ -222,7 +167,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             .collect();
         for i in blink_positions {
             st.battlefield[i].blink_pending = false;
-            fire_on_enter(deck, &mut st, i, turn as u32);
+            fire_on_enter_opts(deck, &mut st, i, turn as u32, true);
         }
         for perm in st.battlefield.iter_mut() {
             perm.tapped = false;
@@ -237,29 +182,37 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         // Win-threshold engines check their counter stock here (Darksteel
         // Reactor class); planeswalker ultimates flag online when
         // loyalty reaches the minus cost.
-        let engine_positions: Vec<usize> = engines
+        // Engine entries whose permanent left the battlefield drop out
+        // here (dead entries never fire again).
+        let engine_uids: Vec<u32> = engines
             .iter()
-            .filter(|(pos, _)| {
-                *pos == usize::MAX || st.battlefield.get(*pos).is_some_and(|p| !p.tapped)
+            .filter(|(uid, _)| {
+                is_commander_sentinel(*uid)
+                    || st.battlefield.iter().any(|p| p.uid == *uid && !p.tapped)
             })
-            .map(|(pos, _)| *pos)
+            .map(|(uid, _)| *uid)
             .collect();
-        for pos in engine_positions {
-            let (host_card, is_cmd) = if pos == usize::MAX {
+        engines.retain(|(uid, _)| engine_uids.contains(uid));
+        for uid in engine_uids {
+            let (host_card, is_cmd) = if is_commander_sentinel(uid) {
                 (usize::MAX, true)
             } else {
-                match st.battlefield.get(pos) {
-                    Some(p) => (p.card, false),
+                match st
+                    .battlefield
+                    .iter()
+                    .find(|p| p.uid == uid)
+                    .map(|p| (p.card, false))
+                {
+                    Some(pair) => pair,
                     None => continue,
                 }
             };
             let upkeep_effects: Vec<Effect> = if is_cmd {
-                deck.commanders
-                    .iter()
-                    .flat_map(|c| c.abilities().cloned().collect::<Vec<_>>())
-                    .filter(|a| a.trigger == Trigger::OnUpkeep)
-                    .map(|a| a.effect)
-                    .collect()
+                // One sentinel per cast commander; the firing reads only
+                // that commander's own abilities, so two partners each
+                // fire once per turn instead of every upkeep effect
+                // firing per sentinel.
+                commander_upkeep_effects(deck, commander_sentinel_slot(uid))
             } else {
                 deck.cards
                     .get(host_card)
@@ -305,6 +258,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                             if let Some(i) = st.library.pop() {
                                 st.hand.push(i);
                                 st.seen += 1;
+                                st.awareness_cards += 1;
                             }
                         }
                     }
@@ -413,6 +367,8 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             st.seen += 1;
             st.awareness_cards += 1;
         }
+        // (Upkeep draws counted in the engine loop above; the effect
+        // executor's Draw arm adds awareness for applied upkeep draws.)
 
         // Record role sightings from the hand.
         for i in &st.hand {
@@ -588,17 +544,15 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
 
         // Commander cast: full pip check, cost deducted, joins the board.
         // The cost records in mana_spent once (this +=), not twice.
-        // Partner decks cast each commander separately; the log's cast turn
-        // is the first one (the command-zone availability timing).
+        // Partner decks cast EACH payable commander (each once per game);
+        // an unpayable commander is skipped and the next one still gets
+        // its try. The log's cast turn is the first one (the command-zone
+        // availability timing).
         // Snapshot the pool first: the mana-readiness check below must
         // see the pre-cast pool, or a same-turn commander cast pushes
         // every other card's readiness a turn later.
         let pool_before_commander = pool.clone();
         for (cmd_i, cmd) in deck.commanders.iter().enumerate() {
-            if commander_cast_turn.is_some() && cmd_i > 0 {
-                // Only the first commander's timing feeds the log curve.
-                break;
-            }
             if st
                 .battlefield
                 .iter()
@@ -607,7 +561,9 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 continue;
             }
             if !payable(&cmd.cost, &pool) || !pips_ok(&cmd.cost, &pool) {
-                break;
+                // Skip this commander; the next partner still gets its
+                // try this turn.
+                continue;
             }
             pay_cost(&cmd.cost, &mut pool);
             mana_spent[turn - 1] += cmd.cost.total() as f64;
@@ -616,7 +572,9 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 commander_castable = commander_cast_turn;
             }
             // The commander is a permanent with no library entry.
+            let cmd_uid = take_uid(&mut st);
             st.battlefield.push(InPlay {
+                uid: cmd_uid,
                 card: usize::MAX,
                 tapped: false,
                 sick: false,
@@ -637,8 +595,14 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                 // Not a station card: online the moment it is cast.
                 station_online = Some(turn as u32);
             }
-            if commander_engine_draws.is_some_and(|n| n > 0) || commander_engine_other {
-                engines.push((usize::MAX, commander_engine_draws.unwrap_or(0)));
+            if commander_engine_draws[cmd_i].is_some_and(|n| n > 0) || commander_engine_other[cmd_i]
+            {
+                // Sentinel uid encodes the commander slot: the upkeep
+                // loop fires that commander's abilities only.
+                engines.push((
+                    commander_sentinel_uid(cmd_i),
+                    commander_engine_draws[cmd_i].unwrap_or(0),
+                ));
             }
             // Planeswalker +1 token engines register at first cast: a
             // loyalty-gain activation that creates tokens is a repeatable
@@ -651,7 +615,11 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             fire_on_enter(deck, &mut st, cmd_pos, turn as u32);
         }
 
-        mana_available[turn - 1] = pool.total() as f64;
+        // Mana available is recorded from the pre-cast snapshot: the
+        // cast/activation passes spend from the same pool and
+        // `mana_spent` re-adds those costs, so recording post-payment
+        // availability would double-subtract in the unused-mana metric.
+        mana_available[turn - 1] = pool_before_commander.total() as f64;
 
         // Mana-readiness: the first turn the board could pay each card's
         // cost, independent of drawing it (the castability curve). The
@@ -689,14 +657,13 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         // speed interaction in hand while spare mana covered its cost?
         // The cheapest answer in hand decides; the goldfish never spends
         // it. Capacity, not events.
-        if turn <= turns {
+        {
             let cheapest = st
                 .hand
                 .iter()
                 .filter_map(|i| {
                     let c = &deck.cards[*i];
-                    (c.is_interaction && c.is_instant_speed)
-                        .then(|| c.min_cost.total().max(c.cost.total()))
+                    (c.is_interaction && c.is_instant_speed).then(|| c.min_cost.total())
                 })
                 .min();
             match cheapest {
@@ -789,15 +756,52 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                     let idx = st.hand.remove(pos);
                     land_drops[turn - 1] += 1;
                     st.battlefield_seen.entry(idx).or_insert(turn as u32);
-                    st.battlefield.push(new_perm(deck, idx, turn as u32, false));
+                    let uid = take_uid(&mut st);
+                    st.battlefield
+                        .push(new_perm_with(uid, deck, idx, turn as u32, false));
                 }
             }
             // Upkeep engines fire on the extra turn too (a Time Sieve
-            // loop keeps drawing).
-            for (pos, draws) in engines.clone() {
-                let Some(p) = st.battlefield.get(pos) else {
+            // loop keeps drawing). The commander sentinel uid resolves
+            // to its commander's own abilities like the main upkeep
+            // loop does.
+            for (uid, draws) in engines.clone() {
+                if is_commander_sentinel(uid) {
+                    // Commander sentinel: the cast commander permanents
+                    // (is_commander, on the battlefield) gate the firing;
+                    // each cast commander's own abilities fire once.
+                    if !st.battlefield.iter().any(|p| p.is_commander) {
+                        continue;
+                    }
+                    let cmd = deck
+                        .commanders
+                        .get(commander_sentinel_slot(uid))
+                        .unwrap_or(&deck.commanders[0]);
+                    let effects: Vec<Effect> = cmd
+                        .abilities()
+                        .filter(|a| a.trigger == Trigger::OnUpkeep)
+                        .map(|a| a.effect.clone())
+                        .collect();
+                    let mill_opp = cmd.mills_opponent;
+                    for effect in &effects {
+                        if let Effect::Draw(n) = effect {
+                            for _ in 0..*n {
+                                if let Some(i) = st.library.pop() {
+                                    st.hand.push(i);
+                                    st.seen += 1;
+                                    st.awareness_cards += 1;
+                                }
+                            }
+                            continue;
+                        }
+                        apply_effect(deck, effect, &mut st, turn as u32, mill_opp);
+                    }
+                    continue;
+                }
+                let Some(p) = st.battlefield.iter().find(|p| p.uid == uid) else {
                     continue;
                 };
+                let p = p.clone();
                 if p.tapped || p.fired {
                     continue;
                 }
@@ -806,27 +810,31 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                         if let Some(i) = st.library.pop() {
                             st.hand.push(i);
                             st.seen += 1;
+                            st.awareness_cards += 1;
                         }
                     }
                 } else {
-                    let card_idx = p.card;
-                    let mill_opp = deck.cards.get(card_idx).is_some_and(|c| c.mills_opponent);
+                    let host_card = p.card;
+                    let mill_opp = deck.cards.get(host_card).is_some_and(|c| c.mills_opponent);
                     let effects: Vec<Effect> = deck
                         .cards
-                        .get(card_idx)
+                        .get(host_card)
                         .map(|c| {
                             c.abilities()
                                 .filter(|a| a.trigger == Trigger::OnUpkeep)
-                                .map(|a| a.effect.clone())
-                                .collect()
+                                .cloned()
+                                .collect::<Vec<_>>()
                         })
-                        .unwrap_or_default();
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|a| a.effect)
+                        .collect();
                     for effect in &effects {
                         if let Effect::Draw(n) = effect {
                             // Scaling engines scale here too.
                             let scaled = deck
                                 .cards
-                                .get(card_idx)
+                                .get(host_card)
                                 .and_then(|c| c.draws_per_matching)
                                 .map(|kind| {
                                     let matches = |card: &super::model::SimCard| match kind {
@@ -851,6 +859,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
                                 if let Some(i) = st.library.pop() {
                                     st.hand.push(i);
                                     st.seen += 1;
+                                    st.awareness_cards += 1;
                                 }
                             }
                             continue;
@@ -910,4 +919,35 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         card_first_graveyard: st.graveyard_seen,
         infinite_mana_suspected: st.infinite_mana_suspected,
     }
+}
+
+/// Sentinel uid for a cast commander's upkeep engine. Real card uids
+/// count up from 0; sentinels count down from `u32::MAX`, so they never
+/// collide with battlefield uids. The low bits carry the commander slot,
+/// so each cast commander fires only its own abilities.
+fn commander_sentinel_uid(slot: usize) -> u32 {
+    u32::MAX - (slot as u32).min(15)
+}
+
+/// True when the uid is a commander sentinel (not a battlefield uid).
+fn is_commander_sentinel(uid: u32) -> bool {
+    uid > u32::MAX - 16
+}
+
+/// The commander slot encoded in a sentinel uid.
+fn commander_sentinel_slot(uid: u32) -> usize {
+    (u32::MAX - uid) as usize
+}
+
+/// Upkeep abilities of one commander (by deck slot), in effect form.
+fn commander_upkeep_effects(deck: &SimDeck, slot: usize) -> Vec<Effect> {
+    deck.commanders
+        .get(slot)
+        .map(|cmd| {
+            cmd.abilities()
+                .filter(|a| a.trigger == Trigger::OnUpkeep)
+                .map(|a| a.effect.clone())
+                .collect()
+        })
+        .unwrap_or_default()
 }

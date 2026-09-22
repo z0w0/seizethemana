@@ -47,17 +47,22 @@ One state file with setup state, index metadata, and the sync stamp:
 | `model` | Embedding model name (e.g. `BAAI/bge-small-en-v1.5-Q`) |
 | `dim` | Vector dimension (384) |
 | `names` | Card names in vector-row order (joins `vectors.bin` rows) |
-| `synced_at` | RFC 3339 timestamp of the last full sync; drives the 24h refresh check |
+| `scryfall_synced_at` | RFC 3339 timestamp of the last card/price sync; drives the 24h refresh check |
+| `combos_synced_at` | RFC 3339 timestamp of the last Commander Spellbook refresh |
 | `doc_version` | Document layout version the vectors were built with |
 
 Setup writes this file last, via temp file + rename. A failed run leaves the
-store marked not set up. `stm sync` updates `synced_at` after card data and
-prices land.
+store marked not set up. `stm sync` updates `scryfall_synced_at` after card
+data and prices land, and `combos_synced_at` when the Spellbook refresh
+succeeded (a failed refresh leaves the combo stamp stale so the next run
+retries).
 
 ## Data schema
 
-Three tables plus two print tables, created by `src/db.rs::open` (WAL mode
-is on; see the migration notes at the end).
+Nine tables (see `migrations/`): `cards`, `token_names`, `sets`,
+`card_prints`, `tags`, `card_tags`, `collection`, `combos`,
+`combo_pieces`, created by `src/db.rs::open` (WAL mode is on; see the
+migration notes at the end).
 
 ### `cards` — the oracle snapshot
 
@@ -79,8 +84,7 @@ one per printing.
 | `released_at`                          | YYYY-MM-DD of the oracle's latest recognized printing; display only, no gating |
 | `game_changer`                         | True when on the Commander Game Changer list (bracket signal for `deck legal`); null when unknown |
 
-Indexing covers `type_line`, `colors`, `rarity`, and `edhrec_rank` for
-filter queries, and the `cards_fts` FTS5 index (below) covers keyword
+Indexing covers `type_line`, `colors`, and `rarity` for filter queries, and the `cards_fts` FTS5 index (below) covers keyword
 search. The vector index handles semantic lookup (below).
 
 ### `cards_fts` — full-text search index
@@ -92,9 +96,10 @@ A SQLite FTS5 virtual table over `cards`, declared external-content
 `tags_text` carries the card's Tagger labels (filled by `db::refresh_tags_text`
 after tag ingest in both setup and sync), so role words like "ramp" or
 "sweeper" resolve through the community vocabulary even when oracle text
-never uses them. Four triggers on `cards`
-(insert/update/delete) keep the index in sync with every write path, and
-migration v1 populates it with a final `rebuild`. Query building and BM25
+never uses them. Three triggers on `cards`
+(insert/update/delete) keep the index in sync with every write path; the
+table starts empty, so the triggers alone keep it correct from the first
+insert. Query building and BM25
 ranking live in `src/db.rs` (`fts_query`, `fts_search`; BM25 weights
 name 8 / tags 4 / type 2 / oracle 1, ties break toward lower EDHREC
 rank). Player shorthand expands before retrieval — `query::expanded_text`
@@ -155,7 +160,7 @@ owns D&D, so Scryfall does not flag their prints). The mapping lives in
 auto-map future sets; an unknown UB-flagged set logs a sync warning.
 `stm sync` upserts both tables; prints that drop out of
 the bulk keep their last known row. Freshness is tracked once in
-`status.json` (`synced_at`), not per row.
+`status.json` (`scryfall_synced_at`), not per row.
 
 Universe and franchise data feeds display and census only — card views,
 `deck show --json`'s `universe_census`, and `collection`'s
@@ -238,14 +243,16 @@ that single pass:
    document layout (`embed::DOC_VERSION`), every stored card re-embeds once
    and the version stamps current — no `--force` needed for layout bumps.
    Save `vectors.bin` + rewrite `status.json` names/counts.
-7. **Stamp.** `synced_at` = now, last of all — an interrupted run stays
-   stale and is retried by the next read command.
+7. **Stamp.** `scryfall_synced_at` = now (captured after the downloads),
+   last of all — an interrupted run stays stale and is retried by the
+   next read command.
 
 Setup runs the same pipeline, just with every bulk row landing as "added",
 followed by a full embedding pass. Read commands (`query`,
-`collection query`) trigger `sync` quietly when `synced_at` is older than
-24h; `--offline` skips it and failures degrade to a warning, never blocking
-the read.
+`collection query`) trigger `sync` synchronously when
+`scryfall_synced_at` is older than 24h: a stale store makes the read
+block for the length of a full sync. `--offline` skips it and failures
+degrade to a warning, never blocking the read.
 
 ## Vector index and query path
 
@@ -286,12 +293,12 @@ by reciprocal rank fusion (RRF). `src/embed.rs` owns the vector side.
    embedded, normalized, then scored against every row by dot product. With
    normalized vectors, dot product equals cosine. A full scan of 32k × 384
    f32 takes well under 50 ms, so no ANN index is needed at this size.
-5. **Full-text leg.** SQLite FTS5 over `name`, `type_line`, and
-   `oracle_text` (`cards_fts`, external-content on `cards`, porter
+5. **Full-text leg.** SQLite FTS5 over `name`, `tags_text`, `type_line`,
+   and `oracle_text` (`cards_fts`, external-content on `cards`, porter
    stemming, kept in sync by triggers on `cards`). The query becomes one
    quoted OR term per word (`db::fts_query`); BM25 ranks with column
-   weights 8/2/1 (name hits dominate). Punctuation-only queries skip this
-   leg.
+   weights 8/4/2/1 (name hits dominate). Punctuation-only queries skip
+   this leg.
 6. **Fusion.** Reciprocal rank fusion (`query::fuse_rrf`, k = 60): each
    leg's rank contributes `1/(k + rank)`; a card ranked well by both legs
    beats a card ranked first by only one. The reported `score` is the RRF
@@ -305,12 +312,18 @@ by reciprocal rank fusion (RRF). `src/embed.rs` owns the vector side.
    when the bulk picks a future reprint as the representative print; the
    daily sync adds newly released cards automatically.
 
-`stm card similar` bypasses both legs: it ranks by shared oracle tags
+`stm card similar` runs a hybrid fusion like `query`: a tag-overlap leg
 (one grouped SQL query over `card_tags`, ordered by shared-tag count, then
-EDHREC rank, then name) and returns the shared labels per hit. `--owned`
-restricts to collection names. This complements semantic search: when the
-user has a known exemplar card, tag overlap finds "plays like this" cards
-the vector model may rank lower.
+EDHREC rank, then name) fuses with a stored-vector cosine leg against the
+seed's vector, by reciprocal rank fusion. The seed's stored vector needs no
+model load (it was embedded at sync time). When the seed has no stored
+vector, only the tag leg runs and the JSON `score` is `null` (the human
+view carries a note). `--owned` restricts to collection names before both
+legs rank, so the ranks and the fused scores match an identical
+`collection query` run. `card similar --json` emits the full card object
+plus `score`, `shared_count`, and `shared_tags`. This complements pure
+semantic search: when the user has a known exemplar card, tag overlap
+anchors "plays like this" cards the vector model may rank lower.
 
 `status.json` records the model name and document version. If the model
 ever changes, rebuild the store with `stm setup --force`; document-layout

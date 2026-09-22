@@ -34,12 +34,18 @@ pub enum Cmp {
 }
 
 impl Cmp {
-    /// Apply the comparison.
+    /// Build the comparison against a card statistic.
+    ///
+    /// `lhs` is the card's stat; the returned closure tests the filter
+    /// value. Call as `op.check(card_stat)(filter_value)`.
     pub fn check(self, lhs: f64) -> impl Fn(f64) -> bool {
         move |rhs| match self {
             Self::Lt => lhs < rhs,
             Self::Le => lhs <= rhs,
-            Self::Eq => (lhs - rhs).abs() < f64::EPSILON,
+            // Exact float equality: the filter values are plain user
+            // decimals (cmc 3, power 2), not computed values, so an
+            // epsilon adds nothing and would miss large values.
+            Self::Eq => lhs == rhs,
             Self::Ge => lhs >= rhs,
             Self::Gt => lhs > rhs,
         }
@@ -513,7 +519,6 @@ mod tests {
             ..no_filters()
         };
         assert!(f.matches(&row(|r| r.legalities = r#"{"vintage":"restricted"}"#.into())));
-        // Banned is not playable.
         let f = CardFilters {
             format: Some("modern".into()),
             ..no_filters()

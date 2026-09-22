@@ -330,7 +330,14 @@ pub struct Problem {
     pub detail: String,
     /// Category + magnitude suggestion (never specific cards).
     pub suggestion: String,
+    /// Cards or counts behind the finding, filled by
+    /// [`super::findings_detail::explain`] (empty until then).
+    pub offenders: Vec<ProblemOffender>,
 }
+
+/// Re-export so callers of `Problem` can name the offender type without
+/// importing the detail module.
+pub use super::findings_detail::ProblemOffender;
 
 /// Severity bucket for an affected-game share.
 fn severity(pct: f64) -> &'static str {
@@ -409,7 +416,7 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
         } else if sources >= 10 {
             // A rock-heavy deck screwing on color, not volume: more lands
             // will not help. The color_screw findings name the missing pips.
-            "check the color_screw findings: the deck has enough nonland sources, so fix the missing colors (any-color sources, fixing lands)".to_string()
+            "the deck has enough mana sources overall — fix the missing colors instead (the color findings above name the cards and the fix)".to_string()
         } else {
             format!(
                 "add {} land slots ({} nonland ramp sources already)",
@@ -423,10 +430,11 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: Some(stats.screw_pct * 100.0),
             color: None,
             detail: format!(
-                "{:.1}% of games had 2 or fewer lands by turn 4",
+                "you run out of lands often: {:.1}% of games had 2 or fewer lands by turn 4",
                 stats.screw_pct * 100.0
             ),
             suggestion,
+            offenders: Vec::new(),
         });
     }
     // Flood fires when the rate sits well above the velocity-adjusted
@@ -434,11 +442,11 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
     // decks, and a rate at or under the expectation is no finding at
     // all). Lands-matter decks flood by design: their finding reads as
     // an observation, never a trim instruction.
-    if turns >= 4 && stats.flood_pct >= 0.20 {
+    if turns >= 4 && stats.flood_pct > 0.0 {
         let lands_matter = deck.cards.iter().any(|c| c.extra_land_drops)
             || deck.commanders.iter().any(|c| c.extra_land_drops);
         let detail = format!(
-            "{:.1}% of games saw 6+ lands by turn 4 (expectation at the deck's actual draw volume: {:.1}%)",
+            "too many lands: {:.1}% of games saw 6 or more lands by turn 4 (about {:.1}% is normal at this deck's draw rate)",
             stats.flood_pct * 100.0,
             stats.flood_expectation * 100.0
         );
@@ -446,7 +454,7 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
         // its share of lands, no trim implied.
         if stats.flood_pct > stats.flood_expectation + 0.10 {
             let lands_matter_note = if lands_matter {
-                " (lands-matter deck: check the plan before trimming)"
+                " (this deck wants lots of lands — check your deck's game plan before trimming)"
             } else {
                 ""
             };
@@ -460,6 +468,7 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                     "trim {} land slots toward the curve{lands_matter_note}",
                     magnitude(stats.flood_pct * 100.0)
                 ),
+                offenders: Vec::new(),
             });
         }
     }
@@ -474,10 +483,11 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                 pct_games: Some((1.0 - by_curve) * 100.0),
                 color: None,
                 detail: format!(
-                    "commander castable by turn {cmc_turn} in only {:.1}% of games",
+                    "your commander comes down late: castable by turn {cmc_turn} in only {:.1}% of games",
                     by_curve * 100.0
                 ),
                 suggestion: "add 2-3 ramp sources or lower the early curve".to_string(),
+                offenders: Vec::new(),
             });
         }
     }
@@ -522,7 +532,7 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                 pct_games: Some(pct * 100.0),
                 color: Some(COLORS[i]),
                 detail: format!(
-                    "{} mana pips missed in {:.1}% of games (enough total mana, wrong colors; {} dedicated {} source{}, {} choice land{})",
+                    "you have enough lands, but not the right colors: {} mana is missing in {:.1}% of games ({} dedicated {} source{}, {} choice land{})",
                     COLORS[i],
                     pct * 100.0,
                     few_sources,
@@ -532,6 +542,7 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
                     if choice_sources == 1 { "" } else { "s" }
                 ),
                 suggestion,
+                offenders: Vec::new(),
             });
         }
     }
@@ -543,10 +554,11 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: Some(stats.starved_pct * 100.0),
             color: None,
             detail: format!(
-                "{:.1}% of games saw no draw source by turn {draw_turn}",
+                "you run out of cards to play: {:.1}% of games saw no draw source by turn {draw_turn}",
                 stats.starved_pct * 100.0
             ),
             suggestion: "add 2-3 draw engines".to_string(),
+            offenders: Vec::new(),
         });
     }
     if turns >= 6 && stats.unused_mana[5] >= 2.5 {
@@ -556,10 +568,11 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: None,
             color: None,
             detail: format!(
-                "{:.1} mana left unspent on average by turn 6",
+                "you end turns with unused mana: {:.1} left over on average by turn 6",
                 stats.unused_mana[5]
             ),
             suggestion: "add cheaper spells or more card draw to spend the mana".to_string(),
+            offenders: Vec::new(),
         });
     }
     let threshold = if commander { 0.60 } else { 0.55 };
@@ -620,12 +633,13 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: None,
             color: None,
             detail: format!(
-                "{} cards cast on time under {:.0}%; worst: {}",
+                "these cards sit in your hand too long: {} cards cast on time under {:.0}% of the time. Worst: {}",
                 dead_names.len(),
                 threshold * 100.0,
                 names.join(", ")
             ),
             suggestion: "cut or discount late cards, or add ramp".to_string(),
+            offenders: Vec::new(),
         });
     }
     if turns >= 5 && stats.removal_count > 0 && stats.removal_access_5 < 0.40 {
@@ -635,11 +649,12 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: Some((1.0 - stats.removal_access_5) * 100.0),
             color: None,
             detail: format!(
-                "removal seen by turn 5 in only {:.1}% of games ({} copies)",
+                "you rarely see a removal spell: only {:.1}% of games had one by turn 5 ({} copies)",
                 stats.removal_access_5 * 100.0,
                 stats.removal_count
             ),
             suggestion: "add 2-3 interaction pieces".to_string(),
+            offenders: Vec::new(),
         });
     }
     if commander && turns >= 8 && stats.wincon_count > 0 && stats.wincon_access_8 < 0.40 {
@@ -649,11 +664,12 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: Some((1.0 - stats.wincon_access_8) * 100.0),
             color: None,
             detail: format!(
-                "win conditions seen by turn 8 in only {:.1}% of games ({} copies)",
+                "you rarely see a way to win: only {:.1}% of games had a win condition in hand by turn 8 ({} copies)",
                 stats.wincon_access_8 * 100.0,
                 stats.wincon_count
             ),
             suggestion: "add 1-2 win conditions or more draw".to_string(),
+            offenders: Vec::new(),
         });
     }
     // Interaction readiness: access is fine but the answer is rarely
@@ -669,12 +685,21 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             pct_games: Some((1.0 - stats.interaction_ready_by_turn[4]) * 100.0),
             color: None,
             detail: format!(
-                "instant-speed interaction ready (in hand + affordable) by turn 5 in only {:.1}% of games ({} instant-speed copies)",
+                "you hold answers but cannot afford to cast them when it matters: instant-speed answers were in hand with enough spare mana by turn 5 in only {:.1}% of games ({} copies)",
                 stats.interaction_ready_by_turn[4] * 100.0,
                 stats.interaction_instant_count
             ),
             suggestion: "add cheaper instant-speed answers".to_string(),
+            offenders: Vec::new(),
         });
+    }
+    // Cause-level detail: every problem gets its offender list (and, where
+    // the data supports it, a cause-specific suggestion) from the same
+    // aggregated stats — with the same dead-card threshold the finding
+    // itself used.
+    for problem in &mut problems {
+        let dead_threshold = if commander { 0.60 } else { 0.55 };
+        super::findings_detail::explain_with_threshold(problem, stats, deck, dead_threshold);
     }
     problems
 }

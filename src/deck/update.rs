@@ -1,290 +1,12 @@
 // Deck update ops (`--add`/`--remove`/`--set`/`--move`) and the
-// `deck update` command.
-//
-// Ops are parsed from CLI specs (`[section:]qty Name [(SET) [cn]] [*F*]`)
-// and applied to an in-memory deck; the caller persists the result.
+// `deck update` command. The op verbs and the apply engine live in
+// `deck/ops.rs`; this file is the command flow: name validation, the
+// real update, the `--dry-run` preview, and `deck dedupe`.
 
-use super::grammar::{self, Deck, DeckEntry};
-use super::store::{load_deck, save_deck, valid_deck_name};
+use super::grammar::Deck;
+pub(super) use super::ops::{DeckOp, USAGE_EXIT, apply_ops, parse_op};
+pub(super) use super::store::{load_deck, save_deck, valid_deck_name};
 use anyhow::Context;
-
-/// One requested update operation.
-#[derive(Debug, Clone, PartialEq)]
-pub enum DeckOp {
-    /// Add copies (`--add [section:]qty Name`).
-    Add {
-        section: Option<String>,
-        entry: DeckEntry,
-    },
-    /// Remove a line entirely, or decrement by qty (`--remove [section:]qty Name`).
-    Remove {
-        section: Option<String>,
-        entry: DeckEntry,
-    },
-    /// Set an exact quantity; 0 deletes the line (`--set [section:]qty Name`).
-    Set {
-        section: Option<String>,
-        entry: DeckEntry,
-    },
-    /// Move copies between sections (`--move [section:]qty Name to:section`).
-    /// Applied as an atomic remove-then-add so the net state (one copy, in
-    /// the new section) is what every later check sees.
-    Move {
-        from: Option<String>,
-        to: String,
-        entry: DeckEntry,
-    },
-}
-
-/// Parse one op spec: `[section:]qty Name [(SET) [cn]] [*F*]`.
-///
-/// The section prefix is matched when the token before the first space
-/// contains a `:`; card names never contain colons in ManaBox exports.
-/// `--set` allows qty 0 (delete the line); add/remove require qty > 0.
-/// `--move` specs end with `to:<section>` (default DECK).
-///
-/// # Errors
-/// Fails with a message naming the bad spec.
-pub fn parse_op(kind: &str, spec: &str) -> anyhow::Result<DeckOp> {
-    // `--move` carries a trailing `to:<section>` clause instead of the
-    // qty+name body alone; split it off before the shared parsing.
-    let (spec, to) = if kind == "move" {
-        let (spec, to) = parse_move_target(spec);
-        (spec, to)
-    } else {
-        (spec, "DECK".to_string())
-    };
-    let (section, body) = match spec.split_once(':') {
-        Some((section, body)) => (Some(section.trim().to_string()), body.trim()),
-        None => (None, spec),
-    };
-    let entry = if kind == "set" && body.trim_start().starts_with("0 ") {
-        // `--set 0 Name` deletes the line; parse_entry rejects qty 0, so
-        // parse the rest and force the quantity.
-        let without_qty = body
-            .split_once(' ')
-            .with_context(|| format!("invalid --set spec {spec:?}: missing quantity"))?
-            .1;
-        let mut entry = grammar::parse_entry(&format!("1 {without_qty}"))
-            .map_err(|e| e.context(format!("invalid --set spec {spec:?}")))?;
-        entry.quantity = 0;
-        entry
-    } else {
-        grammar::parse_entry(body)
-            .map_err(|e| e.context(format!("invalid --{kind} spec {spec:?}")))?
-    };
-    Ok(match kind {
-        "add" => DeckOp::Add { section, entry },
-        "remove" => DeckOp::Remove { section, entry },
-        "set" => DeckOp::Set { section, entry },
-        "move" => DeckOp::Move {
-            from: section,
-            to,
-            entry,
-        },
-        other => anyhow::bail!("unknown op kind {other:?}"),
-    })
-}
-
-/// Split a trailing `to:<section>` off a move spec.
-///
-/// Returns `(spec_without_to, section)`. The `to:` clause is optional and
-/// always last; DECK is the default target. A card name containing
-/// " to:" followed by more words is left intact (only a trailing
-/// single-word target splits).
-fn parse_move_target(spec: &str) -> (&str, String) {
-    let lower = spec.to_ascii_lowercase();
-    if let Some(idx) = lower.rfind(" to:") {
-        let target = spec[idx + 4..].trim();
-        if !target.is_empty() && !target.contains(' ') {
-            return (&spec[..idx], target.trim().to_string());
-        }
-    }
-    (spec, "DECK".to_string())
-}
-
-/// Apply parsed ops to a deck, returning a summary of what changed.
-pub fn apply_ops(deck: &mut Deck, ops: &[DeckOp]) -> anyhow::Result<DeckOpSummary> {
-    let mut summary = DeckOpSummary::default();
-    for op in ops {
-        match op {
-            DeckOp::Add { section, entry } => {
-                let entries = deck.section_entries_mut(section.as_deref().unwrap_or("DECK"));
-                match entry_position(entries, entry) {
-                    Some(pos) => entries[pos].quantity += entry.quantity,
-                    None => entries.push(entry.clone()),
-                }
-                summary.added += entry.quantity;
-            }
-            DeckOp::Remove { section, entry } => {
-                match remove_from_section(deck, section.as_deref(), entry) {
-                    RemoveOutcome::Removed(n) => summary.removed += n,
-                    RemoveOutcome::Absent => {
-                        // The deck already matches the requested end state;
-                        // worth surfacing so typos are caught.
-                        summary.missing.push(entry.name.clone());
-                    }
-                    RemoveOutcome::Elsewhere(actual_section) => {
-                        // Found in a different section; say so instead of
-                        // failing, so unqualified specs stay usable.
-                        summary.relocated.push((entry.name.clone(), actual_section));
-                    }
-                }
-            }
-            DeckOp::Set { section, entry } => {
-                let entries = deck.section_entries_mut(section.as_deref().unwrap_or("DECK"));
-                if entry.quantity == 0 {
-                    // Deleting an already-absent line is a no-op.
-                    if let Some(pos) = entry_position(entries, entry) {
-                        entries.remove(pos);
-                        summary.set += 1;
-                    } else if section.is_none() {
-                        // Unqualified: fall back to other sections, same
-                        // identity rule as remove. A qualified set stays
-                        // strict (the named section has no such line).
-                        match delete_elsewhere(deck, entry) {
-                            Some(section_name) => {
-                                summary.set += 1;
-                                summary.relocated.push((entry.name.clone(), section_name));
-                            }
-                            None => summary.set += 1,
-                        }
-                    } else {
-                        summary.set += 1;
-                    }
-                } else if let Some(pos) = entry_position(entries, entry) {
-                    entries[pos].quantity = entry.quantity;
-                    summary.set += 1;
-                } else {
-                    entries.push(entry.clone());
-                    summary.set += 1;
-                }
-            }
-            DeckOp::Move { from, to, entry } => {
-                // Atomic remove-then-add: the net state (one line, in the
-                // target section) is what later ops and checks see.
-                match remove_from_section(deck, from.as_deref(), entry) {
-                    RemoveOutcome::Removed(n) => summary.moved += n,
-                    RemoveOutcome::Absent => {
-                        summary.missing.push(entry.name.clone());
-                        continue;
-                    }
-                    RemoveOutcome::Elsewhere(actual) => {
-                        summary.moved += entry.quantity;
-                        summary.relocated.push((entry.name.clone(), actual));
-                    }
-                }
-                let entries = deck.section_entries_mut(to);
-                match entry_position(entries, entry) {
-                    Some(pos) => entries[pos].quantity += entry.quantity,
-                    None => entries.push(entry.clone()),
-                }
-            }
-        }
-    }
-    Ok(summary)
-}
-
-/// The position in `entries` matched by `op`'s entry: exact print key when
-/// the op names one, otherwise the first entry with the same card name. A
-/// name without print info targets the card in any printing — the same
-/// identity rule the collection uses ("any print fills a slot").
-fn entry_position(entries: &[DeckEntry], entry: &DeckEntry) -> Option<usize> {
-    let carries_print = entry.set_code.is_some() || entry.foil || entry.collector_number.is_some();
-    entries.iter().position(|e| {
-        if carries_print {
-            e.key() == entry.key()
-        } else {
-            e.name == entry.name
-        }
-    })
-}
-
-/// Remove/decrement the first matching entry.
-///
-/// An unqualified op targets `DECK` first, then falls back to any other
-/// section holding the print (reported via [`RemoveOutcome::Elsewhere`]).
-fn remove_from_section(deck: &mut Deck, section: Option<&str>, entry: &DeckEntry) -> RemoveOutcome {
-    let target = section.unwrap_or("DECK");
-    let entries = deck.section_entries_mut(target);
-    if let Some(pos) = entry_position(entries, entry) {
-        let existing = &mut entries[pos];
-        if existing.quantity > entry.quantity {
-            existing.quantity -= entry.quantity;
-        } else {
-            entries.remove(pos);
-        }
-        return RemoveOutcome::Removed(entry.quantity);
-    }
-    if section.is_some() {
-        // Explicitly qualified: honor it strictly.
-        return RemoveOutcome::Absent;
-    }
-    // Unqualified: search every other section for the print.
-    for idx in 0..deck.sections.len() {
-        let (name, entries) = &mut deck.sections[idx];
-        if name.eq_ignore_ascii_case(target) {
-            continue;
-        }
-        if let Some(pos) = entry_position(entries, entry) {
-            let existing = &mut entries[pos];
-            if existing.quantity > entry.quantity {
-                existing.quantity -= entry.quantity;
-            } else {
-                entries.remove(pos);
-            }
-            return RemoveOutcome::Elsewhere(name.clone());
-        }
-    }
-    RemoveOutcome::Absent
-}
-
-/// Result of one remove op.
-enum RemoveOutcome {
-    /// Removed (or decremented by) this many copies.
-    Removed(i64),
-    /// The print is not in the deck at all.
-    Absent,
-    /// The print lives in another section (named here) and was removed there.
-    Elsewhere(String),
-}
-
-/// Delete the first line matching `entry` outside the default section.
-/// Returns the section name it was deleted from, if any.
-fn delete_elsewhere(deck: &mut Deck, entry: &DeckEntry) -> Option<String> {
-    for idx in 0..deck.sections.len() {
-        let (name, entries) = &mut deck.sections[idx];
-        if name.eq_ignore_ascii_case("DECK") {
-            continue;
-        }
-        if let Some(pos) = entry_position(entries, entry) {
-            entries.remove(pos);
-            return Some(name.clone());
-        }
-    }
-    None
-}
-
-/// Result of applying update ops.
-#[derive(Debug, Default, PartialEq)]
-pub struct DeckOpSummary {
-    /// Card copies added.
-    pub added: i64,
-    /// Card copies removed (requested amount).
-    pub removed: i64,
-    /// Lines set to an exact quantity.
-    pub set: usize,
-    /// Card copies moved between sections.
-    pub moved: i64,
-    /// Names referenced by remove ops that were not in the deck.
-    pub missing: Vec<String>,
-    /// `(name, section)` for removals that hit another section than the
-    /// unqualified default; surfaced as a note, not an error.
-    pub relocated: Vec<(String, String)>,
-}
-
-/// Clap's usage-exit equivalent for our own arg errors.
-pub const USAGE_EXIT: i32 = 2;
 
 /// Outcome of resolving one op's card name against the oracle.
 enum NameCheck {
@@ -304,7 +26,7 @@ fn check_name(conn: &rusqlite::Connection, name: &str) -> anyhow::Result<NameChe
     use crate::db::NameMatch;
     match crate::db::resolve_name(conn, name)? {
         NameMatch::Found(_) => Ok(NameCheck::Ok),
-        NameMatch::Ambiguous(candidates) => Ok(NameCheck::Unknown(candidates)),
+        NameMatch::Ambiguous { candidates, .. } => Ok(NameCheck::Unknown(candidates)),
         NameMatch::NotFound => {
             if crate::db::is_token_name(conn, name)? {
                 Ok(NameCheck::Token)
@@ -378,6 +100,8 @@ fn validate_names(
 /// `--set`/`--move` run first, then the file's. With `allow_partial`,
 /// remove ops that miss the deck are reported and skipped instead of
 /// aborting the whole batch (exit 1 still signals that something missed).
+/// `dry_run` previews the change and writes nothing; `sim` (dry-run only)
+/// adds a same-seed before/after consistency delta.
 #[allow(clippy::too_many_arguments)]
 pub fn update(
     paths: &crate::paths::Paths,
@@ -390,6 +114,11 @@ pub fn update(
     move_specs: &[String],
     from: Option<&std::path::Path>,
     allow_partial: bool,
+    dry_run: bool,
+    sim: bool,
+    legal: bool,
+    backfill_basics: bool,
+    json: bool,
 ) -> anyhow::Result<i32> {
     let mut ops = Vec::new();
     for spec in add {
@@ -425,7 +154,7 @@ pub fn update(
             return Ok(USAGE_EXIT);
         }
     }
-    if ops.is_empty() {
+    if ops.is_empty() && !backfill_basics {
         out.error("no update operations given");
         out.hint("pass --add/--remove/--set/--move specs, e.g. --add '2 Bolt'");
         return Ok(USAGE_EXIT);
@@ -433,7 +162,7 @@ pub fn update(
     if !valid_deck_name(name) {
         out.error(&format!("invalid deck name {name:?}"));
         out.hint("use letters, digits, spaces, or - _ ' & ! + , (no / or ..)");
-        anyhow::bail!("invalid deck name");
+        anyhow::bail!(crate::output::SILENT_ERROR);
     }
     let (_path, mut deck) = load_deck(paths, name)?;
     if let Some(code) = validate_names(conn, out, &ops)? {
@@ -441,13 +170,38 @@ pub fn update(
     }
     // Singleton guard for adds: in a commander-shaped deck an add that
     // pushes a non-basic card past one copy is rejected up front instead
-    // of writing an illegal deck. Set and Move ops keep the post-apply
-    // warning path (an exact-quantity request is deliberate; a move nets
-    // to zero new copies).
-    if let Some(code) = reject_singleton_adds(out, &deck, &ops) {
+    // of writing an illegal deck. The check reads the POST-apply state
+    // (the ops run on a scratch copy in flag order), so a legal
+    // remove+add pair (net one copy) passes. Set and Move ops keep the
+    // post-apply warning path (an exact-quantity request is deliberate;
+    // a move nets to zero new copies).
+    if let Some(code) = reject_singleton_adds(conn, out, &deck, &ops)? {
         return Ok(code);
     }
+    if dry_run {
+        return dry_run_preview(
+            DryRun {
+                conn,
+                out,
+                name,
+                before: &deck,
+                sim,
+                legal,
+                json,
+                backfill_basics,
+            },
+            &ops,
+        );
+    }
     let mut summary = apply_ops(&mut deck, &ops)?;
+    let mut backfilled = 0i64;
+    if backfill_basics {
+        let added = backfill_basics_to_size(conn, out, &mut deck)?;
+        if added > 0 {
+            summary.added += added;
+            backfilled = added;
+        }
+    }
     let mut had_missing = false;
     if !summary.missing.is_empty() {
         out.error(&format!(
@@ -469,11 +223,11 @@ pub fn update(
         }
     }
     // Singleton guard: commander-shape decks should hold one copy per
-    // non-basic card. Computed against the post-apply deck so a legal
+    // non-basic card. Computed against the post-apply deck, so a legal
     // remove+add pair (net one copy) does not warn; the write still
     // happens so agents keep flowing, and `deck legal` reports the real
     // violation.
-    let warnings = singleton_warnings(&ops, &deck);
+    let warnings = singleton_warnings(conn, &ops, &deck)?;
     for w in &warnings {
         out.warning(w);
     }
@@ -499,15 +253,34 @@ pub fn update(
     } else {
         crate::cli::codes::OK
     };
-    out.finish(
-        "Updated",
-        &format!(
-            "deck {name:?}: {} (now {} cards)",
-            parts.join(", "),
-            deck.total()
-        ),
-        std::time::Duration::ZERO,
-    );
+    if json {
+        let payload = serde_json::json!({
+            "name": name,
+            "added": summary.added,
+            "removed": summary.removed,
+            "moved": summary.moved,
+            "set": summary.set,
+            "relocated": summary
+                .relocated
+                .iter()
+                .map(|(card, section)| serde_json::json!({"name": card, "from": section}))
+                .collect::<Vec<_>>(),
+            "backfilled_basics": backfilled,
+            "warnings": warnings,
+            "cards": deck.total(),
+        });
+        println!("{}", serde_json::to_string_pretty(&payload)?);
+    } else {
+        out.finish(
+            "Updated",
+            &format!(
+                "deck {name:?}: {} (now {} cards)",
+                parts.join(", "),
+                deck.total()
+            ),
+            std::time::Duration::ZERO,
+        );
+    }
     Ok(exit)
 }
 
@@ -529,6 +302,476 @@ fn parse_spec_line(line: &str) -> anyhow::Result<DeckOp> {
     parse_op(kind, body.trim_start())
 }
 
+/// Inputs to the `--dry-run` preview, grouped so the helper stays under
+/// the argument-count lint.
+struct DryRun<'a> {
+    conn: &'a rusqlite::Connection,
+    out: &'a mut crate::output::Output,
+    name: &'a str,
+    before: &'a Deck,
+    sim: bool,
+    legal: bool,
+    json: bool,
+    backfill_basics: bool,
+}
+
+/// The `--dry-run` preview: apply the ops to a clone, print the change
+/// list, the cost impact, (with `--sim`) the same-seed consistency delta,
+/// and (with `--legal`) the post-change legality verdict. Nothing is
+/// written, ever. Exit 1 when `--sim` reports a new problem or `--legal`
+/// finds violations.
+fn dry_run_preview(preview: DryRun<'_>, ops: &[DeckOp]) -> anyhow::Result<i32> {
+    let DryRun {
+        conn,
+        out,
+        name,
+        before,
+        sim,
+        legal,
+        json,
+        backfill_basics,
+    } = preview;
+    let mut after = before.clone();
+    let mut summary = apply_ops(&mut after, ops)?;
+    if backfill_basics {
+        let added = backfill_basics_to_size(conn, out, &mut after)?;
+        if added > 0 {
+            summary.added += added;
+        }
+    }
+    for (card, section) in &summary.relocated {
+        out.warning(&format!("{card} was in {section}; removed it there"));
+    }
+    // Missing removes resolve to the same exit codes as a real update:
+    // a preview must never read as a clean no-op when an op could not
+    // resolve.
+    if !summary.missing.is_empty() {
+        return dry_run_missing(out, name, &summary.missing, json);
+    }
+    if json {
+        return dry_run_json(conn, name, before, &after, sim, legal);
+    }
+    dry_run_human(conn, out, name, before, &after, sim, legal)
+}
+
+/// Report unresolvable ops for a `--dry-run` preview.
+fn dry_run_missing(
+    out: &mut crate::output::Output,
+    name: &str,
+    missing: &[String],
+    json: bool,
+) -> anyhow::Result<i32> {
+    out.error(&format!(
+        "{} of the referenced cards are not in the deck: {}",
+        missing.len(),
+        missing.join(", ")
+    ));
+    out.hint("show the deck first: stm deck show");
+    out.hint("apply the resolvable ops anyway with --allow-partial");
+    if json {
+        let payload = serde_json::json!({
+            "name": name,
+            "dry_run": true,
+            "changes": [],
+            "missing": missing,
+        });
+        println!("{}", serde_json::to_string_pretty(&payload)?);
+    }
+    Ok(crate::cli::codes::NO_RESULTS)
+}
+
+/// JSON output for a `--dry-run` preview: changes + cost + optional sim
+/// diff + optional legality verdict in one object. Exit 1 when `--sim`
+/// reports a new problem or `--legal` finds violations.
+fn dry_run_json(
+    conn: &rusqlite::Connection,
+    name: &str,
+    before: &Deck,
+    after: &Deck,
+    sim: bool,
+    legal: bool,
+) -> anyhow::Result<i32> {
+    let diff = super::diff::diff_decks(before, after, false, crate::collection::is_basic_name);
+    let changes = serde_json::to_value(&diff)?;
+    let cost = cost_delta(conn, before, after)?;
+    let sim_payload = if sim {
+        let diff = sim_delta(conn, name, before, after)?;
+        Some(serde_json::to_value(&diff)?)
+    } else {
+        None
+    };
+    let new_problems = sim_payload
+        .as_ref()
+        .and_then(|v| v.get("problems").and_then(|p| p.as_array()))
+        .is_some_and(|problems| {
+            problems
+                .iter()
+                .any(|p| p.get("change").and_then(|c| c.as_str()) == Some("new"))
+        });
+    let (legal_payload, legal_ok) = if legal {
+        let payload = legal_verdict(conn, after)?;
+        let ok = payload
+            .get("legal")
+            .and_then(|l| l.as_bool())
+            .unwrap_or(false);
+        (Some(payload), ok)
+    } else {
+        (None, true)
+    };
+    let payload = serde_json::json!({
+        "name": name,
+        "dry_run": true,
+        "changes": changes,
+        "cost": cost,
+        "sim": sim_payload,
+        "legal": legal_payload,
+    });
+    println!("{}", serde_json::to_string_pretty(&payload)?);
+    Ok(if (sim && new_problems) || (legal && !legal_ok) {
+        crate::cli::codes::ERROR
+    } else {
+        crate::cli::codes::OK
+    })
+}
+
+/// Legality verdict for a post-change deck (the `--legal` dry-run block):
+/// the same checks `deck legal` runs, keyed by the inferred format.
+fn legal_verdict(conn: &rusqlite::Connection, deck: &Deck) -> anyhow::Result<serde_json::Value> {
+    let cards = super::stats::lookup_names(conn, deck)?;
+    let is_commander = super::legal::infer_format(deck) == super::legal::InferredFormat::Commander;
+    let bracket = if is_commander {
+        Some(super::simulator::infer_bracket(deck, &cards))
+    } else {
+        None
+    };
+    // The inferred-constructed case is structural-only, matching `deck legal`.
+    let check_format = if is_commander {
+        Some("commander")
+    } else {
+        None
+    };
+    let (violations, advisories) = super::legal::check(deck, &cards, check_format, bracket);
+    let legal = violations.is_empty();
+    let violations: Vec<serde_json::Value> = violations
+        .iter()
+        .map(|v| serde_json::json!({ "rule": v.rule, "cards": v.cards, "detail": v.detail }))
+        .collect();
+    Ok(serde_json::json!({
+        "legal": legal,
+        "violations": violations,
+        "advisories": advisories,
+    }))
+}
+
+/// Human output for a `--dry-run` preview: change list, cost impact, and
+/// (with `sim`) the same-seed consistency delta.
+fn dry_run_human(
+    conn: &rusqlite::Connection,
+    out: &mut crate::output::Output,
+    name: &str,
+    before: &Deck,
+    after: &Deck,
+    sim: bool,
+    legal: bool,
+) -> anyhow::Result<i32> {
+    let diff = super::diff::diff_decks(before, after, false, crate::collection::is_basic_name);
+    let styles = out.styles();
+
+    println!("{}", styles.header("This change would make"));
+    let mut any_change = false;
+    for section in &diff {
+        if section.is_empty() {
+            continue;
+        }
+        any_change = true;
+        println!("  {}:", styles.header(&section.section));
+        for (card, qty) in &section.removed {
+            println!(
+                "    {} {}",
+                styles.glyph("-", crate::output::GlyphKind::Bad),
+                card_qty_text(card, *qty)
+            );
+        }
+        for (card, qty) in &section.added {
+            println!(
+                "    {} {}",
+                styles.glyph("+", crate::output::GlyphKind::Good),
+                card_qty_text(card, *qty)
+            );
+        }
+        for (card, from, to) in &section.changed {
+            let text = format!("{card}: {from} → {to}");
+            println!(
+                "    {} {}",
+                styles.glyph("~", crate::output::GlyphKind::Dim),
+                text
+            );
+        }
+    }
+    if !any_change {
+        println!("    {}", styles.dim("nothing — the deck already matches"));
+        out.print_note("Nothing was changed. The deck already matches this request.");
+        return Ok(crate::cli::codes::OK);
+    }
+
+    print_cost_block(conn, out, before, after)?;
+
+    // Sim block: same-seed before/after delta.
+    let mut exit = crate::cli::codes::OK;
+    if sim {
+        let diff = sim_delta(conn, name, before, after)?;
+        println!("{}", styles.header("Consistency impact (same seed)"));
+        if diff.is_empty() {
+            println!("    {}", styles.dim("no changes in the simulation"));
+        } else {
+            for d in &diff.shape {
+                println!("    {}: {} → {}", d.name, d.old, d.new);
+            }
+            for d in &diff.metrics {
+                println!("    {}: {} → {}", d.path, d.old, d.new);
+            }
+            for p in &diff.problems {
+                match p.change {
+                    "new" => {
+                        println!(
+                            "    {} {}: {}",
+                            styles.glyph("+", crate::output::GlyphKind::Bad),
+                            p.kind,
+                            p.detail
+                        );
+                        exit = crate::cli::codes::ERROR;
+                    }
+                    _ => println!(
+                        "    {} {}: {}",
+                        styles.glyph("-", crate::output::GlyphKind::Good),
+                        p.kind,
+                        p.detail
+                    ),
+                }
+            }
+        }
+    }
+    // Legality block: the post-change deck against the inferred format.
+    if legal {
+        let verdict = legal_verdict(conn, after)?;
+        let is_legal = verdict
+            .get("legal")
+            .and_then(|l| l.as_bool())
+            .unwrap_or(false);
+        println!("{}", styles.header("Legality"));
+        if is_legal {
+            println!("    {}", styles.dim("the changed deck stays legal"));
+        } else {
+            let violations = verdict
+                .get("violations")
+                .and_then(|v| v.as_array())
+                .cloned()
+                .unwrap_or_default();
+            for v in &violations {
+                let rule = v.get("rule").and_then(|r| r.as_str()).unwrap_or("");
+                let detail = v.get("detail").and_then(|d| d.as_str()).unwrap_or("");
+                println!(
+                    "    {} {}: {}",
+                    styles.glyph("!", crate::output::GlyphKind::Bad),
+                    rule,
+                    detail
+                );
+            }
+            exit = crate::cli::codes::ERROR;
+        }
+    }
+    out.print_note("Nothing was changed. Run the same command without --dry-run to apply.");
+    Ok(exit)
+}
+
+/// The "Cost impact" block: what you would buy and what removals free up.
+fn print_cost_block(
+    conn: &rusqlite::Connection,
+    out: &crate::output::Output,
+    before: &Deck,
+    after: &Deck,
+) -> anyhow::Result<()> {
+    let cost = cost_delta(conn, before, after)?;
+    let styles = out.styles();
+    println!("{}", styles.header("Cost impact"));
+    if cost.to_buy.items.is_empty() {
+        println!("    {}", styles.dim("Nothing new to buy."));
+    } else {
+        for item in &cost.to_buy.items {
+            let owned_note = if item.owned > 0 {
+                format!(" ({} owned)", item.owned)
+            } else {
+                String::new()
+            };
+            println!(
+                "    {} {}",
+                styles.card_name(&item.name),
+                styles.dim(&format!(
+                    "x{} @ {}{}",
+                    item.quantity,
+                    item.price_usd
+                        .map(|p| format!("${p:.2}"))
+                        .unwrap_or_else(|| "unpriced".into()),
+                    owned_note
+                ))
+            );
+        }
+    }
+    println!(
+        "    net spend: {} (buy {}, freed {})",
+        styles.money(cost.net_usd),
+        styles.money(cost.to_buy.total_usd),
+        styles.money(cost.freed_usd)
+    );
+    Ok(())
+}
+
+/// `qty Name` display for a diff row.
+fn card_qty_text(card: &str, qty: i64) -> String {
+    format!("{qty}x {card}")
+}
+
+/// The cost delta between two deck states: what you would buy (missing
+/// copies at the cheapest printing) and what removals free up.
+#[derive(serde::Serialize)]
+struct CostImpact {
+    to_buy: Buylist,
+    /// Cheapest-printing value of the copies the change frees (owned
+    /// copies that leave the deck's slots).
+    freed_usd: f64,
+    /// The running net spend.
+    net_usd: f64,
+}
+
+/// One to-buy line.
+#[derive(serde::Serialize)]
+struct BuyItem {
+    name: String,
+    quantity: i64,
+    price_usd: Option<f64>,
+    /// Copies already owned anywhere in the collection (including this
+    /// deck's own assigned copies).
+    owned: i64,
+}
+
+/// Buy gap of the after-deck minus the before-deck, plus the freed value.
+fn cost_delta(
+    conn: &rusqlite::Connection,
+    before: &Deck,
+    after: &Deck,
+) -> anyhow::Result<CostImpact> {
+    let owned = crate::collection::owned_counts_all(conn)?;
+    let is_basic = crate::collection::is_basic_name;
+    let needed = |deck: &Deck| -> std::collections::BTreeMap<String, i64> {
+        let mut needed = std::collections::BTreeMap::new();
+        for entry in deck.entries() {
+            if is_basic(&entry.name) {
+                continue;
+            }
+            *needed.entry(entry.name.clone()).or_insert(0) += entry.quantity;
+        }
+        needed
+    };
+    let before_needed = needed(before);
+    let after_needed = needed(after);
+    // To buy: slots the after-deck demands that the before-deck did not
+    // (or demanded less of) and the collection cannot cover.
+    let mut items = Vec::new();
+    let mut buy_total = 0.0f64;
+    let mut buy_names: Vec<String> = Vec::new();
+    for (card, qty) in &after_needed {
+        let extra = qty - before_needed.get(card).copied().unwrap_or(0);
+        if extra <= 0 {
+            continue;
+        }
+        let short = extra.min((qty - owned.get(card).copied().unwrap_or(0)).max(0));
+        if short <= 0 {
+            continue;
+        }
+        items.push(BuyItem {
+            name: card.clone(),
+            quantity: short,
+            price_usd: None,
+            owned: owned.get(card).copied().unwrap_or(0),
+        });
+        buy_names.push(card.clone());
+    }
+    let ranges = crate::prints::price_ranges(conn, &buy_names).unwrap_or_default();
+    for item in &mut items {
+        let price = ranges
+            .get(&item.name)
+            .and_then(crate::prints::PrintRange::price);
+        if let Some(p) = price {
+            buy_total += p * item.quantity as f64;
+        }
+        item.price_usd = price;
+    }
+    // Freed: slots the before-deck demanded that the after-deck does not,
+    // valued at the cheapest printing. Only owned copies count: a slot
+    // freed on a card you never owned frees nothing.
+    let mut freed_names: Vec<String> = Vec::new();
+    let mut freed: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::new();
+    for (card, qty) in &before_needed {
+        let released = qty - after_needed.get(card).copied().unwrap_or(0);
+        if released > 0 {
+            let owned_released = released.min(owned.get(card).copied().unwrap_or(0));
+            if owned_released > 0 {
+                freed.insert(card.clone(), owned_released);
+                freed_names.push(card.clone());
+            }
+        }
+    }
+    let freed_ranges = crate::prints::price_ranges(conn, &freed_names).unwrap_or_default();
+    let mut freed_total = 0.0f64;
+    for (card, qty) in &freed {
+        if let Some(p) = freed_ranges
+            .get(card)
+            .and_then(crate::prints::PrintRange::price)
+        {
+            freed_total += p * *qty as f64;
+        }
+    }
+    Ok(CostImpact {
+        to_buy: Buylist {
+            items,
+            total_usd: buy_total,
+        },
+        freed_usd: freed_total,
+        net_usd: buy_total - freed_total,
+    })
+}
+
+/// The grouped to-buy list inside the cost impact.
+#[derive(serde::Serialize)]
+struct Buylist {
+    items: Vec<BuyItem>,
+    total_usd: f64,
+}
+
+/// Simulate before and after at the same seed; returns the report diff
+/// (callers key the exit code on its `new` problems).
+fn sim_delta(
+    conn: &rusqlite::Connection,
+    name: &str,
+    before: &Deck,
+    after: &Deck,
+) -> anyhow::Result<crate::deck::simulator::report_view::ReportDiff> {
+    use crate::deck::simulator::report_view::diff_reports;
+    let cards = super::stats::lookup_names(conn, before)?;
+    let after_cards = super::stats::lookup_names(conn, after)?;
+    let mut all_cards = cards.clone();
+    for (k, v) in after_cards {
+        all_cards.entry(k).or_insert(v);
+    }
+    let seed = 42u64;
+    let runs = 2_000u32;
+    let before_json =
+        super::simulator::sim_report_for(before, &all_cards, name, runs, None, seed, None);
+    let after_json =
+        super::simulator::sim_report_for(after, &all_cards, name, runs, None, seed, None);
+    Ok(diff_reports(&before_json, &after_json))
+}
+
 /// Op kinds the singleton guard distinguishes: Set pins an exact count;
 /// Add and Move both read the post-apply deck's actual holdings.
 #[derive(Clone, Copy)]
@@ -541,50 +784,53 @@ enum OpKind {
 /// Reject add ops that would push a non-basic card past one copy in a
 /// commander-shaped deck.
 ///
-/// The pre-apply deck state decides: an add is incremental by intent, so
-/// incrementing an existing line past one copy is a batch error, not a
-/// warning. Returns the exit code to use when at least one add must be
-/// rejected, or `None` when every add is singleton-safe (or the deck is
-/// not commander-shaped).
+/// The guard reads the post-apply state: the ops run on a scratch copy of
+/// the deck first, so a legal remove+add pair (net one copy) passes while
+/// an incremental add onto an existing line fails. Returns the exit code
+/// to use when at least one add must be rejected, or `None` when every
+/// add is singleton-safe (or the deck is not commander-shaped).
 fn reject_singleton_adds(
+    conn: &rusqlite::Connection,
     out: &mut crate::output::Output,
     deck: &Deck,
     ops: &[DeckOp],
-) -> Option<i32> {
-    deck.section_index("COMMANDER")?;
+) -> anyhow::Result<Option<i32>> {
+    if deck.section_index("COMMANDER").is_none() {
+        return Ok(None);
+    }
+    let mut post = deck.clone();
+    let summary = apply_ops(&mut post, ops);
+    let summary = match summary {
+        Ok(summary) => summary,
+        Err(err) => {
+            // The batch does not apply at all; the update flow reports the
+            // parse/apply error separately, so the guard stays silent.
+            let _ = err;
+            return Ok(None);
+        }
+    };
+    if !summary.missing.is_empty() {
+        // Unresolvable ops make the post state unreliable; the normal
+        // missing-op path reports them.
+        return Ok(None);
+    }
     let mut rejected: Vec<String> = Vec::new();
-    for op in ops {
-        let DeckOp::Add { section, entry } = op else {
-            continue;
-        };
-        if is_unlimited_basics(&entry.name) || rejected.contains(&entry.name) {
+    for (name, qty) in super::legal::maindeck_copies_by_name(&post) {
+        if qty <= 1 || rejected.contains(&name) || is_singleton_exempt(conn, &name) {
             continue;
         }
-        let target = section.as_deref().unwrap_or("DECK");
-        let held_in_target = deck
-            .sections
-            .iter()
-            .find(|(name, _)| name.eq_ignore_ascii_case(target))
-            .map(|(_, entries)| {
-                entries
-                    .iter()
-                    .filter(|e| e.name == entry.name)
-                    .map(|e| e.quantity)
-                    .sum::<i64>()
-            })
-            .unwrap_or(0);
-        let held_elsewhere = deck
-            .entries()
-            .filter(|e| e.name == entry.name)
-            .map(|e| e.quantity)
-            .sum::<i64>()
-            - held_in_target;
-        if held_in_target + entry.quantity + held_elsewhere > 1 {
-            rejected.push(entry.name.clone());
+        // Only names touched by an Add op are rejected: an oversized Set
+        // or Move is the operator's exact request.
+        let touched_by_add = ops.iter().any(|op| match op {
+            DeckOp::Add { entry, .. } => entry.name == name,
+            _ => false,
+        });
+        if touched_by_add {
+            rejected.push(name);
         }
     }
     if rejected.is_empty() {
-        return None;
+        return Ok(None);
     }
     out.error(&format!(
         "{} of the adds would exceed the singleton limit: {}",
@@ -597,7 +843,7 @@ fn reject_singleton_adds(
              or --allow-partial to skip this add"
         ));
     }
-    Some(crate::cli::codes::NO_RESULTS)
+    Ok(Some(crate::cli::codes::NO_RESULTS))
 }
 
 /// Warn when an op would push a non-basic card past one copy in a
@@ -607,9 +853,13 @@ fn reject_singleton_adds(
 /// copy and must not warn. Returns one warning per affected card name.
 /// The deck is still written: the warning is a nudge, and `deck legal`
 /// reports the real violation.
-fn singleton_warnings(ops: &[DeckOp], deck: &Deck) -> Vec<String> {
+fn singleton_warnings(
+    conn: &rusqlite::Connection,
+    ops: &[DeckOp],
+    deck: &Deck,
+) -> anyhow::Result<Vec<String>> {
     if deck.section_index("COMMANDER").is_none() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
     let mut warned: Vec<String> = Vec::new();
     for op in ops {
@@ -624,11 +874,15 @@ fn singleton_warnings(ops: &[DeckOp], deck: &Deck) -> Vec<String> {
         if warned.contains(&entry.name) {
             continue;
         }
-        // Sum across sections: a commander deck holds one copy total, so
-        // a move that splits 2 copies as 1+1 across sections still
-        // breaches the singleton rule.
+        // Sum across maindeck sections: a commander deck holds one copy
+        // outside the sideboard (the sideboard is a wishlist, not extra
+        // copies), so a move that splits 2 copies as 1+1 across maindeck
+        // sections still breaches the singleton rule.
         let held = deck
-            .entries()
+            .sections
+            .iter()
+            .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+            .flat_map(|(_, es)| es.iter())
             .filter(|e| e.name == entry.name)
             .map(|e| e.quantity)
             .sum();
@@ -638,17 +892,17 @@ fn singleton_warnings(ops: &[DeckOp], deck: &Deck) -> Vec<String> {
             // holds is the only state worth checking.
             OpKind::Add | OpKind::Move => held,
         };
-        if end_state <= 1 || is_unlimited_basics(&entry.name) {
+        if end_state <= 1 || is_singleton_exempt(conn, &entry.name) {
             continue;
         }
         warned.push(entry.name.clone());
     }
-    warned
+    Ok(warned
         .iter()
         .map(|name| {
             format!("{name} would exceed the singleton limit; commander decks hold one copy")
         })
-        .collect()
+        .collect())
 }
 
 /// True for the names that never break singleton (basics and snow basics;
@@ -661,124 +915,88 @@ fn is_unlimited_basics(name: &str) -> bool {
     ) || name.starts_with("Snow-Covered")
 }
 
-/// Collapse duplicate lines within each section: entries with the same card
-/// name merge into the first line, quantities summed.
-///
-/// In commander-shaped decks (a COMMANDER section), a non-basic merged line
-/// is capped at one copy: the singleton rule makes any larger holding an
-/// error, so extra copies collapse away instead of lingering in the file.
-/// Basics and 60-card-style decks (no COMMANDER section) keep summed
-/// quantities. Print info (set/cn/foil) of the first line wins. Returns
-/// `(deck, merged_line_count, merged_cards)`; the caller persists and
-/// reports.
-pub fn dedupe_deck(deck: &Deck) -> (Deck, usize, Vec<(String, i64)>) {
-    let commander = deck.section_index("COMMANDER").is_some();
-    let mut out = Deck::default();
-    let mut merged_lines = 0usize;
-    let mut merged_cards: Vec<(String, i64)> = Vec::new();
-    for (section, entries) in &deck.sections {
-        let target = out.section_entries_mut(section);
-        let mut index: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-        for entry in entries {
-            match index.get(&entry.name) {
-                Some(&pos) => {
-                    target[pos].quantity += entry.quantity;
-                    merged_lines += 1;
-                    merged_cards.push((entry.name.clone(), entry.quantity));
-                }
-                None => {
-                    index.insert(entry.name.clone(), target.len());
-                    target.push(entry.clone());
-                }
-            }
-        }
-        if commander {
-            // Collapse over-limit lines: a single line holding 2+ copies of
-            // a non-basic card is the same singleton breach as duplicate
-            // lines, and dedupe is the repair command.
-            let mut collapsed: Vec<(String, i64)> = Vec::new();
-            for entry in target.iter_mut() {
-                let excess = entry.quantity - 1;
-                if excess > 0 && !is_unlimited_basics(&entry.name) {
-                    entry.quantity = 1;
-                    collapsed.push((entry.name.clone(), excess));
-                }
-            }
-            for (name, qty) in collapsed {
-                merged_cards.push((name, qty));
-                merged_lines += 1;
-            }
-        }
+/// True when a card may hold any number of copies in a commander deck:
+/// basic lands by name plus oracle-text cards ("a deck can have any number
+/// of cards named ..."). Mirrors the exemption `deck legal` applies.
+pub(super) fn is_singleton_exempt(conn: &rusqlite::Connection, name: &str) -> bool {
+    if is_unlimited_basics(name) {
+        return true;
     }
-    (out, merged_lines, merged_cards)
+    crate::db::get_card(conn, name)
+        .ok()
+        .flatten()
+        .is_some_and(|c| super::stats::is_unlimited_copies(&c))
 }
 
-/// Entry point for `stm deck dedupe <name>`.
-///
-/// Merges same-name lines per section (first line's print info wins) and
-/// saves the deck. Exit 3 when the deck has no duplicates (nothing to do).
-pub fn dedupe(
-    paths: &crate::paths::Paths,
+/// Add basic lands after the ops until the deck reaches its format's
+/// exact size (100 with a COMMANDER section, 60 for brawl-shape decks, 59
+/// for oathbreaker, else 60). The basic name comes from the commander's
+/// (or deck's) color identity: the first identity color's basic; colorless
+/// decks get Wastes. Returns the added count. A missing commander row or
+/// unparseable identity warns and falls back to Wastes rather than failing
+/// the update.
+fn backfill_basics_to_size(
+    conn: &rusqlite::Connection,
     out: &mut crate::output::Output,
-    name: &str,
-    json: bool,
-) -> anyhow::Result<i32> {
-    let (_path, deck) = load_deck(paths, name)?;
-    let (deduped, merged_lines, merged_cards) = dedupe_deck(&deck);
-    let merged_copies: i64 = total_merged(&merged_cards);
-    if merged_lines == 0 {
-        if json {
-            // Same success shape either way: `merged` empty on a no-op, so
-            // agents parse one contract. Exit 3 still flags "nothing done".
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&serde_json::json!({
-                    "name": name,
-                    "merged_lines": 0,
-                    "merged_copies": 0,
-                    "cards": deck.total(),
-                    "merged": [],
-                }))?
-            );
-        } else {
-            out.error("no duplicate lines; the deck is already one line per card");
-        }
-        return Ok(crate::cli::codes::NO_RESULTS);
+    deck: &mut Deck,
+) -> anyhow::Result<i64> {
+    let target = super::legal::singleton_size_for_deck(deck);
+    // Match the legality check: only maindeck cards count toward the
+    // deck size (the sideboard is a wishlist, not legal maindeck).
+    let deficit = target - deck.maindeck_total();
+    if deficit <= 0 {
+        return Ok(0);
     }
-    save_deck(paths, name, &deduped)?;
-    if json {
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "name": name,
-                "merged_lines": merged_lines,
-                "merged_copies": merged_copies,
-                "cards": deduped.total(),
-                "merged": merged_cards
-                    .iter()
-                    .map(|(card, qty)| serde_json::json!({"name": card, "copies": qty}))
-                    .collect::<Vec<_>>(),
-            }))?
-        );
+    // Identity colors: the COMMANDER section first, else every entry.
+    let names: Vec<String> = match deck.section_index("COMMANDER") {
+        Some(i) => deck.sections[i].1.iter().map(|e| e.name.clone()).collect(),
+        None => deck.entries().map(|e| e.name.clone()).collect(),
+    };
+    let mut colors: Vec<char> = Vec::new();
+    for name in &names {
+        let Ok(card) = crate::db::get_card(conn, name) else {
+            continue;
+        };
+        let Some(card) = card else { continue };
+        if let Ok(identity) = serde_json::from_str::<Vec<String>>(&card.color_identity) {
+            for color in identity {
+                let c = color.chars().next().unwrap_or('C');
+                if !"WUBRG".contains(c) || colors.contains(&c) {
+                    continue;
+                }
+                colors.push(c);
+            }
+        }
+    }
+    let basic_for = |c: char| match c {
+        'W' => "Plains",
+        'U' => "Island",
+        'B' => "Swamp",
+        'R' => "Mountain",
+        _ => "Forest",
+    };
+    let basic = match colors.first() {
+        Some(&c) => basic_for(c),
+        None => {
+            // The commander is absent from the oracle or its identity is
+            // unparseable; the fallback is visible, not silent.
+            out.warning("color identity unknown; backfilling with Wastes");
+            "Wastes"
+        }
+    };
+    let list = deck.section_entries_mut("DECK");
+    if let Some(existing) = list.iter_mut().find(|e| e.name == basic) {
+        existing.quantity += deficit;
     } else {
-        for (card, qty) in &merged_cards {
-            out.status("Merged", &format!("{card} (+{qty} copies removed)"));
-        }
-        out.finish(
-            "Deduped",
-            &format!(
-                "deck {name:?}: {merged_lines} line(s) merged (now {} cards)",
-                deduped.total()
-            ),
-            std::time::Duration::ZERO,
-        );
+        list.push(crate::deck::grammar::DeckEntry {
+            quantity: deficit,
+            name: basic.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
     }
-    Ok(crate::cli::codes::OK)
-}
-
-/// Total copies carried by merged-away lines.
-fn total_merged(merged: &[(String, i64)]) -> i64 {
-    merged.iter().map(|(_, q)| q).sum()
+    Ok(deficit)
 }
 
 #[cfg(test)]

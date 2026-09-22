@@ -1,3 +1,4 @@
+use super::super::maintain::dedupe_deck;
 use super::*;
 
 /// Connection plus its backing tempdir (must outlive the connection).
@@ -10,6 +11,15 @@ fn seeded_conn() -> (tempfile::TempDir, rusqlite::Connection) {
     )
     .unwrap();
     (tmp, conn)
+}
+
+/// Connection with an empty oracle: singleton checks treat every test
+/// name as a regular limited card.
+fn empty_conn() -> rusqlite::Connection {
+    let tmp = tempfile::tempdir().unwrap();
+    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    std::mem::forget(tmp);
+    conn
 }
 
 /// Silent output for tests that call the reporting helpers.
@@ -90,7 +100,9 @@ fn ops_do_increment_and_decrement_math() {
     let summary = apply_ops(&mut deck, &ops).unwrap();
     assert_eq!(summary.added, 2);
     assert_eq!(summary.removed, 1);
-    assert_eq!(summary.set, 2);
+    // Both sets are no-ops: Bolt already reads 4 after the add, and Breya
+    // is gone after the remove. Only real changes count (bug 24).
+    assert_eq!(summary.set, 0);
     assert!(summary.missing.is_empty());
     // Bolt was +2 then set to 4; Breya deleted by set 0.
     assert_eq!(deck.total(), 4);
@@ -157,105 +169,54 @@ fn print_qualified_ops_stay_print_exact() {
 }
 
 #[test]
-fn dedupe_merges_same_name_lines_per_section() {
-    let deck =
-        Deck::parse("// DECK\n1 Bolt\n2 Bolt (M11) 148\n3 Bolt\n// SIDEBOARD\n2 Bolt\n").unwrap();
-    let (mut out, merged, cards) = dedupe_deck(&deck);
-    assert_eq!(merged, 2, "two duplicates merged");
-    assert_eq!(
-        cards,
-        vec![("Bolt".to_string(), 2), ("Bolt".to_string(), 3)]
-    );
-    assert_eq!(out.total(), 8); // 6 Bolt + 2 sideboard Bolt
-    // Quantities sum; first line's print info wins.
-    let deck_entries: Vec<_> = out.section_entries_mut("DECK").clone();
-    assert_eq!(deck_entries[0].name, "Bolt");
-    assert_eq!(deck_entries[0].quantity, 6);
-    assert_eq!(deck_entries[0].set_code, None, "first line had no print");
-    assert_eq!(out.to_text(), "// DECK\n6 Bolt\n\n// SIDEBOARD\n2 Bolt\n");
-}
-
-#[test]
-fn dedupe_collapses_over_singleton_quantities_in_commander_decks() {
-    // A commander deck holds one copy per non-basic card: duplicate
-    // lines merge AND over-limit single lines collapse to 1.
-    let deck = Deck::parse(
-        "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n2 Bolt (M11) 148\n3 Bolt\n// SIDEBOARD\n2 Bolt\n",
-    )
-    .unwrap();
-    let (out, merged, cards) = dedupe_deck(&deck);
-    // 2 duplicate lines merged + 1 collapsed excess in DECK + 1 in SIDEBOARD.
-    assert_eq!(merged, 4);
-    assert_eq!(out.total(), 3); // 1 Breya + 1 Bolt + 1 sideboard Bolt
-    assert_eq!(
-        out.to_text(),
-        "// COMMANDER\n1 Breya\n\n// DECK\n1 Bolt\n\n// SIDEBOARD\n1 Bolt\n"
-    );
-    assert!(cards.contains(&("Bolt".to_string(), 2)));
-    assert!(cards.contains(&("Bolt".to_string(), 3)));
-    assert!(cards.contains(&("Bolt".to_string(), 1)));
-    assert!(cards.contains(&("Bolt".to_string(), 1)));
-}
-
-#[test]
-fn dedupe_keeps_basics_and_60_card_decks_at_summed_quantities() {
-    // Basics are unlimited and a 60-card-style deck (no COMMANDER
-    // section) may hold 4-ofs; neither collapses.
-    let commander = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n20 Island\n").unwrap();
-    let (out, merged, _) = dedupe_deck(&commander);
-    assert_eq!(merged, 0);
-    assert_eq!(out.total(), 21);
-    let flat = Deck::parse("// DECK\n4 Bolt\n").unwrap();
-    let (out, merged, _) = dedupe_deck(&flat);
-    assert_eq!(merged, 0);
-    assert_eq!(out.total(), 4);
-}
-
-#[test]
-fn dedupe_keeps_distinct_prints_when_names_differ() {
-    // Different names never merge, even with identical other fields.
-    let deck = Deck::parse("// DECK\n1 Bolt\n1 Shock\n").unwrap();
-    let (out, merged, _) = dedupe_deck(&deck);
-    assert_eq!(merged, 0);
-    assert_eq!(out.total(), 2);
-}
-
-#[test]
 fn reject_singleton_adds_blocks_over_limit_adds() {
     // Commander deck: adding a second copy of an existing card rejects.
     let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
     let mut out = silent_out();
     let ops = vec![parse_op("add", "1 Bolt").unwrap()];
     assert_eq!(
-        reject_singleton_adds(&mut out, &deck, &ops),
+        reject_singleton_adds(&empty_conn(), &mut out, &deck, &ops).unwrap(),
         Some(crate::cli::codes::NO_RESULTS)
     );
     // A 60-card deck never rejects.
     let flat = Deck::parse("// DECK\n1 Bolt\n").unwrap();
     let mut out = silent_out();
-    assert_eq!(reject_singleton_adds(&mut out, &flat, &ops), None);
+    assert_eq!(
+        reject_singleton_adds(&empty_conn(), &mut out, &flat, &ops).unwrap(),
+        None
+    );
     // Basics are exempt.
     let commander = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Island\n").unwrap();
     let mut out = silent_out();
     let ops = vec![parse_op("add", "5 Island").unwrap()];
-    assert_eq!(reject_singleton_adds(&mut out, &commander, &ops), None);
+    assert_eq!(
+        reject_singleton_adds(&empty_conn(), &mut out, &commander, &ops).unwrap(),
+        None
+    );
     // Adding a new card (not in the deck) is fine.
     let mut out = silent_out();
     let ops = vec![parse_op("add", "1 Shock").unwrap()];
-    assert_eq!(reject_singleton_adds(&mut out, &deck, &ops), None);
-    // Copies held in another section count against the singleton total.
+    assert_eq!(
+        reject_singleton_adds(&empty_conn(), &mut out, &deck, &ops).unwrap(),
+        None
+    );
+    // A sideboard copy does not count against the singleton total: the
+    // sideboard is a wishlist, so a first maindeck copy is still legal.
     let split =
         Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n1 Shock\n").unwrap();
     let mut out = silent_out();
     let ops = vec![parse_op("add", "1 Shock").unwrap()];
     assert_eq!(
-        reject_singleton_adds(&mut out, &split, &ops),
-        Some(crate::cli::codes::NO_RESULTS)
+        reject_singleton_adds(&empty_conn(), &mut out, &split, &ops).unwrap(),
+        None
     );
     // Set and Move ops are never rejected here.
     let mut out = silent_out();
     let ops = vec![parse_op("set", "2 Bolt").unwrap()];
-    assert_eq!(reject_singleton_adds(&mut out, &deck, &ops), None);
+    assert_eq!(
+        reject_singleton_adds(&empty_conn(), &mut out, &deck, &ops).unwrap(),
+        None
+    );
 }
 
 #[test]
@@ -263,28 +224,45 @@ fn singleton_warnings_flag_only_commander_decks() {
     // No COMMANDER section: no warnings at all.
     let deck = Deck::parse("// DECK\n2 Bolt\n").unwrap();
     let ops = vec![parse_op("add", "2 Bolt").unwrap()];
-    assert!(singleton_warnings(&ops, &deck).is_empty());
+    assert!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty()
+    );
     // With a COMMANDER section, a post-apply hold of two warns.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
     let ops = vec![parse_op("add", "2 Bolt").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
     assert_eq!(
-        singleton_warnings(&ops, &deck),
+        singleton_warnings(&empty_conn(), &ops, &deck).unwrap(),
         vec!["Bolt would exceed the singleton limit; commander decks hold one copy".to_string()]
     );
     // Basics are exempt.
     let ops = vec![parse_op("add", "20 Island").unwrap()];
-    assert!(singleton_warnings(&ops, &deck).is_empty());
+    assert!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty()
+    );
     // A set that lowers to 1 does not warn.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n4 Bolt\n").unwrap();
     let ops = vec![parse_op("set", "1 Bolt").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert!(singleton_warnings(&ops, &deck).is_empty());
+    assert!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty()
+    );
     // A set that raises to 3 warns after apply.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
     let ops = vec![parse_op("set", "3 Bolt").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+    assert_eq!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -294,23 +272,41 @@ fn singleton_warnings_read_post_apply_deck_state() {
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
     let ops = vec![parse_op("add", "1 Secluded Courtyard").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert!(singleton_warnings(&ops, &deck).is_empty());
+    assert!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty()
+    );
     // A multi-copy add still warns.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n").unwrap();
     let ops = vec![parse_op("add", "2 Secluded Courtyard").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+    assert_eq!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .len(),
+        1
+    );
     // Adding a second copy of a held card still warns.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Secluded Courtyard\n").unwrap();
     let ops = vec![parse_op("add", "1 Secluded Courtyard").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+    assert_eq!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .len(),
+        1
+    );
     // A move nets to one copy: no warning (the false-positive case
     // that motivated post-apply semantics).
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n").unwrap();
     let ops = vec![parse_op("move", "1 Bolt to:sideboard").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert!(singleton_warnings(&ops, &deck).is_empty());
+    assert!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -410,14 +406,21 @@ fn singleton_warnings_read_post_apply_state() {
     ];
     let _ = apply_ops(&mut deck, &ops).unwrap();
     assert!(
-        singleton_warnings(&ops, &deck).is_empty(),
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .is_empty(),
         "a legal move must not warn"
     );
     // A genuine double-copy hold still warns after apply.
     let mut deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n").unwrap();
     let ops = vec![parse_op("add", "1 Bolt").unwrap()];
     let _ = apply_ops(&mut deck, &ops).unwrap();
-    assert_eq!(singleton_warnings(&ops, &deck).len(), 1);
+    assert_eq!(
+        singleton_warnings(&empty_conn(), &ops, &deck)
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -455,4 +458,469 @@ fn move_onto_existing_line_sums_quantities() {
     assert_eq!(main.len(), 2);
     assert_eq!(main[1].name, "Strix");
     assert_eq!(main[1].quantity, 1);
+}
+
+/// Newly added basic lands never appear in the buylist, even when the
+/// before-deck has no such basic (the name check must not depend on the
+/// oracle rows of the before-deck).
+#[test]
+fn cost_delta_ignores_newly_added_basics() {
+    let (tmp, conn) = seeded_conn();
+    let before = Deck::parse("// DECK\n1 Bolt\n").unwrap();
+    let after = Deck::parse("// DECK\n1 Bolt\n3 Island\n").unwrap();
+    let impact = cost_delta(&conn, &before, &after).unwrap();
+    assert!(impact.to_buy.items.is_empty());
+    let _ = &tmp;
+}
+
+/// The dry-run cost delta: an extra demanded copy the collection cannot
+/// cover prices at the cheapest printing; a released slot frees its value.
+#[test]
+fn cost_delta_matches_buy_and_freed() {
+    let (tmp, conn) = seeded_conn();
+    conn.execute(
+        "INSERT INTO collection (name, set_code, collector_number, foil, binder, binder_type, quantity)
+         VALUES ('Lightning Bolt', 'tst', '1', 'normal', 'Trade', 'binder', 1)",
+        [],
+    )
+    .unwrap();
+    let before = Deck::parse("// DECK\n1 Bolt\n").unwrap();
+    let after = Deck::parse("// DECK\n3 Bolt\n1 Force of Will\n").unwrap();
+    // Force of Will has no card row here, so it is unpriced; the "Bolt"
+    // prefix line is its own name entry and stays short (owned copies
+    // key under "Lightning Bolt"). BTreeMap sorts the item names.
+    let impact = cost_delta(&conn, &before, &after).unwrap();
+    let names: Vec<&str> = impact
+        .to_buy
+        .items
+        .iter()
+        .map(|i| i.name.as_str())
+        .collect();
+    assert_eq!(names, vec!["Bolt", "Force of Will"]);
+    // Removing Bolt frees its one owned copy's slot.
+    let freed = cost_delta(&conn, &after, &before).unwrap();
+    assert_eq!(freed.to_buy.items.len(), 0);
+    assert!(freed.freed_usd >= 0.0, "freed value is not negative");
+    let _ = &tmp;
+}
+
+/// Dry-run through the command surface: nothing is written and the exit
+/// code is clean when no sim problems appear.
+#[test]
+fn update_dry_run_writes_nothing() {
+    let (tmp, conn) = seeded_conn();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(paths.deck_file("Froggy"), "// DECK\n1 Lightning Bolt\n").unwrap();
+    let mut out = silent_out();
+    let before_text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &["1 Lightning Bolt".to_string()],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let after_text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    assert_eq!(before_text, after_text, "dry-run must not write the deck");
+}
+
+#[test]
+fn dry_run_legal_flags_violation() {
+    // Adding a second copy in a commander deck trips the singleton rule
+    // in the --legal verdict, and the preview exits 1.
+    let (tmp, conn) = seeded_conn();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Breya', 'o1', '', 0, 'Legendary Creature — Human', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's1', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Bolt', 'o2', '{1}{R}', 1, 'Instant', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's2', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    for i in 0..10 {
+        conn.execute(
+            &format!(
+                "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+                    keywords, oracle_text, rarity, legalities, set_code, collector_number,
+                    scryfall_id, released_at, game_changer, edhrec_rank)
+                 VALUES ('Island{i}', 'o3-{i}', '', 0, 'Basic Land — Island', '[]', '[]', '[]', '',
+                    'common', '{{\"commander\":\"legal\"}}', 'tst', '1', 's3-{i}', '2020-01-01', NULL, NULL)"
+            ),
+            [],
+        )
+        .unwrap();
+    }
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(
+        paths.deck_file("Froggy"),
+        "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n10 Island\n",
+    )
+    .unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &[],
+        &["2 Bolt".to_string()],
+        &[],
+        None,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        code,
+        crate::cli::codes::ERROR,
+        "illegal post-change deck fails the preview"
+    );
+}
+
+#[test]
+fn backfill_basics_reaches_target_size() {
+    // A trimmed commander deck backfills to 100 cards with an on-color
+    // basic (Breya's identity starts with W → Plains).
+    let (tmp, conn) = seeded_conn();
+    conn.execute("DELETE FROM cards WHERE name = 'Lightning Bolt'", [])
+        .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Breya', 'o1', '', 0, 'Legendary Creature — Human', '[]', '[\"W\",\"U\",\"B\",\"R\"]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's1', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Bolt', 'o2', '{1}{R}', 1, 'Instant', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's2', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(
+        paths.deck_file("Froggy"),
+        "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n",
+    )
+    .unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    let deck = crate::deck::Deck::parse(&text).unwrap();
+    assert_eq!(deck.total(), 100, "backfill reaches the commander size");
+    let plains: i64 = deck
+        .entries()
+        .filter(|e| e.name == "Plains")
+        .map(|e| e.quantity)
+        .sum();
+    assert_eq!(
+        plains, 98,
+        "the first identity color's basic fills the deficit"
+    );
+}
+
+#[test]
+fn dry_run_legal_uses_constructed_rules_for_60_card_decks() {
+    // A 60-card-shaped deck must not be judged by commander rules in the
+    // --legal verdict: singleton and exact-100 checks would reject it.
+    let (tmp, conn) = seeded_conn();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Bolt', 'o2', '{1}{R}', 1, 'Instant', '[]', '[]', '[]', '',
+            'common', '{\"modern\":\"legal\",\"commander\":\"legal\"}', 'tst', '1', 's2', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    for i in 0..56 {
+        conn.execute(
+            &format!(
+                "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+                    keywords, oracle_text, rarity, legalities, set_code, collector_number,
+                    scryfall_id, released_at, game_changer, edhrec_rank)
+                 VALUES ('Island{i}', 'o3-{i}', '', 0, 'Basic Land — Island', '[]', '[]', '[]', '',
+                    'common', '{{\"modern\":\"legal\"}}', 'tst', '1', 's3-{i}', '2020-01-01', NULL, NULL)"
+            ),
+            [],
+        )
+        .unwrap();
+    }
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    let mut deck_text = String::from("// DECK\n3 Bolt\n");
+    for i in 0..56 {
+        deck_text.push_str(&format!("1 Island{i}\n"));
+    }
+    std::fs::write(paths.deck_file("Storm"), deck_text).unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Storm",
+        &["1 Bolt".to_string()],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        code,
+        crate::cli::codes::OK,
+        "a 59-card constructed deck adding its 60th card passes the preview"
+    );
+}
+
+#[test]
+fn backfill_ignores_sideboard_when_counting_deficit() {
+    // The sideboard is a wishlist: a 95-card maindeck with 15 sideboard
+    // cards must still backfill 5 basics.
+    let (tmp, conn) = seeded_conn();
+    conn.execute("DELETE FROM cards WHERE name = 'Lightning Bolt'", [])
+        .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Breya', 'o1', '', 0, 'Legendary Creature — Human', '[]', '[\"W\"]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's1', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Bolt', 'o2', '{1}{R}', 1, 'Instant', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's2', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(
+        paths.deck_file("Froggy"),
+        "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n94 Plains\n// SIDEBOARD\n15 Bolt\n",
+    )
+    .unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    let deck = crate::deck::Deck::parse(&text).unwrap();
+    assert_eq!(
+        deck.maindeck_total(),
+        100,
+        "the deficit counts maindeck cards only"
+    );
+    assert_eq!(deck.sideboard_total(), 15, "sideboard is untouched");
+}
+
+#[test]
+fn dry_run_backfill_previews_backfilled_deck() {
+    // In dry-run, the backfill applies to the preview clone so --legal
+    // judges the end state; the deck file stays untouched.
+    let (tmp, conn) = seeded_conn();
+    conn.execute("DELETE FROM cards WHERE name = 'Lightning Bolt'", [])
+        .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Breya', 'o1', '', 0, 'Legendary Creature — Human', '[]', '[\"W\"]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's1', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Bolt', 'o2', '{1}{R}', 1, 'Instant', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's2', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+            keywords, oracle_text, rarity, legalities, set_code, collector_number,
+            scryfall_id, released_at, game_changer, edhrec_rank)
+         VALUES ('Plains', 'o4', '', 0, 'Basic Land — Plains', '[]', '[]', '[]', '',
+            'common', '{\"commander\":\"legal\"}', 'tst', '1', 's4', '2020-01-01', NULL, NULL)",
+        [],
+    )
+    .unwrap();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(
+        paths.deck_file("Froggy"),
+        "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n",
+    )
+    .unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        true,
+        false,
+        true,
+        true,
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        code,
+        crate::cli::codes::OK,
+        "the backfilled preview deck is legal"
+    );
+    let text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    assert_eq!(
+        text, "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n",
+        "dry-run still writes nothing"
+    );
+}
+
+#[test]
+fn unlimited_copy_cards_escape_singleton_guards() {
+    // "A deck can have any number of cards named ..." oracle text exempts
+    // a card from the singleton guard, the warnings, and dedupe collapse.
+    let (tmp, conn) = seeded_conn();
+    conn.execute("DELETE FROM cards WHERE name = 'Lightning Bolt'", [])
+        .unwrap();
+    for (name, oid, text) in [
+        ("Breya", "o1", ""),
+        (
+            "Shadowborn Apostle",
+            "o2",
+            "A deck can have any number of cards named Shadowborn Apostle.",
+        ),
+        ("Bolt", "o3", ""),
+    ] {
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
+                keywords, oracle_text, rarity, legalities, set_code, collector_number,
+                scryfall_id, released_at, game_changer, edhrec_rank)
+             VALUES (?1, ?2, '', 0, 'Creature', '[]', '[]', '[]', ?3,
+                'common', '{\"commander\":\"legal\"}', 'tst', '1', 's', '2020-01-01', NULL, NULL)",
+            rusqlite::params![name, oid, text],
+        )
+        .unwrap();
+    }
+    let _ = tmp;
+    // Guard: adding a 2nd Apostle passes.
+    let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Shadowborn Apostle\n").unwrap();
+    let mut out = silent_out();
+    let ops = vec![parse_op("add", "1 Shadowborn Apostle").unwrap()];
+    assert_eq!(
+        reject_singleton_adds(&conn, &mut out, &deck, &ops).unwrap(),
+        None
+    );
+    // Warnings: 30 Apostle copies stay silent.
+    let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n30 Shadowborn Apostle\n").unwrap();
+    assert!(singleton_warnings(&conn, &ops, &deck).unwrap().is_empty());
+    // Dedupe: 2 duplicate Apostle lines merge, nothing collapses to 1.
+    let deck = Deck::parse(
+        "// COMMANDER\n1 Breya\n// DECK\n20 Shadowborn Apostle\n10 Shadowborn Apostle\n",
+    )
+    .unwrap();
+    let result = dedupe_deck(&conn, &deck).unwrap();
+    let out_deck = result.deck;
+    let merged = result.merged_lines;
+    let cards = result.merged_cards;
+    assert_eq!(merged, 1);
+    assert_eq!(out_deck.total(), 31, "Apostle keeps its summed copies");
+    assert!(!cards.iter().any(|(n, _)| n == "Breya"));
+    // A regular card still collapses to 1.
+    let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n2 Bolt\n").unwrap();
+    let result = dedupe_deck(&conn, &deck).unwrap();
+    let out_deck = result.deck;
+    let merged = result.merged_lines;
+    assert_eq!(merged, 1);
+    assert_eq!(out_deck.total(), 2);
 }

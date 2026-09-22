@@ -14,6 +14,8 @@
 // is honorary UB: Wizards owns D&D, so Scryfall does not flag its prints,
 // but players read AFR/CLB as crossover product.
 
+use anyhow::Context;
+
 /// Sets in a UB franchise, curated by set code (lowercase).
 const FRANCHISE_CODES: &[(&str, &str)] = &[
     ("ltr", "Middle-earth"),
@@ -52,6 +54,26 @@ const FRANCHISE_CODES: &[(&str, &str)] = &[
 /// Secret Lair set codes: UB-flagged prints, but no single franchise. They
 /// group by their set name ("Secret Lair Drop") in censuses.
 const SECRET_LAIR_CODES: &[&str] = &["sld", "slc", "slu", "slp", "pssc"];
+
+/// UB-flagged promo and organized-play set codes: crossover promos,
+/// convention and WPN prints. No single franchise; each groups by its own
+/// set name in censuses. Known so the sync does not warn.
+const UB_PROMO_CODES: &[&str] = &[
+    "pmei", // Media and Collaboration Promos
+    "pf23", // MagicFest 2023
+    "pf25", // MagicFest 2025
+    "pf26", // MagicFest 2026
+    "ph21", // 2021 Heroes of the Realm
+    "ppro", // Pro Tour Promos
+    "pspl", // Spotlight Series
+    "pss5", // FIN Standard Showdown
+    "purl", // URL/Convention Promos
+    "pw23", // Wizards Play Network 2023
+    "pw25", // Wizards Play Network 2025
+    "pw26", // Wizards Play Network 2026
+    "sch",  // Store Championships
+    "clu",  // Ravnica: Clue Edition (Clue board-game crossover)
+];
 
 /// Name-keyword rules for future sets (checked in order; first hit wins).
 const FRANCHISE_KEYWORDS: &[(&str, &str)] = &[
@@ -100,6 +122,12 @@ pub fn is_secret_lair(set_code: &str) -> bool {
     SECRET_LAIR_CODES.contains(&set_code.to_ascii_lowercase().as_str())
 }
 
+/// True when the set is a known UB promo/organized-play set (no franchise,
+/// but not a mapping gap).
+pub fn is_ub_promo(set_code: &str) -> bool {
+    UB_PROMO_CODES.contains(&set_code.to_ascii_lowercase().as_str())
+}
+
 /// True when a set is UB by our rules, given Scryfall's per-print flag.
 ///
 /// D&D sets count as UB even though Scryfall leaves their prints unflagged.
@@ -111,10 +139,14 @@ pub fn is_universes_beyond(set_code: &str, print_flagged: bool) -> bool {
         )
 }
 
-/// True when the set carries the UB print flag but maps to no franchise and
-/// is not Secret Lair — a curated-table gap the sync should warn about.
+/// True when the set carries the UB print flag but maps to no franchise
+/// and is neither Secret Lair nor a known UB promo set — a curated-table
+/// gap the sync should warn about.
 pub fn unknown_ub_set(set_code: &str, set_name: &str, print_flagged: bool) -> bool {
-    print_flagged && franchise_for(set_code, set_name).is_none() && !is_secret_lair(set_code)
+    print_flagged
+        && franchise_for(set_code, set_name).is_none()
+        && !is_secret_lair(set_code)
+        && !is_ub_promo(set_code)
 }
 
 /// Universe metadata for one card, resolved from the store.
@@ -155,13 +187,14 @@ pub fn card_universe(
             [name],
             |r| Ok((r.get(0)?, r.get(1)?)),
         )
-        .unwrap_or((0, 0));
+        .with_context(|| format!("reading universe prints for {name}"))?;
+    // A name with no stored prints reads as total = 0: multiverse.
     let universe = if total > 0 && ub == total {
         "beyond"
     } else {
         "multiverse"
     };
-    let (set_name, set_type, block, franchise): (
+    let (set_name, set_type, block, set_franchise): (
         Option<String>,
         Option<String>,
         Option<String>,
@@ -173,6 +206,15 @@ pub fn card_universe(
             |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
         )
         .unwrap_or((None, None, None, None));
+    // A franchise belongs to a universes-beyond card only: the
+    // representative print may sit in an in-universe set while other
+    // prints are UB, and pairing `universe: "multiverse"` with a
+    // franchise reads as a contradiction.
+    let franchise = if universe == "beyond" {
+        set_franchise
+    } else {
+        None
+    };
     Ok(CardUniverse {
         universe,
         franchise,
@@ -277,11 +319,13 @@ mod tests {
 
         let meta = card_universe(&conn, "Test Card", "msh").unwrap();
         assert_eq!(meta.universe, "multiverse", "any in-universe print wins");
-        assert_eq!(meta.franchise.as_deref(), Some("Marvel"));
+        // A mixed-print card reports multiverse with no franchise: the
+        // franchise belongs to the UB set, not the card.
+        assert_eq!(meta.franchise.as_deref(), None);
         assert_eq!(meta.set_name.as_deref(), Some("Marvel Super Heroes"));
         assert_eq!(meta.set_type.as_deref(), Some("expansion"));
 
-        // All-UB card: beyond.
+        // All-UB card: beyond, and the franchise follows.
         conn.execute(
             "INSERT INTO card_prints (scryfall_id, name, set_code, universes_beyond, updated_at)
              VALUES ('p3', 'Iron Test', 'msh', 1, 't')",
@@ -296,5 +340,17 @@ mod tests {
         let meta = card_universe(&conn, "Missing Card", "ghost").unwrap();
         assert_eq!(meta.universe, "multiverse");
         assert_eq!(meta.set_name, None);
+    }
+}
+
+#[test]
+fn promo_ub_sets_do_not_warn() {
+    // Organized-play and crossover promo sets carry the UB print flag but
+    // no franchise: known, never a warning.
+    for code in [
+        "pspl", "pmei", "pf25", "pss5", "pw26", "clu", "pf23", "pw25", "purl", "pf26", "sch",
+        "ppro", "ph21", "pw23",
+    ] {
+        assert!(!unknown_ub_set(code, "Any Name", true), "{code} warns");
     }
 }

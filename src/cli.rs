@@ -13,6 +13,7 @@ pub mod codes {
 }
 
 /// Seize the Mana: Scryfall-backed card search, collection, and deck tooling.
+/// stm CLI root: global flags plus the subcommand dispatch.
 #[derive(Parser, Debug)]
 #[command(
     name = "stm",
@@ -74,9 +75,6 @@ pub enum CardCommand {
         /// Emit JSON
         #[arg(long)]
         json: bool,
-        /// Skip the stale-while-revalidate sync check
-        #[arg(long)]
-        offline: bool,
     },
 
     /// List Commander Spellbook combos that include a card
@@ -92,12 +90,10 @@ pub enum CardCommand {
         /// Emit JSON
         #[arg(long)]
         json: bool,
-        /// Skip the stale-while-revalidate sync check
-        #[arg(long)]
-        offline: bool,
     },
 }
 
+/// Top-level stm subcommands: setup, sync, card, collection, and deck.
 #[derive(Subcommand, Debug)]
 pub enum Command {
     /// Download Scryfall bulk data and build the searchable card index
@@ -144,9 +140,6 @@ pub enum Command {
         /// Emit JSON
         #[arg(long)]
         json: bool,
-        /// Skip the stale-while-revalidate sync check
-        #[arg(long)]
-        offline: bool,
     },
 
     /// Collection: import, stats, and owned-only search
@@ -154,9 +147,6 @@ pub enum Command {
         /// Emit JSON (bare `stm collection` stats view)
         #[arg(long)]
         json: bool,
-        /// Skip the stale-while-revalidate sync check
-        #[arg(long)]
-        offline: bool,
         #[command(subcommand)]
         command: Option<CollectionCommand>,
     },
@@ -173,6 +163,7 @@ pub enum Command {
     },
 }
 
+/// Collection subcommands: import, stats, valuation, and card lookups.
 #[derive(Subcommand, Debug)]
 #[allow(clippy::large_enum_variant)]
 pub enum CollectionCommand {
@@ -183,9 +174,12 @@ pub enum CollectionCommand {
         /// Add to the existing collection instead of replacing it
         #[arg(long)]
         add: bool,
-        /// Replace the collection without confirmation
+    },
+    /// Cards wanted by more decks than you own copies of
+    Conflicts {
+        /// Emit JSON
         #[arg(long)]
-        force: bool,
+        json: bool,
     },
     /// Hybrid search restricted to cards you own (keyword + meaning legs)
     Query {
@@ -205,12 +199,10 @@ pub enum CollectionCommand {
         /// Emit JSON
         #[arg(long)]
         json: bool,
-        /// Skip the stale-while-revalidate sync check
-        #[arg(long)]
-        offline: bool,
     },
 }
 
+/// Deck subcommands: build, edit, evaluate, and share deck files.
 #[derive(Subcommand, Debug)]
 pub enum DeckCommand {
     /// Create a new empty deck
@@ -244,6 +236,21 @@ pub enum DeckCommand {
         json: bool,
     },
 
+    /// Sample opening hands (same shuffle and mulligan rules as simulate)
+    Hand {
+        /// Deck name
+        name: String,
+        /// RNG seed for reproducible hands (default: random)
+        #[arg(long)]
+        seed: Option<u64>,
+        /// Number of hands to deal (default 3, max 10)
+        #[arg(long, default_value_t = 3, value_parser = clap::value_parser!(u32).range(1..=10))]
+        count: u32,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+    },
+
     /// Update a deck (add/remove/set/move quantities, per section)
     Update {
         name: String,
@@ -253,7 +260,7 @@ pub enum DeckCommand {
         /// Remove a line entirely, or decrement with `2 Bolt`
         #[arg(long = "remove", value_name = "SPEC")]
         remove: Vec<String>,
-        /// Set an exact quantity, e.g. `Bolt 4` (0 deletes the line)
+        /// Set an exact quantity, e.g. `4 Bolt` or `0 Breya` (0 deletes the line)
         #[arg(long = "set", value_name = "SPEC")]
         set: Vec<String>,
         /// Move copies between sections, e.g. `1 Bolt to:sideboard` or
@@ -269,6 +276,25 @@ pub enum DeckCommand {
         /// instead of aborting the whole batch
         #[arg(long = "allow-partial")]
         allow_partial: bool,
+        /// Preview the change: list diff + cost impact, nothing written
+        #[arg(long = "dry-run")]
+        dry_run: bool,
+        /// With --dry-run: also simulate before/after at the same seed and
+        /// print the consistency delta
+        #[arg(long = "sim")]
+        sim: bool,
+        /// With --dry-run: also run the legality checks on the post-change
+        /// deck and fail the preview when the result is illegal
+        #[arg(long = "legal")]
+        legal: bool,
+        /// Add basic lands after the ops until the deck reaches its size
+        /// (100 for commander, 60 otherwise), picking a basic per the
+        /// deck's color identity
+        #[arg(long = "backfill-basics")]
+        backfill_basics: bool,
+        /// Emit JSON (dry-run preview or the update summary)
+        #[arg(long)]
+        json: bool,
     },
 
     /// Merge duplicate lines (same card name) into one line per section
@@ -315,6 +341,13 @@ pub enum DeckCommand {
         /// Maximum results (default 10)
         #[arg(long, default_value_t = 10, value_parser = clap::value_parser!(u32).range(1..=50))]
         limit: u32,
+        /// Restrict candidates to cards the collection owns
+        #[arg(long)]
+        owned: bool,
+        /// Card names or a text file of names (one per line, `#`
+        /// comments allowed) never to suggest
+        #[arg(long = "exclude", value_name = "NAME|FILE")]
+        exclude: Vec<String>,
         /// Emit JSON
         #[arg(long)]
         json: bool,
@@ -338,7 +371,14 @@ pub enum DeckCommand {
     Import {
         name: String,
         /// ManaBox deck txt file to import
-        file: std::path::PathBuf,
+        #[arg(value_name = "FILE")]
+        file: Option<std::path::PathBuf>,
+        /// URL to import from (Archidekt deck URL)
+        #[arg(long = "url", value_name = "URL")]
+        url: Option<String>,
+        /// Force the format (default: auto-detect from the text)
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
     },
 
     /// Simulate goldfish games to find mana and consistency problems
@@ -395,6 +435,11 @@ pub enum DeckCommand {
         /// deck's sections)
         #[arg(long = "format", value_name = "FMT")]
         format: Option<String>,
+        /// Budget cap for `--for` fill candidates: drop candidates priced
+        /// above this amount in US dollars (USD); unpriced candidates are
+        /// excluded
+        #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
+        max_price: Option<f64>,
         /// Emit JSON
         #[arg(long)]
         json: bool,
@@ -432,6 +477,10 @@ pub enum DeckCommand {
         /// Emit the change-log markdown (remove/add instruction table)
         #[arg(long = "markdown")]
         markdown: bool,
+        /// Emit `deck update --from` op lines (remove/set/add) instead of
+        /// a diff table
+        #[arg(long = "as-update")]
+        as_update: bool,
     },
 
     /// Export a deck to a ManaBox txt file
@@ -442,8 +491,8 @@ pub enum DeckCommand {
         /// Overwrite the destination file if it exists
         #[arg(long)]
         force: bool,
-        /// Output format: manabox (default) or names (plain `qty Name`
-        /// lines, no set/collector-number decorations)
+        /// Output format: manabox (default), names, moxfield, archidekt,
+        /// arena
         #[arg(long, value_name = "FMT", default_value = "manabox")]
         format: String,
     },
@@ -463,10 +512,22 @@ pub enum DeckCommand {
         json: bool,
     },
 
+    /// Duplicate a decklist and its primer under a new name
+    Copy {
+        /// Source deck name
+        source: String,
+        /// New deck name to create
+        destination: String,
+        /// Overwrite the destination decklist if it exists
+        #[arg(long)]
+        force: bool,
+    },
+
     /// Print or replace a deck's primer markdown
     Primer {
         name: String,
-        /// Replace the primer's contents from a markdown file
+        /// Replace the primer's contents from a markdown file, or `-` for
+        /// stdin
         #[arg(long, value_name = "FILE")]
         set: Option<std::path::PathBuf>,
     },
@@ -478,10 +539,75 @@ fn parse_max_price(s: &str) -> Result<f64, String> {
     let v: f64 = s
         .parse()
         .map_err(|_| format!("`{s}` is not a USD amount"))?;
+    if !v.is_finite() {
+        return Err("--max-price must be a finite USD amount".to_string());
+    }
     if v < 0.0 {
         return Err("--max-price must be zero or positive".to_string());
     }
     Ok(v)
+}
+
+/// The active subcommand's `--json` flag, or false when the subcommand has
+/// none. Lets the renderer suppress status lines before dispatch.
+impl Cli {
+    /// Whether the active subcommand set `--json`.
+    pub fn json_flag(&self) -> bool {
+        match &self.command {
+            Command::Setup { .. } => false,
+            Command::Sync { .. } => false,
+            Command::Card { command, json, .. } => {
+                if let Some(sub) = command {
+                    *match sub {
+                        CardCommand::Show { json, .. }
+                        | CardCommand::Similar { json, .. }
+                        | CardCommand::Combos { json, .. } => json,
+                    }
+                } else {
+                    *json
+                }
+            }
+            Command::Query { json, .. } => *json,
+            Command::Collection { json, command, .. } => match command {
+                None => *json,
+                Some(c) => match c {
+                    CollectionCommand::Conflicts { json } => *json,
+                    CollectionCommand::Import { .. } => false,
+                    CollectionCommand::Query { json, .. } => *json,
+                },
+            },
+            Command::Deck { json, command, .. } => deck_json_flag(json, command),
+        }
+    }
+}
+
+/// `--json` for deck subcommands; a subcommand's flag wins, the sugar views
+/// fall back to the parent flag.
+fn deck_json_flag(json: &bool, command: &Option<DeckCommand>) -> bool {
+    match command {
+        None => *json,
+        Some(c) => match c {
+            DeckCommand::Create { .. }
+            | DeckCommand::Import { .. }
+            | DeckCommand::Export { .. }
+            | DeckCommand::Delete { .. }
+            | DeckCommand::Copy { .. }
+            | DeckCommand::Primer { .. } => false,
+            DeckCommand::List { json }
+            | DeckCommand::Show { json, .. }
+            | DeckCommand::Mana { json, .. }
+            | DeckCommand::Hand { json, .. }
+            | DeckCommand::Update { json, .. }
+            | DeckCommand::Dedupe { json, .. }
+            | DeckCommand::Suggest { json, .. }
+            | DeckCommand::Legal { json, .. }
+            | DeckCommand::Simulate { json, .. }
+            | DeckCommand::Cuts { json, .. }
+            | DeckCommand::Combos { json, .. }
+            | DeckCommand::Diff { json, .. }
+            | DeckCommand::Buylist { json, .. } => *json,
+        },
+    }
 }
 
 /// Structured filters shared by `query` and `collection query`.
@@ -556,11 +682,9 @@ mod tests {
 
     #[test]
     fn read_commands_take_offline() {
+        // --offline is a global flag: it lives on the Cli, not per command.
         let cli = Cli::try_parse_from(["stm", "query", "x", "--offline"]).expect("parse");
-        match cli.command {
-            Command::Query { offline, .. } => assert!(offline),
-            other => panic!("unexpected: {other:?}"),
-        }
+        assert!(cli.offline);
         let cli = Cli::try_parse_from(["stm", "card", "Bolt"]).expect("parse");
         match cli.command {
             Command::Card {
@@ -582,20 +706,17 @@ mod tests {
         }
         let cli =
             Cli::try_parse_from(["stm", "collection", "--offline", "query", "x"]).expect("parse");
-        match cli.command {
+        assert!(
+            cli.offline,
+            "the global flag reaches subcommands without a per-command copy"
+        );
+        assert!(matches!(
+            cli.command,
             Command::Collection {
-                offline,
-                command:
-                    Some(CollectionCommand::Query {
-                        offline: q_offline, ..
-                    }),
+                command: Some(CollectionCommand::Query { .. }),
                 ..
-            } => {
-                assert!(offline);
-                assert!(q_offline);
             }
-            other => panic!("unexpected: {other:?}"),
-        }
+        ));
     }
 
     #[test]
@@ -627,20 +748,14 @@ mod tests {
             "--offline",
         ])
         .expect("parse");
+        assert!(cli.offline, "--offline is global");
         match cli.command {
             Command::Card {
-                command:
-                    Some(CardCommand::Similar {
-                        limit,
-                        json,
-                        offline,
-                        ..
-                    }),
+                command: Some(CardCommand::Similar { limit, json, .. }),
                 ..
             } => {
                 assert_eq!(limit, 50);
                 assert!(json);
-                assert!(offline);
             }
             other => panic!("unexpected: {other:?}"),
         }

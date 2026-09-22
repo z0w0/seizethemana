@@ -6,11 +6,12 @@ use super::aggregate::SimStats;
 use super::model::{Role, SimDeck};
 use crate::output::Output;
 
-/// Total cards in the deck (library + commanders).
+/// Lock-pieces in the deck (Role::Lock census for the deck shape).
 fn lock_count(deck: &SimDeck) -> i64 {
     deck.cards.iter().filter(|c| c.role == Role::Lock).count() as i64
 }
 
+/// Booster-pieces in the deck (equipment, auras, pump spells).
 fn booster_count(deck: &SimDeck) -> i64 {
     deck.cards
         .iter()
@@ -18,6 +19,7 @@ fn booster_count(deck: &SimDeck) -> i64 {
         .count() as i64
 }
 
+/// Total cards in the deck (library + commanders).
 fn total_cards(deck: &SimDeck) -> usize {
     deck.cards.len() + deck.commanders.len()
 }
@@ -202,6 +204,11 @@ pub fn json_report(
     let format_name = deck.rules.key;
     let commander_json = deck.commanders.first().map(|cmd| {
         let cmc = cmd.cost.total() as usize;
+        // "On curve" only means something when the sim ran long enough
+        // to reach the commander's curve turn; a clamped short run
+        // would read as a misleading 0%. Null past the horizon.
+        let on_curve = (cmc <= turns && cmc >= 1)
+            .then(|| pct2(stats.commander_castable_by[cmc.clamp(1, turns.min(12))]));
         serde_json::json!({
             "name": cmd.name,
             "cmc": cmd.cost.total() as f64,
@@ -209,7 +216,7 @@ pub fn json_report(
             "avg_first_cast_turn": round2(stats.avg_commander_cast_turn),
             "p50_cast_turn": stats.p50_commander_cast_turn,
             "p95_cast_turn": stats.p95_commander_cast_turn,
-            "on_curve_pct": pct2(stats.commander_castable_by[cmc.clamp(1, turns.min(12))]),
+            "on_curve_pct": on_curve,
         })
     });
     let problems_json: Vec<serde_json::Value> = problems
@@ -222,6 +229,7 @@ pub fn json_report(
                 "color": p.color,
                 "detail": p.detail,
                 "suggestion": p.suggestion,
+                "offenders": p.offenders,
             })
         })
         .collect();
@@ -469,9 +477,9 @@ pub fn print_report(
     );
     if turns >= 4 {
         println!(
-            "  {}  {}  {:.1}% hit all 4 · screw {:.1}% · flood {:.1}%",
+            "  {}  {}  {:.1}% hit all 4 · short {:.1}% · flooded {:.1}%",
             s.bar(stats.hit_all_drops_by[4], 10),
-            s.dim("land drops by t4"),
+            s.dim("land drops by turn 4"),
             stats.hit_all_drops_by[4] * 100.0,
             stats.screw_pct * 100.0,
             stats.flood_pct * 100.0
@@ -508,14 +516,14 @@ pub fn print_report(
         println!(
             "  {}  {}  {:.1}% by turn {cmc} · p50 t{} · p95 t{}",
             s.bar(by, 10),
-            s.dim(&format!("commander (CMC {cmc})")),
+            s.dim(&format!("commander (costs {cmc} mana)")),
             by * 100.0,
             stats.p50_commander_cast_turn,
             stats.p95_commander_cast_turn
         );
         if cmd.animate_at().is_some() && turns >= 6 {
             println!(
-                "  {}  {}  {:.1}% by t6 · p50 t{}",
+                "  {}  {}  {:.1}% by turn 6 · half of games by turn {}",
                 s.bar(stats.station_online_pct, 10),
                 s.dim("station online"),
                 stats.station_online_pct * 100.0,
@@ -527,7 +535,7 @@ pub fn print_report(
     println!(
         "  {}  {}  {:.1} avg unspent · {:.1} cards seen · {:.1} bodies",
         s.bar((stats.unused_mana[t6] / 5.0).min(1.0), 10),
-        s.dim(&format!("mana thru t{}", t6 + 1)),
+        s.dim(&format!("mana through turn {}", t6 + 1)),
         stats.unused_mana[t6],
         stats.cards_seen[t6],
         stats.bodies_by_turn[t6]
@@ -536,7 +544,7 @@ pub fn print_report(
         println!(
             "  {}  {}  {:.1}% of games",
             s.bar(stats.removal_access_5, 10),
-            s.dim("removal seen by t5"),
+            s.dim("removal seen by turn 5"),
             stats.removal_access_5 * 100.0
         );
     }
@@ -544,7 +552,7 @@ pub fn print_report(
         println!(
             "  {}  {}  {:.1}% of games · {:.1}% starved",
             s.bar(stats.draw_access_6, 10),
-            s.dim("draw source by t6"),
+            s.dim("draw source by turn 6"),
             stats.draw_access_6 * 100.0,
             stats.starved_pct * 100.0
         );
@@ -553,7 +561,7 @@ pub fn print_report(
         println!(
             "  {}  {}  {:.1}% · instant-speed {} · held {:.1}",
             s.bar(stats.interaction_ready_by_turn[4], 10),
-            s.dim("interaction ready by t5"),
+            s.dim("answers ready by turn 5"),
             stats.interaction_ready_by_turn[4] * 100.0,
             stats.interaction_instant_count,
             stats.interaction_mana_held
@@ -585,7 +593,7 @@ pub fn print_report(
             s.bar(1.0, 10),
             s.dim("best-case lethal"),
             s.note(&format!(
-                "t{p50} (p50) — goldfish, unblocked: an upper bound"
+                "half of games by turn {p50} — goldfish, unblocked: an upper bound"
             ))
         );
     }
@@ -638,7 +646,7 @@ pub fn print_report(
     // two lines (what the deck has, which card got hurt).
     if stats.color_screw.iter().any(|p| *p >= 0.10) && !stats.pip_blocks.is_empty() {
         println!();
-        println!("{}", s.header("Mana sources & pip blocks"));
+        println!("{}", s.header("Mana sources & color gaps"));
         for p in stats.pip_blocks.iter().take(3) {
             println!(
                 "    {}  {} pips missed in {:.0}% of games",
@@ -652,7 +660,21 @@ pub fn print_report(
         println!();
         println!("{}", s.header("Problems"));
         for p in problems {
+            // Plain-English finding line: what is wrong, then the
+            // jargon-free read. The kind names a stable JSON key; the
+            // human line leads with the meaning.
             println!("  {}", s.error(&format!("{}: {}", p.kind, p.detail)));
+            for offender in &p.offenders {
+                let share = offender
+                    .pct_games
+                    .map(|pct| format!(" ({pct:.0}% of games)"))
+                    .unwrap_or_default();
+                println!(
+                    "    {} {}",
+                    s.card_name(&offender.name),
+                    s.dim(&format!("{}{}", offender.detail, share))
+                );
+            }
             println!("    {}", s.dim(&format!("→ {}", p.suggestion)));
         }
     }

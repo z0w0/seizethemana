@@ -145,7 +145,10 @@ pub(super) fn combat_phase(
                         }
                     }
                     Effect::Counters(n) => {
-                        if let Some(p) = st.battlefield.iter_mut().find(|q| q.card == perm.card) {
+                        // The attacking copy's own uid keys the counters:
+                        // a second copy of the same card must not receive
+                        // the combat trigger.
+                        if let Some(p) = st.battlefield.iter_mut().find(|q| q.uid == perm.uid) {
                             p.counters += n;
                         }
                     }

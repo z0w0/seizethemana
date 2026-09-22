@@ -50,7 +50,6 @@ pub fn run_sync(
         anyhow::bail!("card index not built yet");
     }
     let start = std::time::Instant::now();
-    let now = chrono::Utc::now();
 
     out.status("Fetching", "Scryfall bulk index");
     let (cards_bulk, tags_bulk) = crate::scryfall::fetch_bulk_files()?;
@@ -70,6 +69,9 @@ pub fn run_sync(
         crate::scryfall::ensure_fresh_bulk(&cards_bulk, &cards_dest, out)?;
         crate::scryfall::ensure_fresh_bulk(&tags_bulk, &tags_dest, out)?;
     }
+    // The freshness stamp lands after the downloads: a slow sync must not
+    // shorten the store's effective 24h freshness window.
+    let now = chrono::Utc::now();
 
     out.status("Comparing", "bulk data against stored cards");
     let delta = sync_cards(conn, &cards_dest, out, &now.to_rfc3339())?;
@@ -95,7 +97,9 @@ pub fn run_sync(
     // Combos refresh their own tables wholesale; embeddings ignore them.
     // A failed refresh warns and continues: combos are additive
     // diagnostics, never a blocker for card data.
-    let combos_delta = match crate::spellbook::ensure_fresh_variants(&paths.combos_file(), out) {
+    let combos_refresh =
+        crate::spellbook::ensure_fresh_variants(&paths.combos_file(), out, options.force);
+    let combos_delta = match &combos_refresh {
         Ok(_) => crate::spellbook::ingest(conn, &paths.combos_file(), out, &now.to_rfc3339())?,
         Err(err) => {
             out.warning(&format!("combo refresh failed, continuing: {err:#}"));
@@ -134,24 +138,36 @@ pub fn run_sync(
         } else {
             delta.to_embed.clone()
         };
-        for name in &targets {
+        for (pos, name) in targets.iter().enumerate() {
             if let Some(card) = crate::db::get_card(conn, name)? {
-                upsert_vector(&mut store, &mut model, paths, &card, &tag_index)?;
-                tick_embed_progress(out, &targets, name);
+                upsert_vector(&mut store, &mut model, &card, &tag_index)?;
+                tick_embed_progress(out, targets.len(), pos + 1);
             }
         }
+        // One save for the whole loop: saving per card rewrites the entire
+        // matrix each time.
+        store.save_vectors(paths.root())?;
+        // write_status already stamps doc_version as current.
         write_status(paths, &store)?;
-        mark_doc_version(paths)?;
         out.status("Embedded", &format!("{} cards", targets.len()));
     }
 
     stamp_synced(paths, now)?;
-    stamp_combos_synced(paths, now)?;
+    // Stamp the combo refresh only when it actually succeeded: a failed
+    // refresh must leave the store looking unsynced so the next run retries.
+    if combos_refresh.is_ok() {
+        stamp_combos_synced(paths, now)?;
+    }
     out.finish(
         "Finished",
         &format!(
-            "sync: {} added, {} updated, {} priced in-bulk, {} tags, {} combos",
-            delta.added, delta.changed, delta.priced, tags_delta.tags, combos_delta
+            "sync: {} added, {} updated, {} rank-only, {} priced in-bulk, {} tags, {} combos",
+            delta.added,
+            delta.changed,
+            delta.rank_only,
+            delta.priced,
+            tags_delta.tags,
+            combos_delta
         ),
         start.elapsed(),
     );
@@ -163,8 +179,13 @@ pub fn run_sync(
 pub struct SyncDelta {
     /// Names whose embeddable content changed (changed + added).
     pub to_embed: Vec<String>,
+    /// Names inserted into `cards` by this pass.
     pub added: usize,
+    /// Names whose stored content changed.
     pub changed: usize,
+    /// Names whose only change was the EDHREC rank (updated in place,
+    /// never re-embedded).
+    pub rank_only: usize,
     /// Print rows upserted from the same bulk.
     pub priced: usize,
 }
@@ -182,24 +203,44 @@ pub struct SyncDelta {
 /// Propagates SQLite failures.
 ///
 /// Content signature of a stored row (what re-ingest can change).
+///
+/// Includes every column the ingest can update *except* `edhrec_rank`:
+/// the rank churns broadly on every bulk refresh (EDHREC recomputes
+/// daily), it never enters the embedding document, and a rank-only diff
+/// must not pay a full re-embed. Rank-only changes take the cheap
+/// rank-update pass below.
 fn ingest_signature(card: &crate::db::CardRow) -> String {
     format!(
-        "{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}",
+        "{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}",
+        card.oracle_id,
         card.mana_cost,
         card.cmc,
         card.type_line,
         card.colors,
+        card.color_identity,
         card.keywords,
         card.power.as_deref().unwrap_or(""),
         card.toughness.as_deref().unwrap_or(""),
+        card.loyalty.as_deref().unwrap_or(""),
+        card.rarity,
         card.oracle_text,
+        card.legalities,
         card.released_at,
         card.game_changer.map(|g| g as i64).unwrap_or(-1),
     )
 }
 
+/// The EDHREC rank alone, for the rank-only update pass.
+fn rank_signature(card: &crate::db::CardRow) -> i64 {
+    card.edhrec_rank.unwrap_or(-1)
+}
+
 /// Content signature of a bulk card, computed the same way.
 fn signature_of(card: &crate::scryfall::ScryfallCard) -> String {
+    let identity =
+        serde_json::to_string(&card.color_identity.clone().unwrap_or_default()).unwrap_or_default();
+    let legalities =
+        serde_json::to_string(&card.legalities.clone().unwrap_or_default()).unwrap_or_default();
     ingest_signature(&crate::db::CardRow {
         name: card.name.clone(),
         oracle_id: card.oracle_id.clone(),
@@ -207,7 +248,7 @@ fn signature_of(card: &crate::scryfall::ScryfallCard) -> String {
         cmc: card.cmc.unwrap_or(0.0),
         type_line: card.type_line.clone().unwrap_or_default(),
         colors: serde_json::to_string(&card.colors.clone().unwrap_or_default()).unwrap_or_default(),
-        color_identity: String::new(),
+        color_identity: identity,
         keywords: serde_json::to_string(&card.keywords.clone().unwrap_or_default())
             .unwrap_or_default(),
         power: card.power.clone(),
@@ -216,7 +257,7 @@ fn signature_of(card: &crate::scryfall::ScryfallCard) -> String {
         oracle_text: card.oracle_text.clone().unwrap_or_default(),
         rarity: card.rarity.clone().unwrap_or_default(),
         edhrec_rank: card.edhrec_rank,
-        legalities: String::new(),
+        legalities,
         set_code: String::new(),
         collector_number: String::new(),
         scryfall_id: card.id.clone().unwrap_or_default(),
@@ -240,6 +281,7 @@ pub fn sync_cards(
 
     let mut added: Vec<crate::scryfall::ScryfallCard> = Vec::new();
     let mut changed: Vec<(crate::db::CardRow, crate::scryfall::ScryfallCard)> = Vec::new();
+    let mut rank_only: Vec<(String, Option<i64>)> = Vec::new();
     let mut prints: Vec<crate::scryfall::ScryfallCard> = Vec::new();
 
     // Bulk rows repeat one name across many sets; keep the "best" print.
@@ -250,9 +292,9 @@ pub fn sync_cards(
     let mut token_names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     let mut seen = 0usize;
     out.progress_bar("Parsing", "bulk records", 0);
-    crate::scryfall::stream_records(bulk_path, |mut card| {
+    let malformed = crate::scryfall::stream_records(bulk_path, |mut card| {
         seen += 1;
-        out.tick_progress(1);
+        out.set_progress_position(seen as u64);
         // Never-released cards stay out of the store; the daily sync adds
         // them once their set releases.
         if crate::scryfall::should_skip(&card) || !crate::scryfall::should_ingest(&card) {
@@ -264,17 +306,14 @@ pub fn sync_cards(
         // while the per-name winner feeds the `cards` dedup.
         prints.push(card.clone());
         best.entry(card.name.clone())
-            .and_modify(|current| {
-                let better = crate::scryfall::prefer_row(current, &card);
-                *current = better;
-            })
+            .and_modify(|current| *current = crate::scryfall::prefer_row(current, &card))
             .or_insert(card);
     })
     .context("streaming bulk records")?;
-    // The record count is unknown until the stream ends; restamp the bar with
-    // the true total so the final frame shows a complete bar, not a partial.
-    out.progress_bar("Parsing", "bulk records", seen as u64);
-    out.tick_progress(seen as u64);
+    if malformed > 0 {
+        out.warning(&format!("{malformed} malformed bulk line(s) skipped"));
+    }
+
     out.clear_progress();
     out.status(
         "Read",
@@ -291,6 +330,8 @@ pub fn sync_cards(
             Some(stored) => {
                 if ingest_signature(stored) != signature_of(card) {
                     changed.push((stored.clone(), card.clone()));
+                } else if rank_signature(stored) != card.edhrec_rank.unwrap_or(-1) {
+                    rank_only.push((stored.name.clone(), card.edhrec_rank));
                 }
             }
         }
@@ -300,6 +341,30 @@ pub fn sync_cards(
     let changed_n = changed.len();
     if changed_n > 0 {
         out.status("Updating", &format!("{changed_n} changed cards"));
+    }
+    // Rank-only churn: one cheap UPDATE per row, no re-embed (the rank
+    // never enters the embedding document).
+    let rank_only_n = rank_only.len();
+    if rank_only_n > 0 {
+        out.status("Updating", &format!("{rank_only_n} EDHREC ranks"));
+        conn.execute("BEGIN", []).context("begin rank updates")?;
+        let result = (|| -> anyhow::Result<()> {
+            let mut stmt = conn.prepare("UPDATE cards SET edhrec_rank = ?2 WHERE name = ?1")?;
+            for (name, rank) in &rank_only {
+                stmt.execute(rusqlite::params![name, rank])?;
+            }
+            Ok(())
+        })();
+        match result {
+            Ok(()) => {
+                conn.execute("COMMIT", [])
+                    .context("committing rank updates")?;
+            }
+            Err(err) => {
+                let _ = conn.execute("ROLLBACK", []);
+                return Err(err);
+            }
+        }
     }
     conn.execute("BEGIN", []).context("begin card updates")?;
     let result = (|| -> anyhow::Result<()> {
@@ -354,6 +419,7 @@ pub fn sync_cards(
         to_embed,
         added: added.len(),
         changed: changed_n,
+        rank_only: rank_only_n,
         priced: prints.len(),
     })
 }
@@ -364,24 +430,14 @@ fn doc_version_current(paths: &crate::paths::Paths) -> anyhow::Result<bool> {
     Ok(status.doc_version == crate::embed::DOC_VERSION)
 }
 
-/// Stamp `doc_version` as current in `status.json`.
-fn mark_doc_version(paths: &crate::paths::Paths) -> anyhow::Result<()> {
-    let path = paths.status_file();
-    let mut status = crate::paths::Status::read(&path)?;
-    status.doc_version = crate::embed::DOC_VERSION;
-    status.write(&path)
-}
-
 /// Emit a one-per-fraction progress line during re-embedding.
-fn tick_embed_progress(out: &mut crate::output::Output, targets: &[String], current: &str) {
-    let total = targets.len();
+/// `pos` is the 1-based index of the card just embedded.
+fn tick_embed_progress(out: &mut crate::output::Output, total: usize, pos: usize) {
     if total < 10 {
         return;
     }
-    if let Some(pos) = targets.iter().position(|n| n == current)
-        && (pos + 1).is_multiple_of(total / 10)
-    {
-        out.status("Embedding", &format!("{} of {total} cards", pos + 1));
+    if pos.is_multiple_of(total / 10) {
+        out.status("Embedding", &format!("{pos} of {total} cards"));
     }
 }
 
@@ -397,17 +453,17 @@ pub fn is_stale(status: &crate::paths::Status, now: chrono::DateTime<chrono::Utc
     }
 }
 
-/// Insert or update one card's vector at `name`.
+/// Insert or update one card's vector at `name` in the in-memory store.
 ///
 /// Appends when the name is new to the index; overwrites the row and keeps
 /// row order otherwise (row order must stay aligned with `status.json.names`).
+/// Saving the matrix to disk is the caller's job, once per loop.
 ///
 /// # Errors
 /// Propagates model or storage failures.
 pub fn upsert_vector(
     store: &mut crate::embed::VectorStore,
     model: &mut fastembed::TextEmbedding,
-    paths: &crate::paths::Paths,
     card: &crate::db::CardRow,
     tag_index: &crate::tags::TagIndex,
 ) -> anyhow::Result<()> {
@@ -422,7 +478,6 @@ pub fn upsert_vector(
         }
         None => store.push(&card.name, vector)?,
     }
-    store.save_vectors(paths.root())?;
     Ok(())
 }
 
@@ -520,7 +575,6 @@ mod tests {
         let existing = crate::db::load_all_cards(&conn).unwrap();
         let mut by_name: std::collections::HashMap<&str, &crate::db::CardRow> =
             existing.iter().map(|c| (c.name.as_str(), c)).collect();
-        // Unchanged name.
         let mut kept = std::collections::HashMap::new();
         kept.insert("Old".to_string(), bulk_card("Old", "Old text"));
         kept.insert("New".to_string(), bulk_card("New", "New text"));
@@ -557,13 +611,11 @@ mod tests {
             [],
         )
         .unwrap();
-        // Different set/collector number/rarity (different chosen print) must
-        // not count as a content change: oracle text etc. are identical.
+        // Different set/collector number (different chosen print) must not
+        // count as a content change: the signature covers card content only.
         let mut card = bulk_card("Same", "Text");
         card.set_code = Some("other".into());
         card.collector_number = Some("9".into());
-        card.rarity = Some("rare".into());
-        card.edhrec_rank = Some(5);
         card.id = Some("sid-2".into());
         let existing = crate::db::load_all_cards(&conn).unwrap();
         let by_name: std::collections::HashMap<&str, &crate::db::CardRow> =
@@ -572,6 +624,21 @@ mod tests {
         // Same content -> no change detected.
         let stored = by_name.get("Same").copied().unwrap();
         assert_eq!(ingest_signature(stored), signature_of(&card));
+        // Rarity and loyalty are content: a change re-ingests. The EDHREC
+        // rank is not: it takes the cheap rank-only pass, never a re-embed.
+        for mutator in [
+            |c: &mut crate::scryfall::ScryfallCard| c.rarity = Some("rare".into()),
+            |c: &mut crate::scryfall::ScryfallCard| c.loyalty = Some("3".into()),
+        ] {
+            let mut changed_card = bulk_card("Same", "Text");
+            mutator(&mut changed_card);
+            assert_ne!(ingest_signature(stored), signature_of(&changed_card));
+        }
+        // A rank-only diff lands in the rank pass, not the re-embed list.
+        let mut rank_card = bulk_card("Same", "Text");
+        rank_card.edhrec_rank = Some(5);
+        assert_eq!(ingest_signature(stored), signature_of(&rank_card));
+        assert_ne!(rank_signature(stored), rank_card.edhrec_rank.unwrap_or(-1));
     }
 
     #[test]

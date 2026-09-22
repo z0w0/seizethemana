@@ -20,7 +20,8 @@ fn etb_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
         || lower.starts_with("whenever ")
         || lower.starts_with("when you cast this"))
         && lower.contains("enters")
-        && !lower.contains("opponent");
+        && !lower.contains("opponent")
+        && !lower.contains("land enters");
     if !etb {
         return false;
     }

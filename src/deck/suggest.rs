@@ -60,13 +60,12 @@ pub(super) fn commander_identity(
     identity
 }
 
-/// Tag ids whose labels match the role or the full query text.
+/// Rows whose oracle text carries a role keyword substring.
+///
+/// The scan is bounded (`LIMIT`) and identity-filtered so it stays cheap.
 ///
 /// # Errors
 /// Propagates SQLite failures.
-/// Keyword leg: rows whose oracle text carries a role substring.
-///
-/// The scan is bounded (`LIMIT`) and identity-filtered so it stays cheap.
 #[allow(clippy::too_many_arguments)]
 fn keyword_hits(
     conn: &Connection,
@@ -156,7 +155,8 @@ pub(super) fn identity_ok(card: &CardRow, identity: &str) -> bool {
 /// a commander-finder query). `format` pins the legality filter; when
 /// absent, commander-shaped decks filter to commander and the commander's
 /// color identity, and other decks apply no format filter beyond combo
-/// legality.
+/// legality. `owned_only` restricts candidates to cards the collection
+/// owns.
 #[allow(clippy::too_many_arguments)]
 pub fn suggest(
     paths: &crate::paths::Paths,
@@ -170,24 +170,30 @@ pub fn suggest(
     bracket: Option<u8>,
     max_price: Option<f64>,
     limit: u32,
+    owned_only: bool,
+    exclude: &[String],
     json: bool,
 ) -> anyhow::Result<i32> {
     if commander {
-        return run_commander_search(paths, conn, out, deck_name, query, max_price, limit, json);
+        return run_commander_search(
+            paths, conn, out, deck_name, query, format, bracket, max_price, limit, owned_only,
+            exclude, json,
+        );
     }
     // No query and no role: the deck's open combo slots are the answer.
     if query.is_none() && role.is_none() {
         return super::suggest_combo::run_combo_suggest(
-            paths, conn, out, deck_name, format, bracket, max_price, limit, json,
+            paths, conn, out, deck_name, format, bracket, max_price, limit, exclude, json,
         );
     }
+    let excluded = resolve_exclusions(exclude)?;
     let role = match role {
         None => None,
         Some(text) => match Role::parse(text) {
             Some(r) => Some(r),
             None => {
                 out.error(&format!("unknown role {text:?}"));
-                out.hint("known roles: draw, cantrip, scry, wheel, discard, mill, ramp, mana-rock, mana-dork, mana-sink, land, removal, board-wipe, counterspell, bounce, theft, protection, hate, stax, sacrifice, reanimate, recursion, graveyard, token, anthem, equipment, aura, evasion, combat-trick, burn, lifegain, tutor, toolbox, wincon, finisher, combo, storm, extra-turn, blink, landfall, artifact, enchantment, planeswalker, counters-matter, energy, vehicles, group-hug, politics, voltron, spellslinger, typal, tribal, interaction");
+                out.hint(&format!("known roles: {}", Role::known_names().join(", ")));
                 return Ok(crate::cli::codes::USAGE);
             }
         },
@@ -198,16 +204,23 @@ pub fn suggest(
         return Ok(crate::cli::codes::ERROR);
     }
     let (_path, deck) = load_deck(paths, deck_name)?;
-    let cards_by_name = super::stats::lookup_names(conn, &deck);
+    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
     let is_commander = super::legal::is_commander(&deck, format);
     let identity = if is_commander {
         commander_identity(&deck, &cards_by_name)
     } else {
         String::new()
     };
-    // 60-card decks gate to "legal in at least one 60-card format" when
-    // no format is pinned; `--format` stays the precise override (inside
-    // `gather_hits`).
+    // The deck's existing maindeck Game Changers; at bracket 3 they count
+    // against the 3-cap before a new one is allowed.
+    let existing_gcs = super::legal::maindeck_copies_by_name(&deck)
+        .into_iter()
+        .filter(|(name, _)| {
+            cards_by_name
+                .get(name)
+                .is_some_and(|c| c.game_changer == Some(true))
+        })
+        .count();
 
     let mut ranked = gather_hits(
         paths,
@@ -222,6 +235,8 @@ pub fn suggest(
         limit,
         max_price,
         json,
+        existing_gcs,
+        &excluded,
     )?;
     // 60-card decks: rank lands by color relevance and demote nonland
     // cards sharing zero colors with the deck. Commander decks filter on
@@ -279,13 +294,32 @@ pub fn suggest(
         }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
+    // Owned-only mode: the collection is the whole candidate pool, so
+    // every candidate must survive the owned cut before ranking. An
+    // already-empty pool falls through to the shared empty-result path.
     let owned = crate::collection::owned_counts_all(conn)?;
+    if owned_only && !ranked.is_empty() {
+        ranked.retain(|(card, _, _)| owned.contains_key(&card.name));
+        if ranked.is_empty() {
+            if json {
+                println!("[]");
+            } else {
+                out.error("no owned suggestions matched");
+                out.hint(
+                    "drop --owned to search the whole oracle, or widen the query; the filters may be too tight",
+                );
+            }
+            return Ok(crate::cli::codes::NO_RESULTS);
+        }
+    }
     let ranked = group_owned_first(ranked, &owned);
     to_suggestions(ranked, &owned, conn, out, deck_name, json)
 }
 
 /// True when the card is legal in commander (the only format suggest
-/// targets today); unknown legality keys pass with a note from `deck legal`.
+/// targets today). A missing legality key counts as not legal, matching
+/// `card_legal_in`: suggest must never recommend a card `deck legal`
+/// rejects.
 pub(super) fn card_is_commander_legal(card: &CardRow) -> bool {
     serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&card.legalities)
         .ok()
@@ -293,18 +327,23 @@ pub(super) fn card_is_commander_legal(card: &CardRow) -> bool {
             m.get("commander")
                 .and_then(|v| v.as_str().map(String::from))
         })
-        .is_none_or(|state| state != "banned")
+        .is_some_and(|state| state == "legal" || state == "restricted")
 }
 
-/// True when the card fits the bracket: brackets 1-2 allow no Game
-/// Changers, so those suggestions are filtered. `None` (no bracket given)
-/// and brackets 3-5 pass everything; `deck legal` counts the deck's
-/// Game Changers against the allowance.
-pub(super) fn bracket_allows(bracket: Option<u8>, card: &CardRow) -> bool {
+/// True when adding `card` stays inside the bracket.
+///
+/// Brackets 1-2 allow no Game Changers. At bracket 3 the hard cap is 3
+/// Game Changers, so the deck's existing maindeck count counts against
+/// the cap before a new one is allowed. Brackets 4-5 are uncapped.
+pub(super) fn bracket_allows(bracket: Option<u8>, card: &CardRow, existing_gcs: usize) -> bool {
     if card.game_changer != Some(true) {
         return true;
     }
-    !matches!(bracket, Some(1 | 2))
+    match bracket {
+        Some(1 | 2) => false,
+        Some(3) => existing_gcs < 3,
+        _ => true,
+    }
 }
 
 /// First `CardRow` for an oracle id.
@@ -342,6 +381,8 @@ fn gather_hits(
     limit: u32,
     max_price: Option<f64>,
     out_json: bool,
+    existing_gcs: usize,
+    excluded: &[String],
 ) -> anyhow::Result<Vec<(CardRow, Vec<String>, f32)>> {
     let search_text = query
         .map(str::trim)
@@ -360,8 +401,9 @@ fn gather_hits(
             card_legal_in_any_60(card)
         }
     };
-    // Over-fetch per leg when a price cap will shrink the pool.
-    let depth = fetch_limit(limit, max_price.is_some())
+    // Over-fetch per leg when a price cap or exclusions will shrink the
+    // pool; both trims happen before the limit cut.
+    let depth = fetch_limit(limit, max_price.is_some() || !excluded.is_empty())
         .saturating_mul(2)
         .max(30);
     let semantic = match &search_text {
@@ -404,21 +446,15 @@ fn gather_hits(
             }
         }
     }
-    // Fuse on rank. The semantic leg is already the hybrid search result.
-    // With a price cap the pool is over-fetched (3x): the cap trims the
-    // fused list BEFORE the limit cut, so affordable candidates past the
-    // window still surface.
-    let fused = fuse_legs(
-        &semantic,
-        &tag_leg,
-        fetch_limit(limit, max_price.is_some()),
-        is_commander,
-    )
-    .into_iter()
-    .filter(|(card, _, _)| gate(card))
-    .filter(|(card, _, _)| bracket_allows(bracket, card))
-    .collect::<Vec<_>>();
-    let (fused, hidden) = match max_price {
+    // Fuse on rank. The semantic leg is fetched at `depth` (2x when a
+    // price cap will shrink the pool) and fused at the same depth, so the
+    // deep pool survives to the cap-then-limit cut.
+    let fused = fuse_legs(&semantic, &tag_leg, depth, is_commander)
+        .into_iter()
+        .filter(|(card, _, _)| gate(card))
+        .filter(|(card, _, _)| bracket_allows(bracket, card, existing_gcs))
+        .collect::<Vec<_>>();
+    let (mut fused, hidden) = match max_price {
         Some(max_price) => {
             let (kept, hidden) =
                 crate::prints::retain_by_price(conn, fused, |(c, _, _)| &c.name, max_price)?;
@@ -436,10 +472,12 @@ fn gather_hits(
                 .note(&crate::prints::price_cap_note(max_price, hidden))
         );
     }
+    // Drop exclusions before the limit cut so they never consume a
+    // result slot.
+    retain_unexcluded(&mut fused, excluded);
     // Dedup same-oracle reprints on the deep pool (a reprinted card
     // appears once) before the limit cut — a duplicate would waste a
     // limit slot after truncation. Commander decks keep every face.
-    let mut fused = fused;
     if !is_commander {
         fused.dedup_by(|a, b| a.0.oracle_id == b.0.oracle_id);
     }
@@ -721,25 +759,28 @@ fn group_owned_first(
 ///
 /// The pool is every card that can legally command (legendary creature or
 /// planeswalker, or legendary Vehicle/Spacecraft with a P/T box —
-/// [`super::legal::is_commander_type`]), ranked by semantic fit to the
-/// query (default "frog tribal commander" style: the deck's own theme
-/// words) then EDHREC playability. Hits outside the deck's commander color
-/// identity are marked, not dropped, so a deck without a commander yet
-/// still gets useful options across all colors.
-/// The commander path's ranking core: three legs (semantic, commander tag
-/// families), fused by RRF, price-capped, truncated to `limit`, and
-/// ordered owned-first. Separate from printing so tests can pin the
-/// `--limit` cut.
+/// [`super::legal::is_commander_type`]). Three legs (semantic, commander
+/// tag families) fuse by RRF, then price-cap and `--limit` cut, ordered
+/// owned-first. Hits outside the deck's commander color identity are
+/// marked, not dropped, so a deck without a commander yet still gets
+/// useful options across all colors.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one flat argument per CLI flag; run_commander_search carries the allow upstream"
+)]
 fn commander_candidates(
     paths: &crate::paths::Paths,
     conn: &Connection,
     out: &mut crate::output::Output,
     deck: &super::Deck,
     query: Option<&str>,
+    format: Option<&str>,
+    bracket: Option<u8>,
     max_price: Option<f64>,
     limit: u32,
+    excluded: &[String],
 ) -> anyhow::Result<Vec<(CardRow, Vec<String>, f32)>> {
-    let cards_by_name = super::stats::lookup_names(conn, deck);
+    let cards_by_name = super::stats::lookup_names(conn, deck)?;
 
     // The query drives semantic ranking; with no query, the deck's own
     // nonland names become the theme ("frog tribal" from a frog deck).
@@ -749,9 +790,10 @@ fn commander_candidates(
         .map(str::to_string)
         .unwrap_or_else(|| deck_theme_words(deck, &cards_by_name));
     let filters = crate::search::CardFilters::default();
-    // With a price cap the pool is over-fetched (3x); the cap trims the
-    // fused list before the limit cut.
-    let fetch = fetch_limit(limit, max_price.is_some());
+    // The pool is over-fetched when a price cap or exclusions will shrink
+    // it; both trims happen before the limit cut. Semantic leg and fusion
+    // run at the same depth.
+    let fetch = fetch_limit(limit, max_price.is_some() || !excluded.is_empty());
     let semantic = crate::query::run_search(paths, conn, out, &search_text, &filters, fetch, None)
         .map(|hits| hits.into_iter().map(|h| h.card).collect::<Vec<CardRow>>())?;
 
@@ -773,13 +815,19 @@ fn commander_candidates(
         .filter(|(card, _, _)| {
             super::legal::is_commander_type(card) && card_is_commander_legal(card)
         })
+        // A pinned format gates to cards legal there; a bracket drops
+        // Game Changers the allowance cannot hold (1-2 allow none).
+        .filter(|(card, _, _)| format.is_none_or(|f| card_legal_in(card, Some(f))))
+        .filter(|(card, _, _)| bracket_allows(bracket, card, 0))
         .collect::<Vec<_>>();
     ranked = apply_suggest_price(conn, out, ranked, max_price, false)?;
+    // Drop exclusions before the limit cut so they never consume a
+    // result slot.
+    retain_unexcluded(&mut ranked, excluded);
     ranked.truncate(limit as usize);
     let owned = crate::collection::owned_counts_all(conn)?;
     Ok(group_owned_first(ranked, &owned))
 }
-
 #[allow(clippy::too_many_arguments)]
 fn run_commander_search(
     paths: &crate::paths::Paths,
@@ -787,8 +835,12 @@ fn run_commander_search(
     out: &mut crate::output::Output,
     deck_name: &str,
     query: Option<&str>,
+    format: Option<&str>,
+    bracket: Option<u8>,
     max_price: Option<f64>,
     limit: u32,
+    owned_only: bool,
+    exclude: &[String],
     json: bool,
 ) -> anyhow::Result<i32> {
     if !paths.is_setup() {
@@ -796,8 +848,24 @@ fn run_commander_search(
         out.hint("run 'stm setup' first");
         return Ok(crate::cli::codes::ERROR);
     }
+    let excluded = resolve_exclusions(exclude)?;
     let (_path, deck) = load_deck(paths, deck_name)?;
-    let ranked = commander_candidates(paths, conn, out, &deck, query, max_price, limit)?;
+    let mut ranked = commander_candidates(
+        paths, conn, out, &deck, query, format, bracket, max_price, limit, &excluded,
+    )?;
+    let owned = crate::collection::owned_counts_all(conn)?;
+    if owned_only {
+        ranked.retain(|(card, _, _)| owned.get(&card.name).copied().unwrap_or(0) > 0);
+        if ranked.is_empty() {
+            if json {
+                println!("[]");
+            } else {
+                out.error("no owned commander candidates matched");
+                out.hint("drop --owned to search every legendary, or widen the query");
+            }
+            return Ok(crate::cli::codes::NO_RESULTS);
+        }
+    }
     if ranked.is_empty() {
         if json {
             println!("[]");
@@ -809,7 +877,6 @@ fn run_commander_search(
         }
         return Ok(crate::cli::codes::NO_RESULTS);
     }
-    let owned = crate::collection::owned_counts_all(conn)?;
     to_suggestions(ranked, &owned, conn, out, deck_name, json)
 }
 
@@ -880,150 +947,77 @@ fn to_suggestions(
     Ok(crate::cli::codes::OK)
 }
 
-/// Theme words from the deck's own cards: the most distinctive creature
-/// type words across names and type lines, deduped.
-fn deck_theme_words(
-    deck: &super::Deck,
-    cards_by_name: &std::collections::HashMap<String, CardRow>,
-) -> String {
-    let stop: std::collections::HashSet<&str> = [
-        "the",
-        "of",
-        "and",
-        "a",
-        "an",
-        "creature",
-        "token",
-        "legendary",
-        "enchantment",
-        "instant",
-        "sorcery",
-        "artifact",
-        "land",
-        "planeswalker",
-        "battle",
-        "spell",
-    ]
-    .into_iter()
-    .collect();
-    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
-    for entry in deck.entries() {
-        if let Some(card) = cards_by_name.get(&entry.name) {
-            for word in card.type_line.split(&[' ', '—', ',']) {
-                let w = word.trim();
-                if w.len() >= 4 && !stop.contains(w.to_ascii_lowercase().as_str()) {
-                    *counts.entry(w.to_string()).or_insert(0) += entry.quantity as usize;
+/// Resolve `--exclude` entries into card names. Each entry is a card
+/// name, a text file of names (one per line, `#` comments allowed), or
+/// `-` for stdin. Unknown files read as names; a name that is also a
+/// path is rare enough that the file read error names the entry.
+pub fn resolve_exclusions(entries: &[String]) -> anyhow::Result<Vec<String>> {
+    resolve_exclusions_with(entries, &mut std::io::stdin())
+}
+
+/// Same resolution with an injected stdin source (the `-` entry).
+fn resolve_exclusions_with(
+    entries: &[String],
+    stdin: &mut dyn std::io::Read,
+) -> anyhow::Result<Vec<String>> {
+    let mut names = Vec::new();
+    for entry in entries {
+        let text = if entry == "-" {
+            let mut buf = String::new();
+            stdin
+                .read_to_string(&mut buf)
+                .context("reading --exclude names from stdin")?;
+            Some(buf)
+        } else if std::path::Path::new(entry).is_file() {
+            Some(
+                std::fs::read_to_string(entry)
+                    .with_context(|| format!("reading --exclude file {entry}"))?,
+            )
+        } else {
+            None
+        };
+        match text {
+            Some(text) => {
+                for line in text.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with('#') {
+                        continue;
+                    }
+                    names.push(line.to_string());
                 }
             }
+            None => names.push(entry.clone()),
         }
     }
-    let mut words: Vec<(String, usize)> = counts.into_iter().collect();
-    words.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-    words.truncate(4);
-    let joined = words
-        .iter()
-        .map(|(w, _)| w.as_str())
-        .collect::<Vec<_>>()
-        .join(" ");
-    if joined.is_empty() {
-        "tribal commander".to_string()
-    } else {
-        format!("{joined} commander")
+    Ok(names)
+}
+
+/// Drop excluded card names from the ranked candidates.
+fn retain_unexcluded<C, T, S>(ranked: &mut Vec<(C, T, S)>, excluded: &[String])
+where
+    C: HasName,
+{
+    if excluded.is_empty() {
+        return;
     }
+    let set: std::collections::HashSet<&str> = excluded.iter().map(String::as_str).collect();
+    ranked.retain(|(card, _, _)| !set.contains(card.name()));
 }
 
-/// JSON rows for the suggestion list.
-fn print_json(suggestions: &[Suggestion]) -> anyhow::Result<()> {
-    let items: Vec<serde_json::Value> = suggestions
-        .iter()
-        .map(|s| {
-            let identity: serde_json::Value =
-                serde_json::from_str(&s.card.color_identity).unwrap_or_default();
-            serde_json::json!({
-                "name": s.card.name,
-                "oracle_id": s.card.oracle_id,
-                "mana_cost": s.card.mana_cost,
-                "cmc": s.card.cmc,
-                "type_line": s.card.type_line,
-                "edhrec_rank": s.card.edhrec_rank,
-                "game_changer": s.card.game_changer,
-                "owned": s.owned,
-                "price": s.price_usd,
-                "score": (f64::from(s.score) * 10_000.0).round() / 10_000.0,
-                "tags": s.tags,
-                "oracle_text": s.card.oracle_text,
-                "color_identity": identity,
-            })
-        })
-        .collect();
-    println!("{}", serde_json::to_string_pretty(&items)?);
-    Ok(())
+/// Cards exposing their display name (CardRow and any suggestion row).
+trait HasName {
+    fn name(&self) -> &str;
 }
 
-/// Human table for the suggestion list: owned block first, then the
-/// unowned block, each in relevance order. One line per hit: name, cost,
-/// type, EDHREC rank, ownership/price, and why it matched.
-fn print_text(out: &crate::output::Output, suggestions: &[Suggestion], deck_name: &str) {
-    let styles = out.styles();
-    println!(
-        "{} {}",
-        styles.header("Suggestions"),
-        styles.dim(&format!(
-            "for deck {deck_name:?} (owned first, then by fit)"
-        ))
-    );
-    let mut last_owned = true;
-    for (i, s) in suggestions.iter().enumerate() {
-        if i > 0 && last_owned && s.owned == 0 {
-            println!("{}", styles.dim("— not owned —"));
-        }
-        last_owned = s.owned > 0;
-        let own_note = if s.owned > 0 {
-            styles.success(&format!("own {}", styles.thousands(s.owned)))
-        } else {
-            match s.price_usd {
-                Some(p) => format!("buy {}", styles.money(p)),
-                None => "unpriced".to_string(),
-            }
-        };
-        let gc = if s.card.game_changer == Some(true) {
-            " [GC]"
-        } else {
-            ""
-        };
-        let why = if s.tags.is_empty() {
-            String::new()
-        } else {
-            format!(
-                " {}",
-                s.tags
-                    .iter()
-                    .take(3)
-                    .cloned()
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )
-        };
-        println!(
-            "{:>2}. {} {} {} {} {}{}{}",
-            i + 1,
-            styles.card_name(&s.card.name),
-            styles.mana_pips(&s.card.mana_cost),
-            styles.dim(&s.card.type_line),
-            styles.dim(&format!(
-                "rank {}",
-                s.card
-                    .edhrec_rank
-                    .map(|r| styles.thousands(r))
-                    .unwrap_or_else(|| "—".into())
-            )),
-            styles.dim(&own_note),
-            styles.dim(gc),
-            styles.dim(&why),
-        );
+impl HasName for CardRow {
+    fn name(&self) -> &str {
+        &self.name
     }
 }
 
 #[cfg(test)]
 #[path = "tests/suggest_tests.rs"]
 mod suggest_tests;
+
+mod render;
+use render::{deck_theme_words, print_json, print_text};

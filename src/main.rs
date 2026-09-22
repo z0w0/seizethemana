@@ -1,26 +1,17 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-
 use clap::Parser;
 use rusqlite::Connection;
 use seizethemana::{
     card,
     cli::{self, Cli, CollectionCommand, Command, DeckCommand, codes},
-    collection, db, deck,
+    collection, collection_conflicts, collection_stats, db, deck,
     output::Output,
     paths, query, setup, sync,
 };
 
-/// Set when the user passed `--offline` anywhere; the revalidator reads it.
-static OFFLINE: AtomicBool = AtomicBool::new(false);
-
-pub(crate) fn offline_requested() -> bool {
-    OFFLINE.load(Ordering::Relaxed)
-}
-
 fn main() {
     let cli = cli::Cli::parse();
-    OFFLINE.store(cli.offline, Ordering::Relaxed);
-    let mut out = Output::new(false, cli.no_color, cli.verbose);
+    seizethemana::set_offline(cli.offline);
+    let mut out = Output::new(cli.json_flag(), cli.no_color, cli.verbose);
     let code = run(&cli, &mut out);
     std::process::exit(code);
 }
@@ -55,7 +46,7 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
         Command::Sync { force } => {
             let options = sync::SyncOptions { force: *force };
             sync::run_sync(&paths, &mut conn, out, &options)
-                .map_err(|err| err.context("sync failed; check your network connection, or retry"))
+                .map_err(|err| err.context("sync failed"))
         }
         Command::Card {
             command,
@@ -63,7 +54,7 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
             json,
         } => {
             let mut revalidate = |out: &mut Output| {
-                if !offline_requested() {
+                if !seizethemana::offline_requested() {
                     revalidate_if_stale(&paths, &mut conn, out);
                 }
             };
@@ -77,11 +68,8 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
                     limit,
                     owned,
                     json,
-                    offline,
                 }) => {
-                    if !*offline {
-                        revalidate(out);
-                    }
+                    revalidate(out);
                     card::run_similar(&paths, &mut conn, out, name, *limit, *owned, *json)
                 }
                 Some(cli::CardCommand::Combos {
@@ -89,11 +77,8 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
                     format,
                     limit,
                     json,
-                    offline,
                 }) => {
-                    if !*offline {
-                        revalidate(out);
-                    }
+                    revalidate(out);
                     card::run_combos(
                         &paths,
                         &mut conn,
@@ -123,7 +108,9 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
             json,
             ..
         } => {
-            revalidate_if_stale(&paths, &mut conn, out);
+            if !seizethemana::offline_requested() {
+                revalidate_if_stale(&paths, &mut conn, out);
+            }
             query::run_query(
                 &paths, &mut conn, out, query, filters, *max_price, *limit, *json,
             )
@@ -138,7 +125,11 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
         } => run_deck(&paths, &mut conn, out, *json, command, name.as_deref()),
     };
     outcome.unwrap_or_else(|err| {
-        out.error(&format!("{err:#}"));
+        // A bail carrying the sentinel already printed its own error line;
+        // re-reporting it would double the message.
+        if err.to_string() != seizethemana::output::SILENT_ERROR {
+            out.error(&format!("{err:#}"));
+        }
         codes::ERROR
     })
 }
@@ -152,9 +143,12 @@ fn run_collection(
     command: &Option<CollectionCommand>,
 ) -> anyhow::Result<i32> {
     match command {
-        None => collection::show_stats(paths, conn, out, json),
-        Some(CollectionCommand::Import { file, add, force }) => {
-            collection::import(paths, conn, out, file, *add, *force)
+        None => collection_stats::show_stats(paths, conn, out, json),
+        Some(CollectionCommand::Conflicts { json }) => {
+            collection_conflicts::conflicts(paths, conn, out, *json)
+        }
+        Some(CollectionCommand::Import { file, add }) => {
+            collection::import(paths, conn, out, file, *add)
         }
         Some(CollectionCommand::Query {
             query,
@@ -165,7 +159,9 @@ fn run_collection(
             json,
             ..
         }) => {
-            revalidate_if_stale(paths, conn, out);
+            if !seizethemana::offline_requested() {
+                revalidate_if_stale(paths, conn, out);
+            }
             collection::run_query(
                 paths, conn, out, query, filters, binder, deck, *limit, *json,
             )
@@ -196,6 +192,12 @@ fn run_deck(
         Some(DeckCommand::Mana { name, format, json }) => {
             deck::mana(paths, conn, out, name, format.as_deref(), *json)
         }
+        Some(DeckCommand::Hand {
+            name,
+            seed,
+            count,
+            json,
+        }) => deck::hand(paths, conn, out, name, *seed, *count, *json),
         Some(DeckCommand::Update {
             name,
             add,
@@ -204,6 +206,11 @@ fn run_deck(
             r#move,
             from,
             allow_partial,
+            dry_run,
+            sim,
+            legal,
+            backfill_basics,
+            json,
         }) => deck::update(
             paths,
             conn,
@@ -215,8 +222,15 @@ fn run_deck(
             r#move,
             from.as_deref(),
             *allow_partial,
+            *dry_run,
+            *sim,
+            *legal,
+            *backfill_basics,
+            *json,
         ),
-        Some(DeckCommand::Dedupe { name, json }) => deck::update::dedupe(paths, out, name, *json),
+        Some(DeckCommand::Dedupe { name, json }) => {
+            deck::maintain::dedupe(paths, conn, out, name, *json)
+        }
         Some(DeckCommand::Suggest {
             name,
             positional_query,
@@ -227,6 +241,8 @@ fn run_deck(
             bracket,
             max_price,
             limit,
+            owned,
+            exclude,
             json,
         }) => {
             // The positional query and --query alias; positional wins only
@@ -244,6 +260,8 @@ fn run_deck(
                 *bracket,
                 *max_price,
                 *limit,
+                *owned,
+                exclude,
                 *json,
             )
         }
@@ -281,15 +299,28 @@ fn run_deck(
             *bracket,
             *json,
         ),
-        Some(DeckCommand::Import { name, file }) => {
-            deck::import(paths, conn, out, json, name, file)
-        }
+        Some(DeckCommand::Import {
+            name,
+            file,
+            url,
+            format,
+        }) => deck::import(deck::io::ImportSource {
+            paths,
+            conn,
+            out,
+            json,
+            name,
+            file: file.as_deref(),
+            url: url.as_deref(),
+            format: format.as_deref(),
+        }),
         Some(DeckCommand::Cuts {
             name,
             count,
             for_role,
             bracket,
             format,
+            max_price,
             json,
         }) => deck::cuts(
             paths,
@@ -301,6 +332,7 @@ fn run_deck(
                 for_role: for_role.as_deref(),
                 bracket: *bracket,
                 format: format.as_deref(),
+                max_price: *max_price,
                 json: *json,
             },
         ),
@@ -316,7 +348,11 @@ fn run_deck(
             exact,
             json,
             markdown,
+            as_update,
         }) => {
+            if *as_update {
+                return deck::diff_as_update(paths, conn, out, deck_a, deck_b, *exact);
+            }
             let format = if *json {
                 deck::diff::DiffFormat::Json
             } else if *markdown {
@@ -336,6 +372,11 @@ fn run_deck(
         Some(DeckCommand::Buylist { name, store, json }) => {
             deck::buylist(paths, conn, out, name, store.as_deref(), *json)
         }
+        Some(DeckCommand::Copy {
+            source,
+            destination,
+            force,
+        }) => deck::copy(paths, out, source, destination, *force),
         Some(DeckCommand::Primer { name, set }) => deck::primer(paths, out, name, set.as_deref()),
     };
     // Deck-not-found is the one runtime error with a dedicated hint; emit
@@ -354,12 +395,12 @@ fn run_deck(
 }
 
 /// Stale-while-revalidate: when card data or prices are older than 24h,
-/// refresh them in the background before the command runs.
-///
-/// Failures are reported as warnings, never block the read. A `--offline` run
-/// skips the check entirely.
+/// refresh them before the command runs. The refresh is synchronous: a
+/// stale store makes a read command block for the length of a full sync
+/// (download + ingest + embed). `--offline` skips the check entirely;
+/// a failure downgrades to a warning and never blocks the read.
 fn revalidate_if_stale(paths: &paths::Paths, conn: &mut Connection, out: &mut Output) {
-    if offline_requested() {
+    if seizethemana::offline_requested() {
         return;
     }
     let status = match paths::Status::read(&paths.status_file()) {
@@ -386,14 +427,13 @@ fn revalidate_if_stale(paths: &paths::Paths, conn: &mut Connection, out: &mut Ou
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn offline_flag_is_process_state() {
-        OFFLINE.store(false, Ordering::Relaxed);
-        assert!(!offline_requested());
-        OFFLINE.store(true, Ordering::Relaxed);
-        assert!(offline_requested());
-        OFFLINE.store(false, Ordering::Relaxed);
+        seizethemana::set_offline(false);
+        assert!(!seizethemana::offline_requested());
+        seizethemana::set_offline(true);
+        assert!(seizethemana::offline_requested());
+        seizethemana::set_offline(false);
     }
 }

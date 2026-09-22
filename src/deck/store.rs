@@ -82,15 +82,20 @@ pub fn is_deck_not_found(err: &anyhow::Error) -> bool {
         .any(|c| c.downcast_ref::<DeckNotFound>().is_some())
 }
 
-/// Save a deck back to its txt file (parents ensured).
+/// Save a deck back to its txt file (parents ensured). The write lands
+/// on a temp file first and renames, so a crash never leaves a
+/// truncated decklist behind.
 pub(crate) fn save_deck(
     paths: &crate::paths::Paths,
     name: &str,
     deck: &Deck,
 ) -> anyhow::Result<()> {
+    use anyhow::Context;
     std::fs::create_dir_all(paths.decks_dir()).context("creating decks directory")?;
-    std::fs::write(paths.deck_file(name), deck.to_text())
-        .with_context(|| format!("writing deck {name:?}"))
+    let path = paths.deck_file(name);
+    let tmp = path.with_extension("txt.tmp");
+    std::fs::write(&tmp, deck.to_text()).with_context(|| format!("writing deck {name:?}"))?;
+    std::fs::rename(&tmp, &path).with_context(|| format!("saving deck {name:?}"))
 }
 
 /// Entry point for `stm deck create <name>`.
@@ -120,11 +125,62 @@ pub fn create(
     Ok(crate::cli::codes::OK)
 }
 
+/// Entry point for `stm deck copy <source> <destination>`.
+///
+/// Duplicates the decklist and the primer under the new name so an
+/// improvement pass can work on a copy without touching the original.
+/// Ownership rows in the collection are never copied.
+pub fn copy(
+    paths: &crate::paths::Paths,
+    out: &mut crate::output::Output,
+    source: &str,
+    destination: &str,
+    force: bool,
+) -> anyhow::Result<i32> {
+    ensure_valid_name(out, destination)?;
+    let (_path, deck) = load_deck(paths, source)?;
+    let dest_path = paths.deck_file(destination);
+    if dest_path.exists() && !force {
+        out.error(&format!("deck {destination:?} already exists"));
+        out.hint("use --force to overwrite it");
+        return Ok(crate::cli::codes::ERROR);
+    }
+    save_deck(paths, destination, &deck)?;
+    let primer = primer_file(paths, source);
+    if primer.exists() {
+        let text = std::fs::read_to_string(&primer)
+            .with_context(|| format!("reading {}", primer.display()))?;
+        std::fs::write(primer_file(paths, destination), &text)
+            .with_context(|| format!("writing primer for {destination:?}"))?;
+    }
+    out.finish(
+        "Copied",
+        &format!(
+            "deck {source:?} to {destination:?} ({} cards; primer {})",
+            deck.total(),
+            primer_file(paths, destination).display()
+        ),
+        std::time::Duration::ZERO,
+    );
+    Ok(crate::cli::codes::OK)
+}
+
+#[cfg(test)]
+#[path = "tests/copy_tests.rs"]
+mod copy_tests;
+
+/// Validate a deck name and report a usage error when it breaks the rules.
+///
+/// # Errors
+/// Fails with "invalid deck name" after printing the error and hint. The
+/// message is printed once here; callers must not re-report the bail.
 pub(crate) fn ensure_valid_name(out: &mut crate::output::Output, name: &str) -> anyhow::Result<()> {
     if !valid_deck_name(name) {
         out.error(&format!("invalid deck name {name:?}"));
         out.hint("use letters, digits, spaces, or - _ ' & ! + , (no / or ..)");
-        anyhow::bail!("invalid deck name");
+        // The error line already went out; a bare bail keeps the main
+        // dispatcher from printing a second copy.
+        anyhow::bail!(crate::output::SILENT_ERROR);
     }
     Ok(())
 }
@@ -271,11 +327,11 @@ pub fn delete(
     if !path.exists() {
         out.error(&format!("no decklist for {name:?}"));
         out.hint("list decklists: stm deck list");
-        return Ok(crate::cli::codes::NO_RESULTS);
+        return Ok(crate::cli::codes::ERROR);
     }
-    let cards = Deck::parse(&std::fs::read_to_string(&path).unwrap_or_default())
-        .map(|d| d.total())
-        .unwrap_or(0);
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let cards = Deck::parse(&text).map(|d| d.total()).unwrap_or(0);
     let primer = primer_file(paths, name);
     std::fs::remove_file(&path).with_context(|| format!("deleting {}", path.display()))?;
     if primer.exists() {

@@ -11,7 +11,7 @@ use super::grammar::{Deck, DeckEntry};
 use anyhow::Context;
 
 /// One section's multiset diff.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize)]
 pub struct SectionDiff {
     /// Section header (`COMMANDER`, `DECK`, `SIDEBOARD`).
     pub section: String,
@@ -86,9 +86,9 @@ pub fn diff_section(
             diff.added.push((key.clone(), *qty_b));
         }
     }
-    // Non-basic quantity changes are remove/add pairs in the qty-delta
-    // world only when a net row is cleaner; keep them as explicit
-    // remove+add so the instruction list stays additive.
+    // Quantity changes are net deltas: one direction per card. A 2-for-2
+    // basic swap (−2 Forest, +2 Island) reads as two Remove halves in the
+    // delta list; the per-card transitions below are the exact record.
     for (key, qty_a, qty_b) in changed {
         if qty_a < qty_b {
             diff.added.push((key.clone(), qty_b - qty_a));
@@ -99,14 +99,41 @@ pub fn diff_section(
     diff
 }
 
+/// Collapse same-named sections (case-insensitive) into one section with
+/// summed quantities, preserving first-appearance order.
+fn merge_named_sections(deck: &Deck) -> Deck {
+    let mut sections: Vec<(String, Vec<DeckEntry>)> = Vec::new();
+    for (section, entries) in &deck.sections {
+        if let Some((_, merged)) = sections
+            .iter_mut()
+            .find(|(s, _)| s.eq_ignore_ascii_case(section))
+        {
+            for entry in entries {
+                if let Some(pos) = merged.iter().position(|e| e.name == entry.name) {
+                    merged[pos].quantity += entry.quantity;
+                } else {
+                    merged.push(entry.clone());
+                }
+            }
+        } else {
+            sections.push((section.clone(), entries.clone()));
+        }
+    }
+    Deck { sections }
+}
+
 /// Full deck diff, section by section. Sections match case-insensitively
-/// by header; a section in only one deck diffs against an empty list.
+/// by header; same-named sections within one deck merge (quantities
+/// aggregate) before diffing, and a section in only one deck diffs against
+/// an empty list.
 pub fn diff_decks(
     a: &Deck,
     b: &Deck,
     exact: bool,
     is_basic: impl Fn(&str) -> bool,
 ) -> Vec<SectionDiff> {
+    let a = merge_named_sections(a);
+    let b = merge_named_sections(b);
     let mut out = Vec::new();
     let mut used: Vec<usize> = Vec::new();
     for (section, entries_a) in &a.sections {
@@ -164,11 +191,12 @@ pub fn markdown(diff: &[SectionDiff]) -> String {
                     let delta = b - a;
                     let abs = delta.abs();
                     let plural = if abs == 1 { "" } else { "s" };
-                    format!("{abs} {n}{plural}")
+                    format!("{abs} {}{plural}", display_name(n))
                 })
                 .collect();
-            // Mixed add/remove basics read as the dominant direction
-            // (the table below keeps the per-card transitions).
+            // Mixed add/remove basics are ambiguous in one sentence; the
+            // dominant direction names the row and the per-card table
+            // below keeps the exact transitions.
             let added: i64 = basics.iter().map(|(_, a, b)| (b - a).max(0)).sum();
             let removed: i64 = basics.iter().map(|(_, a, b)| (a - b).max(0)).sum();
             let verb = if added > removed { "Add" } else { "Remove" };
@@ -192,11 +220,11 @@ pub fn markdown(diff: &[SectionDiff]) -> String {
             for i in 0..rows {
                 let rem = removals
                     .get(i)
-                    .map(|(n, q)| format!("| {n} | {q} "))
+                    .map(|(n, q)| format!("| {} | {q} ", display_name(n)))
                     .unwrap_or_else(|| "|  |  ".to_string());
                 let add = additions
                     .get(i)
-                    .map(|(n, q)| format!("| {n} | {q} |"))
+                    .map(|(n, q)| format!("| {} | {q} |", display_name(n)))
                     .unwrap_or("|  |  |".to_string());
                 out.push_str(&format!("{rem}{add}\n"));
             }
@@ -254,7 +282,7 @@ pub fn diff(
     let (deck_a_label, deck_a_parsed) = load_operand(deck_a)?;
     // Target: a real deck first, then a ManaBox txt path.
     let (deck_b_label, deck_b_parsed) = load_operand(deck_b)?;
-    let cards_by_name = super::stats::lookup_names(conn, &deck_a_parsed);
+    let cards_by_name = super::stats::lookup_names(conn, &deck_a_parsed)?;
     let sections = diff_decks(&deck_a_parsed, &deck_b_parsed, exact, |name| {
         cards_by_name
             .get(name)
@@ -338,3 +366,66 @@ pub fn diff(
 #[cfg(test)]
 #[path = "tests/diff_tests.rs"]
 mod diff_tests;
+
+/// `--as-update`: print the diff as `deck update --from` op lines. Removes
+/// first, then quantity changes as `set`, then adds — applying the file
+/// reproduces B from A.
+pub fn diff_as_update(
+    paths: &crate::paths::Paths,
+    conn: &rusqlite::Connection,
+    out: &mut crate::output::Output,
+    deck_a: &str,
+    deck_b: &str,
+    exact: bool,
+) -> anyhow::Result<i32> {
+    let load_operand = |s: &str| -> anyhow::Result<Deck> {
+        match super::store::load_deck(paths, s) {
+            Ok((_p, deck)) => Ok(deck),
+            Err(err) if !super::store::is_deck_not_found(&err) => Err(err),
+            Err(_) => {
+                let text = std::fs::read_to_string(s)
+                    .with_context(|| format!("reading {s} (not a deck name or file)"))?;
+                Deck::parse(&text).with_context(|| format!("parsing {s}"))
+            }
+        }
+    };
+    let deck_a_parsed = load_operand(deck_a)?;
+    let deck_b_parsed = load_operand(deck_b)?;
+    let cards_by_name = super::stats::lookup_names(conn, &deck_a_parsed)?;
+    let sections = diff_decks(&deck_a_parsed, &deck_b_parsed, exact, |name| {
+        cards_by_name
+            .get(name)
+            .is_some_and(super::stats::is_basic_land)
+    });
+    let mut any = false;
+    for s in &sections {
+        // Non-DECK sections carry the `section:` prefix the op grammar
+        // supports; unqualified ops default to DECK and would land
+        // sideboard/commander changes in the wrong place.
+        let prefix = if s.section.eq_ignore_ascii_case("DECK") {
+            String::new()
+        } else {
+            format!("{}:", s.section)
+        };
+        for (name, qty) in &s.removed {
+            any = true;
+            println!("remove {prefix}{qty} {}", display_name(name));
+        }
+        for (name, from, to) in &s.changed {
+            any = true;
+            if *to == 0 {
+                println!("remove {prefix}{from} {}", display_name(name));
+            } else {
+                println!("set {prefix}{to} {}", display_name(name));
+            }
+        }
+        for (name, qty) in &s.added {
+            any = true;
+            println!("add {prefix}{qty} {}", display_name(name));
+        }
+    }
+    if !any {
+        out.print_note("The decks already match; nothing to apply.");
+    }
+    Ok(crate::cli::codes::OK)
+}

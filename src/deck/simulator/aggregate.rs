@@ -367,7 +367,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     stats.p50_lethal_turn = if lethal_turns.is_empty() {
         None
     } else {
-        Some(lethal_turns[lethal_turns.len() / 2])
+        // Nearest-rank median, consistent with the other percentile
+        // lines in the same block.
+        let mut turns = lethal_turns;
+        Some(percentile(&mut turns, 0.5))
     };
 
     let ready_turns: usize = logs
@@ -389,11 +392,7 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     // Attack power p90 at turn 8 (or the last turn simulated).
     if turns >= 8 {
         let mut p90s: Vec<u32> = logs.iter().map(|l| l.attack_power[7]).collect();
-        p90s.sort_unstable();
-        stats.attack_power_p90 = p90s
-            .get((p90s.len() as f64 * 0.9) as usize)
-            .copied()
-            .unwrap_or(0);
+        stats.attack_power_p90 = percentile(&mut p90s, 0.9);
     }
     stats.extra_turns_pct = logs
         .iter()

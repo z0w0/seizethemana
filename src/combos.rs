@@ -23,9 +23,15 @@ pub fn requires_commander(pieces: &[ComboPieceRow]) -> bool {
 }
 
 /// True when the variant is legal in `format` per its Spellbook legality
-/// map. Unknown format keys never pass.
+/// map. Unknown format keys never pass. The lookup lowercases the key:
+/// the Spellbook map stores lowercase formats ("modern"), while callers
+/// pass user text ("Modern").
 pub fn variant_legal_in(variant: &ComboVariant, format: &str) -> bool {
-    variant.legalities.get(format).copied().unwrap_or(false)
+    variant
+        .legalities
+        .get(&format.to_ascii_lowercase())
+        .copied()
+        .unwrap_or(false)
 }
 
 /// Keep only variants that are legal in `format`. Commander-required

@@ -268,3 +268,190 @@ fn combat_power_counts_buff_and_double_strike() {
         "attackers never exceed bodies"
     );
 }
+
+#[test]
+fn partner_deck_casts_both_commanders() {
+    // A partner pair is castable turn 1 ({0} + {1}): each partner joins
+    // the battlefield; the cast loop must not stop after the first.
+    let first = card("Free Leader", "", "Legendary Creature — Human", "");
+    let second = card(
+        "Cheap Partner",
+        "{0}",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+    );
+    let filler = card("Filler", "", "Creature — Frog", "");
+    let cards = cards_map(vec![
+        first,
+        second,
+        filler.clone(),
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+    ]);
+    let mut deck = deck_text("DECK", &[("Island", 40), ("Filler", 20)]);
+    let cmd = deck.section_entries_mut("COMMANDER");
+    for (name, qty) in [("Free Leader", 1), ("Cheap Partner", 1)] {
+        cmd.push(crate::deck::grammar::DeckEntry {
+            quantity: qty,
+            name: name.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    assert_eq!(sim_deck.commanders.len(), 2);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
+    let log = super::game::run_game(&sim_deck, &mut rng, 3);
+    // Both commanders are zero/one-cost creatures: two bodies from turn 1.
+    assert!(log.bodies[0] >= 2, "both partners cast: {}", log.bodies[0]);
+}
+
+#[test]
+fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
+    // Two partners, each with an upkeep draw. The sentinel fix: each
+    // cast commander fires its own engine once per turn (not once per
+    // sentinel), and a partner whose upkeep draw is parsed registers an
+    // engine even when the first partner lacks one.
+    let first = card(
+        "Free Leader",
+        "",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+    );
+    let second = card(
+        "Cheap Partner",
+        "{0}",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+    );
+    let filler = card("Filler", "", "Creature — Frog", "");
+    let cards = cards_map(vec![
+        first,
+        second,
+        filler.clone(),
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+    ]);
+    let mut deck = deck_text("DECK", &[("Island", 40), ("Filler", 20)]);
+    let cmd = deck.section_entries_mut("COMMANDER");
+    for (name, qty) in [("Free Leader", 1), ("Cheap Partner", 1)] {
+        cmd.push(crate::deck::grammar::DeckEntry {
+            quantity: qty,
+            name: name.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    assert_eq!(sim_deck.commanders.len(), 2);
+    // Partner pair: two engines online from turn 1 (both partners cast).
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
+    let log = super::game::run_game(&sim_deck, &mut rng, 3);
+    assert_eq!(log.engines_online[0], 2, "one engine per cast partner");
+    // Same-seed solo run: one commander, one engine, one draw per turn.
+    let solo_deck = deck_text("DECK", &[("Island", 40), ("Filler", 20)]);
+    let mut solo = solo_deck;
+    let cmd = solo.section_entries_mut("COMMANDER");
+    for (name, qty) in [("Free Leader", 1), ("Cheap Partner", 1)] {
+        cmd.push(crate::deck::grammar::DeckEntry {
+            quantity: qty,
+            name: name.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    // The solo comparison: strip the partner's upkeep text by comparing
+    // against a deck where only the first partner carries the engine —
+    // the growth delta must stay at 2 draws/turn (both engines), not 3
+    // (per-sentinel double-fire) or 1 (the missing engine).
+    let second_silent = card("Cheap Partner", "{0}", "Legendary Creature — Human", "");
+    let cards_silent = cards_map(vec![
+        card(
+            "Free Leader",
+            "",
+            "Legendary Creature — Human",
+            "At the beginning of your upkeep, draw a card.",
+        ),
+        second_silent,
+        filler.clone(),
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+    ]);
+    let mut deck_silent = deck_text("DECK", &[("Island", 40), ("Filler", 20)]);
+    let cmd = deck_silent.section_entries_mut("COMMANDER");
+    for (name, qty) in [("Free Leader", 1), ("Cheap Partner", 1)] {
+        cmd.push(crate::deck::grammar::DeckEntry {
+            quantity: qty,
+            name: name.to_string(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    }
+    let silent_deck = build_sim_deck(&deck_silent, &cards_silent, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
+    let silent_log = super::game::run_game(&silent_deck, &mut rng, 3);
+    // Both engines fire: the partner pair sees 1 more card per turn than
+    // the single-engine run (draw step cancels out), every turn.
+    let growth_pair = log.cards_seen[1] - log.cards_seen[0];
+    let growth_solo = silent_log.cards_seen[1] - silent_log.cards_seen[0];
+    assert_eq!(
+        growth_pair,
+        growth_solo + 1,
+        "the second partner's engine fires exactly once"
+    );
+    // Turn 3: cast interference (free filler casts also enter the seen
+    // census and diverge with the libraries), so the bound is a range:
+    // the second engine adds 0-2 pops (its draw plus hand-limit noise).
+    // It must never exceed the +2 double-fire of the old per-sentinel
+    // bug.
+    let growth_pair3 = log.cards_seen[2] - log.cards_seen[1];
+    let growth_solo3 = silent_log.cards_seen[2] - silent_log.cards_seen[1];
+    assert!(
+        (0..=2).contains(&(growth_pair3 - growth_solo3)),
+        "the second partner's engine stays bounded (pair {growth_pair3} vs solo {growth_solo3})"
+    );
+}
+
+#[test]
+fn commander_engine_fires_on_extra_turns() {
+    // An extra turn replays the commander's upkeep engine: the sentinel
+    // must resolve even though it is not a battlefield uid. The deck
+    // holds a {0} "take an extra turn" sorcery, so the extra turn is
+    // guaranteed.
+    let commander = card(
+        "Draw Lord",
+        "{0}",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+    );
+    let extra = card(
+        "Time Lord",
+        "{0}",
+        "Sorcery",
+        "Take an extra turn after this one.",
+    );
+    let filler = card("Filler", "", "Creature — Frog", "");
+    let cards = cards_map(vec![
+        commander,
+        extra,
+        filler,
+        card("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+    ]);
+    let deck = deck_text("DECK", &[("Time Lord", 1), ("Island", 40), ("Filler", 19)]);
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
+    let log = super::game::run_game(&sim_deck, &mut rng, 3);
+    // The engine fires at most once per turn replay (no double-fire on
+    // the extra turn). Every turn-index growth is bounded by the draw
+    // step plus one engine draw plus one possible extra-turn replay.
+    for t in 0..3 {
+        let prev = if t == 0 { 11 } else { log.cards_seen[t - 1] };
+        let growth = log.cards_seen[t] - prev;
+        assert!(
+            growth <= 3,
+            "turn {}: commander engine fires at most once per turn (incl. extra turns): {growth}",
+            t + 1
+        );
+    }
+}

@@ -131,9 +131,10 @@ pub fn section_combos(
 
 /// True when a combo's Spellbook bracket tag breaks the target bracket.
 ///
-/// Spellbook tags run past the numeric brackets ("S" for cEDH-grade
-/// infinite-turn loops); anything with a tag breaks brackets 1-3 by
-/// definition, and an explicit higher tag breaks brackets 1-4 too.
+/// Only the two hard tags count: "S" (cEDH-grade infinite-turn loops) and
+/// "K" (infinite combo with few or no alternative pieces). Both break
+/// brackets 1-4; a tagged card never breaks bracket 5, and an untagged
+/// combo breaks nothing here.
 pub fn breaks_bracket(tag: Option<&str>, bracket: u8) -> bool {
     let Some(tag) = tag else { return false };
     matches!(tag, "S" | "K") && bracket <= 4
@@ -153,7 +154,7 @@ pub fn combos(
     if !super::simulator::store_has_combos_pub(conn) {
         out.error("no combo data in the store");
         out.hint("run 'stm setup' or 'stm sync' to refresh combo data");
-        return Ok(crate::cli::codes::ERROR);
+        return Ok(crate::cli::codes::NO_RESULTS);
     }
     // Format key: explicit flag, else the deck's inferred format.
     let format_key = format
@@ -169,7 +170,7 @@ pub fn combos(
         .collect();
 
     let mut sections = Vec::new();
-    let owned_counts = crate::collection::owned_counts_all(conn).unwrap_or_default();
+    let owned_counts = crate::collection::owned_counts_all(conn)?;
     for (section, entries) in &deck.sections {
         let names: std::collections::HashSet<String> =
             entries.iter().map(|e| e.name.clone()).collect();
@@ -232,7 +233,7 @@ pub fn combos(
             println!("  {}:", styles.dim("One card away"));
             for row in &section.near_misses {
                 let owned = match row.owned {
-                    Some(true) => styles.success("owned ✓"),
+                    Some(true) => styles.glyph("✓ owned", crate::output::GlyphKind::Good),
                     Some(false) => styles.dim("to buy"),
                     None => styles.dim(""),
                 };

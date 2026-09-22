@@ -172,6 +172,7 @@ pub fn parse_ability(segment: &str) -> Option<Ability> {
         || lower_effect.contains("each opponent loses")
         || lower_effect.contains("opponent loses"))
         && lower_effect.contains("life")
+        && !(lower_effect.contains("sacrifice") && lower_effect.contains("opponent"))
     {
         Effect::Drain(super::model::amount_after(&lower_effect, "loses").max(1))
     } else if lower_effect.contains("remove a charge counter") && lower_effect.contains("add") {
@@ -303,20 +304,27 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     let is_saga = type_line.contains("Saga") && !land;
     if is_saga {
         let chapters = parse_saga_chapters(&row.oracle_text);
-        if !chapters.is_empty() {
+        // Non-chapter abilities (ETB and other triggers on the saga
+        // card) register alongside the chapters; `chapter_count` counts
+        // only Activated abilities, so extra triggers stay out of the
+        // chapter index. Shapes the model cannot express are dropped at
+        // parse time like any other card.
+        let mut tier_abilities: Vec<Ability> = chapters
+            .into_iter()
+            .map(|effect| Ability {
+                trigger: super::model::Trigger::Activated,
+                effect,
+                ..Ability::default()
+            })
+            .collect();
+        tier_abilities.extend(abilities);
+        if !tier_abilities.is_empty() {
             station_tiers.insert(
                 0,
                 Tier {
                     at: 0,
                     animate: false,
-                    abilities: chapters
-                        .into_iter()
-                        .map(|effect| Ability {
-                            trigger: super::model::Trigger::Activated,
-                            effect,
-                            ..Ability::default()
-                        })
-                        .collect(),
+                    abilities: tier_abilities,
                 },
             );
         }
@@ -423,10 +431,15 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
             .map(str::trim)
             .find_map(|seg| {
                 let lower = seg.to_ascii_lowercase();
-                if lower.contains("surveil") && !lower.contains("whenever") {
+                // Enter-trigger shapes ("When this creature enters,
+                // surveil 2") are ETB triggers, not cast riders: they
+                // already parse as OnEnter Scry abilities and would
+                // double-count awareness if credited here too.
+                let enter_trigger = lower.starts_with("when ") || lower.starts_with("whenever ");
+                if lower.contains("surveil") && !lower.contains("whenever") && !enter_trigger {
                     return Some(super::model::amount_after(&lower, "surveil").max(1));
                 }
-                if lower.starts_with("scry ") && !lower.contains("whenever") {
+                if lower.starts_with("scry ") && !lower.contains("whenever") && !enter_trigger {
                     return Some(super::model::amount_after(&lower, "scry"));
                 }
                 None
@@ -442,9 +455,7 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
 
     // Mill direction: opponent mills name a target player ("target
     // player mills N", "each opponent mills N").
-    let mills_opponent = text.contains("target player mills")
-        || text.contains("target opponent") && text.contains("mill")
-        || text.contains("each opponent mills");
+    let mills_opponent = super::model::mills_opponent(&text);
 
     // One-shot drain spells ("Deals N damage to target player/opponent",
     // "each opponent loses N life"). Creature-target burn stays removal.
@@ -572,7 +583,6 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
     } else {
         0
     };
-
     // One-shot token spells ("Create four 1/1 Soldier creature tokens"):
     // no trigger prefix, so the trigger families skip them. The cast
     // resolves the creation.
@@ -666,8 +676,12 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         || text.contains("trample")
         || text.contains("menace")
         || text.contains("flying");
-    // Haste: keyword array, reminder text, or "has haste" grants.
-    let has_haste = row.keywords.contains("Haste") || text.contains("haste");
+    // Haste: keyword array or reminder text. "Creatures you control have
+    // haste" is a grant to other bodies — the granter itself does not
+    // attack on its entry turn — so the oracle mention does not set haste
+    // on this card.
+    let has_haste =
+        row.keywords.contains("Haste") || text.contains("has haste") || text.contains("with haste");
     // "You may play an additional land" / "an additional land on each of
     // your turns" (Aesi, Wayward Swordtooth, Burrowing Power).
     let extra_land_drops = text.contains("additional land");

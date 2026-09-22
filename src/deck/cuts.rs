@@ -77,6 +77,8 @@ pub struct CutOptions<'a> {
     pub bracket: Option<u8>,
     /// Pinned format (legality and cut-quantity rules).
     pub format: Option<&'a str>,
+    /// Budget cap for `--for` fill candidates (USD; unpriced excluded).
+    pub max_price: Option<f64>,
     /// Emit JSON.
     pub json: bool,
 }
@@ -87,6 +89,10 @@ pub struct CutOptions<'a> {
 /// castability, score every incumbent, and pair fills for `--for`.
 /// Returns `Ok(None)` when the deck has no resolvable cards (the caller
 /// renders the error).
+#[allow(
+    clippy::too_many_arguments,
+    reason = "one flat argument per CLI flag; the entry-point CutOptions keeps the public surface lint-clean"
+)]
 pub fn cut_rows(
     conn: &Connection,
     deck: &super::Deck,
@@ -95,6 +101,7 @@ pub fn cut_rows(
     count: usize,
     bracket: Option<u8>,
     format: Option<&str>,
+    max_price: Option<f64>,
 ) -> anyhow::Result<Vec<CutRow>> {
     // The deck's format: the pinned flag, else commander when the deck is
     // commander-shaped. The legality pin and copy-count rules read it.
@@ -138,8 +145,8 @@ pub fn cut_rows(
 
     // Game Changer census for bracket pinning (maindeck only; the
     // sideboard is a commander wishlist — see `game_changer_names` in
-    // legal.rs).
-    let gc_in_deck: Vec<&str> = deck
+    // legal.rs). Distinct names: duplicate lines are one card for the cap.
+    let gc_names: std::collections::BTreeSet<&str> = deck
         .sections
         .iter()
         // Maindeck only: the sideboard is a commander wishlist — the same
@@ -159,11 +166,22 @@ pub fn cut_rows(
         Some(3) => 3,
         _ => usize::MAX,
     };
-    let gc_over_cap: std::collections::BTreeSet<&str> = if gc_in_deck.len() > gc_cap {
-        gc_in_deck[gc_cap.min(gc_in_deck.len())..]
-            .iter()
-            .copied()
-            .collect()
+    // Pins are the weakest over-cap cards: keep the most-played (best
+    // EDHREC rank, low number), pin the rest. Unranked cards sort last
+    // (least played), so popular Game Changers survive a cap.
+    let mut gc_ranked: Vec<(&str, Option<i64>)> = gc_names
+        .iter()
+        .map(|n| (*n, cards_by_name.get(*n).and_then(|c| c.edhrec_rank)))
+        .collect();
+    gc_ranked.sort_unstable_by(|a, b| {
+        // Unranked cards rank as i64::MAX (worst), so an over-cap pin
+        // lands on the least-played Game Changer, not an unranked one
+        // kept by Option ordering.
+        let key = |r: &Option<i64>| r.unwrap_or(i64::MAX);
+        key(&a.1).cmp(&key(&b.1)).then_with(|| a.0.cmp(b.0))
+    });
+    let gc_over_cap: std::collections::BTreeSet<&str> = if gc_ranked.len() > gc_cap {
+        gc_ranked[gc_cap..].iter().map(|(n, _)| *n).collect()
     } else {
         Default::default()
     };
@@ -230,7 +248,7 @@ pub fn cut_rows(
                 detail: format!(
                     "Game Changer over the {} bracket allowance ({} in deck, cap {gc_cap})",
                     bracket.unwrap_or(3),
-                    gc_in_deck.len()
+                    gc_names.len()
                 ),
             });
             pinned = true;
@@ -363,7 +381,7 @@ pub fn cut_rows(
     // `--for` fills: top owned-first candidates for the deficit role, one
     // pairing per cut row (reuses the suggest scoring leg).
     if let Some(role) = role {
-        let fills = top_fills(conn, deck, role).unwrap_or_default();
+        let fills = top_fills(conn, deck, role, max_price).unwrap_or_default();
         for row in &mut rows {
             row.replace_with = Some(FillPair {
                 role: format!("{role:?}"),
@@ -387,6 +405,7 @@ pub fn cuts(
         for_role,
         bracket,
         format,
+        max_price,
         json,
     } = *options;
     // Parse the requested role for `--for` discounting + fills (before
@@ -405,14 +424,23 @@ pub fn cuts(
     };
 
     let (_path, deck) = load_deck(paths, name)?;
-    let cards_by_name = super::stats::lookup_names(conn, &deck);
+    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
     if cards_by_name.is_empty() {
         out.error("deck has no resolvable cards");
         out.hint("check card names: stm deck show <name>");
         return Ok(crate::cli::codes::NO_RESULTS);
     }
 
-    let rows = cut_rows(conn, &deck, &cards_by_name, role, count, bracket, format)?;
+    let rows = cut_rows(
+        conn,
+        &deck,
+        &cards_by_name,
+        role,
+        count,
+        bracket,
+        format,
+        max_price,
+    )?;
 
     if json {
         println!("{}", serde_json::to_string_pretty(&rows)?);
@@ -503,9 +531,16 @@ fn role_census(
 }
 
 /// Top fill candidates for a role: owned cards matching the role's tag
-/// labels, cheapest first. A light version of `deck suggest --role`'s
-/// scoring; the pairing is a hint, not a ranked purchase list.
-fn top_fills(conn: &Connection, deck: &super::Deck, role: Role) -> anyhow::Result<Vec<String>> {
+/// labels, most-owned first then best EDHREC rank. A light version of
+/// `deck suggest --role`'s scoring; the pairing is a hint, not a ranked
+/// purchase list. `max_price` drops unpriced and over-cap candidates
+/// before the cut.
+fn top_fills(
+    conn: &Connection,
+    deck: &super::Deck,
+    role: Role,
+    max_price: Option<f64>,
+) -> anyhow::Result<Vec<String>> {
     // Token-level label matching (the same semantics as `deck suggest`):
     // the role word may appear anywhere in a label ("card draw", "draw
     // engine"), never as a substring of a longer word ("drawback").
@@ -522,33 +557,51 @@ fn top_fills(conn: &Connection, deck: &super::Deck, role: Role) -> anyhow::Resul
         .collect::<std::collections::BTreeSet<_>>()
         .into_iter()
         .collect();
+    // An empty deck excludes nothing: skip the NOT IN clause entirely
+    // instead of binding zero placeholders to it.
+    let deck_clause = if deck_names.is_empty() {
+        String::new()
+    } else {
+        let deck_placeholders = vec!["?"; deck_names.len()].join(",");
+        format!(" AND k.name NOT IN ({deck_placeholders})")
+    };
     let tag_placeholders = vec!["?"; tag_ids.len()].join(",");
-    let deck_placeholders = vec!["?"; deck_names.len().max(1)].join(",");
+    let over_cap = max_price;
+    // An over-cap filter narrows the pool: over-fetch before the LIMIT cut.
+    let fetch = if over_cap.is_some() { 30 } else { 3 };
     let sql = format!(
         "SELECT k.name, COALESCE(o.qty, 0) AS owned
          FROM cards k
          LEFT JOIN (SELECT name, SUM(quantity) AS qty FROM collection GROUP BY name) o
            ON o.name = k.name
          JOIN card_tags ct ON ct.oracle_id = k.oracle_id
-         WHERE ct.tag_id IN ({tag_placeholders})
-           AND k.name NOT IN ({deck_placeholders})
+         WHERE ct.tag_id IN ({tag_placeholders}){deck_clause}
          GROUP BY k.name
          ORDER BY owned DESC, k.edhrec_rank ASC NULLS LAST
-         LIMIT 3"
+         LIMIT {fetch}"
     );
     let mut stmt = conn.prepare(&sql).context("preparing fill query")?;
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = tag_ids
         .iter()
         .map(|id| Box::new(id.clone()) as Box<dyn rusqlite::types::ToSql>)
         .collect();
-    for name in deck_names {
-        params.push(Box::new(name));
+    for name in &deck_names {
+        params.push(Box::new(name.clone()));
     }
-    let rows = stmt.query_map(
-        rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
-        |row| row.get::<_, String>(0),
-    )?;
-    rows.collect::<Result<Vec<_>, _>>().context("reading fills")
+    let rows = stmt
+        .query_map(
+            rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
+            |row| row.get::<_, String>(0),
+        )?
+        .collect::<Result<Vec<_>, _>>()
+        .context("reading fills")?;
+    match over_cap {
+        None => Ok(rows),
+        Some(cap) => {
+            let (kept, _) = crate::prints::retain_by_price::<_>(conn, rows, |name| name, cap)?;
+            Ok(kept)
+        }
+    }
 }
 #[cfg(test)]
 #[path = "tests/cuts_tests.rs"]

@@ -3,15 +3,15 @@
 // mutations they drive.
 
 use super::game::{
-    GameState, InPlay, Pool, card_of, fetches_land_text, fire_on_enter, new_perm,
-    register_loyalty_token_engines,
+    GameState, InPlay, Pool, card_of, fetches_land_text, fire_on_enter, new_perm_with,
+    register_loyalty_token_engines, take_uid,
 };
 use super::game_effects::{apply_effect, apply_effect_at};
 use super::game_mana::{
-    add_yield_turns_empty_board, effective_min_cost, pay_cost, pay_creature_cost, payable, pips_ok,
-    usable_for_creature, usable_for_noncreature,
+    add_yield_turns_empty_board, cast_restriction, effective_min_cost, pay_cost,
+    pay_restricted_cost, payable, pips_ok, usable_for_noncreature,
 };
-use super::model::{Effect, Role, SimDeck, Trigger};
+use super::model::{Effect, Restriction, Role, SimDeck, Trigger};
 
 /// The drain multiplier for this deck's format: three opponents in the
 /// commander family, one in constructed.
@@ -51,7 +51,9 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
     let card = &deck.cards[idx];
     let tapped_in = card.enters_tapped;
     st.battlefield_seen.entry(idx).or_insert(turn);
-    st.battlefield.push(new_perm(deck, idx, turn, tapped_in));
+    let uid = take_uid(st);
+    st.battlefield
+        .push(new_perm_with(uid, deck, idx, turn, tapped_in));
     if fetches_land_text(card) {
         // Search up a land from the library (enters tapped).
         if let Some(i) = st
@@ -61,7 +63,9 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
         {
             let fetched = st.library.remove(i);
             st.battlefield_seen.entry(fetched).or_insert(turn);
-            st.battlefield.push(new_perm(deck, fetched, turn, true));
+            let fuid = take_uid(st);
+            st.battlefield
+                .push(new_perm_with(fuid, deck, fetched, turn, true));
         }
     }
     // ETB triggers for the new land (ExtraLand-style ramp lands).
@@ -82,7 +86,7 @@ pub(super) fn cast_phase(
     pool: &mut Pool,
     turn: usize,
     mana_spent: &mut [f64],
-    engines: &mut Vec<(usize, u32)>,
+    engines: &mut Vec<(u32, u32)>,
     pip_blocks: &mut Vec<(usize, usize)>,
     blocked_colors: &mut [bool; 5],
 ) {
@@ -93,6 +97,9 @@ pub(super) fn cast_phase(
         .collect();
     order.sort_by_key(|p| deck.cards[st.hand[*p]].min_cost.total());
     let mut cast_positions = Vec::new();
+    // (uid, card index) of each cast's battlefield permanent: the ETB
+    // pass fires only for these (lands and effect-pushes are excluded).
+    let mut cast_ets: Vec<(u32, usize)> = Vec::new();
     let mut spent_total = 0u32;
     for pos in order {
         // Mid-cast hand changes (wheels, loots) shrink the hand; stale
@@ -103,11 +110,25 @@ pub(super) fn cast_phase(
         let idx = st.hand[pos];
         let card = &deck.cards[idx];
         let eff = effective_min_cost(deck, card, &st.battlefield);
-        // Spend-restricted mana pays creature casts only.
-        let (cost_ok, pip_ok) = if card.is_creature {
+        // Spend-restricted mana pays only its cast class: the general
+        // pool plus the matching bucket counts toward the cast; other
+        // restricted buckets do not. The bucket covers the card's pips
+        // like any other source (each restricted pip is one mana of the
+        // source's chosen color, so the bucket must cover every pip,
+        // once).
+        let restriction = cast_restriction(card);
+        let (cost_ok, pip_ok) = if let Some(restriction) = restriction {
+            let bucket = match restriction {
+                Restriction::Creature => pool.creature_only,
+                Restriction::Legendary => pool.legendary_only,
+                Restriction::Artifact => pool.artifact_only,
+                Restriction::InstantSorcery => pool.instant_sorcery_only,
+            };
+            let pip_total: u32 =
+                eff.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + eff.flex_pips;
             (
-                usable_for_creature(pool) >= eff.total(),
-                pips_ok(&eff, pool) || pool.creature_only > 0,
+                pool.usable_for(restriction) >= eff.total(),
+                pips_ok(&eff, pool) || (bucket > 0 && bucket >= pip_total),
             )
         } else {
             (
@@ -128,8 +149,8 @@ pub(super) fn cast_phase(
             }
             continue;
         }
-        if card.is_creature {
-            pay_creature_cost(&eff, pool);
+        if let Some(restriction) = cast_restriction(card) {
+            pay_restricted_cost(&eff, pool, restriction);
         } else {
             pay_cost(&eff, pool);
         }
@@ -153,9 +174,9 @@ pub(super) fn cast_phase(
             false
         };
         cast_positions.push(pos);
-        // The permanent pushed below; battlefield scans skip it (its
-        // per-cast engine already fired for the casts so far).
-        let cast_perm_pos = st.battlefield.len();
+        // The permanent pushed below; battlefield scans skip it by uid
+        // (its per-cast engine already fired for the casts so far).
+        let cast_perm_uid = super::game::take_uid(st);
         // Additional costs: the cast consumes bodies ("sacrifice a
         // creature") and life ("pay N life"). Sacrificed bodies leave
         // the battlefield and fire their death triggers next turn
@@ -198,6 +219,7 @@ pub(super) fn cast_phase(
         };
         st.battlefield_seen.entry(idx).or_insert(turn as u32);
         st.battlefield.push(InPlay {
+            uid: cast_perm_uid,
             card: idx,
             tapped: false,
             sick: card.is_creature,
@@ -219,6 +241,7 @@ pub(super) fn cast_phase(
         // once-per-turn engine (Liliana-class token fuel).
         let pw_pos = st.battlefield.len() - 1;
         register_loyalty_token_engines(deck, st, pw_pos, engines);
+        cast_ets.push((cast_perm_uid, idx));
         // One-shot mana (rituals) joins this turn's pool only.
         if let Some(y) = &card.mana_on_cast {
             add_yield_turns_empty_board(y, pool, turn as u32);
@@ -292,13 +315,19 @@ pub(super) fn cast_phase(
         }
         // X-cost spells pay the leftover pool as X and scale the effect
         // (best case: X = everything floatable). The generic {X} already
-        // paid 1; the rest of the pool converts.
-        if let Some(class) = card.x_class {
+        // paid 1; the rest of the pool converts. Counters cards skip
+        // this branch: the entry-counter block above already converted
+        // the pool to counters and recorded the spend.
+        if let Some(class) = card.x_class
+            && class != super::model::XClass::Counters
+        {
             let x = pool.total().max(1);
             pool.colorless = 0;
             pool.flexible = 0;
             pool.fixed = [0; 5];
             pool.creature_only = 0;
+            // Spent accounting is single-counted: the entered X counters
+            // ARE the paid X; `spent_total` records it once here.
             spent_total += x;
             match class {
                 super::model::XClass::Drain => {
@@ -341,19 +370,20 @@ pub(super) fn cast_phase(
                 }
                 super::model::XClass::RevealPermanents => {
                     // Best case the top X cards all become permanents on
-                    // the battlefield (capped at 8).
+                    // the battlefield (capped at 8). They enter through a
+                    // reveal effect, not a cast resolution: their
+                    // OnEnter triggers do not fire (the ETB pass below
+                    // excludes non-cast entries).
                     for _ in 0..x.min(8) {
                         if let Some(i) = st.library.pop() {
                             st.battlefield_seen.entry(i).or_insert(turn as u32);
-                            st.battlefield.push(new_perm(deck, i, turn as u32, false));
+                            let uid = take_uid(st);
+                            st.battlefield
+                                .push(new_perm_with(uid, deck, i, turn as u32, false));
                         }
                     }
                 }
-                super::model::XClass::Counters => {
-                    // The entered X +1/+1 counters join the body power
-                    // (the cast path stored X as the entry counters via
-                    // the X sentinel).
-                }
+                _ => {}
             }
         }
         // Prowess census: noncreature spells cast this turn. The same
@@ -370,9 +400,8 @@ pub(super) fn cast_phase(
                 add_yield_turns_empty_board(y, pool, turn as u32);
             }
         }
-        for (pi, p) in st.battlefield.iter().enumerate() {
-            if pi == cast_perm_pos {
-                // The just-cast host fired above.
+        for p in st.battlefield.iter() {
+            if p.uid == cast_perm_uid {
                 continue;
             }
             if let Some(y) = &card_of(deck, p).mana_per_cast {
@@ -443,7 +472,9 @@ pub(super) fn cast_phase(
             st.awareness_cards += 1;
             if free_card.is_creature {
                 st.battlefield_seen.entry(free_idx).or_insert(turn as u32);
+                let uid = take_uid(st);
                 st.battlefield.push(InPlay {
+                    uid,
                     card: free_idx,
                     tapped: false,
                     sick: true,
@@ -505,42 +536,52 @@ pub(super) fn cast_phase(
         }
     }
     // ETB triggers for cards cast this turn (they entered the board);
-    // their upkeep engines register for the next turn. Positions are
-    // collected directly so two copies of the same name each fire.
-    let newly_cast: Vec<usize> = st
+    // their upkeep engines register for the next turn. Entries resolve
+    // through stable uids: lands played this turn already fired via
+    // `play_land` and reveal-effect pushes (tokens, returned bodies)
+    // never had a cast, so both are excluded; token pushes during a
+    // fire cannot shift another entry's identity.
+    let cast_uids: Vec<u32> = cast_ets.iter().map(|e| e.0).collect();
+    let newly_cast: Vec<(usize, u32, usize)> = st
         .battlefield
         .iter()
         .enumerate()
-        .filter(|(_, p)| p.entered_turn == turn && !p.is_commander && p.card < usize::MAX - 1)
-        .map(|(pos, _)| pos)
+        .filter(|(_, p)| {
+            p.entered_turn == turn
+                && !p.is_commander
+                && p.card < usize::MAX - 1
+                && cast_uids.contains(&p.uid)
+        })
+        .map(|(pos, p)| (pos, p.uid, p.card))
         .collect();
-    for pos in newly_cast {
+    for (_, uid, card_idx) in &newly_cast {
+        // Re-resolve the position at fire time: earlier fires can push
+        // tokens and shift indices.
+        let Some(pos) = st.battlefield.iter().position(|p| p.uid == *uid) else {
+            continue;
+        };
         fire_on_enter(deck, st, pos, turn as u32);
-        // Upkeep engines on the cast card register now. `pos` may have
-        // shifted from token pushes; re-resolve by card identity.
-        let card_idx = st.battlefield[pos].card;
-        for ability in deck.cards[card_idx].abilities() {
-            let engine_effect = match (&ability.trigger, &ability.effect) {
-                (Trigger::OnUpkeep, Effect::Draw(n)) => Some(*n),
-                // Mill, recursion, drain, and token upkeep engines run
-                // through the effect executor like the draw ones.
-                (
-                    Trigger::OnUpkeep,
-                    Effect::Mill(_)
-                    | Effect::ReturnFromGraveyard { .. }
-                    | Effect::Drain(_)
-                    | Effect::Tokens(_),
-                ) => Some(0),
-                _ => None,
-            };
-            if let Some(draws) = engine_effect {
-                let live_pos = st
-                    .battlefield
-                    .iter()
-                    .position(|p| p.card == card_idx && p.entered_turn == turn)
-                    .unwrap_or(pos);
-                engines.push((live_pos, draws));
+        // Upkeep engines on the cast card register now, by uid.
+        for ability in deck.cards[*card_idx].abilities() {
+            if let Some(draws) = engine_effect_or_draws(&ability.trigger, &ability.effect) {
+                engines.push((*uid, draws));
             }
         }
+    }
+}
+
+/// Upkeep-engine draws for an ability: the amount for Draw engines, 0
+/// for the executor-run shapes, None when not an upkeep engine.
+fn engine_effect_or_draws(trigger: &Trigger, effect: &Effect) -> Option<u32> {
+    match (trigger, effect) {
+        (Trigger::OnUpkeep, Effect::Draw(n)) => Some(*n),
+        (
+            Trigger::OnUpkeep,
+            Effect::Mill(_)
+            | Effect::ReturnFromGraveyard { .. }
+            | Effect::Drain(_)
+            | Effect::Tokens(_),
+        ) => Some(0),
+        _ => None,
     }
 }

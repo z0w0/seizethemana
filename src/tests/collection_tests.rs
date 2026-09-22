@@ -1,6 +1,8 @@
 // Tests for collection import, stats, and owned search.
 
 use super::*;
+use crate::collection_stats::{Stats, color_key, compute_stats, stats_json};
+use crate::output::Output;
 
 fn csv_row(binder: &str, kind: &str, name: &str, qty: i64, foil: &str) -> CsvRow {
     CsvRow {
@@ -15,7 +17,7 @@ fn csv_row(binder: &str, kind: &str, name: &str, qty: i64, foil: &str) -> CsvRow
         collector_number: "1".into(),
         foil: foil.into(),
         quantity: qty,
-        purchase_price: 1.0,
+        purchase_price: qty as f64,
         scryfall_id: "sid".into(),
     }
 }
@@ -40,13 +42,14 @@ fn parse_csv_handles_quotes_and_kinds() {
              Wishlist,list,Ad Nauseam,2XM,X,76,normal,rare,1,3,sid3,22.38\n"
         ),
     );
-    let (rows, skipped) = parse_csv(&path).unwrap();
+    let (rows, skipped) = parse_csv(&path, &mut Output::new(true, false, false)).unwrap();
     assert_eq!(skipped, 1, "wishlist rows are counted as skipped");
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[0].name, "Lluwen, Imperfect");
     assert_eq!(rows[0].binder_type, BinderType::Binder);
     assert_eq!(rows[0].quantity, 2);
-    assert!((rows[0].purchase_price - 0.5).abs() < 1e-9);
+    // Per-copy 0.5 × qty 2 = the row total.
+    assert!((rows[0].purchase_price - 1.0).abs() < 1e-9);
     assert_eq!(rows[1].binder, "Stationz");
     assert_eq!(rows[1].binder_type, BinderType::Deck);
     assert_eq!(rows[1].foil, "foil");
@@ -60,14 +63,19 @@ fn parse_csv_skips_list_rows() {
         tmp.path(),
         &format!("{CSV_HEADER}Wishlist,list,X,TST,S,1,normal,c,1,1,sid,1.0\n"),
     );
-    assert!(parse_csv(&path).unwrap().0.is_empty());
+    assert!(
+        parse_csv(&path, &mut Output::new(true, false, false))
+            .unwrap()
+            .0
+            .is_empty()
+    );
 }
 
 #[test]
 fn parse_csv_requires_headers() {
     let tmp = tempfile::tempdir().unwrap();
     let path = write_csv(tmp.path(), "Name,Set code\nBolt,TST\n");
-    assert!(parse_csv(&path).is_err());
+    assert!(parse_csv(&path, &mut Output::new(true, false, false)).is_err());
 }
 
 #[test]
@@ -85,8 +93,8 @@ fn aggregate_merges_duplicate_prints() {
         .find(|r| r.foil == "normal" && r.binder == "Collect")
         .unwrap();
     assert_eq!(bolt.quantity, 3);
-    // Purchase prices sum across the merged rows (2 × 1.0).
-    assert!((bolt.purchase_price - 2.0).abs() < 1e-9);
+    // Purchase prices are row totals; merges add them linearly (1 + 2 = 3).
+    assert!((bolt.purchase_price - 3.0).abs() < 1e-9);
 }
 
 #[test]
@@ -94,6 +102,91 @@ fn color_key_sorts_wubrg_and_colorless() {
     assert_eq!(color_key(&["G".into(), "W".into()]), "WG");
     assert_eq!(color_key(&["U".into(), "B".into(), "R".into()]), "UBR");
     assert_eq!(color_key(&[]), "C");
+}
+
+#[test]
+fn import_add_multiplies_purchase_price_by_quantity() {
+    // ManaBox's Purchase price column is per copy: parse_csv turns each row
+    // into a price × quantity total, so importing the same row twice with
+    // --add must total 0.5 × 2 copies × 2 imports = 4.0, not price × rows.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!("{CSV_HEADER}Collect,binder,Bolt,TST,Test,1,normal,common,2,1,sid1,0.5\n"),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id) VALUES ('Bolt', 'oid', 'sid1')",
+        [],
+    )
+    .unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 1,
+        embedded_cards: 1,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Bolt".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    import(&paths, &mut db, &mut out, &csv, false).unwrap();
+    import(&paths, &mut db, &mut out, &csv, true).unwrap();
+    let (qty, total): (i64, f64) = db
+        .query_row(
+            "SELECT quantity, purchase_price FROM collection WHERE name = 'Bolt'",
+            [],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(qty, 4);
+    // 4 copies × 0.5 per copy = 2.0.
+    assert!((total - 2.0).abs() < 1e-9);
+}
+
+#[test]
+fn stats_color_identity_uses_identity_column() {
+    // Command Tower has empty `colors` but WUBRG `color_identity`: the
+    // census must bucket by identity, not read colorless.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!(
+            "{CSV_HEADER}Collect,binder,Command Tower,TST,Test,1,normal,common,2,1,sid1,0.5\n"
+        ),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id, colors, color_identity)
+         VALUES ('Command Tower', 'oid', 'sid1', '[]', '[\"W\",\"U\",\"B\",\"R\",\"G\"]')",
+        [],
+    )
+    .unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 1,
+        embedded_cards: 1,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Command Tower".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = import(&paths, &mut db, &mut out, &csv, false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let stats = compute_stats(&db).unwrap();
+    assert_eq!(stats.color_identity.get("WUBRG"), Some(&2));
+    assert!(!stats.color_identity.contains_key("C"));
 }
 
 #[test]
@@ -156,7 +249,7 @@ fn import_keeps_ownership_only_no_deck_files() {
     .unwrap();
 
     let mut out = crate::output::Output::new(true, false, false);
-    let code = import(&paths, &mut db, &mut out, &csv, false, false).unwrap();
+    let code = import(&paths, &mut db, &mut out, &csv, false).unwrap();
     assert_eq!(code, crate::cli::codes::OK);
 
     // Ownership rows land in the collection (deck assignments count).
@@ -214,7 +307,7 @@ fn import_notes_skip_existing_decklists() {
     std::fs::write(paths.deck_file("Stationz"), "// DECK\n3 Bolt\n").unwrap();
 
     let mut out = crate::output::Output::new(false, true, false);
-    let code = import(&paths, &mut db, &mut out, &csv, false, false).unwrap();
+    let code = import(&paths, &mut db, &mut out, &csv, false).unwrap();
     assert_eq!(code, crate::cli::codes::OK);
     // The existing decklist is untouched (not rewritten, not deleted).
     let deck =
@@ -292,7 +385,7 @@ fn by_universe_rolls_up_cards_and_value() {
     )
     .unwrap();
     let mut out = crate::output::Output::new(true, false, false);
-    let code = import(&paths, &mut db, &mut out, &csv, false, false).unwrap();
+    let code = import(&paths, &mut db, &mut out, &csv, false).unwrap();
     assert_eq!(code, crate::cli::codes::OK);
     let stats = compute_stats(&db).unwrap();
     let multi = &stats.by_universe["multiverse"];

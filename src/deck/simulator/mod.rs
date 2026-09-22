@@ -4,9 +4,22 @@
 // - `model`: card data model (costs, tap yields, station tiers, abilities)
 // - `parse`: oracle-text → model (the sim's whole intelligence)
 // - `deck`: deck construction (deck text → `SimDeck`)
-// - `game`: the per-game turn loop (pure, seeded)
-// - `aggregate`: log aggregation + problem findings
-// - `report`: JSON payload + human stdout render
+// - `game`: shared per-game types (`GameLog`, battlefield permanents,
+//   the mana pool)
+// - `deal`: opening-hand dealing + mulligan policy
+// - `game_run`: the per-game turn loop (pure, seeded)
+// - `cast_phase`: the cast pass and land-drop helpers
+// - `game_effects`: effect execution + tap budget
+// - `game_mana`: pool building and cost payment
+// - `game_combat`: the combat phase
+// - `triggers`, `trigger_activated`, `trigger_landfall`: trigger helpers
+// - `combos`: combo assembly measurement
+// - `findings`: problem findings + mana-base verdict
+// - `findings_detail`: finding detail helpers
+// - `aggregate`: log aggregation + stats
+// - `report`: JSON payload; `report_view`: human stdout render
+// - `hypgeo`: hypergeometric cast ceilings
+// - `format`: format rules (mulligan policy, turn count)
 //
 // Cards are modeled as data, not as rules: a card gets a tap yield (one
 // tap = the listed mana), optional station tiers, an optional crew cost,
@@ -17,9 +30,11 @@
 pub(crate) mod aggregate;
 mod cast_phase;
 mod combos;
+pub(crate) mod deal;
 pub(crate) mod deck;
-mod findings;
-mod format;
+pub(crate) mod findings;
+pub(crate) mod findings_detail;
+pub(crate) mod format;
 pub(crate) mod game;
 mod game_combat;
 mod game_effects;
@@ -32,7 +47,7 @@ mod parse_cost;
 mod parse_keywords;
 mod parse_land;
 mod report;
-mod report_view;
+pub(crate) mod report_view;
 mod trigger_activated;
 mod trigger_landfall;
 mod triggers;
@@ -40,6 +55,12 @@ mod triggers;
 #[cfg(test)]
 #[path = "tests/aggregate_tests.rs"]
 mod aggregate_tests;
+#[cfg(test)]
+#[path = "tests/cast_restriction_tests.rs"]
+mod cast_restriction_tests;
+#[cfg(test)]
+#[path = "tests/combos_tests.rs"]
+mod combos_tests;
 #[cfg(test)]
 #[path = "tests/commander_deck_tests.rs"]
 mod commander_deck_tests;
@@ -53,11 +74,17 @@ mod deck_test_support;
 #[path = "tests/deck_tests.rs"]
 mod deck_tests;
 #[cfg(test)]
+#[path = "tests/format_tests.rs"]
+mod format_tests;
+#[cfg(test)]
 #[path = "tests/game_mechanic_tests.rs"]
 mod game_mechanic_tests;
 #[cfg(test)]
 #[path = "tests/game_tests.rs"]
 mod game_tests;
+#[cfg(test)]
+#[path = "tests/hypgeo_tests.rs"]
+mod hypgeo_tests;
 #[cfg(test)]
 #[path = "tests/lethal_tests.rs"]
 mod lethal_tests;
@@ -88,6 +115,9 @@ mod pipeline_tests;
 #[cfg(test)]
 #[path = "tests/report_tests.rs"]
 mod report_tests;
+#[cfg(test)]
+#[path = "tests/report_view_tests.rs"]
+mod report_view_tests;
 #[cfg(test)]
 #[path = "tests/standard_deck_tests.rs"]
 mod standard_deck_tests;
@@ -163,14 +193,92 @@ use crate::output::Output;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
+/// Run the goldfish pipeline for an in-memory deck and return the JSON
+/// report (no side effects, no output). Shared by `deck simulate` and the
+/// `deck update --dry-run --sim` preview so both answers can never
+/// disagree. `format` overrides the inferred format.
+// The 7 parameters mirror the sim pipeline's inputs one to one; a struct
+// would move the plumbing without removing any argument.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn sim_report_for(
+    deck: &super::Deck,
+    cards: &std::collections::HashMap<String, crate::db::CardRow>,
+    name: &str,
+    runs: u32,
+    turns: Option<u32>,
+    seed: u64,
+    format: Option<&str>,
+) -> serde_json::Value {
+    let sideboard_cards = deck.sideboard_total();
+    let mut sim_deck = deck::build_sim_deck(deck, cards, format);
+    if let Some(f) = format {
+        let applied = deck::apply_format_override(&mut sim_deck, f);
+        debug_assert!(applied, "unknown format override {f:?}");
+    }
+    let total_cards = sim_deck.cards.len() + sim_deck.commanders.len();
+    if total_cards == 0 {
+        return serde_json::json!({ "deck_shape": { "total_cards": 0 } });
+    }
+    let turns = turns.unwrap_or(sim_deck.rules.default_turns);
+    let mut rng = ChaCha8Rng::seed_from_u64(seed);
+    let mut logs = Vec::with_capacity(runs as usize);
+    for _ in 0..runs {
+        logs.push(game::run_game(&sim_deck, &mut rng, turns));
+    }
+    let mut stats = aggregate::aggregate(&logs, &sim_deck, turns);
+    stats.removal_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Removal)
+        .count();
+    stats.removal_wipes = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Removal && c.wipe)
+        .count();
+    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
+    stats.wincon_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Wincon)
+        .count();
+    stats.draw_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Draw)
+        .count();
+    stats.land_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Land)
+        .count();
+    let problems = findings::find_problems(&stats, &sim_deck);
+    let (inferred_bracket, bracket) = if sim_deck.format == model::Format::Constructed {
+        (false, 0)
+    } else {
+        (true, infer_bracket(deck, cards))
+    };
+    let mana_base = findings::mana_base(&sim_deck, bracket, inferred_bracket);
+    report::json_report(
+        &stats,
+        &sim_deck,
+        name,
+        seed,
+        &problems,
+        sideboard_cards,
+        &mana_base,
+    )
+}
+
 /// Entry point for `stm deck simulate <name>`.
 ///
 /// Exit 0 when no problems were found, exit 1 when the report has findings
 /// (the result is the answer, not a crash). A missing deck file is the
 /// shared deck-not-found error from the dispatcher. `baseline` (when given)
 /// diffs the fresh report against that prior JSON: human output prints
-/// deltas only; `--json` prints the `ReportDiff` as JSON. Either way the
-/// exit code keys on new problems, not the raw problem list.
+/// deltas only; `--json` prints the `ReportDiff` as JSON. Exit codes:
+/// without `--baseline` the run exits 1 on ANY problem found; with
+/// `--baseline` it exits 1 only on NEW problems versus the baseline.
 // The 12 parameters mirror the CLI surface one to one; a struct would
 // move the clap plumbing without removing any argument.
 #[allow(clippy::too_many_arguments)]
@@ -192,13 +300,16 @@ pub fn simulate(
 ) -> anyhow::Result<i32> {
     let (_path, deck) = super::store::load_deck(paths, name)?;
     let sideboard_cards = deck.sideboard_total();
-    let cards = lookup_names(conn, &deck);
+    let cards = lookup_names(conn, &deck)?;
     let mut sim_deck = deck::build_sim_deck(&deck, &cards, format);
 
     if let Some(f) = format
         && !deck::apply_format_override(&mut sim_deck, f)
     {
         out.error(&format!("--format {f} needs a COMMANDER section"));
+        out.hint(&format!(
+            "add a commander first: stm deck update {name} --add commander:1 <card>, or drop --format"
+        ));
         return Ok(crate::cli::codes::USAGE);
     }
 
@@ -274,6 +385,14 @@ pub fn simulate(
             Some((a.trim().to_string(), b.trim().to_string()))
         })
         .collect();
+    // A malformed pair (missing '+') is visible, not silent: the spec
+    // list would otherwise shrink with no trace.
+    let dropped_specs = combos.len() - combo_pairs.len();
+    if dropped_specs > 0 {
+        out.warning(&format!(
+            "{dropped_specs} --combo spec(s) missing '+' between the two cards were skipped"
+        ));
+    }
     let combo_rows = findings::piece_pair_access(&logs, &sim_deck, &combo_pairs, turns);
     let combo_limit = combo_limit.unwrap_or(DEFAULT_COMBO_LIMIT);
     let combo_report = load_store_combos(conn, &sim_deck, sim_deck.rules.key).map(|candidates| {
@@ -370,13 +489,9 @@ pub fn simulate(
         if !combo_rows.is_empty() {
             report_view::print_combo_access(out, &combo_rows);
         }
-        match &combo_report {
-            Some(assembly) => {
-                report_view::print_store_combos(out, assembly, combo_limit);
-                report_view::print_win_paths(out, assembly, combo_limit);
-            }
-            None if !combos.is_empty() || store_has_combos(conn) => {}
-            None => {}
+        if let Some(assembly) = &combo_report {
+            report_view::print_store_combos(out, assembly, combo_limit);
+            report_view::print_win_paths(out, assembly, combo_limit);
         }
         if hypgeo {
             report_view::print_hypgeo(out, &hypgeo::cast_ceilings(&sim_deck, turns));

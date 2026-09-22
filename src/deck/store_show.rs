@@ -13,13 +13,11 @@ fn print_overview(
     conn: &Connection,
     deck: &super::Deck,
     deck_name: &str,
+    out: &mut crate::output::Output,
 ) {
     let cards_by_name: std::collections::HashMap<String, crate::db::CardRow> =
-        super::stats::lookup_names(conn, deck);
+        super::stats::lookup_names(conn, deck).unwrap_or_default();
     let stats = super::stats::compute(deck, &cards_by_name);
-    let Ok(owned_map) = owned_map_for_deck(conn, deck_name) else {
-        return;
-    };
     let Ok(available) = super::ownership::available_map(conn, deck_name) else {
         return;
     };
@@ -34,8 +32,10 @@ fn print_overview(
             {
                 return entry.quantity;
             }
-            let (in_deck, _) = owned_map.get(&entry.name).copied().unwrap_or((0, 0));
-            in_deck.min(entry.quantity)
+            // Available copies (deck-assigned + binders) fill the slot;
+            // copies parked in other decks do not.
+            let available = available.get(&entry.name).copied().unwrap_or(0);
+            available.min(entry.quantity)
         })
         .sum();
     if stats.total == 0 {
@@ -60,7 +60,7 @@ fn print_overview(
         )),
     );
     // Money view: what owned copies are worth and what buying the rest costs.
-    let prices = deck_prices(conn, deck);
+    let prices = deck_prices(conn, deck, out);
     let (owned_value, missing_cost) = deck_value(deck, &cards_by_name, &prices, &available);
     if owned_value > 0.0 || missing_cost > 0.0 {
         println!(
@@ -213,10 +213,13 @@ pub(crate) fn owned_map_for_deck(
 /// Cheapest print price for every deck card name, keyed by name.
 ///
 /// A foil deck entry prices at the cheapest foil printing when one exists,
-/// falling back to the cheapest normal print.
+/// falling back to the cheapest normal print. A price-query failure
+/// degrades to unpriced rows (None) with a warning; it never aborts
+/// `deck show`.
 pub(crate) fn deck_prices(
     conn: &Connection,
     deck: &super::Deck,
+    out: &mut crate::output::Output,
 ) -> std::collections::HashMap<String, Option<f64>> {
     let mut names: Vec<String> = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -227,8 +230,14 @@ pub(crate) fn deck_prices(
     }
     // One batched query per finish kind instead of four statements per
     // card name.
-    let ranges =
-        crate::prints::price_ranges(conn, &names).expect("price ranges query failed for deck show");
+    let ranges = crate::prints::price_ranges(conn, &names);
+    let ranges = match ranges {
+        Ok(ranges) => ranges,
+        Err(err) => {
+            out.warning(&format!("price lookup failed; prices omitted: {err:#}"));
+            Default::default()
+        }
+    };
     let mut map = std::collections::HashMap::new();
     for name in names {
         let range = ranges.get(&name);
@@ -283,11 +292,6 @@ pub(crate) fn deck_value(
     (owned_value, missing_cost)
 }
 
-/// Round to two decimals for JSON money fields.
-pub(crate) fn round2(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0
-}
-
 /// Full set name for a set code (`sets` table; `None` when unknown).
 fn set_name_for(conn: &Connection, set_code: &str) -> Option<String> {
     conn.query_row(
@@ -324,7 +328,9 @@ pub(crate) fn universe_census(
         if !seen.insert(card.name.as_str()) {
             continue;
         }
-        let meta = crate::universe::card_universe(conn, &card.name, &card.set_code).ok()?;
+        let Ok(meta) = crate::universe::card_universe(conn, &card.name, &card.set_code) else {
+            continue;
+        };
         let qty = deck
             .sections
             .iter()
@@ -365,14 +371,14 @@ pub fn show(
     // slots, so missing numbers agree across `show` and `buylist`.
     let assigned = super::ownership::deck_assigned_map(conn, name)?;
     let available = super::ownership::available_map(conn, name)?;
-    let cards_by_name = super::stats::lookup_names(conn, &deck);
+    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
     let held_elsewhere = super::ownership::held_elsewhere_map(conn, name)?;
     let slots = super::ownership::slot_map(&deck, &available, &assigned, &held_elsewhere, |name| {
         cards_by_name
             .get(name)
             .is_some_and(super::stats::is_basic_land)
     });
-    let prices = deck_prices(conn, &deck);
+    let prices = deck_prices(conn, &deck, out);
     let primer = primer_file(paths, name);
     let universe_census = universe_census(conn, &deck, &cards_by_name);
     // Full set names per code for the JSON entries (a codes→names cache so
@@ -452,8 +458,8 @@ pub fn show(
             "sideboard_cards": deck.sideboard_total(),
             "primer": primer,
             "currency": crate::output::CURRENCY,
-            "owned_value": round2(owned_value),
-            "missing_cost": round2(missing_cost),
+            "owned_value": crate::output::round2(owned_value),
+            "missing_cost": crate::output::round2(missing_cost),
             "sections": sections,
         });
         if let Some(obj) = v.as_object_mut() {
@@ -485,11 +491,11 @@ pub fn show(
         styles.dim(&count_display),
         styles.dim(&format!("primer: {}", primer.display())),
     );
-    print_overview(&styles, conn, &deck, name);
+    print_overview(&styles, conn, &deck, name, out);
     // To-buy block: the missing slots at the cheapest printing, most
     // expensive first, with the running total (same math as `deck buylist`).
     // The reason names the holding deck when the copy exists elsewhere.
-    let mut to_buy: Vec<(String, i64, f64, String)> = slots
+    let mut to_buy: Vec<(String, i64, Option<f64>, String)> = slots
         .iter()
         .filter(|(_, slot)| slot.missing > 0)
         .map(|(name, slot)| {
@@ -510,15 +516,21 @@ pub fn show(
             (
                 name.clone(),
                 slot.missing,
-                prices.get(name).copied().flatten().unwrap_or(0.0),
+                prices.get(name).copied().flatten(),
                 reason,
             )
         })
         .collect();
-    to_buy.sort_by(|a, b| {
-        let a_cost = a.1 as f64 * a.2;
-        let b_cost = b.1 as f64 * b.2;
-        b_cost.total_cmp(&a_cost).then_with(|| a.0.cmp(&b.0))
+    // Unpriced rows sort last (after every priced row), priced rows by
+    // total cost descending.
+    to_buy.sort_by(|a, b| match (a.2, b.2) {
+        (Some(_), None) => std::cmp::Ordering::Less,
+        (None, Some(_)) => std::cmp::Ordering::Greater,
+        _ => {
+            let a_cost = a.1 as f64 * a.2.unwrap_or(0.0);
+            let b_cost = b.1 as f64 * b.2.unwrap_or(0.0);
+            b_cost.total_cmp(&a_cost).then_with(|| a.0.cmp(&b.0))
+        }
     });
     if !to_buy.is_empty() {
         println!();
@@ -528,7 +540,10 @@ pub fn show(
                 "  {:>2}  {}  {} {}",
                 qty,
                 styles.card_name(card),
-                styles.dim(&format!("@{}", styles.money(*unit))),
+                match unit {
+                    Some(unit) => styles.dim(&format!("@{}", styles.money(*unit))),
+                    None => styles.dim("unpriced"),
+                },
                 styles.dim(&format!("({reason})"))
             );
         }
@@ -538,14 +553,26 @@ pub fn show(
                 styles.dim(&format!("… and {} more lines", to_buy.len() - 8))
             );
         }
-        let total: f64 = to_buy.iter().map(|(_, q, p, _)| (*q as f64) * p).sum();
+        let priced_total: f64 = to_buy
+            .iter()
+            .map(|(_, q, p, _)| (*q as f64) * p.unwrap_or(0.0))
+            .sum();
+        let unpriced: i64 = to_buy
+            .iter()
+            .filter(|(_, _, p, _)| p.is_none())
+            .map(|(_, q, _, _)| *q)
+            .sum();
+        let mut parts = vec![format!(
+            "{} copies",
+            to_buy.iter().map(|(_, q, _, _)| q).sum::<i64>()
+        )];
+        if unpriced > 0 {
+            parts.push(format!("{unpriced} unpriced"));
+        }
         println!(
             "  {} {}",
-            styles.dim(&format!(
-                "{} copies · est.",
-                to_buy.iter().map(|(_, q, _, _)| q).sum::<i64>()
-            )),
-            styles.money(total),
+            styles.dim(&format!("{} · est.", parts.join(", "))),
+            styles.money(priced_total),
         );
     }
     if universe_census.is_some()

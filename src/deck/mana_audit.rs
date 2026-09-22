@@ -15,7 +15,6 @@ const CANTRIP_CREDIT: f64 = 0.25;
 const CANTRIP_CAP: usize = 10;
 /// MDFC land faces count as a partial source (Karsten).
 const MDFC_SOURCE_CREDIT: f64 = 0.8;
-/// MDFC land weight in the deck's land count (non-mythic / mythic).
 /// Requirement floors per number of pips, commander (99-card deck).
 /// Stored table, not extrapolated (Karsten 2022).
 const COMMANDER_REQUIREMENTS: [f64; 4] = [0.0, 12.0, 17.0, 21.0];
@@ -274,13 +273,19 @@ pub fn census(rows: &[(crate::db::CardRow, f64)], deck_colors: &str) -> SourceCe
     out
 }
 
-/// True when the land enters tapped (from oracle text).
+/// True when the land enters tapped unconditionally (from oracle text).
+///
+/// Shock lands and other "unless you pay" forms are untapped-by-default, so
+/// a tapped clause guarded by "unless" or "if you don't" does not count.
 fn enters_tapped(card: &crate::db::CardRow) -> bool {
     let text = card.oracle_text.to_lowercase();
-    text.contains("enters the battlefield tapped")
+    let tapped_clause = text.contains("enters the battlefield tapped")
         || text.contains("enters tapped")
-        || (text.contains("enters") && text.contains("tapped") && !text.contains("unless"))
-            && !text.contains("pay 1 life")
+        || (text.contains("enters") && text.contains("tapped"));
+    tapped_clause
+        && !text.contains("unless")
+        && !text.contains("if you don't")
+        && !text.contains("pay 1 life")
 }
 
 /// Pip counts per color for a mana cost string ("{2}{W}{W}").
@@ -293,7 +298,8 @@ fn cost_pips(cost: &str) -> Vec<(char, usize)> {
             if pip.len() == 1 && pip.starts_with(letter) {
                 n += 1;
             }
-            // Hybrid pips like {W/U} count half toward each color.
+            // Hybrid pips like {W/U}: counted as a full pip of each color
+            // (conservative; each color needs the source).
             if pip.len() == 3 && pip.contains('/') {
                 let parts: Vec<char> = pip.split('/').filter_map(|p| p.chars().next()).collect();
                 if parts.contains(&letter) {
@@ -322,13 +328,15 @@ fn pip_shape(cost: &str) -> (u8, u8, u8) {
     (generic, total.min(255) as u8, same.min(255) as u8)
 }
 
-/// Requirement floor for one color of one card's cost.
-fn requirement_for(cost: &str, lands: f64, is_commander: bool) -> f64 {
-    let (generic, total, same) = pip_shape(cost);
+/// Requirement floor for one color of one card's cost. `pips_in_color`
+/// is that color's pip count in the cost (a {W}{W}{U} cost needs the
+/// 2-pip floor for W, the 1-pip floor for U).
+fn requirement_for(cost: &str, lands: f64, is_commander: bool, pips: u8) -> f64 {
+    let (generic, total, _) = pip_shape(cost);
     let mut base = if is_commander {
-        COMMANDER_REQUIREMENTS[same.min(3) as usize]
+        COMMANDER_REQUIREMENTS[pips.min(3) as usize]
     } else {
-        lookup_sixty(generic, total, same)
+        lookup_sixty(generic, total, pips)
     };
     // Gold cards: +1 per additional color requirement beyond the first.
     let colors_required = cost_pips(cost).len();
@@ -395,8 +403,8 @@ pub fn audit(rows: &[(crate::db::CardRow, f64)], deck_colors: &str, is_commander
         let mut have = Vec::new();
         let mut deficit = Vec::new();
         let mut ok = true;
-        for (letter, _) in &pips {
-            let need = requirement_for(&card.mana_cost, lands, is_commander);
+        for (letter, n) in &pips {
+            let need = requirement_for(&card.mana_cost, lands, is_commander, *n as u8);
             let have_n = source_for(&c, *letter);
             let d = (need - have_n).max(0.0);
             if d > 0.0 {

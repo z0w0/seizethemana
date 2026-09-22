@@ -593,3 +593,21 @@ fn mdfc_spell_face_keeps_on_cast_credits() {
         "the MDFC spell face keeps its on-cast draw"
     );
 }
+
+/// A land's own ETB line ("…enters the battlefield tapped, …") with no
+/// real landfall rider parses no landfall engine.
+#[test]
+fn land_tapped_clause_is_not_landfall_engine() {
+    let sim = parse_sim_card(&card(
+        "Sejiri Glacier Lookalike",
+        "",
+        "Land",
+        "When Sejiri Glacier Lookalike enters the battlefield tapped, \
+         you gain 1 life.",
+    ));
+    assert!(
+        !sim.abilities()
+            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::ExtraLand)),
+        "land-clause text must not parse as a landfall engine"
+    );
+}

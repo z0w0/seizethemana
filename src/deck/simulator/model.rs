@@ -581,3 +581,11 @@ pub fn amount_after(text: &str, needle: &str) -> u32 {
     }
     1
 }
+
+/// True when the text reads a mill clause against the opponent. Plain
+/// "mill" is self-mill; the opponent shapes name a target.
+pub fn mills_opponent(text: &str) -> bool {
+    text.contains("target player mills")
+        || (text.contains("target opponent") && text.contains("mill"))
+        || text.contains("each opponent mills")
+}

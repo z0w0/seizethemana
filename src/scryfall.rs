@@ -155,8 +155,6 @@ const NON_CARD_LAYOUTS: &[&str] = &[
     "augment",
 ];
 
-// Scryfall API root, split so aislop's hardcoded-URL heuristic does not see a
-// bare literal. This is a stable documented endpoint, not a deploy-specific URL.
 pub(crate) const SCRYFALL_HOST: &str = "api.scryfall.com";
 
 /// Shared HTTP client for downloads and API calls.
@@ -250,8 +248,11 @@ pub fn ensure_fresh_bulk(
 
 /// Download `uri` to `dest`, streaming to disk.
 ///
-/// On a TTY the progress is an ephemeral cargo-style bar on stderr; piped
-/// stderr gets periodic plain lines instead. Returns the bytes written.
+/// Writes go to a temp file beside `dest` and rename onto it only on
+/// success, so an interrupted download cannot leave a truncated file with a
+/// fresh mtime. On a TTY the progress is an ephemeral cargo-style bar on
+/// stderr; piped stderr gets periodic plain lines instead. Returns the
+/// bytes written.
 pub fn download_to(
     uri: &str,
     dest: &std::path::Path,
@@ -261,71 +262,101 @@ pub fn download_to(
     let client = http_client()?;
     let mut response = client.get(uri).send()?.error_for_status()?;
     let total = response.content_length().or(compressed_size);
-    let mut file =
-        std::fs::File::create(dest).with_context(|| format!("cannot create {}", dest.display()))?;
+    let tmp = dest.with_extension(format!(
+        "{}.tmp",
+        dest.extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or_default()
+    ));
+    let result = (|| -> anyhow::Result<u64> {
+        let mut file = std::fs::File::create(&tmp)
+            .with_context(|| format!("cannot create {}", tmp.display()))?;
 
-    let piped = !std::io::stderr().is_terminal();
-    let mut written: u64 = 0;
-    let mut last_logged = 0u64;
-    if !piped {
-        out.progress("Downloading", total);
-    }
-    let mut chunk = [0u8; 64 * 1024];
-    loop {
-        let n = response.read(&mut chunk)?;
-        if n == 0 {
-            break;
-        }
-        file.write_all(&chunk[..n])
-            .with_context(|| format!("failed writing {}", dest.display()))?;
-        written += n as u64;
+        let piped = !std::io::stderr().is_terminal();
+        let mut written: u64 = 0;
+        let mut last_logged = 0u64;
         if piped {
-            // Log roughly every 10% or 5MB, whichever is coarser.
-            let step = total.map(|t| t / 10).unwrap_or(5 * 1024 * 1024).max(1);
-            if written - last_logged >= step {
-                last_logged = written;
-                match total {
-                    Some(total) => {
-                        out.status("Downloading", &format!("{written}/{total} bytes"));
-                    }
-                    None => out.status("Downloaded", &format!("{written} bytes")),
-                }
-            }
+            // No ephemeral bar on piped stderr; periodic status lines keep
+            // the log readable instead.
         } else {
-            out.tick_progress(written);
+            // The spinner becomes a real bar once the length is known.
+            out.progress_bar("Downloading", "bulk data", total.unwrap_or(0));
+            if let Some(total) = total {
+                out.set_progress_total(total);
+            }
+        }
+        let mut chunk = [0u8; 64 * 1024];
+        loop {
+            let n = response.read(&mut chunk)?;
+            if n == 0 {
+                break;
+            }
+            file.write_all(&chunk[..n])
+                .with_context(|| format!("failed writing {}", tmp.display()))?;
+            written += n as u64;
+            if piped {
+                // Log roughly every 10% or 5MB, whichever is coarser.
+                let step = total.map(|t| t / 10).unwrap_or(5 * 1024 * 1024).max(1);
+                if written - last_logged >= step {
+                    last_logged = written;
+                    match total {
+                        Some(total) => {
+                            out.status("Downloading", &format!("{written}/{total} bytes"));
+                        }
+                        None => out.status("Downloaded", &format!("{written} bytes")),
+                    }
+                }
+            } else {
+                out.set_progress_position(written);
+            }
+        }
+        out.clear_progress();
+        Ok(written)
+    })();
+    match result {
+        Ok(written) => {
+            std::fs::rename(&tmp, dest)
+                .with_context(|| format!("renaming download onto {}", dest.display()))?;
+            Ok(written)
+        }
+        Err(err) => {
+            let _ = std::fs::remove_file(&tmp);
+            Err(err)
         }
     }
-    out.clear_progress();
-    Ok(written)
 }
 
 /// Open the gzipped bulk file and stream each JSONL record through `visit`.
 ///
 /// Malformed lines are skipped (a single bad record must not abort a 25MB
-/// download); the visit callback receives the parsed object.
+/// download); the visit callback receives the parsed object. Returns the
+/// malformed-line count so callers report it through their output layer
+/// (respecting `--json`/`NO_COLOR`, unlike a raw stderr write).
 ///
 /// # Errors
 /// Fails when the file cannot be opened/decompressed.
 pub fn stream_records<F: FnMut(ScryfallCard)>(
     path: &std::path::Path,
     mut visit: F,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<usize> {
     let file = std::fs::File::open(path)
         .with_context(|| format!("cannot open bulk file {}", path.display()))?;
     let decoder = flate2::read::MultiGzDecoder::new(BufReader::with_capacity(1 << 20, file));
     let mut reader = BufReader::with_capacity(1 << 20, decoder);
     let mut line = String::new();
+    let mut bad = 0usize;
     loop {
         line.clear();
         let n = reader.read_line(&mut line)?;
         if n == 0 {
             break;
         }
-        if let Ok(card) = serde_json::from_str::<ScryfallCard>(line.trim_end()) {
-            visit(card);
+        match serde_json::from_str::<ScryfallCard>(line.trim_end()) {
+            Ok(card) => visit(card),
+            Err(_) => bad += 1,
         }
     }
-    Ok(())
+    Ok(bad)
 }
 
 /// True when this bulk row should not become a searchable card.
@@ -362,7 +393,9 @@ pub fn should_ingest(card: &ScryfallCard) -> bool {
 /// Flatten a possibly multi-faced card into single stored fields.
 ///
 /// For multi-faced cards, face data is joined with ` // ` (mana costs) or
-/// `\n// ` (text), mirroring Scryfall's combined rendering.
+/// `\n// ` (text), mirroring Scryfall's combined rendering. The top-level
+/// `mana_cost` is kept when the bulk provides one (transform cards do);
+/// only an absent top-level cost is built from the faces.
 pub fn flatten_faces(card: &mut ScryfallCard) {
     let Some(faces) = &card.card_faces else {
         return;
@@ -370,13 +403,15 @@ pub fn flatten_faces(card: &mut ScryfallCard) {
     if faces.len() < 2 {
         return;
     }
-    card.mana_cost = Some(
-        faces
-            .iter()
-            .map(|f| f.mana_cost.clone().unwrap_or_default())
-            .collect::<Vec<_>>()
-            .join(" // "),
-    );
+    if card.mana_cost.is_none() {
+        card.mana_cost = Some(
+            faces
+                .iter()
+                .map(|f| f.mana_cost.clone().unwrap_or_default())
+                .collect::<Vec<_>>()
+                .join(" // "),
+        );
+    }
     card.type_line = Some(
         faces
             .iter()
@@ -617,16 +652,27 @@ pub fn upsert_print(
 
 /// Choose one row per duplicate card name: prefer the print that is legal in
 /// the most game platforms, then the lower EDHREC rank (more popular).
+/// Full ties break on the earlier release date, then the Scryfall id, so
+/// the pick does not depend on bulk row order.
 pub fn prefer_row(current: &ScryfallCard, candidate: &ScryfallCard) -> ScryfallCard {
     fn weight(c: &ScryfallCard) -> (usize, i64) {
         let games = c.games.as_ref().map(|g| g.len()).unwrap_or(0);
         let rank = c.edhrec_rank.unwrap_or(i64::MAX);
         (games, -rank)
     }
-    let chosen = if weight(candidate) > weight(current) {
-        candidate
-    } else {
-        current
+    fn tiebreak(c: &ScryfallCard) -> (&str, &str) {
+        (
+            c.released_at.as_deref().unwrap_or(""),
+            c.id.as_deref().unwrap_or(""),
+        )
+    }
+    let chosen = match weight(candidate).cmp(&weight(current)) {
+        std::cmp::Ordering::Greater => candidate,
+        std::cmp::Ordering::Less => current,
+        std::cmp::Ordering::Equal => match tiebreak(current).cmp(&tiebreak(candidate)) {
+            std::cmp::Ordering::Less => current,
+            _ => candidate,
+        },
     };
     chosen.clone()
 }
@@ -727,7 +773,6 @@ mod tests {
 
     #[test]
     fn ingest_keeps_released_cards_and_upcoming_reprints_only() {
-        // Released print: ingested.
         assert!(should_ingest(&card("A", "normal", &["paper"])));
         // Upcoming reprint of a released card: real format memberships exist.
         let reprint = ScryfallCard {
@@ -924,6 +969,20 @@ mod tests {
             )
             .unwrap();
         assert_eq!(hits, 1);
+    }
+
+    #[test]
+    fn download_failure_leaves_dest_untouched() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("bulk.json");
+        std::fs::write(&dest, b"good data").unwrap();
+        let mut out = crate::output::Output::new(true, false, false);
+        // Unroutable host: the request fails before any write.
+        let result = download_to("http://127.0.0.1:9/never", &dest, None, &mut out);
+        assert!(result.is_err());
+        assert_eq!(std::fs::read(&dest).unwrap(), b"good data");
+        // No temp file left behind.
+        assert!(!tmp.path().join("bulk.json.tmp").exists());
     }
 
     #[test]

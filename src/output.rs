@@ -5,7 +5,7 @@ use std::io::IsTerminal;
 pub fn terminal_width() -> usize {
     console::Term::stdout()
         .size_checked()
-        .map(|(w, _)| w as usize)
+        .map(|(_, w)| w as usize)
         .unwrap_or(80)
         .max(40)
 }
@@ -14,6 +14,12 @@ pub fn terminal_width() -> usize {
 /// supplies prices in USD only; when another source lands, swap this and
 /// the `money` symbol branch together.
 pub const CURRENCY: &str = "USD";
+
+/// Bail-message sentinel for errors already printed in full by the
+/// command (error + hint). The main dispatcher suppresses its own
+/// `error:` line when a bail carries exactly this message, so the user
+/// never sees the same failure twice.
+pub const SILENT_ERROR: &str = "\u{0}silent";
 
 /// Thousands-grouped integer string ("1,512", "-1,234") for counts.
 pub fn grouped_int(n: i64) -> String {
@@ -33,11 +39,6 @@ pub fn grouped_int(n: i64) -> String {
 }
 
 /// Money text with an explicit currency: `$1,234.50 USD`.
-pub fn money_text(amount: f64) -> String {
-    let dollars = thousands_amount(amount);
-    format!("${dollars} {CURRENCY}")
-}
-
 /// Thousands-grouped money amount with two decimals ("1,234.50").
 fn thousands_amount(amount: f64) -> String {
     let fixed = format!("{amount:.2}");
@@ -54,8 +55,15 @@ fn thousands_amount(amount: f64) -> String {
     }
 }
 
-/// Rendering hub: decides between human (colored) and JSON output once, at
-/// startup, so command code never branches on `--json` mid-render.
+/// Round to two decimals for JSON money fields.
+#[must_use]
+pub fn round2(v: f64) -> f64 {
+    (v * 100.0).round() / 100.0
+}
+
+/// Rendering hub: decides between human (colored) and JSON output from the
+/// active command's `--json` flag, so command code never branches on
+/// `--json` mid-render.
 ///
 /// Invariants (see docs/design.md):
 ///
@@ -156,45 +164,17 @@ impl Output {
         }
     }
 
-    /// Replace the ephemeral progress line on stderr (spinner/bar), cleared
-    /// when the next status line prints or [`Output::clear_progress`] runs.
+    /// Replace the ephemeral progress line with a bar over `total` units.
     ///
-    /// The line reads `   <spinner> <Verb> …` with the verb bold green,
-    /// matching cargo's spinner rows. When stderr is not a TTY (piped),
-    /// `indicatif` renders nothing, so agents watching a log only see status
-    /// lines between bars.
-    pub fn progress(&mut self, verb: &str, total: Option<u64>) {
-        if self.json {
-            return;
-        }
-        self.clear_progress();
-        if !std::io::stderr().is_terminal() {
-            return;
-        }
-        let bar = match total {
-            Some(total) => indicatif::ProgressBar::new(total),
-            None => indicatif::ProgressBar::new_spinner(),
-        };
-        bar.set_style(
-            indicatif::ProgressStyle::with_template(
-                "   {spinner:.green} {msg} [{bar:.cyan/blue}] {pos}/{len}",
-            )
-            .expect("static template")
-            .progress_chars("#>-"),
-        );
-        bar.set_message(self.err_styles().verb_inline(verb));
-        bar.enable_steady_tick(std::time::Duration::from_millis(120));
-        self.progress = Some(bar);
-    }
-
-    /// Replace the ephemeral progress line with a deterministic bar over
-    /// `total` items, cleared on the next status line.
+    /// One shared bar shape for every progress surface (downloads, bulk
+    /// parsing, embedding): cargo-style padded verb, then dim metadata,
+    /// a cyan/blue bar with bytes-or-items `{pos}/{len}`, and a counting-
+    /// down ETA. On a piped stderr indicatif renders nothing, so callers
+    /// log their own periodic status lines in that mode.
     ///
-    /// The message renders as a cargo-style status line: bold green verb
-    /// padded to the verb column, then dim metadata. Unlike
-    /// [`Output::progress`], this renders even without a TTY so piped runs
-    /// still show chunk checkpoints; indicatif emits one line per draw in
-    /// that mode, so callers should tick coarsely.
+    /// `total == 0` means "unknown": the bar renders as a spinner with
+    /// the same shape (no `pos/len`), and a later call with the true
+    /// total restamps it.
     pub fn progress_bar(&mut self, verb: &str, msg: &str, total: u64) {
         if self.json {
             return;
@@ -203,14 +183,22 @@ impl Output {
         let bar = indicatif::ProgressBar::new(total);
         let styled = self.err_styles().status(verb, msg);
         let style = if std::io::stderr().is_terminal() {
-            indicatif::ProgressStyle::with_template("{msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})")
+            let template = if total > 0 {
+                "   {msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})"
+            } else {
+                "   {msg} {spinner:.green} {pos}"
+            };
+            indicatif::ProgressStyle::with_template(template)
                 .expect("static template")
                 .progress_chars("█>-")
         } else {
-            indicatif::ProgressStyle::with_template("{msg} {pos}/{len}").expect("static template")
+            return; // piped stderr: no ephemeral bar; callers log status lines
         };
         bar.set_style(style);
         bar.set_message(styled);
+        // Steady tick keeps the ETA counting down even when no item
+        // arrives for a while (a stalled download, a big embed chunk).
+        bar.enable_steady_tick(std::time::Duration::from_millis(250));
         self.progress = Some(bar);
     }
 
@@ -218,6 +206,22 @@ impl Output {
     pub fn tick_progress(&self, delta: u64) {
         if let Some(bar) = &self.progress {
             bar.inc(delta);
+        }
+    }
+
+    /// Set the active progress bar's absolute position (byte counters:
+    /// the position is a running total, not an increment).
+    pub fn set_progress_position(&self, pos: u64) {
+        if let Some(bar) = &self.progress {
+            bar.set_position(pos);
+        }
+    }
+
+    /// Set the active progress bar's total (an unknown-length spinner
+    /// becomes a real bar once the content length arrives).
+    pub fn set_progress_total(&self, total: u64) {
+        if let Some(bar) = &self.progress {
+            bar.set_length(total);
         }
     }
 
@@ -441,8 +445,7 @@ impl Styles {
     }
 
     /// Money amount with currency: `$975.40 USD`, bold green when color is
-    /// on. USD is the only supported currency for now; new currencies plug
-    /// in by adding a symbol branch here.
+    /// on. USD is the only supported currency.
     pub fn money(&self, amount: f64) -> String {
         let text = format!("${} {CURRENCY}", thousands_amount(amount));
         if self.color {

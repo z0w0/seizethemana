@@ -49,8 +49,12 @@ pub fn run_combo_suggest(
     bracket: Option<u8>,
     max_price: Option<f64>,
     limit: u32,
+    exclude: &[String],
     json: bool,
 ) -> anyhow::Result<i32> {
+    let excluded = super::suggest::resolve_exclusions(exclude)?;
+    let excluded_set: std::collections::HashSet<&str> =
+        excluded.iter().map(String::as_str).collect();
     let combos_count: i64 = conn
         .query_row("SELECT COUNT(*) FROM combos", [], |r| r.get(0))
         .unwrap_or(0);
@@ -60,7 +64,7 @@ pub fn run_combo_suggest(
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     let (_path, deck) = load_deck(paths, deck_name)?;
-    let cards_by_name = super::stats::lookup_names(conn, &deck);
+    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
     let identity = super::suggest::commander_identity(&deck, &cards_by_name);
     let is_commander = super::legal::is_commander(&deck, None);
     // No pinned format: commander-shaped decks play commander; everything
@@ -104,20 +108,38 @@ pub fn run_combo_suggest(
         )>,
     > = std::collections::HashMap::new();
     for (variant, pieces) in &variants {
-        let held: std::collections::HashSet<&str> = pieces
+        // One slot per ordinal: a face split produces several rows with
+        // the same ordinal (the simulator's combos.rs does the same).
+        // Prefer a face the deck holds; otherwise keep the first-seen row.
+        let mut by_ordinal: std::collections::BTreeMap<i64, &crate::spellbook::ComboPieceRow> =
+            std::collections::BTreeMap::new();
+        for piece in pieces {
+            by_ordinal
+                .entry(piece.ordinal)
+                .and_modify(|slot| {
+                    let slot_held = deck_names.contains(&slot.name);
+                    let held = deck_names.contains(&piece.name);
+                    if !slot_held && held {
+                        *slot = piece;
+                    }
+                })
+                .or_insert(piece);
+        }
+        let slots: Vec<&crate::spellbook::ComboPieceRow> = by_ordinal.values().copied().collect();
+        let held: std::collections::HashSet<&str> = slots
             .iter()
             .filter(|p| deck_names.contains(&p.name))
             .map(|p| p.name.as_str())
             .collect();
-        if pieces.len() < 2 || held.len() + 1 < pieces.len() {
+        if slots.len() < 2 || held.len() + 1 < slots.len() {
             continue;
         }
-        let missing: Vec<&str> = pieces
+        let missing: Vec<&str> = slots
             .iter()
             .map(|p| p.name.as_str())
             .filter(|name| !held.contains(name))
             .collect();
-        if missing.len() == 1 {
+        if missing.len() == 1 && !excluded_set.contains(missing[0]) {
             by_missing
                 .entry(missing[0].to_string())
                 .or_default()
@@ -202,10 +224,15 @@ fn completion(
     if is_commander && !super::suggest::card_is_commander_legal(&card) {
         return None;
     }
-    if !super::suggest::card_legal_in(&card, format) {
+    // Legality gate: for 60-card decks with no format pinned, a card must
+    // be legal in at least one 60-card format (the same gate `gather_hits`
+    // uses); `format` pinned wins when given.
+    if !super::suggest::card_legal_in(&card, format)
+        && (format.is_some() || !super::suggest::card_legal_in_any_60(&card))
+    {
         return None;
     }
-    if !super::suggest::bracket_allows(bracket, &card) {
+    if !super::suggest::bracket_allows(bracket, &card, 0) {
         return None;
     }
     let win_game = hits.iter().any(|(v, _)| {

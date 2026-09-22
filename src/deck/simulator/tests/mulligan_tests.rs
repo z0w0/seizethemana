@@ -1,7 +1,7 @@
 use super::aggregate::aggregate;
+use super::deal::{bottom_position, count_lands_in, london_mulligan, take_n};
 use super::format::rules_for;
 use super::game::run_game;
-use super::game_run::{count_lands_in, london_mulligan};
 use super::model::{Format, Role, SimCard, SimDeck};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -45,13 +45,14 @@ fn london_bottoms_toward_three_lands() {
             let j = rng.random_range(0..=i);
             library.swap(i, j);
         }
-        let hand = super::game_run::take_for_test(&mut library);
+        let hand = take_n(&mut library, 7);
         let pre = count_lands_in(&deck, &hand);
         if (2..=5).contains(&pre) {
             continue;
         }
-        let (hand, post) = london_mulligan(&deck, &mut library, &mut rng);
+        let hand = london_mulligan(&deck, &mut library, &mut rng);
         assert_eq!(hand.len(), 6, "redrawn hand nets 6 cards");
+        let post = count_lands_in(&deck, &hand);
         if pre >= 4 {
             assert!(
                 post < pre,
@@ -68,10 +69,10 @@ fn london_bottoms_toward_three_lands() {
 fn bottom_position_flooded_sheds_land_starved_sheds_spell() {
     let deck = london_deck(40, 20); // indexes 0..40 lands, 40..60 spells
     let land_hand: Vec<usize> = (0..6).chain(vec![45]).collect(); // 6 lands + 1 spell
-    let pos = super::game_run::bottom_position(&deck, &land_hand, 6);
+    let pos = bottom_position(&deck, &land_hand, 6);
     assert!(pos < 6, "flooded hand must bottom a land, bottomed {pos}");
     let spell_hand: Vec<usize> = (40..46).chain(vec![3]).collect(); // 6 spells + 1 land
-    let pos = super::game_run::bottom_position(&deck, &spell_hand, 1);
+    let pos = bottom_position(&deck, &spell_hand, 1);
     assert_eq!(
         pos, 0,
         "starved hand must bottom a spell (first spell at 40)"

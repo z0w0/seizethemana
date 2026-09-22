@@ -10,9 +10,12 @@ use crate::scryfall;
 /// Idempotent unless `--force` is given; writes status.json last so a failed
 /// run leaves the store marked un-set-up.
 ///
-/// `--force` deletes the database file first. The schema is a single
-/// in-place-edited migration (see `db.rs`), so a forced rebuild is the only
-/// way a schema change reaches an existing store.
+/// `--force` deletes the database file and the vector index first. The
+/// schema is a single in-place-edited migration (see `db.rs`), so a forced
+/// rebuild is the only way a schema change reaches an existing store.
+/// Deleting `status.json` and `vectors.bin` up front means a failed run
+/// leaves the store marked un-set-up (reads fail loudly with "run
+/// `stm setup`") instead of scoring new card ids against stale vectors.
 pub fn run_setup(
     paths: &Paths,
     out: &mut Output,
@@ -42,6 +45,23 @@ pub fn run_setup(
         }
         *conn = crate::db::open(&db_path)?;
         out.status("Rebuilt", "empty database with the current schema");
+        // Drop the old index and its status stamp before re-ingesting: the
+        // new id order must never score against old vectors, and a failed
+        // rebuild must leave the store un-set-up.
+        let status_path = paths.status_file();
+        if let Err(err) = std::fs::remove_file(&status_path)
+            && err.kind() != std::io::ErrorKind::NotFound
+        {
+            return Err(anyhow::Error::new(err)
+                .context(format!("removing status {}", status_path.display())));
+        }
+        let vectors_path = paths.vectors_file();
+        if let Err(err) = std::fs::remove_file(&vectors_path)
+            && err.kind() != std::io::ErrorKind::NotFound
+        {
+            return Err(anyhow::Error::new(err)
+                .context(format!("removing vectors {}", vectors_path.display())));
+        }
     }
     paths.ensure_dirs()?;
     let setup_start = std::time::Instant::now();
@@ -88,13 +108,14 @@ pub fn run_setup(
     // 3b. Combo variants (Commander Spellbook). A failed refresh warns and
     // continues: combos are additive diagnostics, never a blocker.
     let now = chrono::Utc::now();
-    let combos_delta = match crate::spellbook::ensure_fresh_variants(&paths.combos_file(), out) {
-        Ok(_) => crate::spellbook::ingest(conn, &paths.combos_file(), out, &now.to_rfc3339())?,
-        Err(err) => {
-            out.warning(&format!("combo refresh failed, continuing: {err:#}"));
-            0
-        }
-    };
+    let combos_delta =
+        match crate::spellbook::ensure_fresh_variants(&paths.combos_file(), out, false) {
+            Ok(_) => crate::spellbook::ingest(conn, &paths.combos_file(), out, &now.to_rfc3339())?,
+            Err(err) => {
+                out.warning(&format!("combo refresh failed, continuing: {err:#}"));
+                0
+            }
+        };
 
     // 4. Embed all cards into the flat vector store (docs carry tag lines).
     out.status(

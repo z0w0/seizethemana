@@ -48,6 +48,38 @@ pub fn available_map(
     Ok(map)
 }
 
+/// Copies available to fill this deck's slots, split by finish: key is
+/// `(card name, foil)` with `foil = true` for foil/etched rows.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn available_map_by_finish(
+    conn: &Connection,
+    deck: &str,
+) -> anyhow::Result<std::collections::HashMap<(String, bool), i64>> {
+    let mut map: std::collections::HashMap<(String, bool), i64> = std::collections::HashMap::new();
+    let mut stmt = conn.prepare(
+        "SELECT c.name, c.foil != 'normal', SUM(c.quantity)
+         FROM collection c JOIN cards k ON k.name = c.name
+         WHERE (c.binder_type = 'deck' AND c.binder = ?1)
+            OR c.binder_type = 'binder'
+         GROUP BY c.name, c.foil != 'normal'",
+    )?;
+    let rows = stmt.query_map([deck], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, bool>(1)?,
+            row.get::<_, i64>(2)?,
+        ))
+    })?;
+    for row in rows {
+        let (name, foil, qty) =
+            row.map_err(|e| anyhow::anyhow!("reading available copies: {e}"))?;
+        map.insert((name, foil), qty);
+    }
+    Ok(map)
+}
+
 /// Copies assigned specifically to this deck, keyed by card name (no
 /// binder copies mixed in).
 ///

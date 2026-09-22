@@ -1,7 +1,7 @@
 // Effect execution and the tap-budget pass for the goldfish game loop,
 // split from game.rs to keep files small.
 
-use super::game::{Activation, BODY_POWER, GameState, InPlay, Pool, card_of};
+use super::game::{Activation, BODY_POWER, GameState, InPlay, Pool, card_of, take_uid};
 use super::game_mana::{
     add_yield, add_yield_turns, effective_min_cost, pay_cost, payable, pips_ok,
 };
@@ -101,7 +101,9 @@ pub(crate) fn apply_effect_at(
                 {
                     // Returns as a body once; the card leaves the log.
                     st.battlefield_seen.entry(i).or_insert(turn);
+                    let uid = take_uid(st);
                     st.battlefield.push(InPlay {
+                        uid,
                         card: i,
                         tapped: false,
                         sick: true,
@@ -178,11 +180,14 @@ pub(crate) fn apply_effect_at(
                 st.treasure_bank += n;
                 return;
             }
-            // Token bodies join as small station/crew fuel. The count
-            // creates that many bodies (capped so go-wide boards stay
-            // bounded).
-            for _ in 0..(*n).clamp(1, 8) {
+            // Token bodies join as small station/crew fuel. A count of
+            // 0 creates nothing (a caller that cannot parse the amount
+            // must not turn it into one body); the cap bounds go-wide
+            // boards.
+            for _ in 0..(*n).min(8) {
+                let uid = take_uid(st);
                 st.battlefield.push(InPlay {
+                    uid,
                     card: usize::MAX - 1,
                     tapped: false,
                     sick: true,
@@ -283,24 +288,26 @@ pub(super) fn tap_budget(
         }
         let crew_n = card_of(deck, &battlefield[vi]).crew.unwrap_or(1);
         let bodies_needed = crew_n.div_ceil(BODY_POWER);
-        let mut tapped_bodies = 0;
-        let mut power = 0u32;
-        for (i, perm) in battlefield.iter_mut().enumerate() {
-            if tapped_bodies >= bodies_needed {
-                break;
-            }
-            if i != vi
-                && !perm.tapped
-                && !perm.sick
-                && !perm.is_commander
-                && (card_of(deck, perm).is_creature || perm.animated)
-            {
-                perm.tapped = true;
-                tapped_bodies += 1;
-                power += body_power(perm, deck);
-            }
-        }
+        // Check total power first: bodies only tap when the crew
+        // succeeds (a failed crew leaves them ready for mana/station).
+        let candidates: Vec<usize> = (0..battlefield.len())
+            .filter(|i| {
+                *i != vi
+                    && !battlefield[*i].tapped
+                    && !battlefield[*i].sick
+                    && !battlefield[*i].is_commander
+                    && (card_of(deck, &battlefield[*i]).is_creature || battlefield[*i].animated)
+            })
+            .take(bodies_needed as usize)
+            .collect();
+        let power: u32 = candidates
+            .iter()
+            .map(|i| body_power(&battlefield[*i], deck))
+            .sum();
         if power >= crew_n {
+            for i in candidates {
+                battlefield[i].tapped = true;
+            }
             battlefield[vi].crewed = true;
             battlefield[vi].sick = false;
             // OnCrewed triggers fire now (tokens join next turn's bodies).
@@ -343,7 +350,6 @@ pub(super) fn tap_budget(
             pay_cost(&cost, pool);
             battlefield[ei].equipped = true;
             battlefield[ei].equip_host = Some(hi);
-            battlefield[ei].tapped = eq.cost > 0 && card_of(deck, &battlefield[ei]).tap.is_none();
             battlefield[ei].fired = true;
         }
     }
@@ -378,7 +384,7 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
     loop {
         let mut best: Option<Activation> = None;
         for (bi, perm) in st.battlefield.iter().enumerate() {
-            if perm.tapped {
+            if perm.tapped || perm.sick {
                 continue;
             }
             let card = card_of(deck, perm);
@@ -414,6 +420,7 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
                         | Effect::Counters(_)
                         | Effect::Loot(_)
                         | Effect::Drain(_)
+                        | Effect::Tokens(_)
                 ) || ability.sacrifice_bodies > 0;
                 // Banked activations (Pentad Prism) consume a charge
                 // counter per fire; gate on the host's counters. Free
@@ -470,6 +477,7 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
                     };
                     best = Some(Activation {
                         pos: bi,
+                        uid: perm.uid,
                         ability: ability.clone(),
                         cost: ability.cost.total(),
                         draws,
@@ -526,6 +534,7 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
             if let Some(i) = st.library.pop() {
                 st.hand.push(i);
                 st.seen += 1;
+                st.awareness_cards += 1;
             }
         }
         // Drain activations resolve at the format's opponent multiplier.
@@ -536,7 +545,7 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
             let victim = st.battlefield.iter().position(|p| {
                 !p.is_commander
                     && p.card < usize::MAX - 1
-                    && p.card != a.pos
+                    && p.uid != a.uid
                     && card_of(deck, p).is_creature
                     && !p.tapped
             });
@@ -568,7 +577,13 @@ pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool
         }
         if let Some(perm) = st.battlefield.get_mut(a.pos) {
             if x_sink {
-                perm.counters += pool.total();
+                // X-sink: the printed {X} already paid 1 through
+                // `pay_cost` above. The rest of the pool is the
+                // player-chosen extra X (paying everything in is legal),
+                // so the paid X = 1 + leftover: the counters match the
+                // spend and the pool ends at zero with nothing swallowed.
+                let extra = pool.total();
+                perm.counters += 1 + extra;
                 *pool = super::game::Pool::default();
             } else {
                 perm.counters += a.counters;

@@ -1,6 +1,8 @@
 // Card roles for `deck suggest`: classification and oracle-text /
 // tagger-label legs. Split from suggest.rs.
 
+/// A deckbuilding job a card can do ("draw", "ramp", "removal"), used to
+/// rank role-keyword scans and structured `--role` suggestions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Role {
     Draw,
@@ -48,6 +50,8 @@ pub enum Role {
 }
 
 impl Role {
+    /// Parse a role word or alias ("draw", "card-draw", "card draw");
+    /// `None` when the word names no role.
     pub fn parse(s: &str) -> Option<Role> {
         let norm = |w: &str| w.replace(['-', '_', ' '], "");
         let q = norm(s).to_ascii_lowercase();

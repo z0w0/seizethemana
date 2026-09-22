@@ -13,6 +13,18 @@ pub fn parse_cost(mana_cost: &str) -> Cost {
             continue;
         }
         let upper = symbol.to_ascii_uppercase();
+        // Twobrid ("{2/W}"): the symbol costs 2 mana, paid as 2 generic
+        // or one pip of that color. The sim models the generic payment
+        // only (2 generic): total is exact, and no deck fails the cast
+        // for lack of the color. The pip's flexibility is not modeled.
+        if let Some(numeric_head) = upper
+            .split('/')
+            .next()
+            .filter(|head| !head.is_empty() && head.chars().all(|c| c.is_ascii_digit()))
+        {
+            cost.generic += numeric_head.parse::<u32>().unwrap_or(0);
+            continue;
+        }
         if upper.chars().all(|c| c.is_ascii_digit()) {
             cost.generic += upper.parse::<u32>().unwrap_or(0);
             continue;

@@ -475,7 +475,7 @@ card names.
 | Kind | Trigger | Suggestion pattern |
 | --- | --- | --- |
 | `mana_screw` | ≥20% of games ≤2 lands by t4 | magnitude-scaled "add {N} land slots" — commander decks with fewer than 6 nonland ramp sources read "add two-mana rocks" instead (rock-heavy decks must not read as land-screwed); 60-card decks always get land slots |
-| `mana_flood` | rate exceeds its velocity-adjusted expectation by >10pp | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check the plan before trimming |
+| `mana_flood` | rate exceeds its velocity-adjusted expectation by >10pp | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check your deck's game plan before trimming |
 | `commander_late` | <60% castable on curve | "add 2-3 ramp sources" |
 | `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts |
 | `draw_starvation` | ≥25% of games see no draw source by t6 | "add 2-3 draw engines" |
@@ -507,6 +507,31 @@ Add `--hypgeo` to any run for exact cast-on-curve ceilings beside the
 simulated numbers, and `--combo "A + B"` to measure combo assembly
 (share of games with both pieces seen in hand by the pair's target turn).
 
+## Problems and explainability
+
+Every problem carries three layers:
+
+1. **`detail`** — a plain-English sentence: what is wrong, how often.
+   Short sentences, no jargon ("you run out of lands often: 22.4% of
+   games had 2 or fewer lands by turn 4"). The raw `kind` stays a stable
+   JSON key; only human strings carry the phrasing.
+2. **`offenders`** — the cards or counts behind the finding, from the
+   same aggregated stats: pip blocks name the color-screw cards, per-card
+   castability names the slow cards, the land/rock census backs screw and
+   flood, the commander's cost explains a late cast. Assembled in
+   `findings_detail.rs` (`explain`), called from `find_problems` so every
+   consumer gets it automatically.
+3. **`suggestion`** — the fix. Cause-specific where the data supports it
+   (color screw names the worst blockers and the color to add);
+   category-level elsewhere ("add 2-3 draw engines" — never card names).
+
+The human `Problems` block prints the finding, then each offender line
+(`name detail (N% of games)`), then the suggestion. `--json` carries the
+same `offenders` array. Human output follows one policy everywhere:
+**what is wrong → how often → which cards → what to do**, simplified
+English, no "pip-block"/"dead card"/"mana screw" jargon in user-facing
+strings.
+
 ## Tests
 
 Two test layers cover the simulator:
@@ -537,7 +562,7 @@ Two test layers cover the simulator:
   X-sink counters, token-count bodies, once-per-turn engines (no
    infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
    consumption, X-entry counters, and the Vivi no-double-count parse.
-   Phase-1 truth-fix tests pin: ETB draws never double count as cast
+   Truth-fix tests pin: ETB draws never double count as cast
    riders, protection spells stay out of Removal, wipes count as
    interaction with the targeted/wipes deck-shape split, 2-damage burn
    and bounce read as interaction, the modern "triggers only once each
@@ -590,9 +615,14 @@ Everything the model cannot execute is dropped at parse time, and the
   graveyard census, then draws seven (trigger wheels fire from their
   upkeep/cast trigger; plain wheel sorceries resolve on cast); loot is
   draw-n discard-n.
-- **Spend-restricted mana pays creature casts only.** Secluded
-  Courtyard-style lands park their mana in a separate bucket; noncreature
-  spells cannot touch it.
+- **Spend-restricted mana pays only its own cast class.** Secluded
+  Courtyard-style lands park their mana in a class bucket (creature,
+  legendary, artifact, instant/sorcery). A cast reaches the general pool
+  plus its own bucket; other buckets and unrestricted casts cannot touch
+  it. The bucket pays the cast's generic and pips as chosen-color mana.
+- **Twobrid symbols cost generic only.** "{2/W}" reads as 2 generic: the
+  total is exact, but the one-colored-pip payment option is not modeled.
+  A deck that can only pay the pip still casts the card in the sim.
 - **Sacrifice outlets consume real bodies.** "Sacrifice a creature:
   Add {C}{C}" activations parse (Ashnod's Altar class); the activation
   removes an untapped non-token body and fires its death triggers. With

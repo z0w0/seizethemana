@@ -750,3 +750,18 @@ fn helix_pinnacle_threshold_is_100_not_10() {
         .expect("threshold parsed");
     assert_eq!(threshold, 100);
 }
+
+#[test]
+fn twobrid_costs_two_generic() {
+    // {2/W} costs 2 mana either way; the sim models the generic payment.
+    let cost = parse_cost("{2/W}");
+    assert_eq!(cost.generic, 2);
+    assert_eq!(cost.total(), 2);
+    // Spectral Procession: three symbols, six mana total.
+    let procession = parse_cost("{2/W}{2/W}{2/W}");
+    assert_eq!(procession.generic, 6);
+    assert_eq!(procession.total(), 6);
+    // No pips leak from the colored half.
+    assert!(cost.pips.iter().all(|p| *p == 0));
+    assert_eq!(cost.flex_pips, 0);
+}

@@ -22,7 +22,7 @@ pub struct AuditInput {
 /// commander) as `(card, copies)` pairs, the deck's color letters, and
 /// whether the deck is commander-shaped.
 fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput> {
-    let cards_by_name = super::stats::lookup_names(conn, deck);
+    let cards_by_name = super::stats::lookup_names(conn, deck)?;
     let mut rows: Vec<(crate::db::CardRow, f64)> = Vec::new();
     for (section, entries) in &deck.sections {
         let in_audit = !section.eq_ignore_ascii_case("SIDEBOARD");
@@ -36,22 +36,32 @@ fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput
         }
     }
     let is_commander = super::legal::is_commander(deck, None);
-    // Deck colors: the commander's identity when one exists, else the
-    // union of printed colors across the maindeck.
+    // Deck colors: the union of every commander's identity (partner
+    // pairs) when one exists, else the union of printed colors across the
+    // maindeck.
     let letters = if is_commander {
-        deck.sections
-            .iter()
-            .find(|(s, _)| s.eq_ignore_ascii_case("COMMANDER"))
-            .and_then(|(_, entries)| entries.first())
-            .and_then(|entry| cards_by_name.get(&entry.name))
-            .map(|card| {
-                serde_json::from_str::<Vec<String>>(&card.color_identity)
+        let mut letters = String::new();
+        for (s, entries) in &deck.sections {
+            if !s.eq_ignore_ascii_case("COMMANDER") {
+                continue;
+            }
+            for entry in entries {
+                let Some(card) = cards_by_name.get(&entry.name) else {
+                    continue;
+                };
+                let identity: String = serde_json::from_str::<Vec<String>>(&card.color_identity)
                     .unwrap_or_default()
                     .iter()
                     .filter_map(|c| c.chars().next())
-                    .collect::<String>()
-            })
-            .unwrap_or_default()
+                    .collect();
+                for c in identity.chars() {
+                    if !letters.contains(c) {
+                        letters.push(c);
+                    }
+                }
+            }
+        }
+        letters
     } else {
         super::suggest::deck_color_letters(deck, &cards_by_name)
     };

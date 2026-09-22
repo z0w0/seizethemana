@@ -141,3 +141,149 @@ fn markdown_basics_mixed_add_remove_use_the_dominant_direction() {
     let md = markdown(&diff);
     assert!(md.contains("Remove 3 Forests and 2 Islands."), "{md}");
 }
+
+#[test]
+fn as_update_outputs_removes_sets_and_adds() {
+    // A full apply loop: the emitted ops turn A into B.
+    let (tmp, paths) = {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+        std::fs::create_dir_all(paths.decks_dir()).unwrap();
+        std::fs::write(paths.deck_file("A"), "// DECK\n2 Bolt\n12 Forest\n").unwrap();
+        std::fs::write(paths.deck_file("B"), "// DECK\n1 Shock\n10 Forest\n").unwrap();
+        (tmp, paths)
+    };
+    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    let mut out = crate::output::Output::new(false, true, false);
+    let code = diff_as_update(&paths, &conn, &mut out, "A", "B", false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    // Ops apply cleanly to A and reproduce B.
+    let deck_a = Deck::parse("// DECK\n2 Bolt\n12 Forest\n").unwrap();
+    let deck_b = Deck::parse("// DECK\n1 Shock\n10 Forest\n").unwrap();
+    let sections = diff_decks(&deck_a, &deck_b, false, |_| false);
+    let mut lines = Vec::new();
+    for s in &sections {
+        let prefix = if s.section.eq_ignore_ascii_case("DECK") {
+            String::new()
+        } else {
+            format!("{}:", s.section)
+        };
+        for (n, q) in &s.removed {
+            lines.push(format!("remove {prefix}{q} {n}"));
+        }
+        for (n, f, t) in &s.changed {
+            if *t == 0 {
+                lines.push(format!("remove {prefix}{f} {n}"));
+            } else {
+                lines.push(format!("set {prefix}{t} {n}"));
+            }
+        }
+        for (n, q) in &s.added {
+            lines.push(format!("add {prefix}{q} {n}"));
+        }
+    }
+    let text = lines.join("\n");
+    assert!(text.contains("remove 2 Bolt"), "{text}");
+    assert!(text.contains("remove 2 Forest"), "{text}");
+    assert!(text.contains("add 1 Shock"), "{text}");
+    // Applying the ops through the real op path reaches B.
+    let mut applied = Deck::parse("// DECK\n2 Bolt\n12 Forest\n").unwrap();
+    let ops: Vec<crate::deck::ops::DeckOp> = text
+        .lines()
+        .map(|l| {
+            let mut parts = l.splitn(2, ' ');
+            let kind = parts.next().unwrap();
+            crate::deck::ops::parse_op(kind, parts.next().unwrap()).unwrap()
+        })
+        .collect();
+    crate::deck::ops::apply_ops(&mut applied, &ops).unwrap();
+    assert!(
+        diff_decks(&applied, &deck_b, false, |_| false)
+            .iter()
+            .all(|s| s.is_empty())
+    );
+    let _ = paths;
+}
+
+#[test]
+fn as_update_prefixes_non_deck_sections() {
+    // Sideboard and COMMANDER diffs carry the `section:` prefix so the
+    // ops land in the right section; the round-trip reproduces B from A.
+    let (tmp, paths) = {
+        let tmp = tempfile::tempdir().unwrap();
+        let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+        std::fs::create_dir_all(paths.decks_dir()).unwrap();
+        std::fs::write(
+            paths.deck_file("A"),
+            "// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n1 Island\n",
+        )
+        .unwrap();
+        std::fs::write(
+            paths.deck_file("B"),
+            "// COMMANDER\n1 Breya\n1 Tymna\n// DECK\n1 Bolt\n// SIDEBOARD\n2 Swamp\n",
+        )
+        .unwrap();
+        (tmp, paths)
+    };
+    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    let mut out = crate::output::Output::new(false, true, false);
+    let code = diff_as_update(&paths, &conn, &mut out, "A", "B", false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    // Recompute the emitted lines from the same diff the command used.
+    let deck_a =
+        Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n// SIDEBOARD\n1 Island\n").unwrap();
+    let deck_b =
+        Deck::parse("// COMMANDER\n1 Breya\n1 Tymna\n// DECK\n1 Bolt\n// SIDEBOARD\n2 Swamp\n")
+            .unwrap();
+    let sections = diff_decks(&deck_a, &deck_b, false, |_| false);
+    let mut lines = Vec::new();
+    for s in &sections {
+        let prefix = if s.section.eq_ignore_ascii_case("DECK") {
+            String::new()
+        } else {
+            format!("{}:", s.section)
+        };
+        for (n, q) in &s.removed {
+            lines.push(format!("remove {prefix}{q} {n}"));
+        }
+        for (n, f, t) in &s.changed {
+            if *t == 0 {
+                lines.push(format!("remove {prefix}{f} {n}"));
+            } else {
+                lines.push(format!("set {prefix}{t} {n}"));
+            }
+        }
+        for (n, q) in &s.added {
+            lines.push(format!("add {prefix}{q} {n}"));
+        }
+    }
+    let text = lines.join("\n");
+    let lower = text.to_lowercase();
+    assert!(lower.contains("add commander:1 tymna"), "{text}");
+    assert!(lower.contains("add sideboard:2 swamp"), "{text}");
+    assert!(lower.contains("remove sideboard:1 island"), "{text}");
+    // The unprefixed DECK ops stay unprefixed.
+    assert!(
+        !text.lines().any(|l| l.starts_with("remove deck:")),
+        "{text}"
+    );
+    // Round-trip: applying the ops to A reproduces B.
+    let ops: Vec<crate::deck::ops::DeckOp> = text
+        .lines()
+        .map(|l| {
+            let mut parts = l.splitn(2, ' ');
+            let kind = parts.next().unwrap();
+            crate::deck::ops::parse_op(kind, parts.next().unwrap()).unwrap()
+        })
+        .collect();
+    let mut applied = deck_a.clone();
+    crate::deck::ops::apply_ops(&mut applied, &ops).unwrap();
+    assert!(
+        diff_decks(&applied, &deck_b, false, |_| false)
+            .iter()
+            .all(|s| s.is_empty()),
+        "applying the ops reproduces B; got {:?}",
+        applied.sections
+    );
+    let _ = paths;
+}

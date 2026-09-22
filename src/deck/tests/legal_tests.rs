@@ -266,6 +266,18 @@ fn spacecraft_with_pt_box_commands() {
 }
 
 #[test]
+fn plain_partner_keyword_pairs() {
+    let mut cards = HashMap::new();
+    let mut thrasios = card("Thrasios", "Legendary Creature — Merfolk Wizard", "GU", "");
+    let mut tymna = card("Tymna", "Legendary Creature — Human Cleric", "WB", "");
+    thrasios.keywords = r#"["Partner"]"#.into();
+    tymna.keywords = r#"["Partner"]"#.into();
+    cards.insert("Thrasios".into(), thrasios);
+    cards.insert("Tymna".into(), tymna);
+    assert!(commander_legal(&["Thrasios".into(), "Tymna".into()], &cards).is_none());
+}
+
+#[test]
 fn vehicle_commander_rules() {
     let mut cards = HashMap::new();
     let mut vehicle = card("Parhelion", "Legendary Artifact — Vehicle", "W", "Crew 4");

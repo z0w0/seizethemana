@@ -108,8 +108,18 @@ fn rows_for_format(
     format: Option<&str>,
 ) -> Vec<CutRow> {
     let deck = super::super::Deck::parse(deck_text).unwrap();
-    let cards_by_name = super::super::stats::lookup_names(conn, &deck);
-    cut_rows(conn, &deck, &cards_by_name, role, count, bracket, format).unwrap()
+    let cards_by_name = super::super::stats::lookup_names(conn, &deck).unwrap();
+    cut_rows(
+        conn,
+        &deck,
+        &cards_by_name,
+        role,
+        count,
+        bracket,
+        format,
+        None,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -376,7 +386,7 @@ fn for_role_pairs_fills_and_discounts_serving_cards() {
     insert_island(&conn, 1);
     let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Repeatable Draw Engine\n1 Big Dumb Finisher\n10 Island\n";
     let deck = super::super::Deck::parse(deck_text).unwrap();
-    let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
     let rows = cut_rows(
         &conn,
         &deck,
@@ -384,6 +394,7 @@ fn for_role_pairs_fills_and_discounts_serving_cards() {
         Some(Role::Draw),
         5,
         Some(3),
+        None,
         None,
     )
     .unwrap();
@@ -424,8 +435,8 @@ fn json_shape_carries_reasons_score_and_pins() {
     insert_island(&conn, 1);
     let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Slow Wall\n10 Island\n";
     let deck = super::super::Deck::parse(deck_text).unwrap();
-    let cards_by_name = super::super::stats::lookup_names(&conn, &deck);
-    let rows = cut_rows(&conn, &deck, &cards_by_name, None, 5, Some(3), None).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let rows = cut_rows(&conn, &deck, &cards_by_name, None, 5, Some(3), None, None).unwrap();
     assert_eq!(rows.len(), 1);
     let json = serde_json::to_value(&rows[0]).unwrap();
     assert!(json["name"].is_string());
@@ -742,5 +753,70 @@ fn mono_color_deck_cuts_off_color_lands() {
     assert!(
         heath_score > delta_score,
         "zero-overlap lands score above partial fetches ({heath_score} vs {delta_score})"
+    );
+}
+
+#[test]
+fn over_cap_gc_pins_unranked_before_ranked() {
+    // Bracket 3 allows 3 Game Changers; a 4-GC deck keeps the ranked
+    // (played) ones and pins the unranked (obscure) one.
+    let (_tmp, mut conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "At the beginning of your upkeep, draw a card.",
+        5.0,
+        None,
+        Some(1),
+    );
+    insert_card(
+        &conn,
+        "Ranked GC",
+        "Sorcery",
+        "Draw two cards.",
+        4.0,
+        Some(true),
+        Some(2),
+    );
+    insert_card(
+        &conn,
+        "Ranked GC Two",
+        "Sorcery",
+        "Draw two cards.",
+        4.0,
+        Some(true),
+        Some(3),
+    );
+    insert_card(
+        &conn,
+        "Ranked GC Three",
+        "Sorcery",
+        "Draw two cards.",
+        4.0,
+        Some(true),
+        Some(4),
+    );
+    insert_card(
+        &conn,
+        "Unranked GC",
+        "Sorcery",
+        "Draw two cards.",
+        4.0,
+        Some(true),
+        None,
+    );
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Ranked GC\n1 Ranked GC Two\n1 Ranked GC Three\n1 Unranked GC\n10 Island\n";
+    let rows = rows_for(&mut conn, deck_text, None, 10, Some(3));
+    let pinned: Vec<&str> = rows
+        .iter()
+        .filter(|r| r.pinned)
+        .map(|r| r.name.as_str())
+        .collect();
+    assert_eq!(
+        pinned,
+        ["Unranked GC"],
+        "the unranked GC pins, the ranked one stays"
     );
 }

@@ -29,11 +29,8 @@ pub const KNOWN_FORMATS: &[&str] = &[
     "oathbreaker",
 ];
 
-/// Formats with a singleton deck rule.
+/// Formats with a singleton deck rule. Each is built around a commander.
 const SINGLETON_FORMATS: &[&str] = &["commander", "brawl", "oathbreaker"];
-
-/// Formats built around a commander (100-card singleton deck).
-const COMMANDER_FORMATS: &[&str] = &["commander", "brawl", "oathbreaker"];
 
 /// Commander deck size, commander included.
 const COMMANDER_SIZE: i64 = 100;
@@ -47,12 +44,37 @@ const SIDEBOARD_MAX: i64 = 15;
 /// Default per-name copy limit outside singleton formats.
 const MAX_COPIES: i64 = 4;
 
+/// Exact maindeck size (including commander) per singleton format.
+fn singleton_deck_size(format: &str) -> i64 {
+    match format {
+        "brawl" => 60,
+        "oathbreaker" => 59,
+        _ => COMMANDER_SIZE,
+    }
+}
+
+/// Deck-size target for a deck by shape: a deck whose only maindeck
+/// section is COMMANDER is brawl-shaped (60); a COMMANDER plus DECK
+/// split is a full commander deck (100); anything else backfills to 60.
+/// The shared target for `--backfill-basics` so a backfilled deck never
+/// fails the size check `deck legal` applies.
+pub fn singleton_size_for_deck(deck: &Deck) -> i64 {
+    let has_commander = deck.section_index("COMMANDER").is_some();
+    let has_deck = deck.section_index("DECK").is_some();
+    match (has_commander, has_deck) {
+        (true, false) => singleton_deck_size("brawl"),
+        (true, true) => COMMANDER_SIZE,
+        _ => CONSTRUCTED_MIN,
+    }
+}
+
 /// One rule violation, with the cards that broke it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Violation {
     /// Rule name, e.g. "copy limit" or "commander color identity".
     pub rule: String,
-    /// Card names involved, in deck order.
+    /// Card names involved; ordering is per-rule (some rules sort and
+    /// dedup, others preserve deck order).
     pub cards: Vec<String>,
     /// Human explanation with the numbers.
     pub detail: String,
@@ -96,7 +118,7 @@ pub fn is_commander(deck: &Deck, pinned_format: Option<&str>) -> bool {
 }
 
 /// Count copies per card name across all sections (sideboard included).
-fn copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
+pub(super) fn copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
     copies_in_sections(deck, |_| true)
 }
 
@@ -137,6 +159,13 @@ fn commander_names(deck: &Deck) -> Vec<String> {
         .unwrap_or_default()
 }
 
+/// Keywords are stored as a JSON array; partner status lives there and in
+/// the type line ("Partner", "Partner with", "Friends forever").
+fn keyword_has_partner(keywords: &str) -> bool {
+    let list: Vec<String> = serde_json::from_str(keywords).unwrap_or_default();
+    list.iter().any(|k| k == "Partner")
+}
+
 /// Commander count per deck rules: exactly one commander, or exactly two
 /// when both carry a partner-style keyword.
 fn commander_legal(names: &[String], cards: &HashMap<String, CardRow>) -> Option<Violation> {
@@ -168,18 +197,36 @@ fn commander_legal(names: &[String], cards: &HashMap<String, CardRow>) -> Option
             }
             let both_partner = partners.iter().all(|c| {
                 c.type_line.contains("Partner")
+                    || keyword_has_partner(&c.keywords)
                     || c.oracle_text.contains("Partner with")
                     || c.oracle_text.contains("Friends forever")
             });
             if both_partner {
                 None
             } else {
-                Some(Violation {
-                    rule: "commander".into(),
-                    cards: names.to_vec(),
-                    detail: "two commanders need Partner, 'Partner with', or 'Friends forever'"
-                        .into(),
-                })
+                // A "Choose a Background" commander pairs with exactly one
+                // Background enchantment as a second commander.
+                let background_pair = {
+                    let chooses = partners
+                        .iter()
+                        .any(|c| c.oracle_text.contains("Choose a Background"));
+                    let backgrounds = partners
+                        .iter()
+                        .filter(|c| c.type_line.contains("Background"))
+                        .count();
+                    chooses && backgrounds == 1
+                };
+                if background_pair {
+                    None
+                } else {
+                    Some(Violation {
+                        rule: "commander".into(),
+                        cards: names.to_vec(),
+                        detail: "two commanders need Partner, 'Partner with', \
+                                 'Friends forever', or a 'Choose a Background' pair"
+                            .into(),
+                    })
+                }
             }
         }
         n => Some(Violation {
@@ -219,14 +266,13 @@ fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
         .all(|c| commander_identity.contains(c))
 }
 
-/// Run every deterministic check.
+/// Run every deterministic check against one deck.
 ///
 /// `format` is `Some` for a known format (per-card legality is checked) and
 /// `None` for an inferred deck whose real format is unknown (structural
 /// checks only, since there is no legality key to test against).
 /// `cards` maps card names to stored rows; names absent from the map are
 /// skipped by metadata checks (they are reported separately as unknown).
-/// Deterministic legality checks for one deck.
 ///
 /// Returns `(violations, advisories)`: violations are hard failures
 /// (unknown cards, copy limits, size, commander rules, Game Changer cap);
@@ -265,15 +311,17 @@ pub fn check(
     let maindeck_counts = maindeck_copies_by_name(deck);
 
     if SINGLETON_FORMATS.contains(&format.unwrap_or("")) {
-        // Deck size: commander formats need exactly 100 including commander.
+        // Deck size: each singleton format carries its own exact count
+        // (commander 100 including commander, brawl 60, oathbreaker 59).
         // Sideboard cards do not count (in commander it is a wishlist, not
         // a legal sideboard).
-        if maindeck_total != COMMANDER_SIZE {
+        let expected = singleton_deck_size(format.unwrap_or(""));
+        if maindeck_total != expected {
             violations.push(Violation {
                 rule: "deck size".into(),
                 cards: Vec::new(),
                 detail: format!(
-                    "{maindeck_total} cards; {} decks are exactly {COMMANDER_SIZE}",
+                    "{maindeck_total} cards; {} decks are exactly {expected}",
                     format.unwrap_or("this format")
                 ),
             });
@@ -302,25 +350,37 @@ pub fn check(
         }
         // Commander rules only apply to commander-style formats with a
         // COMMANDER section.
-        if COMMANDER_FORMATS.contains(&format.unwrap_or("")) && !commander_section.is_empty() {
+        if !commander_section.is_empty() {
             if let Some(v) = commander_legal(&commander_section, cards) {
                 violations.push(v);
             }
             // Color identity of every other card must sit inside the
-            // commander's.
+            // commander's. Maindeck only: sideboard copies are a
+            // wishlist and never count as violations. Skip the check
+            // entirely when no commander resolved: an unknown name is
+            // already reported as an unknown card, and guessing ""
+            // identity would flag every colored card.
+            let commanders_resolved = commander_section.len() == 1
+                && cards
+                    .get(&commander_section[0])
+                    .is_some_and(is_commander_type);
             let identity = commander_section
                 .iter()
                 .filter_map(|n| cards.get(n))
                 .map(color_identity)
                 .collect::<String>();
-            let offenders: Vec<String> = counts
-                .iter()
-                .filter(|(name, _)| {
-                    !commander_section.contains(name)
-                        && cards.get(name).is_some_and(|c| !identity_ok(c, &identity))
-                })
-                .map(|(name, _)| name.clone())
-                .collect();
+            let offenders: Vec<String> = if !commanders_resolved {
+                Vec::new()
+            } else {
+                maindeck_counts
+                    .iter()
+                    .filter(|(name, _)| {
+                        !commander_section.contains(name)
+                            && cards.get(name).is_some_and(|c| !identity_ok(c, &identity))
+                    })
+                    .map(|(name, _)| name.clone())
+                    .collect()
+            };
             if !offenders.is_empty() {
                 violations.push(Violation {
                     rule: "commander color identity".into(),
@@ -354,7 +414,10 @@ pub fn check(
         let limit_violations: Vec<String> = counts
             .iter()
             .filter(|(name, qty)| {
-                *qty > MAX_COPIES && cards.get(name).is_some_and(|c| !is_unlimited_copies(c))
+                *qty > MAX_COPIES
+                    && cards
+                        .get(name)
+                        .is_some_and(|c| !is_basic_land(c) && !is_unlimited_copies(c))
             })
             .map(|(name, qty)| format!("{name} ×{qty}"))
             .collect();
@@ -363,7 +426,7 @@ pub fn check(
                 rule: "copy limit".into(),
                 cards: limit_violations,
                 detail: format!(
-                    "more than {MAX_COPIES} copies (cards with 'any number' oracle text excepted)"
+                    "more than {MAX_COPIES} copies (basics and 'any number' cards excepted)"
                 ),
             });
         }
@@ -438,12 +501,14 @@ pub fn check(
             }
         }
         // The sideboard is the upgrade kit: surface its Game Changers so a
-        // reader previewing a bracket bump can see what comes along.
-        let sideboard_changers: Vec<String> = deck
-            .sections
-            .iter()
-            .find(|(name, _)| name.eq_ignore_ascii_case("SIDEBOARD"))
-            .map(|(_, entries)| {
+        // reader previewing a bracket bump can see what comes along. Every
+        // SIDEBOARD section counts (imports may keep more than one).
+        let mut sideboard_changers: Vec<String> = Vec::new();
+        for (name, entries) in &deck.sections {
+            if !name.eq_ignore_ascii_case("SIDEBOARD") {
+                continue;
+            }
+            sideboard_changers.extend(
                 entries
                     .iter()
                     .filter(|e| {
@@ -451,10 +516,11 @@ pub fn check(
                             .get(&e.name)
                             .is_some_and(|c| c.game_changer == Some(true))
                     })
-                    .map(|e| e.name.clone())
-                    .collect()
-            })
-            .unwrap_or_default();
+                    .map(|e| e.name.clone()),
+            );
+        }
+        sideboard_changers.sort();
+        sideboard_changers.dedup();
         if !sideboard_changers.is_empty() {
             let names = sideboard_changers.join(", ");
             match limit {
@@ -485,6 +551,12 @@ fn game_changer_limit(bracket: u8) -> Option<u8> {
     }
 }
 
+/// Oracle-text signals for one bracket: library searchers, extra turns,
+/// mass land denial, and alternate wins.
+///
+/// Returns verdict lines ("PASS"/"CHECK"/"ADVISE" prefixes) plus advisory
+/// notes naming the matched cards. Counts are official bracket guidance,
+/// not hard rules.
 pub fn scan_bracket_signals(
     deck: &Deck,
     cards: &HashMap<String, CardRow>,
@@ -636,14 +708,20 @@ pub fn scan_bracket_signals(
         "lands you control don't untap",
         "doesn't untap lands",
     ];
-    // "destroy all non" (Ruination-class) needs a land word nearby.
+    // "destroy all non" (Ruination-class) needs a land word nearby, but
+    // "nonland permanents" (a nonland sweeper) does not count: exclude any
+    // "nonland" hit and require the word "land" with a word boundary.
     let mld: std::collections::BTreeSet<String> = mld_needles
         .iter()
         .flat_map(|needle| scan(needle))
         .filter(|name| {
-            cards
-                .get(name)
-                .is_some_and(|c| c.oracle_text.to_lowercase().contains("land"))
+            cards.get(name).is_some_and(|c| {
+                let text = c.oracle_text.to_lowercase();
+                !text.contains("nonland")
+                    && text
+                        .split(|c: char| !c.is_alphabetic())
+                        .any(|word| word == "land" || word == "lands")
+            })
         })
         .collect();
     match (bracket, mld.len()) {
@@ -777,8 +855,7 @@ pub fn legal(
             InferredFormat::Constructed => ("constructed".to_string(), true),
         },
     };
-    let is_commander_format = SINGLETON_FORMATS.contains(&format.as_str())
-        && COMMANDER_FORMATS.contains(&format.as_str());
+    let is_commander_format = SINGLETON_FORMATS.contains(&format.as_str());
     if bracket.is_some() && !is_commander_format {
         out.warning(&format!(
             "--bracket applies to commander-style formats; ignored for {format}"
@@ -786,7 +863,7 @@ pub fn legal(
     }
 
     // Stored rows for every deck entry name.
-    let cards = super::stats::lookup_names(conn, &deck);
+    let cards = super::stats::lookup_names(conn, &deck)?;
 
     // "constructed" is the inferred no-format case: structural checks only.
     let check_format: Option<&str> = if format == "constructed" {
