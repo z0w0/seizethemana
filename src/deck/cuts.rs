@@ -66,10 +66,11 @@ pub struct FillPair {
 }
 
 /// Knobs for a `deck cuts` run (the command takes 9 flags; one struct
-/// keeps the entry point under the argument-count lint).
+/// keeps the entry point under the argument-count lint). `Default` exists
+/// for tests; the CLI path always sets every field, including `count`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct CutOptions<'a> {
-    /// Maximum cut rows.
+    /// Maximum cut rows (5, the CLI default).
     pub count: usize,
     /// Pair cuts with fills for this role.
     pub for_role: Option<&'a str>,
@@ -79,16 +80,32 @@ pub struct CutOptions<'a> {
     pub format: Option<&'a str>,
     /// Budget cap for `--for` fill candidates (USD; unpriced excluded).
     pub max_price: Option<f64>,
+    /// Rank maindeck cuts for each card in this deck zone.
+    pub make_room_for: Option<crate::cli::MakeRoomFor>,
     /// Emit JSON.
     pub json: bool,
+}
+
+/// One `--make-room-for` pairing: a bench card (sideboard or maybeboard)
+/// and the maindeck cut that makes room for it.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct MakeRoomRow {
+    /// The bench card wanting a slot.
+    pub bench_card: String,
+    /// The maindeck card to cut for it.
+    pub cut_candidate: String,
+    /// Why this pairing (role similarity, expendability).
+    pub reasons: Vec<String>,
+    /// Expendability score of the cut candidate in `[0, 1]`.
+    pub score: f32,
 }
 
 /// Compute the ranked cut rows for a deck.
 ///
 /// The core of `stm deck cuts`: resolve the deck, run the fast sim for
 /// castability, score every incumbent, and pair fills for `--for`.
-/// Returns `Ok(None)` when the deck has no resolvable cards (the caller
-/// renders the error).
+/// Returns an empty row list when the deck has no resolvable cards (the
+/// caller renders the error).
 #[allow(
     clippy::too_many_arguments,
     reason = "one flat argument per CLI flag; the entry-point CutOptions keeps the public surface lint-clean"
@@ -121,6 +138,8 @@ pub fn cut_rows(
     });
     let sim_deck = super::simulator::deck::build_sim_deck(deck, cards_by_name, Some(format_key));
     let turns = sim_deck.rules.default_turns;
+    // Seed 42 is load-bearing: the same deck must produce identical
+    // castability scores across runs so cut rankings stay reproducible.
     let mut rng = rand::SeedableRng::seed_from_u64(42);
     let logs: Vec<_> = (0..2000)
         .map(|_| super::simulator::game::run_game(&sim_deck, &mut rng, turns))
@@ -151,7 +170,7 @@ pub fn cut_rows(
         .iter()
         // Maindeck only: the sideboard is a commander wishlist — the same
         // rule `game_changer_names` in legal.rs applies.
-        .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
         .flat_map(|(_, e)| e.iter())
         .filter(|e| {
             cards_by_name
@@ -187,8 +206,12 @@ pub fn cut_rows(
     };
 
     // The deck's aggregate curve center (filler outlier signal).
+    // Maindeck only: the bench is not part of the curve being measured.
     let mut cmcs: Vec<f64> = deck
-        .entries()
+        .sections
+        .iter()
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
+        .flat_map(|(_, e)| e.iter())
         .filter_map(|e| cards_by_name.get(&e.name).map(|c| c.cmc))
         .collect();
     cmcs.sort_by(f64::total_cmp);
@@ -204,10 +227,14 @@ pub fn cut_rows(
     // land detection below reads it).
     let deck_colors = super::suggest::deck_color_letters(deck, cards_by_name);
 
-    // Filler spell prices (one batched lookup).
+    // Filler spell prices (one batched lookup). Maindeck names only: bench
+    // cards are not cut candidates.
     let names: Vec<String> = {
         let mut seen = std::collections::HashSet::new();
-        deck.entries()
+        deck.sections
+            .iter()
+            .filter(|(s, _)| !super::grammar::is_bench_section(s))
+            .flat_map(|(_, e)| e.iter())
             .filter_map(|e| {
                 if seen.insert(e.name.clone()) {
                     Some(e.name.clone())
@@ -227,7 +254,14 @@ pub fn cut_rows(
     // regardless of score: they must go before any discretionary cut.
     let mut rows: Vec<CutRow> = Vec::new();
     let mut seen: std::collections::HashSet<String> = Default::default();
-    for entry in deck.entries() {
+    // Maindeck only: bench cards are not cut candidates (cutting them
+    // frees no maindeck slot).
+    for entry in deck
+        .sections
+        .iter()
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
+        .flat_map(|(_, e)| e.iter())
+    {
         let card = match cards_by_name.get(&entry.name) {
             Some(card) => card,
             None => continue,
@@ -295,10 +329,9 @@ pub fn cut_rows(
             });
             score += 0.2;
         }
-        if castability
+        if let Some(pct) = castability
             .get(entry.name.as_str())
-            .is_some_and(|pct| *pct < 0.5)
-            && let Some(pct) = castability.get(entry.name.as_str())
+            .filter(|pct| **pct < 0.5)
         {
             reasons.push(CutReason {
                 kind: "castability",
@@ -381,12 +414,30 @@ pub fn cut_rows(
     // `--for` fills: top owned-first candidates for the deficit role, one
     // pairing per cut row (reuses the suggest scoring leg).
     if let Some(role) = role {
-        let fills = top_fills(conn, deck, role, max_price).unwrap_or_default();
-        for row in &mut rows {
-            row.replace_with = Some(FillPair {
-                role: format!("{role:?}"),
-                candidates: fills.clone(),
-            });
+        let fills = top_fills(
+            conn,
+            deck,
+            cards_by_name,
+            role,
+            format_key,
+            is_commander,
+            max_price,
+        );
+        match fills {
+            Ok(fills) => {
+                for row in &mut rows {
+                    row.replace_with = Some(FillPair {
+                        role: format!("{role:?}"),
+                        candidates: fills.clone(),
+                    });
+                }
+            }
+            Err(err) => {
+                // The fill query failed; cuts still render, the pairing
+                // column just reads empty. Say so, like `deck show` does
+                // for price lookups.
+                eprintln!("warning: fill lookup failed; fill pairings omitted: {err:#}");
+            }
         }
     }
     Ok(rows)
@@ -406,6 +457,7 @@ pub fn cuts(
         bracket,
         format,
         max_price,
+        make_room_for,
         json,
     } = *options;
     // Parse the requested role for `--for` discounting + fills (before
@@ -429,6 +481,64 @@ pub fn cuts(
         out.error("deck has no resolvable cards");
         out.hint("check card names: stm deck show <name>");
         return Ok(crate::cli::codes::NO_RESULTS);
+    }
+
+    // `--make-room-for` runs its own pairing output and returns. The
+    // `--for` role and `--max-price` cap only feed plain cuts' fill
+    // pairing, which this path does not run; say so rather than ignore
+    // the flags silently.
+    if let Some(zone) = make_room_for {
+        if for_role.is_some() || max_price.is_some() {
+            out.warning(
+                "--for and --max-price apply to plain cuts only; --make-room-for ignores them",
+            );
+        }
+        let (rows, qualifying) =
+            make_room_rows(conn, &deck, &cards_by_name, zone, count, bracket, format)?;
+        if json {
+            println!("{}", serde_json::to_string_pretty(&rows)?);
+            return Ok(crate::cli::codes::OK);
+        }
+        let styles = out.styles();
+        let zone_name = match zone {
+            crate::cli::MakeRoomFor::Sideboard => "sideboard",
+            crate::cli::MakeRoomFor::Maybeboard => "maybeboard",
+        };
+        if rows.is_empty() {
+            println!(
+                "{}",
+                styles.success(&format!(
+                    "no {zone_name} cards to make room for (empty {zone_name})"
+                ))
+            );
+            return Ok(crate::cli::codes::OK);
+        }
+        println!(
+            "{} {}",
+            styles.header("Make-room swaps"),
+            styles.dim(&format!("{zone_name} card ← maindeck cut"))
+        );
+        for row in &rows {
+            println!(
+                "  {:<30} ← {:<30} score {:>4.2}",
+                styles.card_name(&row.bench_card),
+                styles.card_name(&row.cut_candidate),
+                row.score
+            );
+            for reason in &row.reasons {
+                println!("      {}", styles.dim(reason));
+            }
+        }
+        // The pairing window is the cut-row cap; qualifying bench cards
+        // past it go unpaired. Say so instead of dropping them silently.
+        if qualifying > rows.len() {
+            out.warning(&format!(
+                "{} {zone_name} card(s) had no cut to pair with (the cut list holds {} rows)",
+                qualifying - rows.len(),
+                rows.len()
+            ));
+        }
+        return Ok(crate::cli::codes::OK);
     }
 
     let rows = cut_rows(
@@ -523,22 +633,152 @@ fn role_census(
     role: Role,
 ) -> Vec<String> {
     let want = sim_role(role);
-    deck.entries()
+    deck.sections
+        .iter()
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
+        .flat_map(|(_, e)| e.iter())
         .filter_map(|e| cards_by_name.get(&e.name))
         .filter(|card| super::simulator::parse::parse_sim_card(card).role == want)
         .map(|card| card.name.clone())
         .collect()
 }
 
+/// Pair each bench card (sideboard or maybeboard) with the maindeck cut
+/// that makes room for it.
+///
+/// A bench card qualifies when it fits the deck's color identity and is
+/// legal in the deck's format (the same zone rules `deck legal` applies).
+/// Each qualifying card pairs with the most expendable maindeck cut from
+/// `cut_rows` that shares its sim role (a role swap keeps the deck's
+/// shape); with no same-role candidate the top cut overall makes room.
+/// `bracket` pins Game Changers the allowance cannot hold, same as plain
+/// `deck cuts`.
+///
+/// Returns the paired rows plus the qualifying bench-card count; the
+/// difference is the count of bench cards the cut window could not pair.
+#[allow(clippy::too_many_arguments)]
+fn make_room_rows(
+    conn: &Connection,
+    deck: &super::Deck,
+    cards_by_name: &std::collections::HashMap<String, CardRow>,
+    zone: crate::cli::MakeRoomFor,
+    count: usize,
+    bracket: Option<u8>,
+    format: Option<&str>,
+) -> anyhow::Result<(Vec<MakeRoomRow>, usize)> {
+    let zone_matches = |section: &str| -> bool {
+        match zone {
+            crate::cli::MakeRoomFor::Sideboard => super::grammar::is_sideboard_section(section),
+            crate::cli::MakeRoomFor::Maybeboard => super::grammar::is_maybeboard_section(section),
+        }
+    };
+    let is_commander = match format {
+        Some(f) => matches!(
+            f.to_ascii_lowercase().as_str(),
+            "commander" | "brawl" | "oathbreaker"
+        ),
+        None => super::legal::is_commander(deck, None),
+    };
+    let identity = if is_commander {
+        super::suggest::commander_identity(deck, cards_by_name)
+    } else {
+        String::new()
+    };
+    // Qualifying bench cards: identity + legality checked.
+    let bench: Vec<&CardRow> = deck
+        .sections
+        .iter()
+        .filter(|(s, _)| zone_matches(s))
+        .flat_map(|(_, e)| e.iter())
+        .filter_map(|entry| cards_by_name.get(&entry.name))
+        .filter(|card| {
+            (!is_commander || identity.is_empty() || super::suggest::identity_ok(card, &identity))
+                && match format {
+                    Some(f) => super::suggest::card_legal_in(card, Some(f)),
+                    None if is_commander => super::suggest::card_is_commander_legal(card),
+                    None => super::suggest::card_legal_in_any_60(card),
+                }
+        })
+        .collect();
+    if bench.is_empty() {
+        return Ok((Vec::new(), 0));
+    }
+    // Expendability ranking of the maindeck (same scoring as plain cuts).
+    let rows = cut_rows(
+        conn,
+        deck,
+        cards_by_name,
+        None,
+        count.max(20),
+        bracket,
+        format,
+        None,
+    )?;
+    let mut out = Vec::new();
+    // Each cut candidate opens one slot, so a pick is consumed after use:
+    // later bench cards fall through to the next-best same-role cut.
+    let mut used: std::collections::HashSet<usize> = std::collections::HashSet::new();
+    for card in &bench {
+        let sim_role = super::simulator::parse::parse_sim_card(card).role;
+        // Prefer a same-role cut (the swap keeps the deck's role census).
+        let pick = rows
+            .iter()
+            .enumerate()
+            .find(|(i, row)| {
+                !used.contains(i)
+                    && cards_by_name.get(&row.name).is_some_and(|inc| {
+                        super::simulator::parse::parse_sim_card(inc).role == sim_role
+                    })
+            })
+            .or_else(|| rows.iter().enumerate().find(|(i, _)| !used.contains(i)))
+            .map(|(i, _)| i);
+        let Some(pick) = pick else {
+            continue;
+        };
+        used.insert(pick);
+        let pick = &rows[pick];
+        let mut reasons = Vec::new();
+        let same_role = cards_by_name
+            .get(&pick.name)
+            .is_some_and(|inc| super::simulator::parse::parse_sim_card(inc).role == sim_role);
+        reasons.push(if same_role {
+            format!(
+                "same role as {}: the swap keeps the deck's shape",
+                card.name
+            )
+        } else {
+            format!("most expendable maindeck card for {}", card.name)
+        });
+        reasons.extend(
+            pick.reasons
+                .iter()
+                .map(|r| format!("{}: {}", r.kind, r.detail)),
+        );
+        out.push(MakeRoomRow {
+            bench_card: card.name.clone(),
+            cut_candidate: pick.name.clone(),
+            reasons,
+            score: pick.score as f32,
+        });
+    }
+    Ok((out, bench.len()))
+}
+
 /// Top fill candidates for a role: owned cards matching the role's tag
 /// labels, most-owned first then best EDHREC rank. A light version of
 /// `deck suggest --role`'s scoring; the pairing is a hint, not a ranked
-/// purchase list. `max_price` drops unpriced and over-cap candidates
-/// before the cut.
+/// purchase list. Candidates must fit the deck's color identity
+/// (commander decks) and be legal in the deck's format. `max_price` caps
+/// the final list: candidates are cut to three first, then unpriced and
+/// over-cap names are dropped, so the result can be shorter than 3.
+#[allow(clippy::too_many_arguments)]
 fn top_fills(
     conn: &Connection,
     deck: &super::Deck,
+    cards_by_name: &std::collections::HashMap<String, CardRow>,
     role: Role,
+    format_key: &str,
+    is_commander: bool,
     max_price: Option<f64>,
 ) -> anyhow::Result<Vec<String>> {
     // Token-level label matching (the same semantics as `deck suggest`):
@@ -551,6 +791,14 @@ fn top_fills(
     if tag_ids.is_empty() {
         return Ok(Vec::new());
     }
+    // Identity and legality gates mirror `deck suggest`: commander decks
+    // fill only within the commander's color identity, and every deck
+    // fills only with cards legal in its format.
+    let identity = if is_commander {
+        super::suggest::commander_identity(deck, cards_by_name)
+    } else {
+        String::new()
+    };
     let deck_names: Vec<String> = deck
         .entries()
         .map(|e| e.name.clone())
@@ -566,20 +814,28 @@ fn top_fills(
         format!(" AND k.name NOT IN ({deck_placeholders})")
     };
     let tag_placeholders = vec!["?"; tag_ids.len()].join(",");
-    let over_cap = max_price;
-    // An over-cap filter narrows the pool: over-fetch before the LIMIT cut.
-    let fetch = if over_cap.is_some() { 30 } else { 3 };
+    // Identity and legality narrow the pool in Rust after the fetch, so
+    // over-fetch before the cut (same depth rule as `deck suggest`: three
+    // times the display limit, minimum 60 when capped, 30 otherwise). An
+    // over-cap filter narrows too.
+    let fetch = super::suggest::fusion_depth(3, max_price.is_some());
     let sql = format!(
-        "SELECT k.name, COALESCE(o.qty, 0) AS owned
-         FROM cards k
-         LEFT JOIN (SELECT name, SUM(quantity) AS qty FROM collection GROUP BY name) o
-           ON o.name = k.name
-         JOIN card_tags ct ON ct.oracle_id = k.oracle_id
-         WHERE ct.tag_id IN ({tag_placeholders}){deck_clause}
-         GROUP BY k.name
-         ORDER BY owned DESC, k.edhrec_rank ASC NULLS LAST
-         LIMIT {fetch}"
+        "SELECT k.name, COALESCE(o.qty, 0) AS owned,
+                k.oracle_id, k.color_identity, k.legalities
+          FROM cards k
+          LEFT JOIN (SELECT name, SUM(quantity) AS qty FROM collection GROUP BY name) o
+            ON o.name = k.name
+          JOIN card_tags ct ON ct.oracle_id = k.oracle_id
+          WHERE ct.tag_id IN ({tag_placeholders}){deck_clause}
+          GROUP BY k.name
+          ORDER BY owned DESC, k.edhrec_rank ASC NULLS LAST
+          LIMIT {fetch}"
     );
+    struct FillRow {
+        name: String,
+        identity: String,
+        legalities: String,
+    }
     let mut stmt = conn.prepare(&sql).context("preparing fill query")?;
     let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = tag_ids
         .iter()
@@ -591,14 +847,51 @@ fn top_fills(
     let rows = stmt
         .query_map(
             rusqlite::params_from_iter(params.iter().map(|p| p.as_ref())),
-            |row| row.get::<_, String>(0),
+            |row| {
+                Ok(FillRow {
+                    name: row.get(0)?,
+                    identity: row.get(3)?,
+                    legalities: row.get(4)?,
+                })
+            },
         )?
         .collect::<Result<Vec<_>, _>>()
         .context("reading fills")?;
-    match over_cap {
-        None => Ok(rows),
+    // Identity + legality gates in Rust (the same checks as
+    // `deck suggest`, applied before the cut so they never consume
+    // candidate slots).
+    let passes_identity = |row: &FillRow| -> bool {
+        if is_commander && !identity.is_empty() {
+            super::legal::identity_letters(&row.identity)
+                .chars()
+                .all(|c| identity.contains(c))
+        } else {
+            true
+        }
+    };
+    let passes_legality = |row: &FillRow| -> bool {
+        if format_key == "constructed" {
+            let legalities = super::legal::legality_in_map(&row.legalities).unwrap_or_default();
+            crate::deck::suggest::SIXTY_CARD_FORMATS.iter().any(|f| {
+                legalities
+                    .get(*f)
+                    .is_some_and(|s| s == "legal" || s == "restricted")
+            })
+        } else {
+            super::legal::legality_in(&row.legalities, format_key)
+                .is_some_and(|state| state == "legal" || state == "restricted")
+        }
+    };
+    let filtered: Vec<String> = rows
+        .into_iter()
+        .filter(|row| passes_identity(row) && passes_legality(row))
+        .map(|row| row.name)
+        .take(3)
+        .collect();
+    match max_price {
+        None => Ok(filtered),
         Some(cap) => {
-            let (kept, _) = crate::prints::retain_by_price::<_>(conn, rows, |name| name, cap)?;
+            let (kept, _) = crate::prints::retain_by_price::<_>(conn, filtered, |name| name, cap)?;
             Ok(kept)
         }
     }

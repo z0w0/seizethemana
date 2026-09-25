@@ -92,6 +92,44 @@ fn colorless_utility_land_is_empty() {
 }
 
 #[test]
+fn generic_basic_fetch_lands_match_deck_colors() {
+    // "basic land card" text names no type: the land fetches a basic of
+    // every deck color (Myriad Landscape, Escape Tunnel), so it is
+    // never off-color.
+    let myriad = land(
+        "Myriad Landscape",
+        "Land",
+        "{T}: Add {C}.\n{2}, {T}, Sacrifice Myriad Landscape: Search your library for up to two basic land cards.",
+    );
+    assert_eq!(land_rank(&myriad, "WB"), 0);
+    assert!(!land_is_off_color(&myriad, "WB"));
+    let escape = land(
+        "Escape Tunnel",
+        "Land",
+        "{T}: Add {C}.\n{T}, Sacrifice Escape Tunnel: Search your library for a basic land card.",
+    );
+    assert!(!land_is_off_color(&escape, "WB"));
+    // Evolving Wilds stays in the name table; its behavior is unchanged.
+    let wilds = land(
+        "Evolving Wilds",
+        "Land",
+        "{T}, Sacrifice Evolving Wilds: Search your library for a basic land card.",
+    );
+    assert!(!land_is_off_color(&wilds, "WB"));
+    // Typed fetches still name their types: a Swamp/Forest fetcher in a
+    // mono-W deck stays off-color.
+    let typed = land(
+        "Typed Fetch",
+        "Land",
+        "{T}, Sacrifice Typed Fetch: Search your library for a basic Swamp or Forest card.",
+    );
+    assert!(land_is_off_color(&typed, "W"));
+    // Wastes never fetches: still colorless, still off-color in a B deck.
+    let wastes = land("Wastes", "Basic Land", "{T}: Add {C}.");
+    assert!(land_is_off_color(&wastes, "B"));
+}
+
+#[test]
 fn off_color_rules_sort() {
     let heath = land(
         "Windswept Heath",

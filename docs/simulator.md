@@ -38,15 +38,26 @@ src/deck/simulator/
 ├── format.rs     Per-format rules: mulligan policy, turn defaults
 ├── model.rs      Card data model: Cost, TapYield, Tier, Ability, Role
 ├── parse.rs      Oracle text → model (the sim's whole intelligence)
+├── parse_cost.rs / parse_land.rs / parse_keywords.rs   Cost, tap, and keyword readers
+├── role_classify.rs   Role classification heuristics for parsed cards
 ├── deck.rs       Deck text + card rows → SimDeck
-├── game.rs       One game: shuffle, mulligan, turn loop (pure, seeded)
-├── aggregate.rs  Game logs → statistics + problem findings
+├── deal.rs       Shuffle, opener, and mulligan policies (pure, seeded)
+├── game.rs       Game state, pools, permanents (pure, seeded)
+├── game_run.rs   One game's turn loop, phases 1-11
+├── game_*.rs     Turn phases split out of game_run (mana, cast, combat, effects, extra turns, commander)
+├── trigger_*.rs / triggers.rs   Trigger families and their parse rules
+├── cast_phase.rs The cast pass: affordability sweep and cast riders
+├── findings.rs / findings_detail.rs   Problem findings and their cause detail
+├── aggregate.rs  Game logs → statistics
 ├── combos.rs     Store-backed combo assembly (zones → GameLog lookups)
 ├── hypgeo.rs     Exact hypergeometric cast-on-curve ceilings (--hypgeo)
-└── report.rs     JSON payload + human stdout render
+├── report.rs / report_view.rs   JSON payload + human stdout render
+└── tests/        Co-located test files + deck fixtures
 ```
 
-Functional core, imperative shell: `run_game` and everything under it is
+The file split follows the prefixes: `game_*.rs` holds the turn phases,
+`parse_*.rs` the oracle-text readers, `trigger_*.rs` the trigger
+families. `run_game` and everything under it is
 pure and driven by one seeded `ChaCha8Rng`. Same deck + same seed = the
 same games, byte for byte. `aggregate`, `find_problems`, and the renders
 are separate functions the entry point joins. Mutable per-game state
@@ -228,7 +239,9 @@ is the chosen type") tap for one mana of any color — the chosen type is
 the player's choice each game. Static type-granting on *other* lands (The
 World Tree's "lands you control have {T}: …") is not modeled.
 
-Sagas stage one chapter per turn. Chapter lines ("I — Draw a card.",
+Sagas stage one chapter per turn, with a deliberate one-turn delay: the
+staging gate is `turn > entered_turn`, so chapter I fires the turn
+after the saga entered. Chapter lines ("I — Draw a card.",
 "II — Mill three.") parse into per-chapter abilities through the same
 effect shapes as triggers; a chapter with no readable effect draws one
 card instead. Combined numeral lines ("I, II, III — Create a token")
@@ -238,8 +251,13 @@ the battlefield (it sacrificed in real Magic).
 
 Blink-shaped ETBs ("exile … return it to the battlefield") re-fire the
 host's OnEnter triggers once, the turn after (Skyskipper Duo, flicker
-engines). Monarch acquisition ("you become the Monarch") counts as an
-extra card per turn from acquisition (the Monarch draws at upkeep).
+engines). Land-search ETBs and Monarch acquisition parse to their own
+effects and never arm the blink re-fire: a fetch-style ETB searches
+once, and the Monarch is an upkeep engine, not a blink. Monarch
+acquisition ("you become the Monarch") draws one extra card per turn
+from the turn after acquisition (the Monarch draws at their upkeep).
+Tutor and extra-land effects add cards to the hand but give no
+awareness credit (the card was searched, not seen from the library).
 
 ### Keywords modeled (goldfish-aligned)
 
@@ -307,13 +325,16 @@ pays as colorless. X-costs follow the X-cost section above.
 A best-case agent plays each turn in a fixed order:
 
 1. **Untap** — everything untaps; summoning sickness clears; once-per-turn
-   flags reset.
+   flags reset; crew animations expire. Blink-armed permanents re-fire
+   their OnEnter triggers once (the blink re-fire pass).
 2. **Upkeep** — draw, mill, recursion, drain, and token engines fire (one
    firing each, per turn); saga chapters advance through their parsed
-   abilities; win-threshold engines check their counter stock;
-   planeswalker ultimates flag online when loyalty reaches the minus
-   cost.
-3. **Draw** — draw 1.
+   abilities (one turn after entry — the staging gate is
+   `turn > entered_turn`); win-threshold engines check their counter
+   stock; planeswalker ultimates flag online when loyalty reaches the
+   minus cost.
+3. **Draw** — draw 1; the Monarch draws one extra card from the turn
+   after acquisition. Extra turns replay this step later (step 11).
 4. **Land** — play an untapped land when one is in hand, else any land
    (tapped lands wait for a better turn when possible). Fetch lands search
    up a non-fetch land, which enters tapped. An "additional land" board
@@ -352,7 +373,8 @@ A best-case agent plays each turn in a fixed order:
    sum. Hasted creatures attack the turn they enter. Token payoffs join
    next turn's bodies.
 10. **End** — crew animations expire; hand-limit discards from the end;
-    queued extra turns replay a land drop (recorded in `land_drops[]`), a
+    queued extra turns replay a land drop (recorded in `land_drops[]`,
+    which can reach 3 on a turn with an extra-land board plus replays), a
     draw, and one firing of each upkeep engine.
 
 The commander casts from the command zone with the full pip check. Its
@@ -369,7 +391,7 @@ carry ±0.5pp at 10k runs.
 | Block | Meaning |
 | --- | --- |
 | `opening_hand` | land distribution, mulligan rate (one free mulligan under 2 or over 6 lands in commander) |
-| `land_drops` | hit-all-N rates, screw (≤2 by t4), flood (6+ lands in hand + on the battlefield at end of t4 — drops made are the wrong lens), flood expectation at the deck's actual draw volume, percentiles |
+| `land_drops` | hit-all-N rates, screw (≤2 by t4), flood (6+ lands seen at end of t4 — hand, battlefield, and graveyard; drops made are the wrong lens), flood expectation at the deck's actual draw volume, percentiles |
 | `mana_base` | lands/rocks/dorks/ramp-spells/total sources + the bracket target band (see below) + a verdict sentence; top level `mana_base_bracket_inferred` says when the bracket was inferred |
 | `commander` | castable-by-turn curve, p50/p95/avg first cast turn, on-curve share |
 | `station` | commander spacecraft animated by t6 + p50 online turn (null when not a station card) |
@@ -480,7 +502,7 @@ card names.
 | `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts |
 | `draw_starvation` | ≥25% of games see no draw source by t6 | "add 2-3 draw engines" |
 | `mana_unused` | ≥2.5 mana unspent on average by t6 | "add cheaper spells or more draw" |
-| `dead_cards` | ≥3 distinct non-reactive cards cast on time under 60% | "cut or discount late cards, or add ramp" |
+| `dead_cards` | ≥3 distinct non-reactive cards cast on time under the threshold (60% commander, 55% constructed) | "cut or discount late cards, or add ramp" |
 | `category_starved` | removal by t5 <40% / wincons by t8 <40% | "add 2-3 interaction pieces" |
 | `interaction_unready` | instant-speed interaction ready by t5 <40% while access ≥40% | "add cheaper instant-speed answers" |
 
@@ -574,7 +596,7 @@ Two test layers cover the simulator:
   Dedicated archetype tests live in the per-format deck test files
   (commander/standard/modern) for every fixture that was previously
   invariants-only, plus degradation-fixture problem assertions.
-- `simulator/deck_tests.rs` + `simulator/tests/deck_fixtures/*.json` —
+- `simulator/tests/deck_tests.rs` + `simulator/tests/deck_fixtures/*.json` —
   real tournament lists. Sources: mtggoldfish metagame, cEDH Decklist
   Database, EDHREC, and topdeck.gg competitive tournament standings
   (fetched through the TopDeck.gg API with attribution; commander lists

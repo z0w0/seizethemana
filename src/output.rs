@@ -1,7 +1,9 @@
 use owo_colors::OwoColorize;
 use std::io::IsTerminal;
 
-/// Terminal width for layout sizing; 80 when undetectable (piped, tests).
+/// Terminal width for layout sizing, floored at 40 columns. 80 when
+/// undetectable (piped, tests). Narrow terminals never shrink below 40 so
+/// fixed-width table lines stay intact.
 pub fn terminal_width() -> usize {
     console::Term::stdout()
         .size_checked()
@@ -23,7 +25,8 @@ pub const SILENT_ERROR: &str = "\u{0}silent";
 
 /// Thousands-grouped integer string ("1,512", "-1,234") for counts.
 pub fn grouped_int(n: i64) -> String {
-    let digits = n.abs().to_string();
+    let negative = n.is_negative();
+    let digits = n.unsigned_abs().to_string();
     let mut grouped = String::new();
     for (i, c) in digits.chars().enumerate() {
         if i > 0 && (digits.len() - i).is_multiple_of(3) {
@@ -31,15 +34,15 @@ pub fn grouped_int(n: i64) -> String {
         }
         grouped.push(c);
     }
-    if n < 0 {
+    if negative {
         format!("-{grouped}")
     } else {
         grouped
     }
 }
 
-/// Money text with an explicit currency: `$1,234.50 USD`.
-/// Thousands-grouped money amount with two decimals ("1,234.50").
+/// Thousands-grouped money amount with two decimals ("1,234.50"); no
+/// currency symbol (callers add `$` and the currency code).
 fn thousands_amount(amount: f64) -> String {
     let fixed = format!("{amount:.2}");
     let (int_part, frac_part) = fixed.split_once('.').unwrap_or((fixed.as_str(), ""));
@@ -72,7 +75,6 @@ pub fn round2(v: f64) -> f64 {
 ///   progress lines are suppressed entirely.
 /// - ANSI color follows the *stdout* TTY for result text and the *stderr* TTY
 ///   for status lines; `NO_COLOR` and `--no-color` force both plain.
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Output {
     /// Emit pretty-printed JSON instead of styled text.
@@ -91,7 +93,6 @@ pub struct Output {
 ///
 /// Every method returns a plain string when color is disabled, so callers can
 /// wrap text unconditionally.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
 pub struct Styles {
     color: bool,
@@ -112,9 +113,6 @@ pub enum GlyphKind {
     Info,
 }
 
-// Some render helpers are exercised only from unit tests; keep them so the
-// output surface stays uniform.
-#[allow(dead_code)]
 impl Output {
     /// Build the output mode from global flags.
     pub fn new(json: bool, no_color: bool, verbose: bool) -> Self {
@@ -184,9 +182,9 @@ impl Output {
         let styled = self.err_styles().status(verb, msg);
         let style = if std::io::stderr().is_terminal() {
             let template = if total > 0 {
-                "   {msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})"
+                "{msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})"
             } else {
-                "   {msg} {spinner:.green} {pos}"
+                "{msg} {spinner:.green} {pos}"
             };
             indicatif::ProgressStyle::with_template(template)
                 .expect("static template")
@@ -263,9 +261,12 @@ impl Output {
     }
 }
 
-// Some styling helpers are exercised only from unit tests.
-#[allow(dead_code)]
 impl Styles {
+    /// Plain style set (no color), for tests and plain-text contexts.
+    pub fn colorless() -> Self {
+        Self { color: false }
+    }
+
     /// Card name: bold cyan.
     pub fn card_name(&self, s: &str) -> String {
         if self.color {
@@ -300,15 +301,6 @@ impl Styles {
             verb_pad.bold().green().to_string()
         } else {
             verb_pad
-        }
-    }
-
-    /// Bold green verb without the status-column padding (spinner lines).
-    pub fn verb_inline(&self, verb: &str) -> String {
-        if self.color {
-            verb.bold().green().to_string()
-        } else {
-            verb.to_string()
         }
     }
 
@@ -542,6 +534,18 @@ mod tests {
     }
 
     #[test]
+    fn progress_bar_templates_have_no_extra_padding() {
+        // The templates must not prepend spaces: Styles::status already
+        // pads the verb to the cargo-style verb column.
+        let out = Output::new(false, false, false);
+        let mut out = out;
+        out.progress_bar("Embedding", "cards", 10);
+        out.clear_progress();
+        out.progress_bar("Downloading", "bulk data", 0);
+        out.clear_progress();
+    }
+
+    #[test]
     fn finish_appends_duration() {
         let out = Output::new(true, false, false);
         let s = out.err_styles();
@@ -590,6 +594,12 @@ mod tests {
         assert_eq!(s.thousands(1_512), "1,512");
         assert_eq!(s.thousands(-1_234_567), "-1,234,567");
         assert_eq!(s.thousands(0), "0");
+    }
+
+    #[test]
+    fn grouped_int_handles_i64_min() {
+        // i64::MIN.abs() overflows; unsigned_abs must not.
+        assert_eq!(grouped_int(i64::MIN), "-9,223,372,036,854,775,808");
     }
 
     #[test]

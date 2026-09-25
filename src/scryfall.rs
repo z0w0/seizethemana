@@ -123,7 +123,6 @@ pub struct Prices {
 #[derive(Debug, Deserialize, Clone)]
 pub struct CardFace {
     #[serde(default)]
-    #[allow(dead_code)] // parsed for completeness; not stored
     pub name: Option<String>,
     #[serde(default)]
     pub mana_cost: Option<String>,
@@ -155,6 +154,7 @@ const NON_CARD_LAYOUTS: &[&str] = &[
     "augment",
 ];
 
+/// Scryfall API host all downloads and lookups go through.
 pub(crate) const SCRYFALL_HOST: &str = "api.scryfall.com";
 
 /// Shared HTTP client for downloads and API calls.
@@ -192,6 +192,16 @@ pub fn fetch_bulk_files() -> anyhow::Result<(BulkFile, BulkFile)> {
     Ok((find("default_cards")?, find("oracle_tags")?))
 }
 
+/// Refresh window for bulk-file staleness checks. Chrono cannot const-check
+/// `to_std()`, so conversion sites expect success: the value is a positive
+/// compile-time constant, and `to_std()` only fails on non-positive or
+/// out-of-range values.
+const STALE_AFTER_EXPECT: &str = "STALE_AFTER is a positive constant duration";
+
+pub(crate) fn stale_after_std() -> std::time::Duration {
+    crate::sync::STALE_AFTER.to_std().expect(STALE_AFTER_EXPECT)
+}
+
 /// Make sure `dest` holds a fresh copy of `file`'s content.
 ///
 /// Downloads when the file is missing or older than [`crate::sync::STALE_AFTER`]
@@ -209,7 +219,7 @@ pub fn ensure_fresh_bulk(
         meta.modified()
             .ok()
             .and_then(|m| m.elapsed().ok())
-            .is_none_or(|age| age > crate::sync::STALE_AFTER.to_std().expect("positive"))
+            .is_none_or(|age| age > stale_after_std())
     };
     let scryfall_newer = match (&file.updated_at, std::fs::metadata(dest).ok()) {
         (Some(remote), Some(meta)) => meta
@@ -220,7 +230,13 @@ pub fn ensure_fresh_bulk(
                     let local: chrono::DateTime<chrono::Local> = local.into();
                     remote_time.with_timezone(&chrono::Local) > local
                 }
-                Err(_) => false,
+                Err(err) => {
+                    // The comparison is skipped, not failed: a stale-local
+                    // decision then rests on mtime alone. Make the swallow
+                    // visible so a Scryfall format change is not silent.
+                    out.warning(&format!("unparseable Scryfall timestamp {remote:?}: {err}"));
+                    false
+                }
             })
             .unwrap_or(false),
         _ => false,
@@ -229,19 +245,11 @@ pub fn ensure_fresh_bulk(
         out.status("Reusing", &format!("bulk data at {}", dest.display()));
         return Ok(false);
     }
-    let reason = if !dest.exists() {
-        "downloading"
-    } else {
-        "refreshing"
+    let size_note = match file.compressed_size {
+        Some(bytes) => format!("~{}MB", bytes / 1_000_000),
+        None => "unknown size".to_string(),
     };
-    out.status(
-        "Downloading",
-        &format!(
-            "{} bulk data (~{}MB)",
-            reason,
-            file.compressed_size.unwrap_or(0) / 1_000_000
-        ),
-    );
+    out.status("Downloading", &size_note);
     download_to(&file.uri, dest, file.compressed_size, out)?;
     Ok(true)
 }
@@ -275,11 +283,10 @@ pub fn download_to(
         let piped = !std::io::stderr().is_terminal();
         let mut written: u64 = 0;
         let mut last_logged = 0u64;
-        if piped {
-            // No ephemeral bar on piped stderr; periodic status lines keep
-            // the log readable instead.
-        } else {
-            // The spinner becomes a real bar once the length is known.
+        if !piped {
+            // TTY: the spinner becomes a real bar once the length is known.
+            // Piped stderr keeps the log readable with periodic status
+            // lines in the read loop instead of an ephemeral bar.
             out.progress_bar("Downloading", "bulk data", total.unwrap_or(0));
             if let Some(total) = total {
                 out.set_progress_total(total);
@@ -328,10 +335,11 @@ pub fn download_to(
 
 /// Open the gzipped bulk file and stream each JSONL record through `visit`.
 ///
-/// Malformed lines are skipped (a single bad record must not abort a 25MB
-/// download); the visit callback receives the parsed object. Returns the
-/// malformed-line count so callers report it through their output layer
-/// (respecting `--json`/`NO_COLOR`, unlike a raw stderr write).
+/// Malformed lines are skipped (a single bad record must not abort a
+/// multi-hundred-MB download); the visit callback receives the parsed
+/// object. Returns the malformed-line count so callers report it through
+/// their output layer (respecting `--json`/`NO_COLOR`, unlike a raw
+/// stderr write).
 ///
 /// # Errors
 /// Fails when the file cannot be opened/decompressed.
@@ -359,12 +367,20 @@ pub fn stream_records<F: FnMut(ScryfallCard)>(
     Ok(bad)
 }
 
+/// True when the layout marks a non-playable card (token, art series,
+/// emblem…). These names are recorded so collection imports can skip them.
+pub fn is_non_card_layout(layout: &str) -> bool {
+    NON_CARD_LAYOUTS.contains(&layout)
+}
+
 /// True when this bulk row should not become a searchable card.
 ///
-/// Skips non-card layouts (tokens, art series…) and digital-only prints
-/// (arena/mtgo without paper).
+/// Skips non-card layouts (tokens, art series…) and prints with no paper
+/// release (arena/mtgo only). A missing `games` field is treated the same
+/// as digital-only: Scryfall always populates it on real cards, so an
+/// absent field is malformed input, not a paper print.
 pub fn should_skip(card: &ScryfallCard) -> bool {
-    if NON_CARD_LAYOUTS.contains(&card.layout.as_str()) {
+    if is_non_card_layout(&card.layout) {
         return true;
     }
     match &card.games {
@@ -459,197 +475,6 @@ pub fn flatten_faces(card: &mut ScryfallCard) {
     }
 }
 
-/// Insert a parsed card row into the `cards` table.
-///
-/// Uses `INSERT OR IGNORE` so re-runs over the same bulk are idempotent.
-///
-/// # Errors
-/// Propagates SQLite failures with the card name for context.
-pub fn insert_card(conn: &rusqlite::Connection, card: &ScryfallCard) -> anyhow::Result<()> {
-    let legalities = serde_json::to_string(&card.legalities.clone().unwrap_or_default())?;
-    let colors = serde_json::to_string(&card.colors.clone().unwrap_or_default())?;
-    let identity = serde_json::to_string(&card.color_identity.clone().unwrap_or_default())?;
-    let keywords = serde_json::to_string(&card.keywords.clone().unwrap_or_default())?;
-    conn.execute(
-        "INSERT OR IGNORE INTO cards (
-            name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
-            keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-            legalities, set_code, collector_number, scryfall_id, released_at,
-            game_changer
-        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)",
-        rusqlite::params![
-            card.name,
-            card.oracle_id,
-            card.mana_cost.clone().unwrap_or_default(),
-            card.cmc.unwrap_or(0.0),
-            card.type_line.clone().unwrap_or_default(),
-            colors,
-            identity,
-            keywords,
-            card.power,
-            card.toughness,
-            card.loyalty,
-            card.oracle_text.clone().unwrap_or_default(),
-            card.rarity.clone().unwrap_or_default(),
-            card.edhrec_rank,
-            legalities,
-            card.set_code.clone().unwrap_or_default(),
-            card.collector_number.clone().unwrap_or_default(),
-            card.id.clone().unwrap_or_default(),
-            card.released_at.clone().unwrap_or_default(),
-            card.game_changer,
-        ],
-    )?;
-    Ok(())
-}
-
-/// Overwrite the ingestable fields of an existing card row.
-///
-/// The name key stays fixed so collection rows and vectors keep their
-/// references; print identity and prices live in `card_prints` (refreshed
-/// separately by the sync pass).
-///
-/// # Errors
-/// Propagates SQLite failures; fails if `name` is not stored.
-pub fn update_card(
-    conn: &rusqlite::Connection,
-    name: &str,
-    card: &ScryfallCard,
-) -> anyhow::Result<()> {
-    let legalities = serde_json::to_string(&card.legalities.clone().unwrap_or_default())?;
-    let colors = serde_json::to_string(&card.colors.clone().unwrap_or_default())?;
-    let identity = serde_json::to_string(&card.color_identity.clone().unwrap_or_default())?;
-    let keywords = serde_json::to_string(&card.keywords.clone().unwrap_or_default())?;
-    let updated = conn.execute(
-        "UPDATE cards SET
-            oracle_id = ?2, mana_cost = ?3, cmc = ?4, type_line = ?5,
-            colors = ?6, color_identity = ?7, keywords = ?8, power = ?9,
-            toughness = ?10, loyalty = ?11, oracle_text = ?12, rarity = ?13,
-            edhrec_rank = ?14, legalities = ?15, set_code = ?16,
-            collector_number = ?17, scryfall_id = ?18, released_at = ?19,
-            game_changer = ?20
-         WHERE name = ?1",
-        rusqlite::params![
-            name,
-            card.oracle_id,
-            card.mana_cost.clone().unwrap_or_default(),
-            card.cmc.unwrap_or(0.0),
-            card.type_line.clone().unwrap_or_default(),
-            colors,
-            identity,
-            keywords,
-            card.power,
-            card.toughness,
-            card.loyalty,
-            card.oracle_text.clone().unwrap_or_default(),
-            card.rarity.clone().unwrap_or_default(),
-            card.edhrec_rank,
-            legalities,
-            card.set_code.clone().unwrap_or_default(),
-            card.collector_number.clone().unwrap_or_default(),
-            card.id.clone().unwrap_or_default(),
-            card.released_at.clone().unwrap_or_default(),
-            card.game_changer,
-        ],
-    )?;
-    anyhow::ensure!(updated == 1, "card {name:?} vanished during update");
-    Ok(())
-}
-
-/// Upsert one physical printing into `card_prints` (and its set name into
-/// `sets`).
-///
-/// Called for every passing print row of the bulk, not just the per-name
-/// winner, so per-printing prices stay complete. Prices overwrite in bulk
-/// order; prints missing from a fresh bulk keep their last known row.
-///
-/// # Errors
-/// Propagates SQLite failures.
-pub fn upsert_print(
-    conn: &rusqlite::Connection,
-    card: &ScryfallCard,
-    updated_at: &str,
-) -> anyhow::Result<()> {
-    let Some(set_code) = card.set_code.as_deref().map(str::to_ascii_lowercase) else {
-        return Ok(());
-    };
-    if set_code.is_empty() {
-        return Ok(());
-    }
-    let finishes = serde_json::to_string(&card.finishes.clone().unwrap_or_default())?;
-    if let Some(set_name) = &card.set_name {
-        conn.execute(
-            "INSERT INTO sets (set_code, set_name, set_type, block, franchise)
-             VALUES (?1, ?2, ?3, ?4, ?5)
-             ON CONFLICT (set_code) DO UPDATE SET
-                set_name = excluded.set_name,
-                set_type = excluded.set_type,
-                block = excluded.block,
-                franchise = excluded.franchise",
-            rusqlite::params![
-                set_code,
-                set_name,
-                card.set_type.clone().unwrap_or_default(),
-                card.block,
-                crate::universe::franchise_for(&set_code, set_name),
-            ],
-        )?;
-    }
-    let ub_flag = crate::universe::is_universes_beyond(
-        &set_code,
-        card.promo_types
-            .as_ref()
-            .is_some_and(|p| p.iter().any(|t| t == "universesbeyond")),
-    ) as i64;
-    let (usd, usd_foil, usd_etched) = match &card.prices {
-        Some(prices) => (
-            prices.usd.as_deref().and_then(|s| s.parse::<f64>().ok()),
-            prices
-                .usd_foil
-                .as_deref()
-                .and_then(|s| s.parse::<f64>().ok()),
-            prices
-                .usd_etched
-                .as_deref()
-                .and_then(|s| s.parse::<f64>().ok()),
-        ),
-        None => (None, None, None),
-    };
-    conn.execute(
-        "INSERT INTO card_prints (
-            scryfall_id, name, flavor_name, set_code, collector_number, lang,
-            rarity, finishes, released_at, usd, usd_foil, usd_etched, updated_at,
-            universes_beyond
-        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)
-         ON CONFLICT (scryfall_id) DO UPDATE SET
-            name = excluded.name, flavor_name = excluded.flavor_name,
-            set_code = excluded.set_code,
-            collector_number = excluded.collector_number, lang = excluded.lang,
-            rarity = excluded.rarity, finishes = excluded.finishes,
-            released_at = excluded.released_at, usd = excluded.usd,
-            usd_foil = excluded.usd_foil, usd_etched = excluded.usd_etched,
-            updated_at = excluded.updated_at,
-            universes_beyond = excluded.universes_beyond",
-        rusqlite::params![
-            card.id.clone().unwrap_or_default(),
-            card.name,
-            card.flavor_name.clone().unwrap_or_default(),
-            set_code,
-            card.collector_number.clone().unwrap_or_default(),
-            card.lang.clone().unwrap_or_else(|| "en".to_string()),
-            card.rarity.clone().unwrap_or_default(),
-            finishes,
-            card.released_at.clone().unwrap_or_default(),
-            usd,
-            usd_foil,
-            usd_etched,
-            updated_at,
-            ub_flag,
-        ],
-    )?;
-    Ok(())
-}
-
 /// Choose one row per duplicate card name: prefer the print that is legal in
 /// the most game platforms, then the lower EDHREC rank (more popular).
 /// Full ties break on the earlier release date, then the Scryfall id, so
@@ -676,6 +501,10 @@ pub fn prefer_row(current: &ScryfallCard, candidate: &ScryfallCard) -> ScryfallC
     };
     chosen.clone()
 }
+
+mod ingest;
+pub use ingest::{insert_card, update_card, upsert_print};
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -847,6 +676,23 @@ mod tests {
     }
 
     #[test]
+    fn upsert_print_skips_idless_prints() {
+        let tmp = tempfile::tempdir().unwrap();
+        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+        // No `id` field: upserting would key the row to `scryfall_id = ''`
+        // and collide with every other id-less print, so it is skipped.
+        let mut c = card("No Id", "normal", &["paper"]);
+        c.id = None;
+        upsert_print(&conn, &c, "now").unwrap();
+        c.id = Some(String::new());
+        upsert_print(&conn, &c, "now").unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM card_prints", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 0, "id-less prints never land");
+    }
+
+    #[test]
     fn upsert_print_stores_universe_metadata() {
         let tmp = tempfile::tempdir().unwrap();
         let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
@@ -1004,5 +850,77 @@ mod tests {
         let mut seen = Vec::new();
         stream_records(&path, |c| seen.push(c.name)).unwrap();
         assert_eq!(seen, vec!["A".to_string(), "B".to_string()]);
+    }
+
+    // ensure_fresh_bulk
+
+    fn bulk_file(updated_at: Option<&str>) -> BulkFile {
+        BulkFile {
+            uri: "https://example.com/bulk.jsonl.gz".into(),
+            compressed_size: Some(1000),
+            updated_at: updated_at.map(String::from),
+        }
+    }
+
+    /// The freshness decision is pure mtime/updated_at logic; point the
+    /// downloader at a dead host so a false "stale" would fail loudly.
+    #[test]
+    fn ensure_fresh_bulk_reuses_fresh_local_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("bulk.jsonl");
+        std::fs::write(&dest, b"data").unwrap();
+        // Just-written file: neither mtime-stale nor older than the remote
+        // stamp.
+        let mut out = crate::output::Output::new(true, false, false);
+        let downloaded = ensure_fresh_bulk(
+            &bulk_file(Some("2000-01-01T00:00:00.000Z")),
+            &dest,
+            &mut out,
+        )
+        .unwrap();
+        assert!(!downloaded, "fresh local file must not re-download");
+    }
+
+    #[test]
+    fn ensure_fresh_bulk_downloads_missing_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("missing.jsonl");
+        let mut out = crate::output::Output::new(true, false, false);
+        let result = ensure_fresh_bulk(&bulk_file(None), &dest, &mut out);
+        // The missing file forces a download; the fake URI fails, proving
+        // the freshness gate let it through.
+        assert!(result.is_err(), "missing file must attempt a download");
+    }
+
+    #[test]
+    fn ensure_fresh_bulk_downloads_when_remote_is_newer() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("bulk.jsonl");
+        std::fs::write(&dest, b"data").unwrap();
+        // A remote stamp far in the future beats any local mtime.
+        let mut out = crate::output::Output::new(true, false, false);
+        let result = ensure_fresh_bulk(
+            &bulk_file(Some("2999-01-01T00:00:00.000Z")),
+            &dest,
+            &mut out,
+        );
+        assert!(result.is_err(), "newer remote must attempt a download");
+    }
+
+    #[test]
+    fn ensure_fresh_bulk_downloads_when_local_is_stale() {
+        let tmp = tempfile::tempdir().unwrap();
+        let dest = tmp.path().join("bulk.jsonl");
+        std::fs::write(&dest, b"data").unwrap();
+        // Backdate past STALE_AFTER.
+        let old = std::time::SystemTime::now()
+            - crate::sync::STALE_AFTER.to_std().unwrap()
+            - std::time::Duration::from_secs(60);
+        let file = std::fs::File::options().write(true).open(&dest).unwrap();
+        file.set_modified(old).unwrap();
+        drop(file);
+        let mut out = crate::output::Output::new(true, false, false);
+        let result = ensure_fresh_bulk(&bulk_file(None), &dest, &mut out);
+        assert!(result.is_err(), "stale local file must attempt a download");
     }
 }

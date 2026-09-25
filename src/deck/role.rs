@@ -58,6 +58,7 @@ impl Role {
         Some(match q.as_str() {
             // Card advantage
             "draw" | "carddraw" | "drawcards" | "drawengine" => Role::Draw,
+            "cardadvantage" | "cardadv" => Role::Draw,
             "cantrip" | "cantrips" => Role::CardSelection,
             "scry" | "scrying" | "surveil" => Role::CardSelection,
             "cardselection" | "filtering" | "selection" => Role::CardSelection,
@@ -324,3 +325,7 @@ impl Role {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "tests/role_tests.rs"]
+mod role_tests;

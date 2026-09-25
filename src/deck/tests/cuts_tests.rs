@@ -123,6 +123,38 @@ fn rows_for_format(
 }
 
 #[test]
+fn bench_cards_are_never_cut_candidates() {
+    let (_tmp, mut conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "",
+        4.0,
+        None,
+        Some(1),
+    );
+    // A weak spell in the maindeck and a clearly weaker one only on the
+    // sideboard: the sideboard card must not surface as a cut (cutting
+    // it frees no maindeck slot).
+    insert_card_cost(&conn, "Deck Filler", "Instant", "", "{6}{U}{U}", 8.0);
+    insert_card_cost(&conn, "Bench Filler", "Instant", "", "{9}{U}{U}", 10.0);
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n10 Deck Filler\n20 Island\n// SIDEBOARD\n4 Bench Filler\n";
+    let rows = rows_for(&mut conn, deck_text, None, 10, None);
+    assert!(
+        !rows.iter().any(|r| r.name == "Bench Filler"),
+        "sideboard cards must not be cut candidates: {:?}",
+        rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>()
+    );
+    assert!(
+        rows.iter().any(|r| r.name == "Deck Filler"),
+        "maindeck filler should be ranked: {:?}",
+        rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>()
+    );
+}
+
+#[test]
 fn dead_cards_rank_before_curve_outliers_and_basics_commander_skipped() {
     let (_tmp, mut conn) = seeded_conn();
     insert_card(
@@ -409,6 +441,110 @@ fn for_role_pairs_fills_and_discounts_serving_cards() {
             "the tagged draw card is a fill candidate"
         );
     }
+}
+
+#[test]
+fn for_role_fills_respect_identity_and_legality() {
+    // `--for` fills must stay inside the commander's color identity and
+    // the deck's format: an off-identity or banned tagged card is never
+    // a fill candidate, even when it is the most-owned match.
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "Draw a card at upkeep.",
+        5.0,
+        None,
+        Some(10),
+    );
+    conn.execute(
+        "UPDATE cards SET color_identity = '[\"W\"]' WHERE name = 'Test Commander'",
+        [],
+    )
+    .unwrap();
+    insert_card(
+        &conn,
+        "Dead Filler",
+        "Creature — Giant",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+    conn.execute(
+        "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'card-draw', 'card draw', 1)",
+        [],
+    )
+    .unwrap();
+    // Three tagged draw candidates: off-identity (G), banned in commander,
+    // and a legal on-identity one.
+    for (name, identity, legalities) in [
+        ("Off Identity Draw", "[\"G\"]", "{\"commander\":\"legal\"}"),
+        ("Banned Draw", "[]", "{\"commander\":\"banned\"}"),
+        ("Good Draw", "[]", "{\"commander\":\"legal\"}"),
+    ] {
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at, game_changer, edhrec_rank)
+             VALUES (?1, 'oid-'||?1, '{2}', 2.0, 'Instant', '[]', ?2, '[]', 'Draw a card.',
+                'common', ?3, 'tst', '1', 'sid-'||?1, '2020-01-01', NULL, NULL)",
+            rusqlite::params![name, identity, legalities],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO card_tags (oracle_id, tag_id) VALUES ('oid-'||?1, 't1')",
+            rusqlite::params![name],
+        )
+        .unwrap();
+    }
+    // The off-identity and banned cards are the most-owned, so without the
+    // gates they would win the "owned first" ordering.
+    conn.execute(
+        "INSERT INTO collection (name, binder, binder_type, quantity, foil)
+         VALUES ('Off Identity Draw', 'binder', 'binder', 5, 'normal')",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO collection (name, binder, binder_type, quantity, foil)
+         VALUES ('Banned Draw', 'binder', 'binder', 4, 'normal')",
+        [],
+    )
+    .unwrap();
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Dead Filler\n10 Island\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let rows = cut_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        Some(Role::Draw),
+        5,
+        Some(3),
+        None,
+        None,
+    )
+    .unwrap();
+    let candidates: Vec<String> = rows
+        .iter()
+        .filter_map(|r| r.replace_with.as_ref())
+        .flat_map(|p| p.candidates.clone())
+        .collect();
+    assert!(
+        !candidates.iter().any(|c| c.contains("Off Identity")),
+        "off-identity cards are never fill candidates"
+    );
+    assert!(
+        !candidates.iter().any(|c| c.contains("Banned")),
+        "format-illegal cards are never fill candidates"
+    );
+    assert!(
+        candidates.iter().any(|c| c == "Good Draw"),
+        "the legal on-identity card fills the role"
+    );
 }
 
 #[test]
@@ -819,4 +955,425 @@ fn over_cap_gc_pins_unranked_before_ranked() {
         ["Unranked GC"],
         "the unranked GC pins, the ranked one stays"
     );
+}
+
+#[test]
+fn make_room_for_sideboard_pairs_role_matched_cuts() {
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "Draw a card at upkeep.",
+        5.0,
+        None,
+        Some(10),
+    );
+    conn.execute(
+        "UPDATE cards SET color_identity = '[\"W\"]' WHERE name = 'Test Commander'",
+        [],
+    )
+    .unwrap();
+    // Maindeck: a dead finisher (expendable, Wincon role) and a draw
+    // source (serves the deck, Draw role).
+    insert_card(
+        &conn,
+        "Dead Finisher",
+        "Creature — Giant",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+    insert_card(
+        &conn,
+        "Live Draw",
+        "Creature — Human",
+        "Draw a card at upkeep.",
+        3.0,
+        None,
+        Some(80),
+    );
+    // Sideboard: a legal on-identity draw spell and an off-identity one.
+    for (name, identity) in [("Side Draw", "[]"), ("Off Side Draw", "[\"G\"]")] {
+        insert_card(&conn, name, "Instant", "Draw a card.", 2.0, None, None);
+        conn.execute(
+            "UPDATE cards SET color_identity = ?2 WHERE name = ?1",
+            rusqlite::params![name, identity],
+        )
+        .unwrap();
+    }
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Dead Finisher\n1 Live Draw\n10 Island\n// SIDEBOARD\n1 Side Draw\n1 Off Side Draw\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let (rows, _qualifying) = make_room_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        crate::cli::MakeRoomFor::Sideboard,
+        5,
+        None,
+        None,
+    )
+    .unwrap();
+    // The off-identity sideboard card never asks for a slot.
+    assert!(
+        rows.iter().all(|r| r.bench_card != "Off Side Draw"),
+        "off-identity sideboard cards are skipped"
+    );
+    let swap = rows
+        .iter()
+        .find(|r| r.bench_card == "Side Draw")
+        .expect("the on-identity sideboard card pairs");
+    assert_eq!(swap.cut_candidate, "Dead Finisher");
+    assert!(
+        swap.reasons
+            .iter()
+            .any(|r| r.contains("same role") || r.contains("expendable")),
+        "the pairing explains itself"
+    );
+}
+
+#[test]
+fn make_room_for_sideboard_empty_sideboard_is_empty() {
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "Draw a card at upkeep.",
+        5.0,
+        None,
+        Some(10),
+    );
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n10 Island\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let (rows, _qualifying) = make_room_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        crate::cli::MakeRoomFor::Sideboard,
+        5,
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(rows.is_empty(), "no sideboard means no swaps");
+}
+
+#[test]
+fn make_room_for_maybeboard_pairs_maybeboard_cards() {
+    // The maybeboard zone pairs like the sideboard: on-identity, legal
+    // maybeboard cards get a maindeck cut; off-identity ones are skipped.
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "Draw a card at upkeep.",
+        5.0,
+        None,
+        Some(10),
+    );
+    conn.execute(
+        "UPDATE cards SET color_identity = '[\"W\"]' WHERE name = 'Test Commander'",
+        [],
+    )
+    .unwrap();
+    insert_card(
+        &conn,
+        "Dead Filler",
+        "Creature — Giant",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+    for (name, identity) in [("Maybe Draw", "[]"), ("Off Maybe", "[\"G\"]")] {
+        insert_card(&conn, name, "Instant", "Draw a card.", 2.0, None, None);
+        conn.execute(
+            "UPDATE cards SET color_identity = ?2 WHERE name = ?1",
+            rusqlite::params![name, identity],
+        )
+        .unwrap();
+    }
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Dead Filler\n10 Island\n// MAYBEBOARD\n1 Maybe Draw\n1 Off Maybe\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let (rows, _qualifying) = make_room_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        crate::cli::MakeRoomFor::Maybeboard,
+        5,
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(
+        rows.iter().all(|r| r.bench_card != "Off Maybe"),
+        "off-identity maybeboard cards are skipped"
+    );
+    assert!(
+        rows.iter().any(|r| r.bench_card == "Maybe Draw"),
+        "the on-identity maybeboard card pairs with a cut"
+    );
+    // The sideboard zone does not read maybeboard cards.
+    let (rows, _qualifying) = make_room_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        crate::cli::MakeRoomFor::Sideboard,
+        5,
+        None,
+        None,
+    )
+    .unwrap();
+    assert!(rows.is_empty(), "zones never cross");
+}
+
+#[test]
+fn unpinned_sixty_card_deck_fills_and_swaps_respect_default_legality() {
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Modern Staple",
+        "Instant",
+        "Draw a card.",
+        1.0,
+        None,
+        Some(1),
+    );
+    conn.execute(
+        "UPDATE cards SET legalities = '{\"modern\":\"legal\",\"commander\":\"banned\"}' WHERE name = 'Modern Staple'",
+        [],
+    ).unwrap();
+    insert_card(
+        &conn,
+        "Illegal Card",
+        "Creature",
+        "Haste.",
+        1.0,
+        None,
+        Some(1),
+    );
+    conn.execute(
+        "UPDATE cards SET legalities = '{\"modern\":\"banned\",\"standard\":\"banned\",\"pioneer\":\"banned\",\"legacy\":\"banned\",\"vintage\":\"banned\",\"pauper\":\"banned\"}' WHERE name = 'Illegal Card'",
+        [],
+    ).unwrap();
+
+    conn.execute(
+        "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'card-draw', 'card draw', 1)",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO card_tags (oracle_id, tag_id) VALUES ('oid-Modern Staple', 't1')",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO card_tags (oracle_id, tag_id) VALUES ('oid-Illegal Card', 't1')",
+        [],
+    )
+    .unwrap();
+
+    insert_island(&conn, 1);
+    let deck_text = "// DECK\n1 Dead Filler\n10 Island";
+    insert_card(
+        &conn,
+        "Dead Filler",
+        "Creature",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+
+    let rows = super::cut_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        Some(super::Role::Draw),
+        5,
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+
+    let candidates: Vec<String> = rows
+        .iter()
+        .filter_map(|r| r.replace_with.as_ref())
+        .flat_map(|p| p.candidates.clone())
+        .collect();
+
+    assert!(
+        candidates.contains(&"Modern Staple".to_string()),
+        "modern staple should be a fill candidate"
+    );
+    assert!(
+        !candidates.contains(&"Illegal Card".to_string()),
+        "illegal card should be dropped"
+    );
+
+    let deck_with_bench =
+        "// DECK\n1 Dead Filler\n10 Island\n// MAYBEBOARD\n1 Modern Staple\n1 Illegal Card";
+    let deck_b = super::super::Deck::parse(deck_with_bench).unwrap();
+    let cards_b = super::super::stats::lookup_names(&conn, &deck_b).unwrap();
+
+    let (room_rows, qualifying) = super::make_room_rows(
+        &conn,
+        &deck_b,
+        &cards_b,
+        crate::cli::MakeRoomFor::Maybeboard,
+        5,
+        None,
+        None,
+    )
+    .unwrap();
+
+    assert_eq!(qualifying, 1, "only the legal card qualifies");
+    assert!(
+        room_rows.iter().any(|r| r.bench_card == "Modern Staple"),
+        "Modern Staple should pair"
+    );
+    assert!(
+        !room_rows.iter().any(|r| r.bench_card == "Illegal Card"),
+        "Illegal Card should be skipped"
+    );
+}
+
+#[test]
+fn for_fills_survive_max_price_below_three_candidates() {
+    // Three tagged fill candidates, two priced over the cap: the fill
+    // list cuts to the survivors (fewer than 3) instead of erroring or
+    // listing over-cap names.
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "",
+        5.0,
+        None,
+        Some(10),
+    );
+    insert_card(
+        &conn,
+        "Filler",
+        "Creature — Giant",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+    insert_island(&conn, 1);
+    conn.execute(
+        "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'card-draw', 'card draw', 1)",
+        [],
+    )
+    .unwrap();
+    for (name, usd) in [
+        ("Fill A", Some(1.0_f64)),
+        ("Fill B", Some(50.0)),
+        ("Fill C", None),
+    ] {
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at, game_changer, edhrec_rank)
+             VALUES (?1, 'oid-'||?1, '{2}', 2.0, 'Instant', '[]', '[]', '[]',
+                'Draw a card.', 'common', '{\"commander\":\"legal\"}',
+                'tst', '1', 'sid-'||?1, '2020-01-01', NULL, NULL)",
+            rusqlite::params![name],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO card_tags (oracle_id, tag_id) VALUES ('oid-'||?1, 't1')",
+            rusqlite::params![name],
+        )
+        .unwrap();
+        if let Some(usd) = usd {
+            conn.execute(
+                "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
+                    lang, rarity, finishes, released_at, usd, usd_foil, updated_at)
+                 VALUES ('sid-'||?1, ?1, 'm11', '148', 'en', 'common', '[\"nonfoil\"]',
+                    '2020-01-01', ?2, NULL, 't')",
+                rusqlite::params![name, usd],
+            )
+            .unwrap();
+        }
+    }
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Filler\n10 Island\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let rows = cut_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        Some(Role::Draw),
+        5,
+        None,
+        None,
+        Some(5.0),
+    )
+    .unwrap();
+    for row in &rows {
+        let pair = row.replace_with.as_ref().expect("fill pairing present");
+        // Only the under-cap priced candidate survives the $5 cap;
+        // unpriced and over-cap names are dropped.
+        assert_eq!(pair.candidates, vec!["Fill A".to_string()]);
+    }
+}
+
+#[test]
+fn for_fills_empty_tags_still_pair_rows_with_empty_candidates() {
+    // No tags for the role at all: cut rows still carry the pairing (the
+    // candidates list is empty), and no error surfaces.
+    let (_tmp, conn) = seeded_conn();
+    insert_card(
+        &conn,
+        "Test Commander",
+        "Legendary Creature — Human",
+        "",
+        5.0,
+        None,
+        Some(10),
+    );
+    insert_card(
+        &conn,
+        "Filler",
+        "Creature — Giant",
+        "Haste.",
+        8.0,
+        None,
+        Some(500),
+    );
+    insert_island(&conn, 1);
+    let deck_text = "// COMMANDER\n1 Test Commander\n// DECK\n1 Filler\n10 Island\n";
+    let deck = super::super::Deck::parse(deck_text).unwrap();
+    let cards_by_name = super::super::stats::lookup_names(&conn, &deck).unwrap();
+    let rows = cut_rows(
+        &conn,
+        &deck,
+        &cards_by_name,
+        Some(Role::Draw),
+        5,
+        None,
+        None,
+        None,
+    )
+    .unwrap();
+    for row in &rows {
+        let pair = row.replace_with.as_ref().expect("fill pairing present");
+        assert!(pair.candidates.is_empty(), "no tags, no candidates");
+    }
 }

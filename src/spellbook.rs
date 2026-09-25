@@ -149,11 +149,10 @@ pub fn ensure_fresh_variants(
         && let Ok(meta) = std::fs::metadata(dest)
         && let Ok(modified) = meta.modified()
         && let Ok(age) = modified.elapsed()
-        && age <= crate::sync::STALE_AFTER.to_std()?
+        && age <= crate::scryfall::stale_after_std()
     {
         return Ok(false);
     }
-    out.status("Downloading", "combo variants (Commander Spellbook)");
     crate::scryfall::download_to(VARIANTS_URL, dest, None, out)?;
     Ok(true)
 }
@@ -195,10 +194,14 @@ pub fn stream_raw_variants<F: FnMut(&str)>(
 
     // Walk the array with a brace counter that tracks string state, so
     // braces inside strings never mislead. Objects are emitted raw.
+    //
+    // Scanning is byte-wise: UTF-8 continuation bytes (>= 0x80) never
+    // collide with the ASCII delimiters, so multi-byte card names survive
+    // verbatim. Each closed object is decoded as UTF-8 before `visit`.
     let mut depth = 0i32;
     let mut in_string = false;
     let mut escaped = false;
-    let mut object = String::new();
+    let mut object: Vec<u8> = Vec::new();
     let mut bytes = window;
     let mut chunk = [0u8; 64 * 1024];
     loop {
@@ -211,34 +214,37 @@ pub fn stream_raw_variants<F: FnMut(&str)>(
         }
         let drained = std::mem::take(&mut bytes);
         for &b in &drained {
-            let c = b as char;
             if in_string {
                 if escaped {
                     escaped = false;
-                } else if c == '\\' {
+                } else if b == b'\\' {
                     escaped = true;
-                } else if c == '"' {
+                } else if b == b'"' {
                     in_string = false;
                 }
             } else {
-                match c {
-                    '"' => in_string = true,
-                    '{' => depth += 1,
-                    '}' => {
+                match b {
+                    b'"' => in_string = true,
+                    b'{' => depth += 1,
+                    b'}' => {
                         depth -= 1;
                         if depth == 0 {
-                            object.push(c);
-                            visit(&object);
+                            object.push(b);
+                            // A non-UTF-8 object is malformed input; skip it
+                            // like any bad row instead of aborting the pass.
+                            if let Ok(text) = std::str::from_utf8(&object) {
+                                visit(text);
+                            }
                             object.clear();
                             continue;
                         }
                     }
-                    ']' if depth == 0 => return Ok(()),
+                    b']' if depth == 0 => return Ok(()),
                     _ => {}
                 }
             }
             if depth > 0 {
-                object.push(c);
+                object.push(b);
             }
         }
     }
@@ -315,7 +321,10 @@ pub fn ingest(
         }
     }
     tx.commit().context("commit combo ingest")?;
-    out.status("Ingested", &format!("{n} combo variants"));
+    out.status(
+        "Loaded",
+        &format!("{} spell combos", crate::output::grouped_int(n as i64)),
+    );
     Ok(n)
 }
 
@@ -388,6 +397,33 @@ mod tests {
         assert_eq!(v.bracket_tag.as_deref(), Some("R"));
         assert!(v.legalities["commander"]);
         assert!(!v.legalities["modern"]);
+    }
+
+    #[test]
+    fn stream_raw_variants_keeps_utf8_card_names() {
+        // "Jötun Grunt" is multi-byte UTF-8; the byte-wise scanner must pass
+        // it through undamaged so piece names join against `cards`.
+        let body = r#"{"timestamp":"t","variants":[
+        {"id":"u-1","uses":[{"card":{"name":"Jötun Grunt"},"zoneLocations":["B"]}],
+        "produces":[{"feature":{"name":"Gain life"}}],"spoiler":false,"legalities":{}},
+        {"id":"u-2","uses":[{"card":{"name":"Æthersnipe"}}],"produces":[],"spoiler":false}
+        ]}"#;
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_bulk(&dir, body);
+        let mut seen = Vec::new();
+        stream_raw_variants(&path, |raw| seen.push(raw.to_string())).unwrap();
+        assert_eq!(seen.len(), 2);
+        assert!(seen[0].contains("Jötun Grunt"), "mangled: {}", seen[0]);
+        assert!(seen[1].contains("Æthersnipe"), "mangled: {}", seen[1]);
+        let parsed = parse_all(&path).unwrap();
+        let names: Vec<String> = parsed
+            .iter()
+            .flat_map(|v| v.pieces.iter().map(|p| p.name.clone()))
+            .collect();
+        assert_eq!(
+            names,
+            vec!["Jötun Grunt".to_string(), "Æthersnipe".to_string()]
+        );
     }
 
     #[test]

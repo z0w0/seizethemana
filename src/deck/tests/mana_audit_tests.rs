@@ -361,3 +361,43 @@ fn cantrip_credit_caps_at_exactly_ten_effects() {
         "10 effects at 0.25 cap at 2.5 exactly"
     );
 }
+
+// mana() wrapper
+
+#[test]
+fn mana_wrapper_json_exits_ok_and_needs_setup() {
+    // JSON mode prints a payload and exits OK; a missing deck errors with
+    // a deck-not-found path rather than a panic.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let result = super::super::mana::mana(&paths, &conn, &mut out, "Nope", None, true);
+    assert!(result.is_err(), "unknown deck must error, not panic");
+}
+
+#[test]
+fn mana_wrapper_renders_json_payload_for_real_deck() {
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    conn.execute(
+        "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+            color_identity, keywords, oracle_text, rarity, legalities,
+            set_code, collector_number, scryfall_id, released_at)
+         VALUES ('Forest', 'oid-F', '', 0, 'Basic Land — Forest', '[]', '[]', '[]',
+            '({T}: Add {G}.)', 'common', '{}', 'tst', '1', 'sid-F', '2020-01-01')",
+        [],
+    )
+    .unwrap();
+    crate::deck::create(
+        &paths,
+        &mut crate::output::Output::new(true, false, false),
+        "D",
+    )
+    .unwrap();
+    std::fs::write(paths.deck_file("D"), "// DECK\n10 Forest\n").unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = super::super::mana::mana(&paths, &conn, &mut out, "D", None, true).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+}

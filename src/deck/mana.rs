@@ -25,7 +25,7 @@ fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput
     let cards_by_name = super::stats::lookup_names(conn, deck)?;
     let mut rows: Vec<(crate::db::CardRow, f64)> = Vec::new();
     for (section, entries) in &deck.sections {
-        let in_audit = !section.eq_ignore_ascii_case("SIDEBOARD");
+        let in_audit = !super::grammar::is_bench_section(section);
         for entry in entries {
             if !in_audit {
                 break;

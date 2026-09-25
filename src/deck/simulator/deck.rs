@@ -4,6 +4,7 @@
 use super::model::{Ability, Effect, Format, Role, SimCard, SimDeck, Tier, Trigger};
 use super::parse::parse_sim_card;
 use crate::db::CardRow;
+use crate::deck::grammar::is_bench_section;
 use std::collections::HashMap;
 
 /// Convert one deck entry into a simulated card. `is_commander` marks the
@@ -92,11 +93,11 @@ pub fn build_sim_deck(
         commanders.push(sim);
     }
     let mut library = Vec::new();
-    // Library = every section except COMMANDER and SIDEBOARD. Checking the
-    // section source directly avoids dropping a DECK copy whose name also
-    // appears in the sideboard wishlist.
+    // Library = every section except COMMANDER and the bench
+    // (SIDEBOARD/MAYBEBOARD). Checking the section source directly avoids
+    // dropping a DECK copy whose name also appears in a bench section.
     for (section, entries) in &deck.sections {
-        if section.eq_ignore_ascii_case("COMMANDER") || section.eq_ignore_ascii_case("SIDEBOARD") {
+        if section.eq_ignore_ascii_case("COMMANDER") || is_bench_section(section) {
             continue;
         }
         for entry in entries {

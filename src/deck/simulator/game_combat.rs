@@ -32,27 +32,25 @@ pub(super) fn combat_phase(
     turns: usize,
     land_drops: &[u8],
 ) -> CombatOutcome {
-    let drain_mult = if deck.format == super::model::Format::Commander {
-        3
-    } else {
-        1
-    };
+    let drain_mult = deck.format.drain_mult();
     let static_buff_power: i32 = st
         .battlefield
         .iter()
         .filter(|p| p.card < usize::MAX - 1)
         .map(|p| card_of(deck, p).buff.map(|(p_, _)| p_.max(0)).unwrap_or(0))
         .sum();
-    // Equipped gear buffs its own host only: (host position, buff power).
-    let equip_buffs: Vec<(usize, i32)> = st
+    // Equipped gear buffs its own host only: (host uid, buff power).
+    // Hosts are matched by uid so board shifts between turns cannot
+    // move the buff to a different permanent.
+    let equip_buffs: Vec<(u32, i32)> = st
         .battlefield
         .iter()
-        .enumerate()
-        .filter(|(_, p)| p.equipped && p.card < usize::MAX - 1)
-        .filter_map(|(_, p)| {
+        .filter(|p| p.equipped && p.card < usize::MAX - 1)
+        .filter_map(|p| {
             let host = p.equip_host?;
-            card_of(deck, p).equipment.map(|e| (host, e.buff.0.max(0)))
+            Some((host, card_of(deck, p).equipment?))
         })
+        .map(|(host, e)| (host, e.buff.0.max(0)))
         .collect();
     let mut token_bodies = 0u32;
     let mut power_total: u32 = 0;
@@ -74,14 +72,29 @@ pub(super) fn combat_phase(
     } else {
         0
     };
-    for (pi, perm) in st.battlefield.clone().iter().enumerate() {
-        let attacks = perm.animated
-            || perm.crewed
-            || (card_of(deck, perm).is_creature && !perm.tapped && !perm.sick);
+    // Snapshot the board: OnAttack/OnCombatDamage triggers push tokens
+    // and would shift indices mid-loop. Only the light per-permanent
+    // fields the loop reads are copied.
+    let snapshot: Vec<(usize, bool, bool, bool)> = st
+        .battlefield
+        .iter()
+        .enumerate()
+        .map(|(pi, perm)| {
+            (
+                pi,
+                perm.animated,
+                perm.crewed,
+                card_of(deck, perm).is_creature && !perm.tapped && !perm.sick,
+            )
+        })
+        .collect();
+    for (pi, animated, crewed, untapped_creature) in snapshot {
+        let attacks = animated || crewed || untapped_creature;
         if !attacks {
             continue;
         }
-        let card = card_of(deck, perm);
+        let perm = st.battlefield[pi].clone();
+        let card = card_of(deck, &perm);
         attackers += 1;
         if card.evasion {
             evasive += 1;
@@ -100,7 +113,7 @@ pub(super) fn combat_phase(
         // joins this attacker when THIS permanent paid the equip cost.
         power += equip_buffs
             .iter()
-            .filter(|(host, _)| *host == pi)
+            .filter(|(host, _)| perm.uid != 0 && *host == perm.uid)
             .map(|(_, buff)| *buff)
             .sum::<i32>();
         if card.landfall {

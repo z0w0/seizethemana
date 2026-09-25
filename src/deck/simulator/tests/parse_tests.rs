@@ -260,6 +260,37 @@ fn cantrip_draws_on_cast() {
 }
 
 #[test]
+fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
+    // A true split card ("Fire // Ice"): the cast pays the cheaper face,
+    // so the on-cast draw of the uncast face must not fire.
+    let split = parse_sim_card(&card(
+        "Wax // Wane",
+        "{1}{G} // {1}{W}",
+        "Instant // Instant",
+        "Wax: Create a 3/3 Centaur creature token.\n//\nWane: Destroy target artifact.",
+    ));
+    assert_eq!(split.draws_on_cast, 0);
+    // An Adventure carries "//" in its oracle text but is one card cast
+    // as one sequence: its on-cast rider (here, the adventure face's draw)
+    // stays live.
+    let adventure = parse_sim_card(&card(
+        "Giant Killer",
+        "{1}{W}",
+        "Creature — Human Peasant // Adventure",
+        "Draw a card.\n//\nChop Down — Destroy target artifact.",
+    ));
+    assert_eq!(adventure.draws_on_cast, 1);
+    // A land/spell MDFC cast face also keeps its on-cast effects.
+    let mdfc = parse_sim_card(&card(
+        "Emeria's Call",
+        "{4}{W}{W}{W}",
+        "Land // Sorcery",
+        "Draw two cards.\n//\n(Play this face as a land.)",
+    ));
+    assert_eq!(mdfc.draws_on_cast, 2);
+}
+
+#[test]
 fn mill_shapes_parse() {
     let etb = parse_sim_card(&card(
         "Mill Fiend",

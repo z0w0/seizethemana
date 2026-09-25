@@ -134,7 +134,7 @@ fn archidekt_card(card: &serde_json::Value) -> Option<(String, FetchedEntry)> {
             for (needle, section) in [
                 ("commander", "COMMANDER"),
                 ("sideboard", "SIDEBOARD"),
-                ("maybeboard", "SIDEBOARD"),
+                ("maybeboard", "MAYBEBOARD"),
             ] {
                 if names.iter().any(|n| n.eq_ignore_ascii_case(needle)) {
                     return section.to_string();

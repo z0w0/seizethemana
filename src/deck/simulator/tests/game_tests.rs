@@ -230,6 +230,47 @@ fn five_color_commander_needs_all_pips() {
     );
 }
 
+#[test]
+fn commander_cast_ignores_restricted_bucket_mana() {
+    // A creature-only mana source's bucket never pays a commander cast:
+    // `pay_cost` cannot spend it, so the readiness check must not count
+    // it either. A {5} commander with only a creature-only rock on the
+    // board must stay uncast (the board lands alone never reach 5).
+    let mut cards = Vec::new();
+    // Every source is creature-restricted: the general pool never holds
+    // mana the commander could pay with.
+    for _ in 0..40 {
+        cards.push(parse_sim_card(&card(
+            "Creature Gate",
+            "",
+            "Land",
+            "{T}: Add {W}. Spend this mana only to cast creature spells.",
+        )));
+    }
+    let deck = SimDeck {
+        cards,
+        commanders: vec![super::model::SimCard {
+            name: "Generic Boss".into(),
+            cost: super::model::Cost {
+                generic: 5,
+                ..super::model::Cost::default()
+            },
+            role: Role::Wincon,
+            ..super::model::SimCard::default()
+        }],
+        format: Format::Commander,
+        rules: super::format::rules_for("commander"),
+    };
+    let mut rng = ChaCha8Rng::seed_from_u64(7);
+    let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 8)).collect();
+    let stats = aggregate(&logs, &deck, 8);
+    assert!(
+        stats.commander_castable_by[7] < 0.05,
+        "5-generic commander cast with restricted-bucket mana: {:.3} by t7",
+        stats.commander_castable_by[7]
+    );
+}
+
 // Station end-to-end: crew -> station -> attack-draw chain
 
 #[test]

@@ -113,6 +113,18 @@ pub fn get_card(conn: &Connection, name: &str) -> anyhow::Result<Option<CardRow>
     }
 }
 
+/// True when an oracle card with this exact name is stored.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn card_exists(conn: &Connection, name: &str) -> anyhow::Result<bool> {
+    let found: i64 = conn
+        .prepare("SELECT COUNT(*) FROM cards WHERE name = ?1 COLLATE NOCASE")?
+        .query_row([name], |row| row.get(0))
+        .context("checking card name")?;
+    Ok(found > 0)
+}
+
 /// Result of resolving a user-typed card name.
 #[derive(Debug)]
 pub enum NameMatch {
@@ -151,6 +163,12 @@ pub fn resolve_name(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch>
             None => Ok(NameMatch::NotFound),
         };
     }
+    prefix_match(conn, typed)
+}
+
+/// Resolve a typed name as a unique prefix across oracle names and
+/// flavor-name aliases, or as a whole-string alias.
+fn prefix_match(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch> {
     // Unique prefix. Escape LIKE wildcards in the user text.
     let pattern = format!(
         "{}%",
@@ -177,51 +195,97 @@ pub fn resolve_name(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch>
     let mut rows = stmt.query_map([&pattern], |row| row.get::<_, String>(0))?;
     let first = rows.next().transpose().context("reading name")?;
     match first {
-        Some(_) => {
-            let mut candidates = conn
-                .prepare(
-                    "SELECT name FROM cards WHERE name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
-                     ORDER BY name LIMIT 6",
-                )?
-                .query_map([&pattern], |row| row.get::<_, String>(0))?
-                .collect::<Result<Vec<_>, _>>()
-                .context("reading names")?;
-            // Flavor-name aliases join the same prefix space; each alias
-            // maps back to the oracle card of the print carrying them, so a
-            // unique alias prefix resolves.
-            candidates.extend(
-                conn.prepare(
-                    "SELECT DISTINCT name FROM card_prints
-                     WHERE flavor_name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
-                     ORDER BY name LIMIT 6",
-                )?
-                .query_map([&pattern], |row| row.get::<_, String>(0))?
-                .collect::<Result<Vec<_>, _>>()
-                .context("reading aliases")?,
-            );
-            if candidates.len() == 1 && total == 1 {
-                return resolve_candidate(conn, &candidates[0]);
-            }
-            candidates.sort_unstable();
-            candidates.dedup();
-            let total = total.max(candidates.len() as i64) as usize;
-            Ok(NameMatch::Ambiguous { candidates, total })
+        Some(_) => prefix_candidates(conn, &pattern, total),
+        None => alias_match(conn, typed),
+    }
+}
+
+/// Resolve a name-prefix match: unique candidates resolve, otherwise the
+/// ambiguity report carries samples and the real total.
+fn prefix_candidates(conn: &Connection, pattern: &str, total: i64) -> anyhow::Result<NameMatch> {
+    let mut candidates = conn
+        .prepare(
+            "SELECT name FROM cards WHERE name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
+             ORDER BY name LIMIT 6",
+        )?
+        .query_map([pattern], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()
+        .context("reading names")?;
+    // Flavor-name aliases join the same prefix space; each alias
+    // maps back to the oracle card of the print carrying them, so a
+    // unique alias prefix resolves.
+    candidates.extend(
+        conn.prepare(
+            "SELECT DISTINCT name FROM card_prints
+             WHERE flavor_name LIKE ?1 ESCAPE '\\' COLLATE NOCASE
+             ORDER BY name LIMIT 6",
+        )?
+        .query_map([pattern], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()
+        .context("reading aliases")?,
+    );
+    // Resolve when one oracle card backs the whole prefix space:
+    // dedup first, because a card's own name and one of its
+    // flavor-name aliases can both prefix-match — that is still
+    // a single match, not an ambiguity.
+    candidates.sort_unstable();
+    candidates.dedup();
+    if candidates.len() == 1 {
+        return resolve_candidate(conn, &candidates[0]);
+    }
+    let total = total.max(candidates.len() as i64) as usize;
+    Ok(NameMatch::Ambiguous { candidates, total })
+}
+
+/// Whole-string alias match: the flavor name of some print ("Godzilla,
+/// King of the Monsters" → Zilortha), exact first, then unique prefix.
+fn alias_match(conn: &Connection, typed: &str) -> anyhow::Result<NameMatch> {
+    let alias_names = |sql: &str| -> anyhow::Result<Vec<String>> {
+        conn.prepare(sql)?
+            .query_map([typed], |row| row.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()
+            .context("reading alias")
+    };
+    let exact = alias_names(
+        "SELECT DISTINCT name FROM card_prints
+         WHERE flavor_name = ?1 COLLATE NOCASE ORDER BY name LIMIT 1",
+    )?;
+    if let Some(name) = exact.into_iter().next() {
+        return resolve_candidate(conn, &name);
+    }
+    // Unique alias prefix ("Godzilla, King" → the one flavor name
+    // starting with it) resolves like a unique name prefix. Two or
+    // more oracle cards behind the prefix space is ambiguity, not a
+    // pick.
+    let pattern = format!(
+        "{}%",
+        typed
+            .replace('\\', "\\\\")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
+    );
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT name FROM card_prints
+         WHERE flavor_name LIKE ?1 ESCAPE '\\' COLLATE NOCASE ORDER BY name",
+    )?;
+    let mut rows = stmt.query_map([&pattern], |row| row.get::<_, String>(0))?;
+    let mut matches: Vec<String> = Vec::new();
+    for row in rows.by_ref() {
+        matches.push(row.context("reading alias prefix")?);
+        if matches.len() > 1 {
+            break;
         }
-        None => {
-            // Whole-string alias: the flavor name of some print ("Godzilla,
-            // King of the Monsters" → Zilortha). ORDER BY name makes the
-            // pick deterministic when prints of one flavor name map to
-            // different oracle cards; the alphabetically first name wins.
-            let mut stmt = conn.prepare(
-                "SELECT DISTINCT name FROM card_prints
-                 WHERE flavor_name = ?1 COLLATE NOCASE ORDER BY name LIMIT 1",
-            )?;
-            let mut rows = stmt.query_map([typed], |row| row.get::<_, String>(0))?;
-            match rows.next().transpose().context("reading alias")? {
-                Some(name) => resolve_candidate(conn, &name),
-                None => Ok(NameMatch::NotFound),
-            }
-        }
+    }
+    if matches.len() > 1 {
+        let total = matches.len() + rows.filter_map(Result::ok).count();
+        return Ok(NameMatch::Ambiguous {
+            candidates: matches,
+            total,
+        });
+    }
+    match matches.into_iter().next() {
+        Some(name) => resolve_candidate(conn, &name),
+        None => Ok(NameMatch::NotFound),
     }
 }
 
@@ -233,6 +297,7 @@ fn resolve_candidate(conn: &Connection, name: &str) -> anyhow::Result<NameMatch>
     }
 }
 
+/// SQL column list for one `cards` row; `map_card` reads in this order.
 fn card_select() -> &'static str {
     "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity, keywords,
             power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
@@ -241,6 +306,7 @@ fn card_select() -> &'static str {
      FROM cards WHERE name = ?1"
 }
 
+/// Map one `cards` row in `card_select` column order.
 fn map_card(row: &rusqlite::Row<'_>) -> rusqlite::Result<CardRow> {
     Ok(CardRow {
         name: row.get(0)?,
@@ -313,13 +379,27 @@ fn stat_number(stat: &Option<String>) -> Option<f64> {
     stat.as_deref().and_then(|s| s.trim().parse().ok())
 }
 
+/// Combine extracted query terms with OR or AND.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FtsTermOperator {
+    /// Return cards matching any extracted query term.
+    Any,
+    /// Return cards matching every extracted query term.
+    All,
+}
+
 /// Build an FTS5 MATCH expression from free text: one quoted term per
-/// whitespace-separated token, OR-joined, so any term matching ranks a card.
+/// whitespace-separated token, OR-joined by default.
 ///
 /// Doubled `"` inside a term escapes it per FTS5 string rules. Returns `None`
 /// when nothing usable remains (empty text or punctuation-only terms), which
 /// callers treat as "skip the full-text leg".
 pub fn fts_query(text: &str) -> Option<String> {
+    fts_query_with_operator(text, FtsTermOperator::Any)
+}
+
+/// Build an FTS5 MATCH expression with explicit any-term or all-term matching.
+pub fn fts_query_with_operator(text: &str, operator: FtsTermOperator) -> Option<String> {
     let terms: Vec<String> = text
         .split_whitespace()
         .filter(|t| t.chars().any(char::is_alphanumeric))
@@ -328,7 +408,11 @@ pub fn fts_query(text: &str) -> Option<String> {
     if terms.is_empty() {
         None
     } else {
-        Some(terms.join(" OR "))
+        let separator = match operator {
+            FtsTermOperator::Any => " OR ",
+            FtsTermOperator::All => " AND ",
+        };
+        Some(terms.join(separator))
     }
 }
 
@@ -363,6 +447,29 @@ pub fn fts_search(
     match_expr: &str,
     limit: usize,
 ) -> anyhow::Result<Vec<(i64, f64)>> {
+    fts_search_with_weights(conn, match_expr, limit, FTS_COLUMN_WEIGHTS)
+}
+
+/// BM25-ranked FTS hits using explicit weights for each indexed column.
+///
+/// The weight order is name, tags, type line, and oracle text. Search
+/// evaluation uses this function to compare ranking settings without changing
+/// the defaults used by [`fts_search`].
+///
+/// # Errors
+/// Rejects non-finite or negative weights and propagates SQLite failures.
+pub fn fts_search_with_weights(
+    conn: &Connection,
+    match_expr: &str,
+    limit: usize,
+    weights: [f64; 4],
+) -> anyhow::Result<Vec<(i64, f64)>> {
+    anyhow::ensure!(
+        weights
+            .iter()
+            .all(|weight| weight.is_finite() && *weight >= 0.0),
+        "FTS weights must be finite and non-negative"
+    );
     // BM25 ties break toward lower EDHREC rank (more popular first), then
     // row order for determinism.
     let mut stmt = conn.prepare(&format!(
@@ -372,7 +479,7 @@ pub fn fts_search(
          ORDER BY bm25(cards_fts, {}, {}, {}, {}),
              cards.edhrec_rank IS NULL, cards.edhrec_rank, cards.id
          LIMIT ?2",
-        FTS_COLUMN_WEIGHTS[0], FTS_COLUMN_WEIGHTS[1], FTS_COLUMN_WEIGHTS[2], FTS_COLUMN_WEIGHTS[3],
+        weights[0], weights[1], weights[2], weights[3],
     ))?;
     let rows = stmt
         .query_map(rusqlite::params![match_expr, limit as i64], |row| {
@@ -641,6 +748,85 @@ mod tests {
     }
 
     #[test]
+    fn resolve_name_resolves_flavor_name_aliases() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let conn = open(&tmp.path().join("t.db")).expect("open");
+        sample_card(&conn, "Zilortha, Light of Ikoria");
+        // An alias (whole string and unique prefix) resolves to the
+        // oracle card of the print carrying it.
+        let alias = |scryfall_id: &str, flavor: &str| {
+            conn.execute(
+                "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
+                    lang, rarity, finishes, released_at, flavor_name, updated_at)
+                 VALUES (?1, 'Zilortha, Light of Ikoria', 'iko', '1', 'en',
+                    'rare', '[\"nonfoil\"]', '2020-01-01', ?2, 'now')",
+                rusqlite::params![scryfall_id, flavor],
+            )
+            .expect("insert print");
+        };
+        alias("godzilla", "Godzilla, King of the Monsters");
+        match resolve_name(&conn, "Godzilla, King of the Monsters").expect("resolve alias") {
+            NameMatch::Found(c) => assert_eq!(c.name, "Zilortha, Light of Ikoria"),
+            other => panic!("expected whole-string alias hit, got {other:?}"),
+        }
+        match resolve_name(&conn, "Godzilla, King").expect("resolve alias prefix") {
+            NameMatch::Found(c) => assert_eq!(c.name, "Zilortha, Light of Ikoria"),
+            other => panic!("expected unique alias prefix, got {other:?}"),
+        }
+        // A card whose own name and its alias both prefix-match still
+        // resolves (the dedup collapses the two paths to one card).
+        match resolve_name(&conn, "Zilortha").expect("resolve shared prefix") {
+            NameMatch::Found(c) => assert_eq!(c.name, "Zilortha, Light of Ikoria"),
+            other => panic!("expected deduped single match, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn resolve_name_flags_ambiguous_alias_prefix() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let conn = open(&tmp.path().join("t.db")).expect("open");
+        sample_card(&conn, "Zilortha, Light of Ikoria");
+        sample_card(&conn, "Zilortha, Apex of Ikoria");
+        // Two oracle cards behind one alias prefix ("Godzilla,") must
+        // report ambiguity, not resolve to the alphabetically first.
+        let alias = |scryfall_id: &str, card: &str, flavor: &str| {
+            conn.execute(
+                "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
+                    lang, rarity, finishes, released_at, flavor_name, updated_at)
+                 VALUES (?1, ?2, 'iko', '1', 'en',
+                    'rare', '[\"nonfoil\"]', '2020-01-01', ?3, 'now')",
+                rusqlite::params![scryfall_id, card, flavor],
+            )
+            .expect("insert print");
+        };
+        alias(
+            "g1",
+            "Zilortha, Light of Ikoria",
+            "Godzilla, King of the Monsters",
+        );
+        alias(
+            "g2",
+            "Zilortha, Apex of Ikoria",
+            "Godzilla, Primeval Champion",
+        );
+        match resolve_name(&conn, "Godzilla, ").expect("resolve shared alias prefix") {
+            NameMatch::Ambiguous { candidates, total } => {
+                assert_eq!(total, 2);
+                assert_eq!(
+                    candidates,
+                    vec!["Zilortha, Apex of Ikoria", "Zilortha, Light of Ikoria"]
+                );
+            }
+            other => panic!("expected ambiguity, got {other:?}"),
+        }
+        // The whole-string match still resolves to its own card.
+        match resolve_name(&conn, "Godzilla, Primeval Champion").expect("resolve exact alias") {
+            NameMatch::Found(c) => assert_eq!(c.name, "Zilortha, Apex of Ikoria"),
+            other => panic!("expected exact alias hit, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn collection_key_spans_binder_and_foil_kind() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let conn = open(&tmp.path().join("t.db")).expect("open");
@@ -676,6 +862,10 @@ mod tests {
         assert_eq!(
             fts_query("a  b\tc"),
             Some("\"a\" OR \"b\" OR \"c\"".to_string())
+        );
+        assert_eq!(
+            fts_query_with_operator("lightning bolt", FtsTermOperator::All),
+            Some("\"lightning\" AND \"bolt\"".to_string())
         );
         assert_eq!(
             fts_query("\"quoted\" name"),

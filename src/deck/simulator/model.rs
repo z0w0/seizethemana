@@ -170,8 +170,17 @@ pub enum Effect {
     Tokens(u32),
     /// Put N charge counters on this permanent (counter injection).
     Counters(u32),
-    /// Extra land drop this turn (explore-style effects).
+    /// Extra land drop this turn (explore-style effects, land-search
+    /// ETBs, saga ramp chapters). Puts one card in the hand; never
+    /// re-fires and never sets the blink flag.
     ExtraLand,
+    /// A blink-shaped ETB ("exile … return it to the battlefield").
+    /// The permanent re-fires its own OnEnter triggers once, next turn
+    /// (the re-arm lives in the ETB firing path, not in this effect).
+    Blink,
+    /// "You become the Monarch": from the turn after acquisition the
+    /// Monarch draws one extra card at upkeep (engine, not one apply).
+    Monarch,
     /// Put the top N cards of the library into the graveyard. Milled
     /// cards count as cards seen (velocity) and fill the graveyard log.
     Mill(u32),
@@ -201,6 +210,9 @@ pub enum Effect {
     ExtraTurn,
     /// Upkeep threshold engine: when the host holds `counters` charge
     /// counters it wins (Darksteel Reactor, Helix Pinnacle class).
+    /// An unparseable counter amount parses to `u32::MAX`, so the
+    /// engine can never reach it: the engine fires only when the
+    /// amount was readable in the oracle text.
     WinThreshold {
         /// Counters needed to win.
         counters: u32,
@@ -278,6 +290,9 @@ pub struct SimCard {
     pub crew: Option<u32>,
     /// Creature-ness for body counting and dork timing.
     pub is_creature: bool,
+    /// True when the type line carries Legendary. Gates the
+    /// legendary-only spend restriction (Plaza of Heroes).
+    pub is_legendary: bool,
     /// Artifact-ness for improvise/affinity discount math.
     pub is_artifact: bool,
     /// True when the card is a Spacecraft or Planet (stationable type).
@@ -390,9 +405,9 @@ pub struct SimCard {
     /// Extra land drop each turn ("you may play an additional land").
     /// Feeds `land_drops[]` as one extra drop per turn while in play.
     pub extra_land_drops: bool,
-    /// Optional kicker cost (generic part); paid from spare mana when
+    /// Optional kicker cost (pips and generic); paid from spare mana when
     /// affordable. The kicker rider bumps drain/damage amounts.
-    pub kicker: Option<u32>,
+    pub kicker: Option<Cost>,
     /// True when the card destroys or sweeps every permanent of a class
     /// ("destroy all creatures"): a board wipe. Wipes count as
     /// interaction capacity but never fire in a goldfish.
@@ -487,6 +502,7 @@ impl SimCard {
 
     /// Chapter count of a saga (the tier-0 Activated abilities). Sagas
     /// without parsed chapters read as three chapters (the common shape).
+    /// Non-chapter triggers sharing tier 0 stay out of the count.
     pub fn chapter_count(&self) -> usize {
         if !self.is_saga {
             return 0;
@@ -494,7 +510,12 @@ impl SimCard {
         let parsed = self
             .station_tiers
             .first()
-            .map(|t| t.abilities.len())
+            .map(|t| {
+                t.abilities
+                    .iter()
+                    .filter(|a| a.trigger == Trigger::Activated)
+                    .count()
+            })
             .unwrap_or(0);
         parsed.max(3)
     }
@@ -519,6 +540,25 @@ pub enum Format {
     Constructed,
 }
 
+impl Format {
+    /// Opponents a player-targeted drain resolves against: three in the
+    /// commander family ("each opponent"), one in constructed.
+    pub fn drain_mult(self) -> u32 {
+        match self {
+            Self::Commander => 3,
+            Self::Constructed => 1,
+        }
+    }
+
+    /// Starting life total the goldfish races to zero.
+    pub fn life_target(self) -> f64 {
+        match self {
+            Self::Commander => 120.0,
+            Self::Constructed => 20.0,
+        }
+    }
+}
+
 /// A deck ready to simulate: the library plus the command-zone commander.
 #[derive(Debug)]
 pub struct SimDeck {
@@ -532,20 +572,26 @@ pub struct SimDeck {
     pub rules: super::format::FormatRules,
 }
 
-/// Cards drawn when a draw spell resolves: numerals win ("draw two cards"),
-/// otherwise 1.
+/// Cards drawn when a draw spell resolves: numerals and number words win
+/// ("draw two cards", "draw seven cards"), otherwise 1.
 pub fn draw_amount(text: &str) -> u32 {
-    if !text.contains("draw ") && !text.contains("investigate") {
+    if !text.contains("draw ") && !text.contains("draws ") && !text.contains("investigate") {
         return 0;
     }
-    for word in ["five", "four", "three", "two", "5", "4", "3", "2"] {
+    for (word, n) in [
+        ("seven", 7u32),
+        ("six", 6),
+        ("five", 5),
+        ("four", 4),
+        ("three", 3),
+        ("two", 2),
+        ("5", 5),
+        ("4", 4),
+        ("3", 3),
+        ("2", 2),
+    ] {
         if text.contains(&format!("draw {word}")) || text.contains(&format!("draws {word}")) {
-            return match word {
-                "two" => 2,
-                "three" => 3,
-                "four" => 4,
-                _ => 5,
-            };
+            return n;
         }
     }
     1

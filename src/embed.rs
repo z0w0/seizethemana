@@ -2,6 +2,10 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+#[cfg(target_os = "macos")]
+/// Core ML embedding for document rebuild experiments.
+pub mod coreml;
+
 // Local text embedding via fastembed ONNX + a flat on-disk vector store.
 //
 // Cards are embedded into unit-normalized 384-dim vectors (bge-small-en-v1.5);
@@ -14,14 +18,17 @@ mod f32slice {
     pub fn cast(bytes: &[u8]) -> &[f32] {
         bytemuck::cast_slice(bytes)
     }
+
+    /// Reinterpret `f32`s as little-endian bytes for `vectors.bin` writes.
+    pub fn bytes(values: &[f32]) -> &[u8] {
+        bytemuck::cast_slice(values)
+    }
 }
 
-/// Model used for embeddings; also recorded in `status.json` so we can detect
-/// a stale index after a model change.
-///
-/// Quantized variant: ~4x faster CPU inference than fp32 with the same
-/// 384-dim output and negligible retrieval loss at this corpus size.
-pub const MODEL: fastembed::EmbeddingModel = fastembed::EmbeddingModel::BGESmallENV15Q;
+/// Full-precision model selected for card search and recorded in `status.json`.
+pub const MODEL: fastembed::EmbeddingModel = fastembed::EmbeddingModel::BGESmallENV15;
+/// Stable status-file identity for the selected embedding model.
+pub const MODEL_NAME: &str = "BAAI/bge-small-en-v1.5";
 
 /// Max tokens per embedded text.
 ///
@@ -49,8 +56,8 @@ pub struct VectorMeta {
     pub names: Vec<String>,
 }
 
-/// Row index of a card name, if present.
 impl VectorMeta {
+    /// Row index of a card name, if present.
     pub fn index_of(&self, name: &str) -> Option<usize> {
         self.names.iter().position(|n| n == name)
     }
@@ -103,6 +110,8 @@ impl VectorMatrix {
         }
     }
 
+    /// Append one value to the owned matrix; panics when mapped (mutating
+    /// code paths always build on `Owned`).
     fn push_value(&mut self, value: f32) {
         match self {
             VectorMatrix::Owned(v) => v.push(value),
@@ -116,28 +125,19 @@ impl VectorMatrix {
 /// Stored in `status.json` as `doc_version`. When the layout changes, bump
 /// this constant; the next sync re-embeds every card whose stored version
 /// lags behind.
-pub const DOC_VERSION: u32 = 1;
+pub const DOC_VERSION: u32 = 2;
 
 /// Build the embedding document for a card.
 ///
-/// Layout (name first so exact-name lookups rank top):
+/// Natural-language layout selected by the search bake-off:
 ///
 /// ```text
-/// Lightning Bolt
-/// {R} · Instant
-/// Keywords: none
-/// Colors: R
-/// Tags: removal, burn
-/// P/T: 2/2            (creatures; Loyalty: 4 for planeswalkers)
-/// Deal 3 damage to any target.
+/// Lightning Bolt. Mana cost {R}. Type Instant. Keywords none. Colors R.
+/// Tags removal, burn. P/T 2/2. Rules text Deal 3 damage to any target.
 /// ```
 ///
-/// The structured lines carry facts the text model underweights (color
-/// words, keyword names, stat lines) so queries like "black sacrifice
-/// outlet" or "big green creature" match on more than oracle prose. The
-/// Tags line carries Tagger's community role labels — vocabulary oracle
-/// text alone does not surface. The line is omitted when the card has no
-/// tags (or the tag index is empty).
+/// The layout keeps card identity and structured facts near rules text. Tags
+/// add role vocabulary that oracle text may not contain.
 #[allow(clippy::too_many_arguments)]
 pub fn build_doc(
     name: &str,
@@ -167,19 +167,35 @@ pub fn build_doc(
     } else {
         format!("Colors: {colors}")
     };
-    let mut doc = format!("{name}\n{mana_cost} · {type_line}\n{keyword_line}\n{color_line}");
-    if !tags_line.is_empty() {
-        doc.push('\n');
-        doc.push_str(tags_line);
-    }
+    let mut fields = vec![
+        format!("Name: {name}"),
+        format!("Mana cost: {mana_cost}"),
+        format!("Type: {type_line}"),
+        keyword_line,
+        color_line,
+        format!(
+            "Tags: {}",
+            tags_line.strip_prefix("Tags: ").unwrap_or("none")
+        ),
+    ];
     if let (Some(p), Some(t)) = (power, toughness) {
-        doc.push_str(&format!("\nP/T: {p}/{t}"));
+        fields.push(format!("P/T: {p}/{t}"));
     } else if let Some(l) = loyalty {
-        doc.push_str(&format!("\nLoyalty: {l}"));
+        fields.push(format!("Loyalty: {l}"));
     }
-    doc.push('\n');
-    doc.push_str(oracle_text);
-    doc
+    fields.push(format!("Rules text: {oracle_text}"));
+    let details = fields
+        .into_iter()
+        .skip(1)
+        .map(|field| {
+            field
+                .replace(": ", " ")
+                .trim_end_matches(['.', ' '])
+                .to_string()
+        })
+        .collect::<Vec<_>>()
+        .join(". ");
+    format!("{name}. {details}.")
 }
 
 /// Convenience: doc string for a loaded card row, with tags from `index`.
@@ -204,14 +220,47 @@ pub fn doc_for_row(row: &crate::db::CardRow, index: &crate::tags::TagIndex) -> S
 /// threads plateau and slightly regress.
 pub const INTRA_THREADS: usize = 8;
 
+/// Embeds batches of card documents for the vector index.
+pub trait DocumentEmbedder {
+    /// Embed a batch of documents.
+    fn embed_documents(&mut self, texts: &[String]) -> anyhow::Result<Vec<Vec<f32>>>;
+}
+
+impl DocumentEmbedder for fastembed::TextEmbedding {
+    fn embed_documents(&mut self, texts: &[String]) -> anyhow::Result<Vec<Vec<f32>>> {
+        self.embed(texts, Some(256)).context("embedding texts")
+    }
+}
+
 /// Load the embedding model, cached under `cache_dir`.
 ///
-/// First call downloads the quantized ONNX model (~35MB); later calls load
-/// from cache. `show_progress` forwards fastembed's own download progress.
+/// macOS uses Core ML for document batches. Other platforms use CPU inference.
+/// Query embeddings use the CPU encoder on every platform.
 ///
 /// # Errors
 /// Propagates model load/download failures.
 pub fn load_model(
+    cache_dir: &std::path::Path,
+    show_progress: bool,
+) -> anyhow::Result<Box<dyn DocumentEmbedder>> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = show_progress;
+        coreml::CoreMlEmbedding::load(cache_dir, MODEL, MAX_LENGTH, false)
+            .map(|model| Box::new(model) as Box<dyn DocumentEmbedder>)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        load_query_model(cache_dir, show_progress)
+            .map(|model| Box::new(model) as Box<dyn DocumentEmbedder>)
+    }
+}
+
+/// Load the CPU query encoder with the same full-precision weights as documents.
+///
+/// # Errors
+/// Propagates model load or download failures.
+pub fn load_query_model(
     cache_dir: &std::path::Path,
     show_progress: bool,
 ) -> anyhow::Result<fastembed::TextEmbedding> {
@@ -221,7 +270,7 @@ pub fn load_model(
         .with_max_length(MAX_LENGTH)
         .with_intra_threads(INTRA_THREADS);
     fastembed::TextEmbedding::try_new(options)
-        .context("initializing embedding model (first run downloads ~35MB)")
+        .context("initializing CPU query model (first run downloads the full-precision model)")
 }
 
 /// Embed texts, normalizing each vector to unit length.
@@ -232,10 +281,10 @@ pub fn load_model(
 /// # Errors
 /// Propagates embedding failures.
 pub fn embed_texts(
-    model: &mut fastembed::TextEmbedding,
+    model: &mut dyn DocumentEmbedder,
     texts: &[String],
 ) -> anyhow::Result<Vec<Vec<f32>>> {
-    let mut out = model.embed(texts, Some(256)).context("embedding texts")?;
+    let mut out = model.embed_documents(texts)?;
     for v in &mut out {
         normalize(v);
     }
@@ -258,7 +307,6 @@ pub fn normalize_row(row: &mut [f32]) {
     normalize(row)
 }
 
-#[allow(dead_code)]
 impl VectorStore {
     /// Empty store with the standard metadata.
     pub fn new() -> Self {
@@ -307,7 +355,7 @@ impl VectorStore {
 
     /// True when no vectors are stored.
     pub fn is_empty(&self) -> bool {
-        self.vectors.len() == 0
+        self.meta.names.is_empty()
     }
 
     /// Write `vectors.bin` under `dir` atomically.
@@ -326,9 +374,7 @@ impl VectorStore {
             let file = std::fs::File::create(&tmp)?;
             let mut writer = std::io::BufWriter::new(file);
             let all = self.vectors.slice(0, self.vectors.len());
-            for value in all {
-                writer.write_all(&value.to_le_bytes())?;
-            }
+            writer.write_all(f32slice::bytes(all))?;
             writer.flush()?;
         }
         std::fs::rename(&tmp, &vectors_path)?;
@@ -381,6 +427,12 @@ impl VectorStore {
             dim: status.dim,
             names: status.names,
         };
+        anyhow::ensure!(
+            meta.dim == DIM,
+            "status.json records dimension {}, but this build expects {DIM}; \
+             rebuild the index with 'stm setup --force'",
+            meta.dim
+        );
         let vectors_path = dir.join("vectors.bin");
         let file = std::fs::File::open(&vectors_path)
             .with_context(|| format!("reading {}", vectors_path.display()))?;
@@ -399,29 +451,14 @@ impl VectorStore {
             "vectors.bin holds {count} vectors but status.json lists {} names",
             meta.names.len()
         );
-        // SAFETY-free variant: mmap with private read-only semantics.
+        // mmap with private read-only semantics; the file length was
+        // validated above, so mapping cannot fault on a truncated file.
         let mmap = unsafe { memmap2::Mmap::map(&file)? };
         Ok((meta, mmap))
     }
 
-    /// `(index, cosine score)` for the `limit` best matches, best first.
-    ///
-    /// Vectors are unit-normalized, so this is a dot-product scan.
-    pub fn search(&self, query: &[f32], limit: usize) -> Vec<(usize, f32)> {
-        let mut scored: Vec<(usize, f32)> = (0..self.meta.names.len())
-            .map(|i| {
-                let row = self.vectors.slice(i * DIM, DIM);
-                let score: f32 = query.iter().zip(row).map(|(q, v)| q * v).sum();
-                (i, score)
-            })
-            .collect();
-        scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
-        scored.truncate(limit);
-        scored
-    }
-
     /// Embed one query string (with the BGE query instruction) into a
-    /// normalized vector ready for [`VectorStore::search`].
+    /// normalized vector ready for the dot-product scan in `run_search`.
     ///
     /// # Errors
     /// Propagates embedding failures.
@@ -430,12 +467,12 @@ impl VectorStore {
         model: &mut fastembed::TextEmbedding,
         query: &str,
     ) -> anyhow::Result<Vec<f32>> {
-        let mut out = model
+        let mut vectors = model
             .embed([format!("{QUERY_INSTRUCTION}{query}")], None)
             .context("embedding query")?;
-        let mut vector = out
+        let mut vector = vectors
             .pop()
-            .ok_or_else(|| anyhow::anyhow!("model returned no embedding"))?;
+            .context("CPU model returned no query embedding")?;
         vector.truncate(DIM);
         normalize(&mut vector);
         Ok(vector)
@@ -450,7 +487,7 @@ impl Default for VectorStore {
 
 /// Human-readable model name for `meta.json`.
 fn model_name() -> String {
-    "BAAI/bge-small-en-v1.5-Q".to_string()
+    MODEL_NAME.to_string()
 }
 
 #[cfg(test)]
@@ -473,9 +510,9 @@ mod tests {
         );
         assert_eq!(
             doc,
-            "Lightning Bolt\n{R} · Instant\nKeywords: none\nColors: R\nDeal 3 damage."
+            "Lightning Bolt. Mana cost {R}. Type Instant. Keywords none. Colors R. Tags none. Rules text Deal 3 damage."
         );
-        // With tags: the Tags line sits between colors and stats/text.
+        // Role tags stay with the other card facts.
         let doc = build_doc(
             "Lightning Bolt",
             "{R}",
@@ -488,7 +525,10 @@ mod tests {
             "Deal 3 damage.",
             "Tags: burn, removal",
         );
-        assert!(doc.contains("Colors: R\nTags: burn, removal\nDeal 3"));
+        assert!(
+            doc.contains("Colors R. Tags burn, removal. Rules text Deal 3"),
+            "{doc}"
+        );
     }
 
     #[test]
@@ -505,9 +545,9 @@ mod tests {
             "Haste.",
             "",
         );
-        assert!(doc.contains("Keywords: Haste, Vigilance"));
-        assert!(doc.contains("Colors: G"));
-        assert!(doc.contains("P/T: 2/2"));
+        assert!(doc.contains("Keywords Haste, Vigilance"));
+        assert!(doc.contains("Colors G"));
+        assert!(doc.contains("P/T 2/2"));
         // Loyalty replaces P/T for planeswalkers.
         let doc = build_doc(
             "Jace",
@@ -521,7 +561,7 @@ mod tests {
             "+1: Draw.",
             "",
         );
-        assert!(doc.contains("Loyalty: 4"));
+        assert!(doc.contains("Loyalty 4"));
         assert!(!doc.contains("P/T"));
         // Colorless and empty keywords render explicitly.
         let doc = build_doc(
@@ -536,14 +576,14 @@ mod tests {
             "",
             "",
         );
-        assert!(doc.contains("Keywords: none"));
-        assert!(doc.contains("Colors: colorless"));
+        assert!(doc.contains("Keywords none"));
+        assert!(doc.contains("Colors colorless"));
         // Malformed JSON columns degrade to "none"/"colorless".
         let doc = build_doc(
             "X", "", "Land", "not json", "also not", None, None, None, "", "",
         );
-        assert!(doc.contains("Keywords: none"));
-        assert!(doc.contains("Colors: colorless"));
+        assert!(doc.contains("Keywords none"));
+        assert!(doc.contains("Colors colorless"));
     }
 
     #[test]
@@ -560,7 +600,10 @@ mod tests {
             "",
             "",
         );
-        assert!(doc.starts_with("Forest\n · Basic Land — Forest\nKeywords: none"));
+        assert!(
+            doc.starts_with("Forest. Mana cost. Type Basic Land — Forest. Keywords none"),
+            "{doc}"
+        );
     }
 
     #[test]
@@ -575,9 +618,10 @@ mod tests {
     }
 
     #[test]
-    fn search_ranks_by_dot_product() {
+    fn rows_score_by_dot_product() {
+        // The production scan (query.rs `run_search`) scores rows by dot
+        // product and keeps the top-N. Pin the scoring semantics here.
         let mut store = VectorStore::new();
-        // Unit vectors in 384-dim space; use simple 2-element content.
         let mut a = vec![0.0; DIM];
         a[0] = 1.0;
         let mut b = vec![0.0; DIM];
@@ -591,13 +635,19 @@ mod tests {
 
         let mut q = vec![0.0; DIM];
         q[0] = 1.0; // closest to "a", then "b", never "c"
-        let hits = store.search(&q, 2);
-        assert_eq!(hits.len(), 2);
-        assert_eq!(hits[0].0, store.meta.index_of("a").unwrap());
-        assert_eq!(hits[1].0, store.meta.index_of("b").unwrap());
-        assert!((hits[0].1 - 1.0).abs() < 1e-6);
-        // limit larger than corpus returns everything
-        assert_eq!(store.search(&q, 10).len(), 3);
+        let scores: Vec<(usize, f32)> = (0..store.len())
+            .map(|i| {
+                let row = store.row(i);
+                let score: f32 = q.iter().zip(row).map(|(x, y)| x * y).sum();
+                (i, score)
+            })
+            .collect();
+        let mut top = scores;
+        top.sort_unstable_by(|x, y| y.1.total_cmp(&x.1));
+        top.truncate(2);
+        assert_eq!(top[0].0, store.meta.index_of("a").unwrap());
+        assert_eq!(top[1].0, store.meta.index_of("b").unwrap());
+        assert!((top[0].1 - 1.0).abs() < 1e-6);
     }
 
     #[test]
@@ -619,7 +669,7 @@ mod tests {
                 .zip(store.row(0).iter())
                 .all(|(x, y)| (x - y).abs() < 1e-6)
         );
-        assert_eq!(loaded.meta.model, "BAAI/bge-small-en-v1.5-Q");
+        assert_eq!(loaded.meta.model, "BAAI/bge-small-en-v1.5");
         assert_eq!(loaded.meta.dim, DIM);
     }
 
@@ -661,6 +711,30 @@ mod tests {
         }
         .write(&dir.join("status.json"))
         .unwrap();
+    }
+
+    #[test]
+    fn load_rejects_wrong_dim_status() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store = status_for(&["x"]);
+        store.save_vectors(tmp.path()).unwrap();
+        // Status claiming a different dimension than the model produces:
+        // the slice math would read garbage, so the load must fail loudly.
+        crate::paths::Status {
+            setup_complete: true,
+            ingested_cards: 1,
+            embedded_cards: 1,
+            model: store.meta.model.clone(),
+            dim: 768,
+            names: store.meta.names.clone(),
+            scryfall_synced_at: String::new(),
+            doc_version: crate::embed::DOC_VERSION,
+            combos_synced_at: String::new(),
+        }
+        .write(&tmp.path().join("status.json"))
+        .unwrap();
+        let err = VectorStore::load(tmp.path()).unwrap_err();
+        assert!(err.to_string().contains("rebuild the index"), "{err}");
     }
 
     #[test]

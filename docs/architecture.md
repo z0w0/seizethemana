@@ -40,16 +40,16 @@ whole store with `--data-dir`.
 
 One state file with setup state, index metadata, and the sync stamp:
 
-| Field | Meaning |
-| --- | --- |
-| `setup_complete` | True when `stm setup` finished; the not-set-up check reads this |
-| `ingested_cards`, `embedded_cards` | Counts from the last setup run |
-| `model` | Embedding model name (e.g. `BAAI/bge-small-en-v1.5-Q`) |
-| `dim` | Vector dimension (384) |
-| `names` | Card names in vector-row order (joins `vectors.bin` rows) |
-| `scryfall_synced_at` | RFC 3339 timestamp of the last card/price sync; drives the 24h refresh check |
-| `combos_synced_at` | RFC 3339 timestamp of the last Commander Spellbook refresh |
-| `doc_version` | Document layout version the vectors were built with |
+| Field                              | Meaning                                                                      |
+| ---------------------------------- | ---------------------------------------------------------------------------- |
+| `setup_complete`                   | True when `stm setup` finished; the not-set-up check reads this              |
+| `ingested_cards`, `embedded_cards` | Counts from the last setup run                                               |
+| `model`                            | Embedding model name (e.g. `BAAI/bge-small-en-v1.5`)                         |
+| `dim`                              | Vector dimension (384)                                                       |
+| `names`                            | Card names in vector-row order (joins `vectors.bin` rows)                    |
+| `scryfall_synced_at`               | RFC 3339 timestamp of the last card/price sync; drives the 24h refresh check |
+| `combos_synced_at`                 | RFC 3339 timestamp of the last Commander Spellbook refresh                   |
+| `doc_version`                      | Document layout version the vectors were built with                          |
 
 Setup writes this file last, via temp file + rename. A failed run leaves the
 store marked not set up. `stm sync` updates `scryfall_synced_at` after card
@@ -69,19 +69,19 @@ migration notes at the end).
 One row per card **name**. The bulk is oracle-level: one row per card, not
 one per printing.
 
-| Column                                 | Notes                                                 |
-| -------------------------------------- | ----------------------------------------------------- |
-| `name`                                 | UNIQUE; lookup key for deck and collection joins      |
-| `oracle_id`                            | Scryfall oracle ID                                    |
-| `mana_cost`, `cmc`, `type_line`        | Multi-faced cards are flattened (`{2}{B} // {B}`)     |
-| `colors`, `color_identity`, `keywords` | JSON arrays (stored as text)                          |
-| `power`, `toughness`, `loyalty`        | Nullable; `*`-style stats stored as printed           |
-| `oracle_text`                          | Faces joined with `\n// `                             |
-| `rarity`, `edhrec_rank`                | `edhrec_rank` nullable                                |
-| `legalities`                           | JSON object: `{"modern":"legal",...}`                 |
-| `set_code`, `collector_number`         | Representative print for the name (display identity)  |
-| `scryfall_id`                          | Print ID of the representative print (display only)   |
-| `released_at`                          | YYYY-MM-DD of the oracle's latest recognized printing; display only, no gating |
+| Column                                 | Notes                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `name`                                 | UNIQUE; lookup key for deck and collection joins                                                  |
+| `oracle_id`                            | Scryfall oracle ID                                                                                |
+| `mana_cost`, `cmc`, `type_line`        | Multi-faced cards are flattened (`{2}{B} // {B}`)                                                 |
+| `colors`, `color_identity`, `keywords` | JSON arrays (stored as text)                                                                      |
+| `power`, `toughness`, `loyalty`        | Nullable; `*`-style stats stored as printed                                                       |
+| `oracle_text`                          | Faces joined with `\n// `                                                                         |
+| `rarity`, `edhrec_rank`                | `edhrec_rank` nullable                                                                            |
+| `legalities`                           | JSON object: `{"modern":"legal",...}`                                                             |
+| `set_code`, `collector_number`         | Representative print for the name (display identity)                                              |
+| `scryfall_id`                          | Print ID of the representative print (display only)                                               |
+| `released_at`                          | YYYY-MM-DD of the oracle's latest recognized printing; display only, no gating                    |
 | `game_changer`                         | True when on the Commander Game Changer list (bracket signal for `deck legal`); null when unknown |
 
 Indexing covers `type_line`, `colors`, and `rarity` for filter queries, and the `cards_fts` FTS5 index (below) covers keyword
@@ -110,12 +110,12 @@ to both the BM25 terms and the embedded query.
 
 One row per group of identical copies.
 
-| Column                                 | Notes                                   |
-| -------------------------------------- | --------------------------------------- |
-| `name`                                 | Joins to `cards.name`                   |
+| Column                                 | Notes                                              |
+| -------------------------------------- | -------------------------------------------------- |
+| `name`                                 | Joins to `cards.name`                              |
 | `set_code`, `collector_number`, `foil` | Print identity; `foil` is `normal`/`foil`/`etched` |
-| `binder`, `binder_type`                | Location: binder name + `binder`/`deck` |
-| `quantity`, `purchase_price`           | Copy count and cost basis               |
+| `binder`, `binder_type`                | Location: binder name + `binder`/`deck`            |
+| `quantity`, `purchase_price`           | Copy count and cost basis                          |
 
 The key is `(name, set_code, collector_number, foil, binder, binder_type)`.
 The same print can sit in several locations (2 in a binder plus 1 in a
@@ -127,18 +127,18 @@ deck). Rows come from `stm collection import` (ManaBox CSV). Wishlist
 One `card_prints` row per physical printing, harvested from Scryfall's
 default-cards bulk. Set codes are lowercase everywhere in this store.
 
-| Column | Notes |
-| --- | --- |
-| `scryfall_id` | PRIMARY KEY; Scryfall print ID |
-| `name` | Oracle card name; joins to `cards`/`collection`/decks |
-| `flavor_name` | Just-for-fun printed name (Godzilla series, Secret Lair crossovers); empty for regular prints |
-| `set_code`, `collector_number` | Print identity, lowercase set code |
-| `lang` | ISO language code; default `en` |
-| `rarity`, `finishes` | Finish list is a JSON array (`["nonfoil","foil"]`) |
-| `released_at` | This printing's release date |
-| `usd`, `usd_foil`, `usd_etched` | Latest USD prices, nullable |
-| `updated_at` | Refresh timestamp for the row |
-| `universes_beyond` | 1 when the print is a Universes Beyond printing (Scryfall's `promo_types` "universesbeyond" flag) or belongs to an honorary-UB set (AFR/AFC/CLB, the D&D sets) |
+| Column                          | Notes                                                                                                                                                          |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scryfall_id`                   | PRIMARY KEY; Scryfall print ID                                                                                                                                 |
+| `name`                          | Oracle card name; joins to `cards`/`collection`/decks                                                                                                          |
+| `flavor_name`                   | Just-for-fun printed name (Godzilla series, Secret Lair crossovers); empty for regular prints                                                                  |
+| `set_code`, `collector_number`  | Print identity, lowercase set code                                                                                                                             |
+| `lang`                          | ISO language code; default `en`                                                                                                                                |
+| `rarity`, `finishes`            | Finish list is a JSON array (`["nonfoil","foil"]`)                                                                                                             |
+| `released_at`                   | This printing's release date                                                                                                                                   |
+| `usd`, `usd_foil`, `usd_etched` | Latest USD prices, nullable                                                                                                                                    |
+| `updated_at`                    | Refresh timestamp for the row                                                                                                                                  |
+| `universes_beyond`              | 1 when the print is a Universes Beyond printing (Scryfall's `promo_types` "universesbeyond" flag) or belongs to an honorary-UB set (AFR/AFC/CLB, the D&D sets) |
 
 The index on `(name, set_code, collector_number)` serves cheapest-print
 picks and the collection-valuation join. Price reads go through
@@ -174,33 +174,34 @@ Scryfall's daily `oracle_tags` bulk). Art tags (illustration descriptions)
 are out of scope: they join through the unique-artwork bulk and describe
 artwork, not deck roles.
 
-| Table        | Columns | Notes |
-| ------------ | ------- | ----- |
-| `tags`       | `id` (stable UUID, PK), `slug`, `label`, `use_count` | `use_count` is the global tagging count, a popularity signal |
-| `card_tags`  | `oracle_id`, `tag_id`, `weight` (PK on the pair) | joins to `cards.oracle_id`; rewritten wholesale on every tags ingest |
+| Table       | Columns                                              | Notes                                                                |
+| ----------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
+| `tags`      | `id` (stable UUID, PK), `slug`, `label`, `use_count` | `use_count` is the global tagging count, a popularity signal         |
+| `card_tags` | `oracle_id`, `tag_id`, `weight` (PK on the pair)     | joins to `cards.oracle_id`; rewritten wholesale on every tags ingest |
 
 Only the tag `id` is treated as an identity — slugs and labels can change
 between daily files. The bulk is a complete snapshot, so ingest replaces
-`card_tags` and upserts `tags` in one transaction. `src/tags.rs` owns
+`card_tags` and upserts `tags` in one transaction. Changed selected labels
+refresh the affected embedding documents during sync. `src/tags.rs` owns
 parsing (`TagRecord`), ingest, and the in-process [`TagIndex`] lookup, which
-also picks the embedding-document labels (below). Tag refreshes never
-trigger re-embedding: only card-content changes or a document-layout bump
-do.
+also picks the embedding-document labels (below). Sync re-embeds cards when
+their selected document labels change, as well as when card content or the
+document layout changes.
 
 ### `combos` and `combo_pieces` — Commander Spellbook variants
 
 One `combos` row per combo variant, harvested from Commander Spellbook's
 daily variants bulk (`json.commanderspellbook.com`, ~28 MB gzipped).
 
-| Column              | Notes                                                   |
-| ------------------- | ------------------------------------------------------- |
-| `id`                | Spellbook variant ID (PK)                               |
-| `produces`          | JSON array of feature names ("Win the game")            |
-| `mana_value_needed` | Total mana the combo needs                              |
-| `bracket_tag`       | Spellbook bracket letter (R/S/P/O/C/E; B = commander-banned) |
+| Column              | Notes                                                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `id`                | Spellbook variant ID (PK)                                                                                         |
+| `produces`          | JSON array of feature names ("Win the game")                                                                      |
+| `mana_value_needed` | Total mana the combo needs                                                                                        |
+| `bracket_tag`       | Spellbook bracket letter (R/S/P/O/C/E; B = commander-banned)                                                      |
 | `legalities`        | JSON map, format name → legal (16 keys; the backend forces 60-card keys false when a piece must be the commander) |
-| `popularity`        | Spellbook popularity count                              |
-| `updated_at`        | Refresh stamp                                           |
+| `popularity`        | Spellbook popularity count                                                                                        |
+| `updated_at`        | Refresh stamp                                                                                                     |
 
 `combo_pieces` is one row per piece: `combo_id`, `name` (each face of a
 two-faced card is its own row), `ordinal`, `zones` (JSON array of Spellbook
@@ -257,33 +258,29 @@ degrade to a warning, never blocking the read.
 ## Vector index and query path
 
 Search is hybrid: a full-text (BM25) leg and a vector (semantic) leg, fused
-by reciprocal rank fusion (RRF). `src/embed.rs` owns the vector side.
+by reciprocal rank fusion (RRF). `src/embed.rs` owns the vector side. See
+[`querying.md`](querying.md) for search settings, embedding details, and the
+living baseline, bake-off, and ranking-sweep guide.
 
 1. **Documents.** Each card becomes one text (`build_doc`):
 
    ```text
-   Lightning Bolt
-   {R} · Instant
-   Keywords: none
-   Colors: R
-   Tags: burn, direct damage
-   P/T: 2/2            (creatures; Loyalty: 4 for planeswalkers)
-   Deal 3 damage to any target.
+     Lightning Bolt. Mana cost {R}. Type Instant. Keywords none. Colors R.
+     Tags burn, direct damage. Rules text Deal 3 damage to any target.
    ```
 
-   The name on its own line makes exact-name lookups rank first; the
-   keyword/color/stat lines carry facts the text model underweights. The
-   `Tags:` line carries Tagger's community role labels — up to 12 labels
+   The name leads the text; the structured facts keep card identity clear.
+   Tags carry Tagger's community role labels — up to 12 labels
    picked by global popularity with one label per first-word family (see
    `tags::select_labels`), so role vocabulary like "wheel" or "sacrifice
-   outlet" matches even when oracle prose does not say it. The line is
-   omitted when a card has no tags. The layout has a version
+   outlet" matches even when oracle prose does not say it. The layout has a version
    (`DOC_VERSION` in `src/embed.rs`); `status.json` records which version
    the vectors were built with, so layout changes trigger a one-time
    re-embed on the next sync.
-2. **Model.** `BAAI/bge-small-en-v1.5` (quantized ONNX via fastembed),
-   384 dims, max length 128 tokens, 8 threads. Picked after a speed and
-   quality bake-off; the numbers live in comments in `src/embed.rs`.
+
+2. **Model.** `BAAI/bge-small-en-v1.5` (full-precision ONNX via fastembed),
+   384 dims, max length 128 tokens, 8 threads. The repeatable model
+   comparison workflow is documented in `docs/querying.md`.
 3. **Storage.** Unit-normalized vectors in `vectors.bin` (little-endian
    f32, row-major) plus metadata in `status.json` (model name, dim, card
    names in row order, `doc_version`). Both files are written via temp
@@ -291,8 +288,8 @@ by reciprocal rank fusion (RRF). `src/embed.rs` owns the vector side.
 4. **Vector leg.** The query text gets the BGE instruction prefix
    (`Represent this sentence for searching relevant passages: `), is
    embedded, normalized, then scored against every row by dot product. With
-   normalized vectors, dot product equals cosine. A full scan of 32k × 384
-   f32 takes well under 50 ms, so no ANN index is needed at this size.
+   normalized vectors, dot product equals cosine. Search scans the flat
+   matrix; it does not use an approximate-nearest-neighbor index.
 5. **Full-text leg.** SQLite FTS5 over `name`, `tags_text`, `type_line`,
    and `oracle_text` (`cards_fts`, external-content on `cards`, porter
    stemming, kept in sync by triggers on `cards`). The query becomes one
@@ -331,15 +328,18 @@ changes re-embed automatically on the next sync.
 
 ## Decks (`src/deck/`)
 
-Deck contents live in ManaBox txt files under `decks/`. The module has five
-parts:
+Deck contents live in ManaBox txt files under `decks/`. The module covers:
 
 - **`grammar`** — pure parser and writer. Sections (`// NAME`) and entries
   (`qty Name (SET) cn [*F*]`); set/cn/foil optional. Only a ManaBox-shaped
   `(SET) CN` tail counts as print info, so card names with parentheses
   survive. A blank line inside `// COMMANDER` splits the section into
   `COMMANDER` + `DECK`: ManaBox exports the commander(s), one blank line,
-  then the rest of the deck. Print info is preserved on the line but never
+  then the rest of the deck. `SIDEBOARD` and `MAYBEBOARD` are bench
+  sections: never counted toward deck size, curve/ramp, copy limits, or
+  the bracket Game Changer cap, but their cards still check format
+  legality and (in commander) color identity. Print info is preserved on
+  the line but never
   used as a key; update ops and ownership both match on the card name.
 - **`store`** — deck files on disk: `create`, `list`, `show` (with `own N/M`
   from the collection, `(+N elsewhere)` binder hint, primer path), plus the
@@ -351,16 +351,20 @@ parts:
 - **`update`** — op parsing (`[section:]qty Name`) and math: `--add` adds
   copies, `--remove` takes them away (line deleted at 0), `--set` pins an
   exact count (`0` deletes). `--add`/`--set` names are validated against
-   the oracle: unknown names exit 3 (with "did you mean" candidates),
-   token names add with a warning. Unqualified removals
-   target `DECK` first, then fall back to other sections with a note.
+  the oracle: unknown names exit 3 (with "did you mean" candidates),
+  token names add with a warning. Unqualified removals
+  target `DECK` first, then fall back to other sections with a note.
   `set`/`remove` of absent cards exit 3 and name them.
 - **`legal`** — format and Commander-bracket legality. Deterministic
-  checks only: deck size (exactly 100 maindeck for commander — the
-  `// SIDEBOARD` section is a wishlist there and does not count; 60+
-  maindeck and sideboard ≤ 15 for constructed, sideboard subtracted),
-  copy limits (4, singleton for commander-style formats; basics and cards
-  whose oracle text allows "any number" are exempt), commander rules
+  checks only: deck size (exactly 100 maindeck for commander — bench
+  sections never count; 60+ maindeck and sideboard ≤ 15 for
+  constructed, sideboard subtracted), copy limits (4 across maindeck +
+  sideboard for constructed, singleton for commander-style formats;
+  the maybeboard is exempt from copy limits; basics and cards whose
+  oracle text allows "any number" are exempt), per-card format legality
+  for every section including the bench, color identity (maindeck as
+  violations, bench cards as a separate `bench color identity`
+  violation), commander rules
   (exactly 1, or 2 with Partner/`Friends forever`; legendary creature,
   planeswalker, or legendary Vehicle/Spacecraft with a printed
   power/toughness box — the Edge of Eternities rules change), commander
@@ -404,7 +408,8 @@ parts:
   full pip check (a 5c commander needs one of each pip) and count as a
   draw engine when their oracle shows a repeatable draw. Cost
   reductions (warp, improvise, affinity) approximate to flat cuts. The
-  sideboard never enters the library: it is a wishlist, not a legal zone.
+  bench (sideboard/maybeboard) never enters the library: it is not part
+  of the legal deck.
   Reported per run: opening-hand shape, land-drop curve, commander
   on-curve timing, unspent mana, cards seen, role access, color screw
   (enough mana but the wrong colors), per-card castability, station
@@ -422,8 +427,10 @@ parts:
   `docs/simulator.md`.
 
 Basic lands are treated as unlimited throughout: `deck show` counts them as
-owned (marked `(basics unlimited)`), excludes them from deck cost, and
-`deck legal` exempts them from copy limits.
+owned (marked `(own ∞)`), excludes them from deck cost, and
+`deck legal` exempts them from copy limits. Wastes and snow basics have a
+Basic Land type line but are tracked like any other card: a limited supply,
+priced and counted as owned or missing.
 
 Two independent write paths, joined by the deck name:
 
@@ -462,25 +469,27 @@ forward-only on every `db::open`:
 
 ## Module map
 
-| Module          | Responsibility                                                 |
-| --------------- | -------------------------------------------------------------- |
-| `cli.rs`        | clap command tree; the only place argv is interpreted          |
-| `paths.rs`      | Data-dir layout, all path derivation, `status.json` type       |
-| `db.rs`         | Schema + migrations, connections, row types (`CardRow`), name resolution, FTS query/search, `Filterable` impl |
-| `scryfall.rs`   | Bulk download + streaming parse + ingest/update mapping (cards bulk; bulk index serves cards + tags files) |
-| `tags.rs`       | Oracle-tags bulk parsing + ingest (`tags`, `card_tags`), `TagIndex` lookups, embedding-label selection |
-| `spellbook.rs`  | Commander Spellbook variants bulk: download + stream parse + ingest (`combos`, `combo_pieces`) |
-| `combos.rs`     | Shared combo reads: set-based variant loading, format legality, commander-required filtering |
-| `universe.rs`   | Universes Beyond + franchise mapping (curated set codes + name-keyword rules), card-level universe resolution |
-| `embed.rs`      | Model loading, doc building, vector store save/load/search     |
-| `search.rs`     | Structured filters (`--type/--color/--cmc/...`), ranking       |
-| `query.rs`      | `stm query` orchestration + hybrid search pipeline (FTS + vector, RRF fusion) |
-| `setup.rs`      | Setup pipeline (sync + full embed) with progress output        |
-| `sync.rs`       | Bulk sync: card diff + price harvest + incremental embed, staleness |
-| `card.rs`       | `stm card` detail rendering (text + JSON)                      |
-| `release.rs`    | Release-date parsing/checking helpers for ingest gating        |
-| `collection.rs` | ManaBox CSV import (ownership only; deck rows are deck-assignment rows), collection stats, owned-only search |
-| `deck/`         | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, format-aware suggestions, overview stats, combo audit, cut ranking, deck diffing, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`combos`/`cuts`/`diff`/`simulator`) |
-| `prints.rs`     | `card_prints` reads: cheapest/priciest print, owned-print pricing |
-| `output.rs`     | Human/JSON output hub: color detection, style helpers (bars, framing, wrapping), progress plumbing |
-| `main.rs`       | Dispatch, exit codes, auto-refresh hook, error reporting       |
+| Module                    | Responsibility                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cli.rs`                  | clap command tree; the only place argv is interpreted                                                                                                                                                                                                                                                                                  |
+| `paths.rs`                | Data-dir layout, all path derivation, `status.json` type                                                                                                                                                                                                                                                                               |
+| `db.rs`                   | Schema + migrations, connections, row types (`CardRow`), name resolution, FTS query/search, `Filterable` impl                                                                                                                                                                                                                          |
+| `scryfall.rs`             | Bulk download + streaming parse + ingest/update mapping (cards bulk; bulk index serves cards + tags files)                                                                                                                                                                                                                             |
+| `tags.rs`                 | Oracle-tags bulk parsing + ingest (`tags`, `card_tags`), `TagIndex` lookups, embedding-label selection                                                                                                                                                                                                                                 |
+| `spellbook.rs`            | Commander Spellbook variants bulk: download + stream parse + ingest (`combos`, `combo_pieces`)                                                                                                                                                                                                                                         |
+| `combos.rs`               | Shared combo reads: set-based variant loading, format legality, commander-required filtering                                                                                                                                                                                                                                           |
+| `universe.rs`             | Universes Beyond + franchise mapping (curated set codes + name-keyword rules), card-level universe resolution                                                                                                                                                                                                                          |
+| `embed.rs`                | Model loading, doc building, vector store save/load/search                                                                                                                                                                                                                                                                             |
+| `search.rs`               | Structured filters (`--type/--color/--cmc/...`), ranking                                                                                                                                                                                                                                                                               |
+| `query.rs`                | `stm query` orchestration + hybrid search pipeline (FTS + vector, RRF fusion)                                                                                                                                                                                                                                                          |
+| `setup.rs`                | Setup pipeline (sync + full embed) with progress output                                                                                                                                                                                                                                                                                |
+| `sync.rs`                 | Bulk sync: card diff + price harvest + incremental embed, staleness                                                                                                                                                                                                                                                                    |
+| `card/`                   | `stm card` detail rendering (`mod.rs`: text + JSON with owned/available collection counts; `similar.rs`: tag-overlap neighbors; `combos.rs`: Spellbook combos)                                                                                                                                                                         |
+| `release.rs`              | Release-date parsing/checking helpers for ingest gating                                                                                                                                                                                                                                                                                |
+| `collection.rs`           | ManaBox CSV import (ownership only; deck rows are deck-assignment rows)                                                                                                                                                                                                                                                                |
+| `collection_stats.rs`     | Whole-collection aggregates for `stm collection` (counts, value, facets, universes)                                                                                                                                                                                                                                                    |
+| `collection_conflicts.rs` | Conflicting deck/binder assignments for `stm collection conflicts`                                                                                                                                                                                                                                                                     |
+| `deck/`                   | ManaBox txt grammar, deck files, update ops, primer, legality/bracket checks, format-aware suggestions, overview stats, combo audit, cut ranking, deck diffing, goldfish simulation (`grammar`/`store`/`update`/`io`/`legal`/`stats`/`combos`/`cuts`/`diff`/`simulator` and the role, hand, mana, bracket, ownership, and ops helpers) |
+| `prints.rs`               | `card_prints` reads: cheapest/priciest print, owned-print pricing                                                                                                                                                                                                                                                                      |
+| `output.rs`               | Human/JSON output hub: color detection, style helpers (bars, framing, wrapping), progress plumbing                                                                                                                                                                                                                                     |
+| `main.rs`                 | Dispatch, exit codes, auto-refresh hook, error reporting                                                                                                                                                                                                                                                                               |

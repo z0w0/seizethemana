@@ -498,4 +498,11 @@ fn draw_amount_numerals_win() {
     assert_eq!(draw_amount("destroy target"), 0);
 }
 
+#[test]
+fn draw_amount_six_and_seven() {
+    assert_eq!(draw_amount("draw six cards"), 6);
+    assert_eq!(draw_amount("draw seven cards"), 7);
+    assert_eq!(draw_amount("each player draws seven cards"), 7);
+}
+
 // Game loop: pool math

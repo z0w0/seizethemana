@@ -1,7 +1,7 @@
 // Tests for the cross-deck conflict report and its helpers.
 
 use super::*;
-use crate::collection_conflicts::{deck_demand, demanded_by, locations_all};
+use crate::collection_conflicts::{deck_demand, demanded_by};
 
 fn conn() -> (tempfile::TempDir, Connection) {
     let tmp = tempfile::tempdir().unwrap();
@@ -63,7 +63,7 @@ fn demand_reads_only_parseable_lists() {
     std::fs::create_dir_all(paths.decks_dir()).unwrap();
     deck_file(&paths, "Froggy", &[("Rhystic Study", 1)]);
     std::fs::write(paths.deck_file("Broken"), "not a deck list @@@").unwrap();
-    let demand = demanded_by(&paths, "Rhystic Study");
+    let demand = demanded_by(&paths, "Rhystic Study").unwrap();
     assert_eq!(demand, vec![("Froggy".to_string(), 1)]);
 }
 
@@ -72,22 +72,44 @@ fn demand_reads_only_parseable_lists() {
 fn missing_decks_dir_is_empty_not_an_error() {
     let (tmp, _conn) = conn();
     let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
-    let demand = demanded_by(&paths, "Anything");
+    let demand = demanded_by(&paths, "Anything").unwrap();
     assert!(demand.is_empty());
 }
 
-/// locations_all groups by location + finish and puts binders first.
+/// Demand counts maindeck, commander, and sideboard slots; maybeboard
+/// entries are loose candidates and never demand copies.
 #[test]
-fn locations_all_groups_and_orders() {
-    let (_tmp, conn) = conn();
-    row(&conn, "Froggy", "deck", "Bolt", 1);
-    row(&conn, "Trade", "binder", "Bolt", 2);
-    let locs = locations_all(&conn, "Bolt").unwrap();
-    assert_eq!(
-        locs,
-        vec![
-            ("Trade".to_string(), "binder".to_string(), 2, false),
-            ("Froggy".to_string(), "deck".to_string(), 1, false),
-        ]
+fn demand_counts_playable_sections_not_maybeboard() {
+    let (tmp, _conn) = conn();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    let path = paths.deck_file("Sections");
+    std::fs::write(
+        path,
+        "// COMMANDER\n1 Frog Wizard\n// DECK\n2 Rhystic Study\n// SIDEBOARD\n1 Rhystic Study\n// MAYBEBOARD\n9 Rhystic Study\n",
+    )
+    .unwrap();
+    let demand = demanded_by(&paths, "Rhystic Study").unwrap();
+    assert_eq!(demand, vec![("Sections".to_string(), 3)]);
+    let commander = demanded_by(&paths, "Frog Wizard").unwrap();
+    assert_eq!(commander, vec![("Sections".to_string(), 1)]);
+    assert!(
+        demanded_by(&paths, "Rhystic Study Maybe")
+            .unwrap()
+            .is_empty()
     );
+}
+
+/// Quantity carries through: the same name in one deck sums its lines.
+#[test]
+fn demand_sums_duplicate_lines_in_one_deck() {
+    let (tmp, _conn) = conn();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    deck_file(&paths, "Splits", &[("Rhystic Study", 2)]);
+    let path = paths.deck_file("Splits");
+    let text = std::fs::read_to_string(&path).unwrap();
+    std::fs::write(&path, format!("{text}\n1 Rhystic Study")).unwrap();
+    let demand = demanded_by(&paths, "Rhystic Study").unwrap();
+    assert_eq!(demand, vec![("Splits".to_string(), 3)]);
 }

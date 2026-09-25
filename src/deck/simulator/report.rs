@@ -173,6 +173,15 @@ fn summary_line(stats: &SimStats, deck: &SimDeck, problems: &[super::findings::P
     }
 }
 
+/// Bench-section counts for the JSON `deck_shape` block.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct BenchCounts {
+    /// SIDEBOARD copies excluded from the simulated library.
+    pub sideboard_cards: i64,
+    /// MAYBEBOARD copies excluded from the simulated library.
+    pub maybeboard_cards: i64,
+}
+
 /// Build the JSON payload for the report.
 pub fn json_report(
     stats: &SimStats,
@@ -180,7 +189,7 @@ pub fn json_report(
     name: &str,
     seed: u64,
     problems: &[super::findings::Problem],
-    sideboard_cards: i64,
+    bench: BenchCounts,
     mana_base: &super::findings::ManaBase,
 ) -> serde_json::Value {
     let turns = stats.turns as usize;
@@ -253,7 +262,8 @@ pub fn json_report(
         "seed": seed,
         "deck_shape": {
             "total_cards": total_cards(deck) as i64,
-            "sideboard_cards": sideboard_cards,
+            "sideboard_cards": bench.sideboard_cards,
+            "maybeboard_cards": bench.maybeboard_cards,
             "lands": lands,
             "rocks": rocks,
             "dorks": dorks,

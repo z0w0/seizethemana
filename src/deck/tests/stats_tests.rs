@@ -135,6 +135,42 @@ fn compute_empty_deck() {
 }
 
 #[test]
+fn bench_sections_count_in_total_but_not_curve_or_ramp() {
+    // Sideboard and maybeboard cards add to `total` only: curve, ramp,
+    // colors, and types describe the legal deck.
+    let cards: HashMap<String, CardRow> = [
+        card("Island", 0.0, "Basic Land — Island", "[]", ""),
+        card("Sol Ring", 1.0, "Artifact", "[]", "{T}: Add {C}{C}."),
+        card("Dragon", 7.0, "Creature — Dragon", r#"["R"]"#, "Flying."),
+    ]
+    .into_iter()
+    .map(|c| (c.name.clone(), c))
+    .collect();
+    let mut deck = deck_of(&[("Island", 10), ("Sol Ring", 1)]);
+    for section in ["SIDEBOARD", "MAYBEBOARD"] {
+        deck.section_entries_mut(section)
+            .push(crate::deck::grammar::DeckEntry {
+                quantity: 1,
+                name: "Dragon".to_string(),
+                set_code: None,
+                collector_number: None,
+                foil: false,
+            });
+    }
+    let stats = compute(&deck, &cards);
+    // Both bench Dragons count toward the total...
+    assert_eq!(stats.total, 13);
+    // ...but nothing else: no 7-drop curve slot, no red in colors.
+    let curve_count: i64 = stats.curve.iter().map(|b| b.count).sum();
+    assert_eq!(curve_count, 1, "only the maindeck Sol Ring curves");
+    assert_eq!(stats.ramp, (10, 1, 0, 0));
+    assert!(
+        stats.colors.is_empty(),
+        "bench cards never feed the color breakdown"
+    );
+}
+
+#[test]
 fn curve_json_histogram_matches_fixture() {
     use crate::deck::grammar::{Deck, DeckEntry};
     let mut cards: HashMap<String, CardRow> = HashMap::new();

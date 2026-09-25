@@ -37,7 +37,9 @@ pub(crate) mod findings_detail;
 pub(crate) mod format;
 pub(crate) mod game;
 mod game_combat;
+mod game_commander;
 mod game_effects;
+mod game_extra_turns;
 mod game_mana;
 mod game_run;
 pub(crate) mod hypgeo;
@@ -46,6 +48,11 @@ pub(crate) mod parse;
 mod parse_cost;
 mod parse_keywords;
 mod parse_land;
+mod role_classify;
+
+#[cfg(test)]
+#[path = "tests/parse_cost_tests.rs"]
+mod parse_cost_tests;
 mod report;
 pub(crate) mod report_view;
 mod trigger_activated;
@@ -76,6 +83,12 @@ mod deck_tests;
 #[cfg(test)]
 #[path = "tests/format_tests.rs"]
 mod format_tests;
+#[cfg(test)]
+#[path = "tests/game_fix_tests.rs"]
+mod game_fix_tests;
+#[cfg(test)]
+#[path = "tests/game_mana_edge_tests.rs"]
+mod game_mana_edge_tests;
 #[cfg(test)]
 #[path = "tests/game_mechanic_tests.rs"]
 mod game_mechanic_tests;
@@ -160,9 +173,9 @@ pub(crate) fn infer_bracket(
     let changers = deck
         .sections
         .iter()
-        // Maindeck only: the sideboard is a commander wishlist (the same
-        // census `deck legal` uses).
-        .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+        // Maindeck only: the bench sections are not part of the deck (the
+        // same census `deck legal` uses).
+        .filter(|(s, _)| !crate::deck::grammar::is_bench_section(s))
         .flat_map(|(_, e)| e.iter())
         .filter(|e| {
             !e.name.is_empty()
@@ -209,10 +222,15 @@ pub(crate) fn sim_report_for(
     seed: u64,
     format: Option<&str>,
 ) -> serde_json::Value {
-    let sideboard_cards = deck.sideboard_total();
+    let bench = report::BenchCounts {
+        sideboard_cards: deck.sideboard_total(),
+        maybeboard_cards: deck.maybeboard_total(),
+    };
     let mut sim_deck = deck::build_sim_deck(deck, cards, format);
     if let Some(f) = format {
         let applied = deck::apply_format_override(&mut sim_deck, f);
+        // Release builds keep the deck as parsed when the override name
+        // is unknown; the CLI only passes validated format names.
         debug_assert!(applied, "unknown format override {f:?}");
     }
     let total_cards = sim_deck.cards.len() + sim_deck.commanders.len();
@@ -259,15 +277,7 @@ pub(crate) fn sim_report_for(
         (true, infer_bracket(deck, cards))
     };
     let mana_base = findings::mana_base(&sim_deck, bracket, inferred_bracket);
-    report::json_report(
-        &stats,
-        &sim_deck,
-        name,
-        seed,
-        &problems,
-        sideboard_cards,
-        &mana_base,
-    )
+    report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base)
 }
 
 /// Entry point for `stm deck simulate <name>`.
@@ -299,7 +309,10 @@ pub fn simulate(
     json: bool,
 ) -> anyhow::Result<i32> {
     let (_path, deck) = super::store::load_deck(paths, name)?;
-    let sideboard_cards = deck.sideboard_total();
+    let bench = report::BenchCounts {
+        sideboard_cards: deck.sideboard_total(),
+        maybeboard_cards: deck.maybeboard_total(),
+    };
     let cards = lookup_names(conn, &deck)?;
     let mut sim_deck = deck::build_sim_deck(&deck, &cards, format);
 
@@ -406,15 +419,8 @@ pub fn simulate(
             // JSON diff mode: print the ReportDiff as JSON so agents can
             // gate on new problems without hand-diffing full reports.
             let baseline: serde_json::Value = read_baseline_json(baseline_path)?;
-            let current = report::json_report(
-                &stats,
-                &sim_deck,
-                name,
-                seed,
-                &problems,
-                sideboard_cards,
-                &mana_base,
-            );
+            let current =
+                report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
             let diff = report_view::diff_reports(&baseline, &current);
             println!("{}", serde_json::to_string_pretty(&diff)?);
             // Diff mode exits on the delta: empty diff or only resolved
@@ -424,15 +430,8 @@ pub fn simulate(
             }
             return Ok(crate::cli::codes::OK);
         }
-        let mut v = report::json_report(
-            &stats,
-            &sim_deck,
-            name,
-            seed,
-            &problems,
-            sideboard_cards,
-            &mana_base,
-        );
+        let mut v =
+            report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
         if !combo_rows.is_empty()
             && let Some(obj) = v.as_object_mut()
         {
@@ -467,15 +466,8 @@ pub fn simulate(
     } else if let Some(baseline_path) = baseline {
         // Diff mode: load the prior report and print only the deltas.
         let baseline = read_baseline_json(baseline_path)?;
-        let current = report::json_report(
-            &stats,
-            &sim_deck,
-            name,
-            seed,
-            &problems,
-            sideboard_cards,
-            &mana_base,
-        );
+        let current =
+            report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
         let diff = report_view::diff_reports(&baseline, &current);
         report_view::print_diff(out, &diff);
         // Diff mode exits on the delta: empty diff or only resolved

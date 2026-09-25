@@ -42,8 +42,8 @@ one binary serves both a person in a terminal and an agent in a script.
 Card lists get domain styling: card names bold cyan, mana pips colored per
 W/U/B/R/G/C, set codes and counts dim, rarity colored (mythic magenta, rare
 yellow, uncommon cyan), deck shortfalls yellow `(own 2/4)` or red
-`(own 0/4)`. Basic lands show `(basics unlimited)` and a unit price
-(`@$1.25 USD`) follows each card line in `deck show`. Money renders as
+`(own 0/4)`. Basic lands show `(own ∞)` and a unit price
+(`$1.25 USD`) follows each card line in `deck show`. Money renders as
 `$X.XX USD` everywhere in human output.
 
 Histograms get a shared dim bar glyph (`██····`): collection curve/colors/
@@ -96,7 +96,7 @@ stm deck simulate <name> [--runs N] [--turns N] [--seed S] [--format FMT] [--bas
 stm deck combos <name> [--format FMT] [--bracket 1-5] [--json]   # Spellbook combo audit, per section
 stm deck cuts <name> [--count N] [--for ROLE] [--bracket 1-5] [--json]   # ranked expendability + cut/fill pairing
 stm deck diff <A> <B-or-file> [--exact] [--json] [--markdown] [--as-update]   # change instructions
-stm deck import <name> <file|none> [--url URL] [--format FMT]  # upsert the decklist (auto-detect or pinned format)
+stm deck import <name> [file] [--url URL] [--format FMT]  # upsert the decklist (file or --url, auto-detect or pinned format)
 stm deck delete <name>                            # decklist only; ownership is kept
 stm deck mana <name> [--json]                     # mana-base audit against the bracket band
 stm deck copy <name> <new-name>
@@ -155,9 +155,12 @@ Conventions:
   Scryfall Tagger labels + role keyword scan, fused by reciprocal rank
   fusion (EDHREC breaks ties), grouped owned cards first with each group
   in fit order, annotated with ownership (copy count), price, and Game
-  Changer   flags. `--role` accepts 69 known role names (aliases mapping to 42
-  structured roles: draw, ramp,
-  board-wipe, sacrifice, voltron, spellslinger, typal, group-hug, ...).
+  Changer flags. `--role` takes a role name; ~130 aliases resolve to 42
+  structured roles (draw, ramp, removal, board-wipe, sacrifice, voltron,
+  spellslinger, typal, group-hug, ...; `card-advantage`/`cardadv` alias
+  to draw). `--owned` trims to owned cards before the limit cut, so an
+  owned card below `--limit` still
+  surfaces.
   `--format <fmt>` pins the legality filter; commander-shaped decks default
   to the commander's color identity and commander legality, other decks
   accept any format. `--commander` swaps the pool to
@@ -188,7 +191,8 @@ Conventions:
   collection but missing a decklist print once as "unverified".
 - `stm deck hand <name> [--seed S] [--count N]` deals sample opening
   hands with the simulator's shuffle + mulligan rules: seed N's first
-  hand is sim game #1's opener, so advice and sim runs never disagree.
+  hand is sim game #1's opener, so advice and sim runs never disagree
+  (`--count` default 3, max 10).
   Each hand prints with a keep/mull sentence (land count vs the keep
   band, early plays); `--json` wraps `{seed, hands}`.
 - `stm deck simulate` runs Monte Carlo goldfish games (default 10,000 —
@@ -219,7 +223,7 @@ Conventions:
   lands/rocks/dorks/ramp counts against the bracket target bands
   (`--bracket 1-5`, default 3) with a verdict sentence ("trim 3 lands",
   "add 2 ramp", "on target"). The flood metric counts lands *seen* at end of turn 4
-  (opener + draws + cantrips) against the hypergeometric expectation at
+  (opener + draws + cantrips + self-mill) against the hypergeometric expectation at
   that same draw volume, so a land-heavy deck reports real flood where a
   drops-made detector reads zero, and a cantrip deck is not punished for
   seeing more cards. Model limits ship in the JSON
@@ -238,8 +242,14 @@ Conventions:
   top regardless of score; then sim castability faults, curve outliers,
   pricey one-offs). Rows carry `rank` and `pinned`. Basics and the
   commander are never suggested. `--for <role>` pairs every cut with
-  fill candidates for the deficit role (owned first) and discounts
-  incumbents already serving that role.
+  fill candidates for the deficit role (owned first, always inside the
+  commander's color identity and legal in the deck's format) and
+  discounts incumbents already serving that role.
+  `--make-room-for sideboard|maybeboard` pairs each bench card with
+  the maindeck cut that makes room for it: off-identity or
+  format-illegal bench cards are skipped, and pairings prefer
+  same-role cuts so the swap keeps the deck's shape. JSON rows are
+  `{bench_card, cut_candidate, reasons, score}`.
 - `stm deck diff <A> <B>` prints per-section change instructions
   (removed / added / quantity changed; basics and quantity shifts
   collapse to `Name: N → M` rows). `--as-update` emits `deck update

@@ -12,6 +12,15 @@ pub mod codes {
     pub const NO_RESULTS: i32 = 3;
 }
 
+/// Deck zone `deck cuts --make-room-for` ranks swaps for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+pub enum MakeRoomFor {
+    /// Rank maindeck cuts for each sideboard card
+    Sideboard,
+    /// Rank maindeck cuts for each maybeboard card
+    Maybeboard,
+}
+
 /// Seize the Mana: Scryfall-backed card search, collection, and deck tooling.
 /// stm CLI root: global flags plus the subcommand dispatch.
 #[derive(Parser, Debug)]
@@ -165,6 +174,8 @@ pub enum Command {
 
 /// Collection subcommands: import, stats, valuation, and card lookups.
 #[derive(Subcommand, Debug)]
+// `Import` carries a `PathBuf` plus filter struct, far larger than the
+// other variants' fields; the box is not worth the indirection.
 #[allow(clippy::large_enum_variant)]
 pub enum CollectionCommand {
     /// Import a ManaBox collection CSV export
@@ -440,6 +451,11 @@ pub enum DeckCommand {
         /// excluded
         #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
         max_price: Option<f64>,
+        /// For each bench card (sideboard or maybeboard), rank maindeck
+        /// cuts that make room for it (identity- and legality-checked,
+        /// paired by role)
+        #[arg(long = "make-room-for", value_enum)]
+        make_room_for: Option<MakeRoomFor>,
         /// Emit JSON
         #[arg(long)]
         json: bool,

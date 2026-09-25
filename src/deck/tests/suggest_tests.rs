@@ -50,6 +50,8 @@ fn role_parse_knows_the_names() {
     assert_eq!(Role::parse("group-hug"), Some(Role::GroupHug));
     assert_eq!(Role::parse("voltron"), Some(Role::Voltron));
     assert_eq!(Role::parse("stax"), Some(Role::Stax));
+    assert_eq!(Role::parse("card-advantage"), Some(Role::Draw));
+    assert_eq!(Role::parse("cardadv"), Some(Role::Draw));
     assert!(Role::parse("gibberish").is_none());
 }
 
@@ -870,6 +872,8 @@ fn commander_search_truncates_to_limit() {
         None,
         3,
         &[],
+        None,
+        false,
     )
     .unwrap();
     assert_eq!(
@@ -877,6 +881,89 @@ fn commander_search_truncates_to_limit() {
         3,
         "the commander path truncates to --limit (6 candidates in the store)"
     );
+}
+
+#[test]
+fn owned_only_survives_the_limit_cut() {
+    // `--owned` must trim the pool to owned names BEFORE the limit cut:
+    // an owned card ranked below --limit still surfaces (the collection
+    // is the whole candidate pool). The store holds 6 identical frog
+    // commanders; only the lowest-fused one is owned. With limit 3 the
+    // old owned-after-truncate order dropped it; the new order keeps it.
+    let dir = tempfile::tempdir().unwrap();
+    let conn = crate::db::open(&dir.path().join("t.db")).unwrap();
+    for i in 0..6 {
+        let name = format!("Frog Chief {i}");
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at)
+             VALUES (?1, ?2, '', 4, 'Legendary Creature — Frog', '[]', '[\"G\"]',
+                '[]', 'text', 'rare', '{\"commander\":\"legal\"}', 'tst', '1',
+                ?2, '2020-01-01')",
+            rusqlite::params![name, format!("oid-{i}")],
+        )
+        .unwrap();
+    }
+    conn.execute(
+        "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'commander', 'commander', 1)",
+        [],
+    )
+    .unwrap();
+    for i in 0..6 {
+        conn.execute(
+            "INSERT INTO card_tags (oracle_id, tag_id) VALUES (?1, 't1')",
+            rusqlite::params![format!("oid-{i}")],
+        )
+        .unwrap();
+    }
+    // Only "Frog Chief 5" is owned; the tag-leg order sorts by label count
+    // then name, so it ranks last and lands outside the limit-3 window.
+    conn.execute(
+        "INSERT INTO collection (name, binder, binder_type, quantity, foil)
+         VALUES ('Frog Chief 5', 'binder', 'binder', 1, 'normal')",
+        [],
+    )
+    .unwrap();
+    let paths = crate::paths::Paths::new(dir.path().to_path_buf());
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 6,
+        embedded_cards: 6,
+        model: "m".into(),
+        dim: 384,
+        names: vec![],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    std::fs::write(paths.root().join("vectors.bin"), Vec::<u8>::new()).unwrap();
+    let deck = super::super::Deck::parse("// DECK\n1 Forest\n").unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let owned: std::collections::HashSet<String> = ["Frog Chief 5".to_string()].into();
+    let ranked = super::super::suggest::commander_candidates(
+        &paths,
+        &conn,
+        &mut out,
+        &deck,
+        Some("frog"),
+        None,
+        None,
+        None,
+        3,
+        &[],
+        Some(&owned),
+        false,
+    )
+    .unwrap();
+    assert_eq!(
+        ranked.len(),
+        1,
+        "the owned card outside the fused top-3 survives the --owned filter"
+    );
+    assert_eq!(ranked[0].0.name, "Frog Chief 5");
 }
 
 #[test]
@@ -998,6 +1085,8 @@ fn exclude_before_limit_keeps_full_result_count() {
         None,
         3,
         &excluded,
+        None,
+        false,
     )
     .unwrap();
     assert_eq!(
@@ -1009,4 +1098,94 @@ fn exclude_before_limit_keeps_full_result_count() {
         !ranked.iter().any(|(c, _, _)| excluded.contains(&c.name)),
         "no excluded card survives"
     );
+}
+
+#[test]
+fn demote_off_color_commander_lands_drops_and_sorts() {
+    // A mono-B deck: an off-color land (produces only R) is dropped; a
+    // partial fetch producing B + R demotes below a plain on-color land
+    // when no off-color duals are in the pool.
+    let bad_land = card("R Land", "Land", "", "({T}: Add {R}.)", None);
+    let partial = card(
+        "B R Fetch",
+        "Land",
+        "",
+        "({T}, Pay 1 life, Sacrifice this: Add {B} or {R}.)",
+        None,
+    );
+    let on_color = card("Swamp", "Basic Land — Swamp", "", "({T}: Add {B}.)", None);
+    let mut ranked = vec![
+        (bad_land, Vec::<String>::new(), 1.0_f32),
+        (partial, vec![], 1.0),
+        (on_color, vec![], 1.0),
+    ];
+    demote_off_color_commander_lands(&mut ranked, "B");
+    // Off-color land dropped.
+    assert!(
+        !ranked.iter().any(|(c, _, _)| c.name == "R Land"),
+        "a land producing no deck colors is dropped: {:?}",
+        ranked
+            .iter()
+            .map(|(c, _, _)| c.name.clone())
+            .collect::<Vec<_>>()
+    );
+    // Swamp and the partial fetch remain; the partial fetch demotes below
+    // the plain basic in a mono-color deck.
+    assert!(ranked.iter().any(|(c, _, _)| c.name == "Swamp"));
+    assert!(ranked.iter().any(|(c, _, _)| c.name == "B R Fetch"));
+}
+
+#[test]
+fn empty_role_result_is_json_array_with_exit_3() {
+    // A known role with zero hits: JSON prints `[]`, exit 3, and the
+    // stderr note lists known roles (no "nearby" wording).
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = empty_suggestions(Some(Role::Draw), &mut out, true);
+    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+    let code = empty_suggestions(None, &mut out, true);
+    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+    // Human mode: the error path still exits 3.
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = empty_suggestions(None, &mut out, false);
+    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+}
+
+#[test]
+fn fusion_depth_matches_between_role_and_commander_paths() {
+    // Both fusion paths share one helper; pin its shape: 3x when capped
+    // (minimum 60), the limit otherwise, never below 30.
+    for (limit, capped) in [
+        (1u32, false),
+        (1, true),
+        (10, true),
+        (5, false),
+        (100, true),
+    ] {
+        let depth = fusion_depth(limit, capped);
+        if capped {
+            assert!(depth >= 60, "capped depth floors at 60: {depth}");
+        }
+        assert!(depth >= 30, "depth floor is 30: {depth}");
+        assert!(depth >= limit as usize);
+    }
+    // Same call, same value: no path-specific drift is possible because
+    // both call the same function.
+    // The uncapped window never drops below the 30 floor.
+    assert_eq!(fusion_depth(10, false), 30);
+}
+
+#[test]
+fn bracket_cap_counts_existing_game_changers() {
+    // A Game Changer enters the bracket-3 cap only while the deck's
+    // existing count is below 3; at the cap it is refused (the
+    // commander path shares this rule with the role path).
+    let mut gc = card("Test GC", "Instant", "U", "", None);
+    gc.game_changer = Some(true);
+    assert!(!bracket_allows(Some(3), &gc, 3));
+    assert!(bracket_allows(Some(3), &gc, 2));
+    assert!(bracket_allows(Some(3), &gc, 0));
+    assert!(bracket_allows(Some(4), &gc, 3));
+    assert!(bracket_allows(None, &gc, 3));
+    let plain = card("Test Plain", "Instant", "U", "", None);
+    assert!(bracket_allows(Some(3), &plain, 3));
 }

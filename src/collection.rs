@@ -72,6 +72,8 @@ pub fn parse_csv(
     let mut rows = Vec::new();
     let mut skipped_list_rows = 0usize;
     let mut unknown_binder_rows = 0usize;
+    let mut non_positive_qty_rows = 0usize;
+    let mut unparseable_qty_rows = 0usize;
     let mut purchase_warns = 0usize;
     for record in reader.records() {
         let record = record.with_context(|| format!("parsing {}", path.display()))?;
@@ -99,23 +101,24 @@ pub fn parse_csv(
             "etched" => "etched",
             _ => "normal",
         };
-        let quantity: i64 = record
-            .get(c_qty)
-            .unwrap_or("1")
-            .trim()
-            .parse()
-            .with_context(|| {
-                format!(
-                    "unparseable quantity {:?} for card {:?}",
-                    record.get(c_qty).unwrap_or_default(),
-                    record.get(c_name).unwrap_or_default(),
-                )
-            })?;
-        anyhow::ensure!(
-            quantity > 0,
-            "non-positive quantity {quantity} for card {:?}",
-            record.get(c_name).unwrap_or_default()
-        );
+        // An unparseable or blank quantity skips like any other bad row
+        // instead of failing the whole import: one bad line must not
+        // poison the import.
+        let qty_text = record.get(c_qty).unwrap_or("1").trim();
+        let quantity: i64 = match qty_text.parse() {
+            Ok(q) => q,
+            Err(_) => {
+                unparseable_qty_rows += 1;
+                continue;
+            }
+        };
+        // A non-positive quantity skips like any other bad row instead of
+        // failing the whole import: ManaBox exports carry wishlist rows
+        // with quantity 0, and one bad line must not poison the import.
+        if quantity <= 0 {
+            non_positive_qty_rows += 1;
+            continue;
+        }
         let purchase_price = c_price
             .and_then(|i| record.get(i))
             .and_then(|text| {
@@ -152,6 +155,16 @@ pub fn parse_csv(
     if unknown_binder_rows > 0 {
         out.warning(&format!(
             "{unknown_binder_rows} CSV rows with an unknown Binder Type were skipped (expected 'binder', 'deck', or 'list')"
+        ));
+    }
+    if non_positive_qty_rows > 0 {
+        out.warning(&format!(
+            "{non_positive_qty_rows} CSV rows with a non-positive quantity were skipped"
+        ));
+    }
+    if unparseable_qty_rows > 0 {
+        out.warning(&format!(
+            "{unparseable_qty_rows} CSV rows with an unparseable or blank quantity were skipped"
         ));
     }
     if purchase_warns > 0 {
@@ -241,30 +254,39 @@ pub fn import(
         ),
     );
 
-    // Resolve card names against the oracle (case-insensitive). Rows that
-    // name a known token/art/emblem (recorded from the bulk) skip silently;
-    // ambiguous names warn as ambiguous (the card exists — the user can
-    // spell it out); genuinely unknown names warn as unknown.
+    // Resolve card names against the oracle (case-insensitive). A real
+    // card always imports — even when its name also sits in token_names
+    // (staples like Vampiric Tutor have digital-only prints recorded as
+    // token-ish names). Rows left unresolved that name a known
+    // token/art/emblem skip silently; ambiguous names warn as ambiguous
+    // (the card exists — the user can spell it out); genuinely unknown
+    // names warn as unknown.
     let mut unknown: Vec<String> = Vec::new();
     let mut ambiguous: Vec<String> = Vec::new();
     let mut skipped_tokens = 0usize;
     let mut resolved: Vec<CsvRow> = Vec::new();
     for row in &aggregated {
+        // Exact real-card match wins over a token_names entry (digital-only
+        // prints of staples once landed there). But a token name that only
+        // prefix-matches real cards ("Food" vs "Food Chain") skips before
+        // resolution, or it would resolve as the card it prefix-matches.
+        if !crate::db::card_exists(conn, &row.name)? && crate::db::is_token_name(conn, &row.name)? {
+            skipped_tokens += 1;
+            continue;
+        }
         match crate::db::resolve_name(conn, &row.name)? {
             crate::db::NameMatch::Found(card) => {
                 let mut row = row.clone();
                 row.name = card.name;
                 resolved.push(row);
             }
-            crate::db::NameMatch::Ambiguous { candidates, .. } => {
-                ambiguous.push(format!(
-                    "{} (matches {}+ oracle names, e.g. {})",
-                    row.name,
-                    candidates.len(),
-                    candidates.first().cloned().unwrap_or_default()
-                ));
+            crate::db::NameMatch::Ambiguous { total, .. } => {
+                ambiguous.push(format!("{} (matches {total}+ oracle names)", row.name));
             }
             _ => {
+                // Not a real card: a known token/art/emblem name skips
+                // silently (the CSV row is a token the user tracks), any
+                // other name warns as unknown.
                 if crate::db::is_token_name(conn, &row.name)? {
                     skipped_tokens += 1;
                 } else {
@@ -508,6 +530,12 @@ pub fn run_query(
             locations,
         });
     }
+    // Per-hit owned counts as a name map for `card_json` (the JSON path
+    // reads counts from the map, not per-hit fields).
+    let owned_counts: std::collections::HashMap<String, i64> = out_hits
+        .iter()
+        .map(|h| (h.card.name.clone(), h.owned))
+        .collect();
     if out_hits.is_empty() {
         if json {
             println!("[]");
@@ -522,15 +550,24 @@ pub fn run_query(
         let names: Vec<String> = out_hits.iter().map(|h| h.card.name.clone()).collect();
         // One batched query per finish kind instead of four per card name.
         let ranges = crate::prints::price_ranges(conn, &names)?;
+        let available_all = available_counts_all(conn)?;
         let items: Vec<serde_json::Value> = out_hits
             .iter()
             .map(|h| {
                 let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
                 let universe = crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)
                     .unwrap_or_default();
-                let mut v = crate::card::card_json(&h.card, &tag_index, &range, &universe);
+                // `owned` and `available` come from card_json (collection
+                // counts); `locations` is this command's per-hit extra.
+                let mut v = crate::card::card_json(
+                    &h.card,
+                    &tag_index,
+                    &range,
+                    &universe,
+                    &owned_counts,
+                    &available_all,
+                );
                 v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
-                v["owned"] = serde_json::json!(h.owned);
                 v["locations"] = serde_json::json!(
                     h.locations
                         .iter()
@@ -638,14 +675,42 @@ pub fn owned_counts_all(
     Ok(counts)
 }
 
-/// Unlimited-copy basic land names (the same exemption `deck update`'s
-/// singleton guard and the sim's findings use).
-pub(crate) fn is_basic_name(name: &str) -> bool {
-    matches!(
-        name,
-        "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
-    ) || name.starts_with("Snow-Covered")
+/// Binder-only copies per card name.
+///
+/// `available` in card JSON: copies you can trade or move without
+/// dismantling a deck. Deck rows stay out of this count.
+///
+/// # Errors
+/// Propagates SQLite failures.
+pub fn available_counts_all(
+    conn: &Connection,
+) -> anyhow::Result<std::collections::HashMap<String, i64>> {
+    let mut counts = std::collections::HashMap::new();
+    let mut stmt = conn.prepare(
+        "SELECT name, SUM(quantity) FROM collection
+         WHERE binder_type = 'binder'
+         GROUP BY name",
+    )?;
+    let rows = stmt.query_map([], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+    })?;
+    for row in rows {
+        let (name, qty) = row.context("reading binder counts")?;
+        counts.insert(name, qty);
+    }
+    Ok(counts)
 }
+
+/// Unlimited-copy basic land names (the same exemption `deck update`'s
+/// singleton guard and the sim's findings use). Wastes and snow basics are
+/// limited-supply cards, so they stay tracked.
+pub(crate) fn is_basic_name(name: &str) -> bool {
+    matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
+}
+
+#[cfg(test)]
+#[path = "tests/collection_price_tests.rs"]
+mod collection_price_tests;
 
 #[cfg(test)]
 #[path = "tests/collection_tests.rs"]
@@ -688,6 +753,20 @@ fn parse_locale_price(text: &str) -> Option<f64> {
     }
     if dots > 1 {
         return None;
+    }
+    if dots == 1 {
+        // A single dot with a 3-digit tail is ambiguous ("1.234" is
+        // 1234 in de-DE but 1.234 in en-US): reject it the same way a
+        // thousands comma is. A zero head is unambiguous — no
+        // thousands notation starts with a lone zero — so "0.125"
+        // stays a valid decimal.
+        let (head, tail) = text.split_once('.')?;
+        if head != "0" {
+            let tail = tail.to_string();
+            if tail.len() == 3 {
+                return None;
+            }
+        }
     }
     text.parse::<f64>().ok()
 }

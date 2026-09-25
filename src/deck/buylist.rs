@@ -104,7 +104,7 @@ pub(super) fn missing_rows(
                 unknown_names.insert(entry.name.clone());
                 continue;
             };
-            if super::stats::is_basic_land(card) {
+            if super::stats::is_tracked_basic(card) {
                 continue;
             }
             if entry.foil {

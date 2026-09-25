@@ -70,12 +70,15 @@ English at a 10th grade reading level:
 - Active voice. Say who does what.
 - No filler. Cut every sentence that does not change what the reader does.
 - Keep the same rules for README, docs/, SKILL.md, and error messages.
+- Format every changed `.md` file with Prettier. Run `prettier --write` on
+  changed Markdown files, then run `prettier --check` on those same files.
 
 ## Reference documents
 
-| Document               | What it covers                                                              |
-| ---------------------- | --------------------------------------------------------------------------- |
-| `docs/architecture.md` | Data schema, vector index + query path, sync pipeline, deck module, migration policy |
-| `docs/design.md`       | CLI design: command surface, output style, human vs agent-friendly modes    |
+| Document               | What it covers                                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/architecture.md` | Data schema, vector index + query path, sync pipeline, deck module, migration policy                                                                |
+| `docs/querying.md`     | Production search, embedding documents, baseline, model bake-off, and ranking sweep                                                                 |
+| `docs/design.md`       | CLI design: command surface, output style, human vs agent-friendly modes                                                                            |
 | `docs/simulator.md`    | How the goldfish simulation works: intent, card model, turn pipeline, metrics, assumptions, limits — the living reference for `src/deck/simulator/` |
-| `README.md`            | Install, usage examples, ManaBox guide                                      |
+| `README.md`            | Install, usage examples, ManaBox guide                                                                                                              |

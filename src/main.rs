@@ -41,89 +41,7 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
 
     // Result-of-Result: the inner Result is the command's own failure, the
     // outer is its exit-code decision.
-    let outcome = match &cli.command {
-        Command::Setup { force } => setup::run_setup(&paths, out, &mut conn, *force),
-        Command::Sync { force } => {
-            let options = sync::SyncOptions { force: *force };
-            sync::run_sync(&paths, &mut conn, out, &options)
-                .map_err(|err| err.context("sync failed"))
-        }
-        Command::Card {
-            command,
-            name,
-            json,
-        } => {
-            let mut revalidate = |out: &mut Output| {
-                if !seizethemana::offline_requested() {
-                    revalidate_if_stale(&paths, &mut conn, out);
-                }
-            };
-            match command {
-                Some(cli::CardCommand::Show { name, json }) => {
-                    revalidate(out);
-                    card::run_card(&paths, &mut conn, out, name, *json)
-                }
-                Some(cli::CardCommand::Similar {
-                    name,
-                    limit,
-                    owned,
-                    json,
-                }) => {
-                    revalidate(out);
-                    card::run_similar(&paths, &mut conn, out, name, *limit, *owned, *json)
-                }
-                Some(cli::CardCommand::Combos {
-                    name,
-                    format,
-                    limit,
-                    json,
-                }) => {
-                    revalidate(out);
-                    card::run_combos(
-                        &paths,
-                        &mut conn,
-                        out,
-                        name,
-                        format.as_deref(),
-                        *limit,
-                        *json,
-                    )
-                }
-                None => {
-                    let Some(name) = name.as_deref() else {
-                        out.error("card name is required");
-                        out.hint("use 'stm card <name>' or 'stm card show <name>'");
-                        return codes::USAGE;
-                    };
-                    revalidate(out);
-                    card::run_card(&paths, &mut conn, out, name, *json)
-                }
-            }
-        }
-        Command::Query {
-            query,
-            filters,
-            max_price,
-            limit,
-            json,
-            ..
-        } => {
-            if !seizethemana::offline_requested() {
-                revalidate_if_stale(&paths, &mut conn, out);
-            }
-            query::run_query(
-                &paths, &mut conn, out, query, filters, *max_price, *limit, *json,
-            )
-        }
-        Command::Collection { json, command, .. } => {
-            run_collection(&paths, &mut conn, out, *json, command)
-        }
-        Command::Deck {
-            json,
-            command,
-            name,
-        } => run_deck(&paths, &mut conn, out, *json, command, name.as_deref()),
-    };
+    let outcome = dispatch(cli, &paths, &mut conn, out);
     outcome.unwrap_or_else(|err| {
         // A bail carrying the sentinel already printed its own error line;
         // re-reporting it would double the message.
@@ -132,6 +50,91 @@ fn run(cli: &Cli, out: &mut Output) -> i32 {
         }
         codes::ERROR
     })
+}
+
+/// Command-to-handler dispatch table.
+fn dispatch(
+    cli: &Cli,
+    paths: &paths::Paths,
+    conn: &mut Connection,
+    out: &mut Output,
+) -> anyhow::Result<i32> {
+    match &cli.command {
+        Command::Setup { force } => setup::run_setup(paths, out, conn, *force),
+        Command::Sync { force } => {
+            let options = sync::SyncOptions { force: *force };
+            sync::run_sync(paths, conn, out, &options).map_err(|err| err.context("sync failed"))
+        }
+        Command::Card {
+            command,
+            name,
+            json,
+        } => run_card_group(paths, conn, out, command, name.as_deref(), *json),
+        Command::Query {
+            query,
+            filters,
+            max_price,
+            limit,
+            json,
+            ..
+        } => {
+            revalidate_if_stale(paths, conn, out);
+            query::run_query(paths, conn, out, query, filters, *max_price, *limit, *json)
+        }
+        Command::Collection { json, command, .. } => {
+            run_collection(paths, conn, out, *json, command)
+        }
+        Command::Deck {
+            json,
+            command,
+            name,
+        } => run_deck(paths, conn, out, *json, command, name.as_deref()),
+    }
+}
+
+/// Card subcommand dispatch with the shared staleness revalidation.
+fn run_card_group(
+    paths: &paths::Paths,
+    conn: &mut Connection,
+    out: &mut Output,
+    command: &Option<cli::CardCommand>,
+    name: Option<&str>,
+    json: bool,
+) -> anyhow::Result<i32> {
+    let mut revalidate = |out: &mut Output| revalidate_if_stale(paths, conn, out);
+    match command {
+        Some(cli::CardCommand::Show { name, json }) => {
+            revalidate(out);
+            card::run_card(paths, conn, out, name, *json)
+        }
+        Some(cli::CardCommand::Similar {
+            name,
+            limit,
+            owned,
+            json,
+        }) => {
+            revalidate(out);
+            card::similar::run_similar(paths, conn, out, name, *limit, *owned, *json)
+        }
+        Some(cli::CardCommand::Combos {
+            name,
+            format,
+            limit,
+            json,
+        }) => {
+            revalidate(out);
+            card::combos::run_combos(paths, conn, out, name, format.as_deref(), *limit, *json)
+        }
+        None => {
+            let Some(name) = name else {
+                out.error("card name is required");
+                out.hint("use 'stm card <name>' or 'stm card show <name>'");
+                return Ok(codes::USAGE);
+            };
+            revalidate(out);
+            card::run_card(paths, conn, out, name, json)
+        }
+    }
 }
 
 /// Dispatch collection subcommands.
@@ -159,9 +162,7 @@ fn run_collection(
             json,
             ..
         }) => {
-            if !seizethemana::offline_requested() {
-                revalidate_if_stale(paths, conn, out);
-            }
+            revalidate_if_stale(paths, conn, out);
             collection::run_query(
                 paths, conn, out, query, filters, binder, deck, *limit, *json,
             )
@@ -321,6 +322,7 @@ fn run_deck(
             bracket,
             format,
             max_price,
+            make_room_for,
             json,
         }) => deck::cuts(
             paths,
@@ -333,6 +335,7 @@ fn run_deck(
                 bracket: *bracket,
                 format: format.as_deref(),
                 max_price: *max_price,
+                make_room_for: *make_room_for,
                 json: *json,
             },
         ),
@@ -405,7 +408,18 @@ fn revalidate_if_stale(paths: &paths::Paths, conn: &mut Connection, out: &mut Ou
     }
     let status = match paths::Status::read(&paths.status_file()) {
         Ok(status) => status,
-        Err(_) => return,
+        Err(err) => {
+            // An unreadable status file means the freshness gate has no
+            // data; silence would hide a corrupt store. Never set up is
+            // normal (setup prints its own error later); other failures
+            // are worth a line on stderr.
+            if paths.is_setup() {
+                eprintln!(
+                    "warning: status file unreadable ({err:#}); skipping the freshness check"
+                );
+            }
+            return;
+        }
     };
     let now = chrono::Utc::now();
     if !sync::is_stale(&status, now) {

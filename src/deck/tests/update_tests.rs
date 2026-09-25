@@ -473,6 +473,20 @@ fn cost_delta_ignores_newly_added_basics() {
     let _ = &tmp;
 }
 
+/// A failed price read surfaces as an error, not a silent $0.00 cost.
+#[test]
+fn cost_delta_propagates_price_read_failure() {
+    let (tmp, conn) = seeded_conn();
+    conn.execute_batch("DROP TABLE card_prints;").unwrap();
+    let before = Deck::parse("// DECK\n1 Bolt\n").unwrap();
+    let after = Deck::parse("// DECK\n1 Bolt\n2 Bolt\n").unwrap();
+    assert!(
+        cost_delta(&conn, &before, &after).is_err(),
+        "a dropped price table must error, not report $0.00"
+    );
+    let _ = &tmp;
+}
+
 /// The dry-run cost delta: an extra demanded copy the collection cannot
 /// cover prices at the cheapest printing; a released slot frees its value.
 #[test]
@@ -923,4 +937,123 @@ fn unlimited_copy_cards_escape_singleton_guards() {
     let merged = result.merged_lines;
     assert_eq!(merged, 1);
     assert_eq!(out_deck.total(), 2);
+}
+
+#[test]
+fn dedupe_keeps_basic_lanes_per_section() {
+    // Basics keep summed quantities; sections dedupe independently
+    // (the same name in DECK and SIDEBOARD stays two lines).
+    let (tmp, conn) = seeded_conn();
+    let deck =
+        Deck::parse("// DECK\n8 Plains\n8 Plains\n1 Bolt\n// SIDEBOARD\n1 Bolt\n2 Fog\n2 Fog\n")
+            .unwrap();
+    let mut result = dedupe_deck(&conn, &deck).unwrap();
+    assert_eq!(result.merged_lines, 2);
+    let main = result.deck.section_entries_mut("DECK");
+    assert_eq!(main.len(), 2, "Plains + Bolt");
+    assert_eq!(main[0].quantity, 16, "basic copies sum");
+    let side = result.deck.section_entries_mut("SIDEBOARD");
+    assert_eq!(side.len(), 2);
+    assert_eq!(side[0].quantity, 1, "Bolt lines do not cross sections");
+    let _ = &tmp;
+}
+
+#[test]
+fn allow_partial_continues_and_exits_error() {
+    // `--allow-partial`: a remove that misses the deck is reported and
+    // the batch still applies and saves; the exit code is ERROR (1).
+    let (tmp, conn) = seeded_conn();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(paths.deck_file("Froggy"), "// DECK\n1 Lightning Bolt\n").unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &["1 Ghost Card".to_string()],
+        &[],
+        &[],
+        None,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::ERROR, "partial batch exits ERROR");
+    // The deck was still written (the resolvable state stands).
+    let text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    assert_eq!(text, "// DECK\n1 Lightning Bolt\n");
+
+    // Without --allow-partial the same update stops with exit 3 and
+    // writes nothing.
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &["1 Ghost Card".to_string()],
+        &[],
+        &[],
+        None,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+}
+
+#[test]
+fn backfill_falls_back_to_wastes_when_identity_unresolvable() {
+    // A commander missing from the oracle (or with an unparseable
+    // identity): the backfill warns and uses Wastes instead of failing.
+    let (tmp, conn) = seeded_conn();
+    conn.execute("DELETE FROM cards WHERE name = 'Lightning Bolt'", [])
+        .unwrap();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(
+        paths.deck_file("Froggy"),
+        "// COMMANDER\n1 Ghost Commander\n// DECK\n",
+    )
+    .unwrap();
+    let mut out = silent_out();
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &[],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+    )
+    .unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    let deck = crate::deck::Deck::parse(&text).unwrap();
+    let wastes: i64 = deck
+        .entries()
+        .filter(|e| e.name == "Wastes")
+        .map(|e| e.quantity)
+        .sum();
+    assert_eq!(wastes, 99, "unresolvable identity backfills with Wastes");
 }

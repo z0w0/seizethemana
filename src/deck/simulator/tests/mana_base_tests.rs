@@ -144,7 +144,6 @@ fn deck_with_ramp(n_lands: usize, n_ramp: usize, name: &str) -> (Deck, HashMap<S
             foil: false,
         });
     }
-    let _ = name;
     (deck, cards)
 }
 

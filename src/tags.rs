@@ -64,14 +64,16 @@ pub struct TagIndex {
     by_oracle: std::collections::HashMap<String, Vec<TagInfo>>,
 }
 
-impl TagIndex {
-    /// Empty index (no tags): tests and tag-less stores.
-    pub fn default_empty() -> Self {
+impl Default for TagIndex {
+    /// Empty index (no tags).
+    fn default() -> Self {
         Self {
             by_oracle: std::collections::HashMap::new(),
         }
     }
+}
 
+impl TagIndex {
     /// Load every card's tags in one query.
     ///
     /// A missing or empty `tags` table (fresh schema, failed ingest) reads as
@@ -203,7 +205,6 @@ pub mod select_labels {
 pub fn ingest(
     conn: &mut Connection,
     bulk_path: &std::path::Path,
-    out: &mut crate::output::Output,
 ) -> anyhow::Result<TagIngestSummary> {
     let file = std::fs::File::open(bulk_path)
         .with_context(|| format!("cannot open tags bulk file {}", bulk_path.display()))?;
@@ -232,15 +233,6 @@ pub fn ingest(
             }
         }
     }
-    out.status(
-        "Parsed",
-        &format!(
-            "{} tags ({} taggings) from {}",
-            records.len(),
-            taggings,
-            bulk_path.display()
-        ),
-    );
 
     conn.execute("BEGIN", []).context("begin tags ingest")?;
     let result = (|| -> anyhow::Result<TagIngestSummary> {
@@ -396,8 +388,7 @@ mod tests {
         drop(enc);
 
         let mut conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
-        let mut out = crate::output::Output::new(true, false, false);
-        let summary = ingest(&mut conn, &path, &mut out).unwrap();
+        let summary = ingest(&mut conn, &path).unwrap();
         assert_eq!(summary.tags, 3);
         assert_eq!(summary.taggings, 3);
         assert_eq!(summary.tagged_cards, 2);
@@ -422,7 +413,7 @@ mod tests {
         )
         .unwrap();
         drop(enc);
-        let summary = ingest(&mut conn, &path, &mut out).unwrap();
+        let summary = ingest(&mut conn, &path).unwrap();
         assert_eq!(summary.taggings, 1);
         let (n,): (i64,) = conn
             .query_row("SELECT COUNT(*) FROM card_tags", [], |r| {

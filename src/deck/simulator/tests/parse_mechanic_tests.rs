@@ -216,9 +216,22 @@ fn kicker_parses() {
         "Sorcery",
         "Kicker {2}\nKicked Bolt deals 3 damage to target player.",
     ));
-    assert_eq!(kicked.kicker, Some(2));
+    assert_eq!(kicked.kicker, Some(parse_cost("{2}")));
     let plain = parse_sim_card(&card("Bolt", "{1}{R}", "Sorcery", "Bolt deals 3."));
     assert_eq!(plain.kicker, None);
+}
+
+#[test]
+fn kicker_colored_pips_parse() {
+    let kicked = parse_sim_card(&card(
+        "Kicked Prism",
+        "{2}{R}",
+        "Sorcery",
+        "Kicker {1}{G}\nKicked Prism deals 4 damage to any target.",
+    ));
+    let kicker = kicked.kicker.expect("colored kicker parses");
+    assert_eq!(kicker.generic, 1);
+    assert_eq!(kicker.pips, [0, 0, 0, 0, 1]);
 }
 
 #[test]
@@ -591,6 +604,24 @@ fn mdfc_spell_face_keeps_on_cast_credits() {
     assert_eq!(
         sim.draws_on_cast, 2,
         "the MDFC spell face keeps its on-cast draw"
+    );
+}
+
+#[test]
+fn transform_card_keeps_on_cast_credits() {
+    // A transform card is not a split card: only the front face is cast,
+    // so its on-cast riders stay.
+    let mut row = card(
+        "Delver of Secrets // Insectile Aberration",
+        "{1}{U} // ",
+        "Creature — Human // Creature — Insect",
+        "When you cast this spell, draw a card.\nAt the beginning of your upkeep, look at the top card of your library. You may reveal an instant or sorcery card. If you do, transform this creature.\n//\nFlying",
+    );
+    row.keywords = "Transform".into();
+    let sim = parse_sim_card(&row);
+    assert!(
+        sim.draws_on_cast > 0,
+        "the transform card's front-face rider stays"
     );
 }
 

@@ -153,81 +153,120 @@ pub fn import(source: ImportSource<'_>) -> anyhow::Result<i32> {
         out.hint("import a file: stm deck import <name> <file>");
         return Ok(crate::cli::codes::USAGE);
     }
+    let (text, source_label) = match read_source(out, file, url)? {
+        Some(pair) => pair,
+        None => return Ok(crate::cli::codes::USAGE),
+    };
+    let mut deck = import_deck_text(out, &text, format, &source_label)?;
+    let commander_note = settle_commander(conn, out, &mut deck, json)?;
+    save_imported(
+        paths,
+        conn,
+        out,
+        name,
+        &deck,
+        &source_label,
+        &commander_note,
+    )?;
+    Ok(crate::cli::codes::OK)
+}
+
+/// Read the decklist text from the file or URL source. `None` means the
+/// usage error was already printed and the caller should return.
+fn read_source<'a>(
+    out: &mut crate::output::Output,
+    file: Option<&'a std::path::Path>,
+    url: Option<&'a str>,
+) -> anyhow::Result<Option<(String, String)>> {
     let text = match (file, url) {
-        (Some(file), _) => {
-            std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?
-        }
+        (Some(file), _) => (
+            std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?,
+            file.display().to_string(),
+        ),
         (None, Some(url)) => {
             if crate::offline_requested() {
                 out.error("--url needs the network; --offline skips all fetches");
                 out.hint("export a txt from the deck site and import the file instead");
-                return Ok(crate::cli::codes::USAGE);
+                return Ok(None);
             }
             out.status("Fetching", url);
-            super::url_fetch::fetch(url)?.to_text()
+            (super::url_fetch::fetch(url)?.to_text(), url.to_string())
         }
         (None, None) => {
             out.error("nothing to import: pass a file path or --url <URL>");
             out.hint("e.g. stm deck import Froggy ~/Downloads/Froggy.txt");
-            return Ok(crate::cli::codes::USAGE);
+            return Ok(None);
         }
     };
-    let source_label = match url {
-        Some(url) => url.to_string(),
-        None => file.map(|f| f.display().to_string()).unwrap_or_default(),
-    };
-    let mut deck = import_deck_text(out, &text, format, &source_label)?;
+    Ok(Some(text))
+}
 
-    // Commander prompt: only when the decklist carries no real COMMANDER
-    // section, stdout is a TTY, and JSON output is off (agents never hang).
-    let cards_by_name = super::stats::lookup_names(conn, &deck)?;
-    let mut commander_note = String::new();
-    if !has_commander_section(&deck) && !has_commander_line(&deck, &cards_by_name) {
-        let candidates = commander_candidates(&cards_by_name);
-        if candidates.is_empty() {
-            commander_note = "no commander candidate found in the decklist; set one with \
-                 stm deck update <name> --add commander:1 <card>"
-                .to_string();
-        } else if !json && std::io::stdout().is_terminal() {
-            match prompt_commander(&candidates)? {
-                Some(pick) => match crate::db::resolve_name(conn, &pick)? {
-                    crate::db::NameMatch::Found(card) => {
-                        deck.section_entries_mut("COMMANDER").push(DeckEntry {
-                            quantity: 1,
-                            name: card.name.clone(),
-                            set_code: Some(card.set_code.clone()).filter(|s| !s.is_empty()),
-                            collector_number: Some(card.collector_number.clone())
-                                .filter(|c| !c.is_empty()),
-                            foil: false,
-                        });
-                        commander_note = format!("commander set: {}", card.name);
-                    }
-                    _ => {
-                        commander_note = format!(
-                            "commander {pick:?} not in the oracle; skipped — \
-                                 set it with stm deck update <name> --add commander:1 <card>"
-                        );
-                    }
-                },
-                None => {
-                    commander_note = format!(
-                        "no commander set; candidates: {}; \
-                         set one with stm deck update <name> --add commander:1 <card>",
-                        candidates.join(", ")
-                    );
-                }
-            }
-        } else {
-            commander_note = format!(
-                "no commander section; candidates: {} (set with \
-                 stm deck update <name> --add commander:1 <card>)",
-                candidates.join(", ")
-            );
-        }
+/// Commander resolution on import: only when the decklist carries no real
+/// COMMANDER section, stdout is a TTY, and JSON output is off (agents
+/// never hang). Returns the note printed with the ownership summary.
+fn settle_commander(
+    conn: &rusqlite::Connection,
+    _out: &crate::output::Output,
+    deck: &mut super::grammar::Deck,
+    json: bool,
+) -> anyhow::Result<String> {
+    let cards_by_name = super::stats::lookup_names(conn, deck)?;
+    if has_commander_section(deck) || has_commander_line(deck, &cards_by_name) {
+        return Ok(String::new());
     }
+    let candidates = commander_candidates(&cards_by_name);
+    if candidates.is_empty() {
+        return Ok(
+            "no commander candidate found in the decklist; set one with \
+             stm deck update <name> --add commander:1 <card>"
+                .to_string(),
+        );
+    }
+    if json || !std::io::stdout().is_terminal() {
+        return Ok(format!(
+            "no commander section; candidates: {} (set with \
+             stm deck update <name> --add commander:1 <card>)",
+            candidates.join(", ")
+        ));
+    }
+    match prompt_commander(&candidates)? {
+        Some(pick) => match crate::db::resolve_name(conn, &pick)? {
+            crate::db::NameMatch::Found(card) => {
+                deck.section_entries_mut("COMMANDER").push(DeckEntry {
+                    quantity: 1,
+                    name: card.name.clone(),
+                    set_code: Some(card.set_code.clone()).filter(|s| !s.is_empty()),
+                    collector_number: Some(card.collector_number.clone()).filter(|c| !c.is_empty()),
+                    foil: false,
+                });
+                Ok(format!("commander set: {}", card.name))
+            }
+            _ => Ok(format!(
+                "commander {pick:?} not in the oracle; skipped — \
+                 set it with stm deck update <name> --add commander:1 <card>"
+            )),
+        },
+        None => Ok(format!(
+            "no commander set; candidates: {}; \
+             set one with stm deck update <name> --add commander:1 <card>",
+            candidates.join(", ")
+        )),
+    }
+}
 
+/// Persist the imported deck and print the ownership summary and finish
+/// line.
+fn save_imported(
+    paths: &crate::paths::Paths,
+    conn: &rusqlite::Connection,
+    out: &mut crate::output::Output,
+    name: &str,
+    deck: &super::grammar::Deck,
+    source_label: &str,
+    commander_note: &str,
+) -> anyhow::Result<()> {
     ensure_deck_file(paths, name)?;
-    save_deck(paths, name, &deck)?;
+    save_deck(paths, name, deck)?;
     ensure_primer_file(paths, name)?;
 
     // Ownership summary: read-only counts from the collection split.
@@ -244,7 +283,7 @@ pub fn import(source: ImportSource<'_>) -> anyhow::Result<i32> {
         .map(|(name, qty)| available.get(*name).copied().unwrap_or(0).min(*qty))
         .sum();
     if !commander_note.is_empty() {
-        out.print_note(&commander_note);
+        out.print_note(commander_note);
     }
     out.status(
         "Ownership",
@@ -264,7 +303,7 @@ pub fn import(source: ImportSource<'_>) -> anyhow::Result<i32> {
         ),
         std::time::Duration::ZERO,
     );
-    Ok(crate::cli::codes::OK)
+    Ok(())
 }
 
 /// Parse imported deck text in any supported format and normalize
@@ -306,7 +345,7 @@ fn has_commander_line(
 ) -> bool {
     deck.sections
         .iter()
-        .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
         .flat_map(|(_, es)| es.iter())
         .any(|e| {
             cards_by_name
@@ -415,243 +454,8 @@ pub fn primer(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::deck::store::primer_file;
-    use crate::output::Output;
-
-    fn setup() -> (tempfile::TempDir, crate::paths::Paths, rusqlite::Connection) {
-        let tmp = tempfile::tempdir().unwrap();
-        let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
-        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
-        (tmp, paths, conn)
-    }
-
-    /// Seed oracle rows so name resolution and commander detection work.
-    fn seed_card(conn: &rusqlite::Connection, name: &str, type_line: &str, rank: Option<i64>) {
-        conn.execute(
-            "INSERT INTO cards (name, oracle_id, type_line, edhrec_rank, set_code, collector_number)
-             VALUES (?1, 'oid', ?2, ?3, 'tst', '1')",
-            rusqlite::params![name, type_line, rank],
-        )
-        .unwrap();
-    }
-
-    const DECK_TXT: &str =
-        "// COMMANDER\n1 Breya, Etherium Shaper (MH3) 372 *F*\n\n// DECK\n2 Island (SOS) 274\n";
-
-    #[test]
-    fn import_upserts_by_name() {
-        let (_tmp, paths, conn) = setup();
-        seed_card(
-            &conn,
-            "Breya, Etherium Shaper",
-            "Legendary Creature — Human",
-            Some(10),
-        );
-        seed_card(&conn, "Island", "Basic Land — Island", None);
-        let src = paths.root().join("source.txt");
-        std::fs::write(&src, DECK_TXT).unwrap();
-        let mut out = Output::new(true, false, false);
-
-        import(ImportSource {
-            paths: &paths,
-            conn: &conn,
-            out: &mut out,
-            json: true,
-            name: "Round",
-            file: Some(&src),
-            url: None,
-            format: None,
-        })
-        .unwrap();
-        // Upsert: importing again succeeds and overwrites by name.
-        let code = import(ImportSource {
-            paths: &paths,
-            conn: &conn,
-            out: &mut out,
-            json: true,
-            name: "Round",
-            file: Some(&src),
-            url: None,
-            format: None,
-        })
-        .unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-        // Contents on disk match the source grammar.
-        let stored = std::fs::read_to_string(paths.deck_file("Round")).unwrap();
-        assert_eq!(stored, DECK_TXT);
-        // Primer stub exists.
-        assert!(primer_file(&paths, "Round").exists());
-
-        let dest = paths.root().join("out.txt");
-        export(&paths, &mut out, "Round", &dest, false, "manabox").unwrap();
-        assert_eq!(std::fs::read_to_string(&dest).unwrap(), DECK_TXT);
-        // Export refuses to overwrite without --force.
-        let code = export(&paths, &mut out, "Round", &dest, false, "manabox").unwrap();
-        assert_eq!(code, crate::cli::codes::ERROR);
-        let code = export(&paths, &mut out, "Round", &dest, true, "manabox").unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-    }
-
-    #[test]
-    fn manabox_quirk_renames_oversized_commander_section() {
-        let (_tmp, paths, conn) = setup();
-        seed_card(&conn, "Bolt", "Instant", None);
-        let src = paths.root().join("manabox.txt");
-        // ManaBox's export shape: the whole deck under // COMMANDER.
-        std::fs::write(
-            &src,
-            "// COMMANDER\n2 Bolt\n1 Bolt\n1 Fog\n1 Giant Growth\n1 Lightning Helix\n1 Shock\n",
-        )
-        .unwrap();
-        let mut out = Output::new(true, false, false);
-        import(ImportSource {
-            paths: &paths,
-            conn: &conn,
-            out: &mut out,
-            json: true,
-            name: "Quirk",
-            file: Some(&src),
-            url: None,
-            format: None,
-        })
-        .unwrap();
-        let deck =
-            Deck::parse(&std::fs::read_to_string(paths.deck_file("Quirk")).unwrap()).unwrap();
-        assert!(deck.section_index("COMMANDER").is_none(), "merged to DECK");
-        assert_eq!(deck.total(), 7);
-    }
-
-    #[test]
-    fn real_commander_section_survives() {
-        let (_tmp, paths, conn) = setup();
-        seed_card(
-            &conn,
-            "Breya, Etherium Shaper",
-            "Legendary Creature — Human",
-            Some(10),
-        );
-        seed_card(&conn, "Island", "Basic Land — Island", None);
-        let src = paths.root().join("ok.txt");
-        std::fs::write(&src, DECK_TXT).unwrap();
-        let mut out = Output::new(true, false, false);
-        import(ImportSource {
-            paths: &paths,
-            conn: &conn,
-            out: &mut out,
-            json: true,
-            name: "Ok",
-            file: Some(&src),
-            url: None,
-            format: None,
-        })
-        .unwrap();
-        let deck = Deck::parse(&std::fs::read_to_string(paths.deck_file("Ok")).unwrap()).unwrap();
-        assert_eq!(deck.section_index("COMMANDER"), Some(0));
-        assert_eq!(deck.total(), 3);
-    }
-
-    #[test]
-    fn import_rejects_bad_grammar() {
-        let (_tmp, paths, conn) = setup();
-        let src = paths.root().join("bad.txt");
-        std::fs::write(&src, "not a deck line").unwrap();
-        let mut out = Output::new(true, false, false);
-        assert!(
-            import(ImportSource {
-                paths: &paths,
-                conn: &conn,
-                out: &mut out,
-                json: true,
-                name: "Bad",
-                file: Some(&src),
-                url: None,
-                format: None
-            })
-            .is_err()
-        );
-    }
-
-    #[test]
-    fn export_names_strips_print_and_foil_decorations() {
-        let (_tmp, paths, conn) = setup();
-        seed_card(&conn, "Bolt", "Instant", None);
-        let deck_path = paths.deck_file("Names");
-        if let Some(dir) = deck_path.parent() {
-            std::fs::create_dir_all(dir).unwrap();
-        }
-        std::fs::write(
-            deck_path,
-            "// COMMANDER\n1 Breya\n// DECK\n2 Bolt (SOS) 100 *F*\n1 Fog\n",
-        )
-        .unwrap();
-        let dest = _tmp.path().join("names.txt");
-        let mut out = Output::new(true, false, false);
-        let code = export(&paths, &mut out, "Names", &dest, false, "names").unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-        let text = std::fs::read_to_string(&dest).unwrap();
-        assert_eq!(text, "// COMMANDER\n1 Breya\n\n// DECK\n2 Bolt\n1 Fog\n");
-    }
-
-    #[test]
-    fn primer_create_read_update() {
-        let (_tmp, paths, _conn) = setup();
-        std::fs::create_dir_all(paths.decks_dir()).unwrap();
-        std::fs::write(paths.deck_file("P"), "// DECK\n1 Bolt\n").unwrap();
-        let mut out = Output::new(false, true, false);
-
-        // No primer yet: reading creates an empty stub.
-        let code = primer(&paths, &mut out, "P", None).unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-        assert_eq!(
-            std::fs::read_to_string(primer_file(&paths, "P")).unwrap(),
-            ""
-        );
-        let _ = out; // empty-primer note checked visually; output is mode-safe
-
-        // --set writes contents from a markdown file.
-        let src = paths.root().join("primer.md");
-        std::fs::write(&src, "# My deck\nPlan: win.\n").unwrap();
-        let code = primer(&paths, &mut out, "P", Some(&src)).unwrap();
-        assert_eq!(code, crate::cli::codes::OK);
-        assert_eq!(
-            std::fs::read_to_string(primer_file(&paths, "P")).unwrap(),
-            "# My deck\nPlan: win.\n"
-        );
-    }
-
-    #[test]
-    fn primer_requires_existing_deck() {
-        let (_tmp, paths, _conn) = setup();
-        let mut out = Output::new(true, false, false);
-        let code = primer(&paths, &mut out, "Ghost", None);
-        assert!(code.is_err());
-    }
-
-    #[test]
-    fn import_validates_deck_names() {
-        let (_tmp, paths, conn) = setup();
-        let src = paths.root().join("deck.txt");
-        std::fs::write(&src, DECK_TXT).unwrap();
-        let mut out = Output::new(true, false, false);
-        // Invalid names error before any file is touched.
-        assert!(
-            import(ImportSource {
-                paths: &paths,
-                conn: &conn,
-                out: &mut out,
-                json: true,
-                name: "../escape",
-                file: Some(&src),
-                url: None,
-                format: None
-            })
-            .is_err()
-        );
-        assert!(!paths.deck_file("../escape").exists());
-    }
-}
+#[path = "tests/io_tests.rs"]
+mod io_tests;
 
 #[cfg(test)]
 #[path = "tests/prompt_tests.rs"]

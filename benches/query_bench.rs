@@ -59,7 +59,7 @@ fn bench_vector_scan(c: &mut Criterion) {
          out: &mut seizethemana::output::Output| {
             let store = seizethemana::embed::VectorStore::load(_paths.root()).expect("load store");
             let mut model =
-                seizethemana::embed::load_model(&_paths.models_dir(), false).expect("model");
+                seizethemana::embed::load_query_model(&_paths.models_dir(), false).expect("model");
             let query = store
                 .embed_query(&mut model, "sacrifice a creature to draw cards")
                 .expect("embed");
@@ -69,7 +69,31 @@ fn bench_vector_scan(c: &mut Criterion) {
             group.warm_up_time(WARM_UP);
             group.measurement_time(MEASURE);
             group.bench_function(BenchmarkId::new("full_scan", n), |b| {
-                b.iter(|| store.search(criterion::black_box(&query), usize::MAX))
+                // The production scan (query.rs run_search): dot product
+                // per row, then a partial top-N sort. usize::MAX keeps the
+                // full-sort shape the original bench measured.
+                //
+                // Maintenance: this loop hand-mirrors the scoring block in
+                // `crate::query::run_search` (the `scored` build and its
+                // sort). If that function's scan changes shape — a new
+                // filter, a different comparator, a chunked scorer — update
+                // this bench to the same shape, or it stops measuring the
+                // code the CLI actually runs.
+                b.iter(|| {
+                    let mut scored: Vec<(usize, f32)> = (0..n)
+                        .map(|i| {
+                            let row = store.row(i);
+                            let score: f32 = criterion::black_box(&query)
+                                .iter()
+                                .zip(row)
+                                .map(|(q, v)| q * v)
+                                .sum();
+                            (i, score)
+                        })
+                        .collect();
+                    scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
+                    scored
+                })
             });
             group.finish();
             let _ = out;

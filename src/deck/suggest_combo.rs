@@ -7,6 +7,7 @@ use rusqlite::Connection;
 
 use super::store::load_deck;
 use crate::db::CardRow;
+use crate::deck::grammar::is_bench_section;
 
 /// One ranked completion: the missing card, how many variants it
 /// completes, and the best example.
@@ -20,6 +21,9 @@ pub struct Completion {
     win_game: bool,
     /// Highest Spellbook popularity among the completed variants.
     popularity: i64,
+    /// Ranking score in `[0, 1]`: variant count blended with popularity,
+    /// each normalized by the row-set maximum.
+    score: f32,
 }
 
 /// The best example combo a missing card completes: (pieces, bracket tag).
@@ -77,11 +81,11 @@ pub fn run_combo_suggest(
     };
 
     // The deck's own names drive the candidate join; commander decks keep
-    // their sideboard wishlist out of the join.
+    // their bench sections (sideboard/maybeboard) out of the join.
     let deck_names: std::collections::HashSet<String> = deck
         .sections
         .iter()
-        .filter(|(section, _)| !(is_commander && section.eq_ignore_ascii_case("SIDEBOARD")))
+        .filter(|(section, _)| !(is_commander && is_bench_section(section)))
         .flat_map(|(_, entries)| entries.iter().map(|e| e.name.clone()))
         .collect();
 
@@ -174,6 +178,26 @@ pub fn run_combo_suggest(
             })
             .then_with(|| a.card.name.cmp(&b.card.name))
     });
+    // Ranking score for JSON rows: variants completed and popularity, each
+    // normalized by the row-set maximum, blended 60/40. Computed after the
+    // sort so the score follows the same ranking the table shows.
+    let max_variants = completions
+        .iter()
+        .map(|c| c.variants_completed)
+        .max()
+        .unwrap_or(1)
+        .max(1) as f32;
+    let max_popularity = completions
+        .iter()
+        .map(|c| c.popularity)
+        .max()
+        .unwrap_or(1)
+        .max(1) as f32;
+    for c in &mut completions {
+        let variants = c.variants_completed as f32 / max_variants;
+        let pop = c.popularity as f32 / max_popularity;
+        c.score = 0.6 * variants + 0.4 * pop;
+    }
     // --max-price: the budget cap applies before the limit cut; unpriced
     // candidates are excluded.
     if let Some(max_price) = max_price {
@@ -201,6 +225,10 @@ pub fn run_combo_suggest(
     }
     Ok(crate::cli::codes::OK)
 }
+
+#[cfg(test)]
+#[path = "tests/suggest_combo_tests.rs"]
+mod suggest_combo_tests;
 
 /// Build one completion when the card passes the identity, format, and
 /// bracket filters.
@@ -263,6 +291,7 @@ fn completion(
         best,
         win_game,
         popularity,
+        score: 0.0,
     })
 }
 
@@ -286,6 +315,7 @@ fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<(
                 "edhrec_rank": c.card.edhrec_rank,
                 "game_changer": c.card.game_changer,
                 "owned": owned.get(&c.card.name).copied().unwrap_or(0),
+                "score": (c.score * 10_000.0).round() / 10_000.0,
                 "price": ranges
                     .get(&c.card.name)
                     .and_then(|r| r.cheapest.as_ref())

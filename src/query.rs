@@ -8,14 +8,6 @@ use crate::output::Output;
 use crate::paths::Paths;
 use crate::search::CardFilters;
 
-/// One ranked search hit: the card plus its similarity score.
-pub struct Hit {
-    pub card: CardRow,
-    /// Hybrid score in `[0, 1]`: normalized reciprocal-rank fusion of the
-    /// full-text and vector result lists (see `fuse_rrf`).
-    pub score: f32,
-}
-
 /// Query-expansion table: player shorthand -> community tag vocabulary.
 ///
 /// Each row is a trigger phrase and extra search terms appended to both
@@ -465,11 +457,37 @@ pub fn expanded_text(text: &str) -> String {
     format!("{text} {}", extras.join(" "))
 }
 
+/// Expanded query text and its matching full-text expression.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PreparedQuery {
+    /// Text callers must embed for the vector leg.
+    pub expanded_text: String,
+    /// SQLite FTS5 expression, or `None` when the text has no searchable terms.
+    pub fts_expression: Option<String>,
+}
+
+/// Prepare both retrieval legs from one original query string.
+pub fn prepare_query(text: &str) -> PreparedQuery {
+    prepare_query_with_operator(text, db::FtsTermOperator::Any)
+}
+
+/// Prepare one query with an explicit FTS term operator.
+pub fn prepare_query_with_operator(text: &str, operator: db::FtsTermOperator) -> PreparedQuery {
+    let expanded_text = expanded_text(text);
+    let fts_expression = db::fts_query_with_operator(&expanded_text, operator);
+    PreparedQuery {
+        expanded_text,
+        fts_expression,
+    }
+}
+
 /// Candidate depth each retrieval leg contributes to the fusion. Public
 /// so the quality harness measures the same candidate pools the CLI fuses.
 ///
-/// Deep enough that filters cutting candidates during fusion rarely starve
-/// the final `--limit` window.
+/// The floor is 20: with only `--limit` candidates, filters cutting rows
+/// during fusion starve the final window on tight queries. A fixed floor
+/// keeps the fused window full regardless of how aggressive the filters
+/// are, at a fixed small scan cost.
 pub fn fusion_depth(limit: usize) -> usize {
     limit.max(20)
 }
@@ -506,16 +524,29 @@ pub fn fuse_rrf_k(
     k: f64,
     edhrec_rank: impl Fn(&str) -> Option<i64>,
 ) -> Vec<(String, f32)> {
+    fuse_weighted_rrf(fts_hits, vector_hits, limit, k, 1.0, 1.0, edhrec_rank)
+}
+
+/// Fuse ranked legs with independent weights for full-text and vector search.
+fn fuse_weighted_rrf(
+    fts_hits: &[(String, f64)],
+    vector_hits: &[(String, f64)],
+    limit: usize,
+    k: f64,
+    fts_weight: f64,
+    vector_weight: f64,
+    edhrec_rank: impl Fn(&str) -> Option<i64>,
+) -> Vec<(String, f32)> {
     let mut scores: std::collections::HashMap<&str, f64> = std::collections::HashMap::new();
     for (rank, (name, _)) in fts_hits.iter().enumerate() {
-        *scores.entry(name.as_str()).or_insert(0.0) += 1.0 / (k + rank as f64 + 1.0);
+        *scores.entry(name.as_str()).or_insert(0.0) += fts_weight / (k + rank as f64 + 1.0);
     }
     for (rank, (name, _)) in vector_hits.iter().enumerate() {
-        *scores.entry(name.as_str()).or_insert(0.0) += 1.0 / (k + rank as f64 + 1.0);
+        *scores.entry(name.as_str()).or_insert(0.0) += vector_weight / (k + rank as f64 + 1.0);
     }
-    // Normalize to [0, 1]: a card ranked first on both legs scores
-    // 2 / (k + 1); everything else sits below that ceiling.
-    let max_score = 2.0 / (k + 1.0);
+    // Normalize to [0, 1]: a card ranked first on both legs reaches the
+    // sum of the leg weights divided by k + 1.
+    let max_score = (fts_weight + vector_weight) / (k + 1.0);
     let mut ranked: Vec<(String, f32)> = scores
         .into_iter()
         .map(|(name, score)| (name.to_string(), (score / max_score) as f32))
@@ -531,6 +562,326 @@ pub fn fuse_rrf_k(
     });
     ranked.truncate(limit);
     ranked
+}
+
+/// Read-only access to card vectors used by the shared search path.
+pub trait VectorRowProvider {
+    /// Number of vector rows.
+    fn row_count(&self) -> usize;
+    /// Vector dimension for each row.
+    fn dimension(&self) -> usize;
+    /// Card name associated with a row.
+    fn card_name(&self, row: usize) -> Option<&str>;
+    /// Vector values for a row.
+    fn vector(&self, row: usize) -> Option<&[f32]>;
+}
+
+impl VectorRowProvider for VectorStore {
+    fn row_count(&self) -> usize {
+        self.len()
+    }
+
+    fn dimension(&self) -> usize {
+        self.meta.dim
+    }
+
+    fn card_name(&self, row: usize) -> Option<&str> {
+        self.meta.names.get(row).map(String::as_str)
+    }
+
+    fn vector(&self, row: usize) -> Option<&[f32]> {
+        (row < self.len()).then(|| self.row(row))
+    }
+}
+
+/// Candidate and ranking settings for a shared search run.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SearchSettings {
+    /// BM25 weights in name, tags, type line, and oracle text order.
+    pub fts_column_weights: [f64; 4],
+    /// Minimum FTS candidate count before fusion.
+    pub fts_candidate_depth: usize,
+    /// Minimum vector candidate count before fusion.
+    pub vector_candidate_depth: usize,
+    /// Reciprocal-rank fusion constant.
+    pub rrf_k: f64,
+    /// Relative contribution of the FTS leg during reciprocal-rank fusion.
+    pub fts_rrf_weight: f64,
+    /// Relative contribution of the vector leg during reciprocal-rank fusion.
+    pub vector_rrf_weight: f64,
+    /// Whether FTS requires any or all extracted query terms.
+    pub fts_term_operator: db::FtsTermOperator,
+    /// Initial FTS SQL window as a multiple of the candidate depth.
+    pub fts_overfetch_multiplier: usize,
+    /// Minimum number of FTS SQL rows in the initial window.
+    pub fts_min_sql_rows: usize,
+    /// Maximum number of FTS SQL windows, including the initial window.
+    pub fts_max_rounds: usize,
+}
+
+impl Default for SearchSettings {
+    fn default() -> Self {
+        Self {
+            fts_column_weights: db::FTS_COLUMN_WEIGHTS,
+            fts_candidate_depth: 20,
+            vector_candidate_depth: 20,
+            rrf_k: RRF_K,
+            fts_rrf_weight: 1.0,
+            vector_rrf_weight: 1.0,
+            fts_term_operator: db::FtsTermOperator::Any,
+            fts_overfetch_multiplier: 4,
+            fts_min_sql_rows: 50,
+            fts_max_rounds: 4,
+        }
+    }
+}
+
+/// One card and its score in a ranked search leg.
+#[derive(Debug, Clone)]
+pub struct Hit {
+    /// Matched card.
+    pub card: CardRow,
+    /// FTS rank, vector dot product, or normalized hybrid score, depending on
+    /// which [`SearchResults`] list contains the hit.
+    pub score: f32,
+}
+
+/// Ordered results from the full-text, vector, and fused search legs.
+#[derive(Debug, Clone, Default)]
+pub struct SearchResults {
+    /// BM25 hits, best first.
+    pub fts: Vec<Hit>,
+    /// Vector hits, best first.
+    pub vector: Vec<Hit>,
+    /// Reciprocal-rank-fused hits, best first.
+    pub hybrid: Vec<Hit>,
+}
+
+/// Search settings that match the current `stm query` ranking.
+pub const DEFAULT_SEARCH_SETTINGS: SearchSettings = SearchSettings {
+    fts_column_weights: db::FTS_COLUMN_WEIGHTS,
+    fts_candidate_depth: 20,
+    vector_candidate_depth: 20,
+    rrf_k: RRF_K,
+    fts_rrf_weight: 1.0,
+    vector_rrf_weight: 1.0,
+    fts_term_operator: db::FtsTermOperator::Any,
+    fts_overfetch_multiplier: 4,
+    fts_min_sql_rows: 50,
+    fts_max_rounds: 4,
+};
+
+/// Run FTS, vector, and hybrid search using an already embedded query vector.
+///
+/// `cards` must be in database order. Each non-empty vector provider must
+/// have one name-aligned row per card. Filters and restricted names apply to
+/// both retrieval legs before candidate selection.
+///
+/// # Errors
+/// Fails when card IDs, vector rows, or dimensions do not align, when search
+/// settings are invalid, or when SQLite search fails.
+#[allow(clippy::too_many_arguments)]
+pub fn search_with_vectors(
+    conn: &rusqlite::Connection,
+    cards: &[CardRow],
+    vectors: &impl VectorRowProvider,
+    query_vector: &[f32],
+    text: &str,
+    filters: &CardFilters,
+    limit: usize,
+    restrict: Option<&std::collections::HashSet<String>>,
+) -> anyhow::Result<SearchResults> {
+    search_with_settings(
+        conn,
+        cards,
+        vectors,
+        query_vector,
+        text,
+        filters,
+        limit,
+        restrict,
+        &DEFAULT_SEARCH_SETTINGS,
+    )
+}
+
+/// Run shared search with explicit candidate depths, BM25 weights, and RRF k.
+///
+/// The selected depths grow to at least `limit`, so settings cannot starve a
+/// larger requested result window.
+///
+/// # Errors
+/// Fails when card IDs, vector rows, or dimensions do not align, when search
+/// settings are invalid, or when SQLite search fails.
+#[allow(clippy::too_many_arguments)]
+pub fn search_with_settings(
+    conn: &rusqlite::Connection,
+    cards: &[CardRow],
+    vectors: &impl VectorRowProvider,
+    query_vector: &[f32],
+    text: &str,
+    filters: &CardFilters,
+    limit: usize,
+    restrict: Option<&std::collections::HashSet<String>>,
+    settings: &SearchSettings,
+) -> anyhow::Result<SearchResults> {
+    validate_settings(settings)?;
+    let vector_count = vectors.row_count();
+    if vector_count > 0 {
+        anyhow::ensure!(
+            vector_count == cards.len(),
+            "vector store holds {vector_count} rows but the card table lists {}; rebuild the index with 'stm setup --force'",
+            cards.len()
+        );
+        anyhow::ensure!(
+            vectors.dimension() > 0 && query_vector.len() == vectors.dimension(),
+            "query vector has dimension {} but vector rows have dimension {}; use matching embedding models",
+            query_vector.len(),
+            vectors.dimension()
+        );
+        for (row, card) in cards.iter().enumerate() {
+            anyhow::ensure!(
+                vectors.card_name(row) == Some(card.name.as_str()),
+                "vector row {row} does not match card {}; rebuild the index with 'stm setup --force'",
+                card.name
+            );
+            anyhow::ensure!(
+                vectors
+                    .vector(row)
+                    .is_some_and(|vector| vector.len() == vectors.dimension()),
+                "vector row {row} has the wrong dimension; rebuild the vector cache"
+            );
+        }
+    }
+
+    let cards_by_name: std::collections::HashMap<&str, &CardRow> = cards
+        .iter()
+        .map(|card| (card.name.as_str(), card))
+        .collect();
+    let allowed: Vec<bool> = cards
+        .iter()
+        .map(|card| {
+            restrict.is_none_or(|names| names.contains(&card.name)) && filters.matches(card)
+        })
+        .collect();
+    let fts_depth = settings.fts_candidate_depth.max(limit);
+    let vector_depth = settings.vector_candidate_depth.max(limit);
+    let mut vector_hits = Vec::new();
+    if vector_count > 0 && vector_depth > 0 {
+        let mut scored: Vec<(usize, f32)> = Vec::new();
+        for (row, is_allowed) in allowed.iter().copied().enumerate() {
+            if !is_allowed {
+                continue;
+            }
+            let vector = vectors
+                .vector(row)
+                .ok_or_else(|| anyhow::anyhow!("vector row {row} disappeared during search"))?;
+            let score: f32 = query_vector
+                .iter()
+                .zip(vector)
+                .map(|(query, value)| query * value)
+                .sum();
+            scored.push((row, score));
+        }
+        if scored.len() > vector_depth {
+            scored.select_nth_unstable_by(vector_depth - 1, |a, b| b.1.total_cmp(&a.1));
+            scored.truncate(vector_depth);
+        }
+        scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
+        vector_hits = scored
+            .into_iter()
+            .map(|(row, score)| {
+                let card = &cards[row];
+                (card.name.clone(), f64::from(score))
+            })
+            .collect();
+    }
+
+    let prepared = prepare_query_with_operator(text, settings.fts_term_operator);
+    let mut fts_hits = Vec::new();
+    if let Some(expression) = prepared.fts_expression {
+        let ids = db::card_ids(conn)?;
+        anyhow::ensure!(
+            ids.len() == cards.len(),
+            "database lists {} card IDs but {} card rows; reload cards before searching",
+            ids.len(),
+            cards.len()
+        );
+        let row_by_id: std::collections::HashMap<i64, usize> = ids
+            .into_iter()
+            .enumerate()
+            .map(|(row, id)| (id, row))
+            .collect();
+        let mut sql_limit = fts_depth
+            .saturating_mul(settings.fts_overfetch_multiplier)
+            .max(settings.fts_min_sql_rows);
+        for _ in 0..settings.fts_max_rounds {
+            let round: Vec<(String, f64)> = db::fts_search_with_weights(
+                conn,
+                &expression,
+                sql_limit,
+                settings.fts_column_weights,
+            )?
+            .into_iter()
+            .filter_map(|(id, score)| {
+                let row = *row_by_id.get(&id)?;
+                allowed[row].then(|| (cards[row].name.clone(), score))
+            })
+            .collect();
+            if round.len() >= fts_hits.len() || round.len() >= fts_depth {
+                fts_hits = round;
+            }
+            if fts_hits.len() >= fts_depth {
+                break;
+            }
+            sql_limit = sql_limit.saturating_mul(settings.fts_overfetch_multiplier);
+        }
+        fts_hits.truncate(fts_depth);
+    }
+
+    let hybrid = fuse_weighted_rrf(
+        &fts_hits,
+        &vector_hits,
+        limit,
+        settings.rrf_k,
+        settings.fts_rrf_weight,
+        settings.vector_rrf_weight,
+        |name| cards_by_name.get(name).and_then(|card| card.edhrec_rank),
+    );
+    Ok(SearchResults {
+        fts: to_hits(fts_hits, &cards_by_name),
+        vector: to_hits(vector_hits, &cards_by_name),
+        hybrid: to_hits(hybrid, &cards_by_name),
+    })
+}
+
+/// Reject settings that cannot be represented safely by the shared ranking path.
+fn validate_settings(settings: &SearchSettings) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        settings
+            .fts_column_weights
+            .iter()
+            .all(|weight| weight.is_finite() && *weight >= 0.0),
+        "FTS weights must be finite and non-negative"
+    );
+    anyhow::ensure!(
+        settings.rrf_k.is_finite() && settings.rrf_k >= 0.0,
+        "RRF k must be finite and non-negative"
+    );
+    anyhow::ensure!(
+        settings.fts_rrf_weight.is_finite()
+            && settings.fts_rrf_weight >= 0.0
+            && settings.vector_rrf_weight.is_finite()
+            && settings.vector_rrf_weight >= 0.0
+            && settings.fts_rrf_weight + settings.vector_rrf_weight > 0.0,
+        "RRF leg weights must be finite, non-negative, and not both zero"
+    );
+    anyhow::ensure!(
+        settings.fts_overfetch_multiplier > 0
+            && settings.fts_min_sql_rows > 0
+            && settings.fts_max_rounds > 0,
+        "FTS window multiplier, minimum rows, and maximum rounds must be positive"
+    );
+    Ok(())
 }
 
 /// Run a hybrid search: full-text (BM25) + vector legs fused by RRF.
@@ -556,110 +907,65 @@ pub fn run_search(
     let store =
         VectorStore::load(paths.root()).context("loading vector index (run 'stm setup' first)")?;
     let cards = db::load_all_cards(conn)?;
-    let cards_by_name: std::collections::HashMap<&str, &CardRow> =
-        cards.iter().map(|c| (c.name.as_str(), c)).collect();
-    // FTS returns the cards.rowid; map it to a position through the actual
-    // ids (rowids are not guaranteed to be dense or position-aligned).
-    let names_by_id: std::collections::HashMap<i64, usize> =
-        db::card_ids(conn)?.into_iter().zip(0..).collect();
-    let depth = fusion_depth(limit);
-    // One filter pass over the store up front: leg closures read this mask
-    // instead of re-running the JSON-backed filter checks per card per leg.
-    let allowed: Vec<bool> = cards
-        .iter()
-        .map(|card| {
-            restrict.is_none_or(|names| names.contains(&card.name)) && filters.matches(card)
-        })
-        .collect();
+    let prepared = prepare_query(text);
+    let query_vector = if store.is_empty() {
+        Vec::new()
+    } else {
+        let status = crate::paths::Status::read(&paths.status_file())?;
+        anyhow::ensure!(
+            store.meta.model == embed::MODEL_NAME
+                && status.model == embed::MODEL_NAME
+                && status.doc_version == embed::DOC_VERSION,
+            "the card index uses an older embedding model or document layout; run 'stm sync' before searching"
+        );
+        // Alignment is checked before model loading so corrupt metadata does
+        // not spend time starting the inference runtime.
+        validate_vector_names(&store, &cards)?;
+        let mut model = embed::load_query_model(&paths.models_dir(), false)?;
+        store.embed_query(&mut model, &prepared.expanded_text)?
+    };
+    let results = search_with_vectors(
+        conn,
+        &cards,
+        &store,
+        &query_vector,
+        text,
+        filters,
+        limit,
+        restrict,
+    )?;
+    Ok(results.hybrid)
+}
 
-    // Leg 1: vector scan into a scratch buffer, filtered, top-`depth` by
-    // partial sort (a full scan is cheap; a full sort is not). The embedded
-    // text carries the expansion alias so shorthand phrasing matches the
-    // vocabulary the documents actually use.
-    let expanded = expanded_text(text);
-    let mut model = embed::load_model(&paths.models_dir(), false)?;
-    let query = store.embed_query(&mut model, &expanded)?;
-    let mut scored: Vec<(usize, f32)> = Vec::with_capacity(cards.len());
-    // The vector rows must stay aligned with the loaded card list: row i
-    // scores cards[i]. A shorter store is guarded by the length check
-    // below; when lengths match, the names must too.
-    debug_assert!(
-        store.meta.names.len() != cards.len()
-            || store
+/// Check the production vector store against cards before loading the model.
+fn validate_vector_names(store: &VectorStore, cards: &[CardRow]) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        store.len() == cards.len()
+            && store
                 .meta
                 .names
                 .iter()
-                .zip(cards.iter())
-                .all(|(a, b)| a == &b.name),
-        "vector rows out of alignment with loaded cards"
+                .zip(cards)
+                .all(|(name, card)| name == &card.name),
+        "vector store holds {} rows but the card table lists {} and they are out of alignment; rebuild the index with 'stm setup --force'",
+        store.len(),
+        cards.len()
     );
-    for (i, allowed_i) in allowed.iter().enumerate() {
-        if *allowed_i && i < store.meta.names.len() {
-            let row = store.row(i);
-            let score: f32 = query.iter().zip(row).map(|(q, v)| q * v).sum();
-            scored.push((i, score));
-        }
-    }
-    if scored.len() > depth {
-        scored.select_nth_unstable_by(depth - 1, |a, b| b.1.total_cmp(&a.1));
-        scored.truncate(depth);
-    }
-    scored.sort_unstable_by(|a, b| b.1.total_cmp(&a.1));
-    let vector_hits: Vec<(String, f64)> = scored
-        .into_iter()
-        .map(|(idx, score)| (cards[idx].name.clone(), score as f64))
-        .collect();
-
-    // Leg 2: full-text BM25 over name/tags/type/oracle text. Punctuation-only
-    // queries skip the leg (nothing tokenizes). The SQL cut over-selects
-    // (4× per round) until `depth` rows survive the filters, so a tight
-    // restrict/filter cannot starve the fused window. Expansion alias terms
-    // join as extra OR terms so shorthand still reaches the tag vocabulary.
-    let Some(expr) = db::fts_query(&expanded) else {
-        let fused = fuse_rrf(&[], &vector_hits, limit, |name| {
-            cards_by_name.get(name).and_then(|c| c.edhrec_rank)
-        });
-        return Ok(to_hits(fused, &cards_by_name));
-    };
-    let mut fts_hits: Vec<(String, f64)> = Vec::new();
-    let mut sql_limit = depth.saturating_mul(4).max(50);
-    for _ in 0..4 {
-        let round: Vec<(String, f64)> = db::fts_search(conn, &expr, sql_limit)?
-            .into_iter()
-            .filter_map(|(id, _score)| {
-                let card_idx = *names_by_id.get(&id)?;
-                allowed[card_idx].then(|| (cards[card_idx].name.clone(), 0.0))
-            })
-            .collect();
-        if round.len() >= fts_hits.len() || round.len() >= depth {
-            fts_hits = round;
-        }
-        if fts_hits.len() >= depth {
-            break;
-        }
-        sql_limit = sql_limit.saturating_mul(4);
-    }
-    fts_hits.truncate(depth);
-
-    // Fuse on rank, keep the requested window, then map back to cards.
-    let fused = fuse_rrf(&fts_hits, &vector_hits, limit, |name| {
-        cards_by_name.get(name).and_then(|c| c.edhrec_rank)
-    });
-    Ok(to_hits(fused, &cards_by_name))
+    Ok(())
 }
 
-/// Map a fused `(name, score)` list to `Hit`s, best first.
-fn to_hits(
-    fused: Vec<(String, f32)>,
+/// Convert ordered card names and scores into public search hits.
+fn to_hits<T: Into<f64>>(
+    ranked: Vec<(String, T)>,
     cards_by_name: &std::collections::HashMap<&str, &CardRow>,
 ) -> Vec<Hit> {
-    fused
+    ranked
         .into_iter()
         .filter_map(|(name, score)| {
             let card = cards_by_name.get(name.as_str())?;
             Some(Hit {
                 card: (*card).clone(),
-                score,
+                score: score.into() as f32,
             })
         })
         .collect()
@@ -726,17 +1032,26 @@ pub fn run_query(
         // One batched query per finish kind instead of four per card name.
         let ranges = crate::prints::price_ranges(conn, &names)?;
         let tag_index = crate::tags::TagIndex::load(conn)?;
+        let owned_all = crate::collection::owned_counts_all(conn)?;
+        let available_all = crate::collection::available_counts_all(conn)?;
         let items: Vec<serde_json::Value> = hits
             .iter()
-            .map(|h| {
+            .map(|h| -> anyhow::Result<serde_json::Value> {
                 let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
-                let universe = crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)
-                    .unwrap_or_default();
-                let mut v = crate::card::card_json(&h.card, &tag_index, &range, &universe);
+                let universe =
+                    crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)?;
+                let mut v = crate::card::card_json(
+                    &h.card,
+                    &tag_index,
+                    &range,
+                    &universe,
+                    &owned_all,
+                    &available_all,
+                );
                 v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
-                v
+                Ok(v)
             })
-            .collect();
+            .collect::<anyhow::Result<_>>()?;
         print_json(items)?;
     } else {
         print_text(out, &hits);
@@ -770,210 +1085,5 @@ fn print_text(out: &Output, hits: &[Hit]) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn expansion_appends_tag_vocabulary() {
-        let expanded = expanded_text("mana ramp");
-        assert!(expanded.starts_with("mana ramp"), "{expanded}");
-        assert!(expanded.contains("ramp"), "{expanded}");
-        assert!(expanded.contains("mana acceleration"), "{expanded}");
-        // No trigger: text passes through unchanged.
-        assert_eq!(expanded_text("Lightning Bolt"), "Lightning Bolt");
-        // Multiple triggers stack, each expansion once.
-        let expanded = expanded_text("cheap counterspell");
-        assert!(expanded.contains("counter target spell"), "{expanded}");
-        // A trigger inside a larger phrase still expands.
-        let expanded = expanded_text("board wipe");
-        assert!(expanded.contains("sweeper"), "{expanded}");
-        assert!(expanded.contains("destroy all creatures"), "{expanded}");
-        // Word boundaries: "ramp" must not match inside "trample"; a query
-        // of "trample" does trigger its own entry.
-        let expanded = expanded_text("gives trample");
-        assert!(!expanded.contains("mana acceleration"), "{expanded}");
-        assert!(expanded.contains("evasion"), "{expanded}");
-        // Punctuation and case do not block matching.
-        let expanded = expanded_text("Board-Wipe!!");
-        assert!(expanded.contains("sweeper"), "{expanded}");
-    }
-
-    #[test]
-    fn fuse_rrf_rewards_consensus() {
-        // A card ranked well on both legs beats a card ranked first on one.
-        let fts = vec![("shared".to_string(), 0.0), ("fts_only".to_string(), 0.0)];
-        let vector = vec![
-            ("vector_only".to_string(), 0.0),
-            ("shared".to_string(), 0.0),
-        ];
-        let fused = fuse_rrf(&fts, &vector, 10, |_| None);
-        assert_eq!(fused[0].0, "shared");
-        // Scores are normalized to [0, 1].
-        assert!((0.0..=1.0).contains(&fused[0].1));
-    }
-
-    #[test]
-    fn fuse_rrf_normalizes_top_score() {
-        // First on both legs: (1/(k+1) + 1/(k+1)) / (2/(k+1)) == 1.0.
-        let fts = vec![("bolt".to_string(), 0.0)];
-        let vector = vec![("bolt".to_string(), 0.0)];
-        let fused = fuse_rrf(&fts, &vector, 1, |_| None);
-        assert!((fused[0].1 - 1.0).abs() < 1e-6);
-    }
-
-    #[test]
-    fn fuse_rrf_ties_break_toward_popularity_then_name() {
-        // zebra (fts #1) and apple (vector #1) tie at 1/(k+1); loved
-        // (vector #2) and plain (fts #2) tie at 1/(k+2).
-        let fts = vec![("zebra".to_string(), 0.0), ("plain".to_string(), 0.0)];
-        let vector = vec![("apple".to_string(), 0.0), ("loved".to_string(), 0.0)];
-        let fused = fuse_rrf(&fts, &vector, 10, |name| match name {
-            "loved" => Some(5),
-            _ => None,
-        });
-        // Top tie: no EDHREC data either side -> alphabetical.
-        assert_eq!(fused[0].0, "apple");
-        assert_eq!(fused[1].0, "zebra");
-        // Second tie: EDHREC-ranked card first.
-        assert_eq!(fused[2].0, "loved");
-        assert_eq!(fused[3].0, "plain");
-    }
-
-    #[test]
-    fn fuse_rrf_respects_limit() {
-        let fts: Vec<(String, f64)> = (0..30).map(|i| (format!("card{i}"), 0.0)).collect();
-        assert_eq!(fuse_rrf(&fts, &[], 5, |_| None).len(), 5);
-    }
-
-    #[test]
-    fn fuse_rrf_k_softens_top_ranks() {
-        // A larger k compresses the score gap between rank 1 and rank 2.
-        let fts: Vec<(String, f64)> = (0..5).map(|i| (format!("card{i}"), 0.0)).collect();
-        let tight = fuse_rrf_k(&fts, &[], 5, 1.0, |_| None);
-        let soft = fuse_rrf_k(&fts, &[], 5, 500.0, |_| None);
-        let gap = |list: &[(String, f32)]| list[0].1 - list[1].1;
-        assert!(gap(&tight) > gap(&soft), "larger k narrows the gap");
-    }
-
-    #[test]
-    fn query_json_is_the_full_card_shape_plus_score() {
-        let card = CardRow {
-            name: "Bolt".into(),
-            oracle_id: "oid".into(),
-            mana_cost: "{R}".into(),
-            cmc: 1.0,
-            type_line: "Instant".into(),
-            colors: r#"["R"]"#.into(),
-            color_identity: r#"["R"]"#.into(),
-            keywords: "[]".into(),
-            power: None,
-            toughness: None,
-            loyalty: None,
-            oracle_text: "Deal 3".into(),
-            rarity: "uncommon".into(),
-            edhrec_rank: None,
-            legalities: "{}".into(),
-            set_code: "TST".into(),
-            collector_number: "1".into(),
-            scryfall_id: "sid-1".into(),
-            released_at: String::new(),
-            game_changer: None,
-        };
-        let empty_tags = crate::tags::TagIndex::default_empty();
-        let range = crate::prints::PrintRange {
-            cheapest: Some(crate::prints::Print {
-                scryfall_id: "sid-1".into(),
-                name: "Bolt".into(),
-                set_code: "tst".into(),
-                set_name: "Test".into(),
-                collector_number: "1".into(),
-                lang: "en".into(),
-                finishes: vec!["nonfoil".into()],
-                released_at: "2020-01-01".into(),
-                usd: Some(0.99),
-                usd_foil: Some(4.5),
-                usd_etched: None,
-            }),
-            priciest: None,
-            cheapest_foil: None,
-            priciest_foil: None,
-        };
-        let v = crate::card::card_json(&card, &empty_tags, &range, &Default::default());
-        // The full contract: every CardRow field an agent joins on.
-        for key in [
-            "name",
-            "oracle_id",
-            "mana_cost",
-            "cmc",
-            "type_line",
-            "colors",
-            "color_identity",
-            "keywords",
-            "power",
-            "toughness",
-            "loyalty",
-            "oracle_text",
-            "rarity",
-            "edhrec_rank",
-            "legalities",
-            "game_changer",
-            "set",
-            "collector_number",
-            "scryfall_id",
-            "released_at",
-            "tags",
-            "price",
-            "price_foil",
-            "max_price",
-            "max_price_foil",
-        ] {
-            assert!(v.get(key).is_some(), "missing {key}");
-        }
-        assert_eq!(v["oracle_id"], "oid");
-        assert_eq!(v["price"], 0.99);
-        // An unpriced card renders null, not a missing field.
-        let v =
-            crate::card::card_json(&card, &empty_tags, &Default::default(), &Default::default());
-        assert_eq!(v["price"], serde_json::Value::Null);
-    }
-
-    #[test]
-    fn names_under_price_keeps_at_or_under_cap() {
-        let dir = tempfile::tempdir().unwrap();
-        let conn = crate::db::open(&dir.path().join("t.db")).unwrap();
-        for (name, usd, foil) in [
-            ("Cheap Bolt", Some(1.0_f64), None),
-            ("Pricy Bolt", Some(9.0), None),
-            ("Unpriced Bolt", None, None),
-            ("Foil Only", None, Some(1.5_f64)),
-        ] {
-            conn.execute(
-                "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
-                    color_identity, keywords, oracle_text, rarity, legalities,
-                    set_code, collector_number, scryfall_id, released_at)
-                 VALUES (?1, ?2, '{1}{R}', 1, 'Instant', '[]', '[]', '[]',
-                    'bolt deals 3 damage', 'common', '{}', 'tst', '1', 'sid',
-                    '2020-01-01')",
-                rusqlite::params![name, format!("oid-{name}")],
-            )
-            .unwrap();
-            conn.execute(
-                "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number,
-                    lang, rarity, finishes, released_at, usd, usd_foil, updated_at)
-                 VALUES (?1, ?2, 'm11', '148', 'en', 'common', '[\"nonfoil\"]',
-                    '2020-01-01', ?3, ?4, 't')",
-                rusqlite::params![format!("sid-{name}"), name, usd, foil],
-            )
-            .unwrap();
-        }
-        let under = crate::prints::names_under_price(&conn, 2.0).unwrap();
-        assert_eq!(
-            under,
-            vec!["Cheap Bolt".to_string(), "Foil Only".to_string()],
-            "unpriced excluded; foil-only prices at its foil print"
-        );
-        // A tighter cap drops the foil-only card.
-        let under = crate::prints::names_under_price(&conn, 1.0).unwrap();
-        assert_eq!(under, vec!["Cheap Bolt".to_string()]);
-    }
-}
+#[path = "tests/query_tests.rs"]
+mod query_tests;

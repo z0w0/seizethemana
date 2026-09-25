@@ -433,7 +433,8 @@ fn bare_header(lower: &str) -> Option<String> {
     match lower {
         "deck" | "mainboard" | "maindeck" => Some("DECK".to_string()),
         "commander" | "commanders" => Some("COMMANDER".to_string()),
-        "sideboard" | "maybeboard" => Some("SIDEBOARD".to_string()),
+        "sideboard" => Some("SIDEBOARD".to_string()),
+        "maybeboard" => Some("MAYBEBOARD".to_string()),
         _ => None,
     }
 }

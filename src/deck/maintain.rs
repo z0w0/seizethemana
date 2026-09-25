@@ -53,7 +53,7 @@ pub fn dedupe_deck(conn: &rusqlite::Connection, deck: &Deck) -> anyhow::Result<D
             let mut collapsed: Vec<(String, i64)> = Vec::new();
             for entry in target.iter_mut() {
                 let excess = entry.quantity - 1;
-                if excess > 0 && !super::update::is_singleton_exempt(conn, &entry.name) {
+                if excess > 0 && !super::update::is_singleton_exempt(conn, &entry.name)? {
                     entry.quantity = 1;
                     collapsed.push((entry.name.clone(), excess));
                 }
@@ -125,12 +125,23 @@ pub fn dedupe(
         for (card, qty) in &merged_cards {
             out.status("Merged", &format!("{card} (+{qty} copies removed)"));
         }
+        // Section-aware size, same as `deck update`.
+        let mut size = format!("{} maindeck", deduped.maindeck_total());
+        let sideboard = deduped.sideboard_total();
+        if sideboard > 0 {
+            size.push_str(&format!(" + {sideboard} sideboard"));
+        }
+        let maybeboard = deduped.maybeboard_total();
+        if maybeboard > 0 {
+            size.push_str(&format!(" + {maybeboard} maybeboard"));
+        }
+        let commander = deduped.commander_total();
+        if commander > 0 {
+            size.push_str(&format!(" + {commander} commander"));
+        }
         out.finish(
             "Deduped",
-            &format!(
-                "deck {name:?}: {merged_lines} line(s) merged (now {} cards)",
-                deduped.total()
-            ),
+            &format!("deck {name:?}: {merged_lines} line(s) merged (now {size})"),
             std::time::Duration::ZERO,
         );
     }

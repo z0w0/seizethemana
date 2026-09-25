@@ -53,9 +53,10 @@ pub struct InPlay {
     /// True once this Equipment has paid an equip cost this game (the
     /// buff joins combat only while equipped).
     pub equipped: bool,
-    /// Battlefield index of the creature this Equipment suits up
-    /// (equipped gear only). The buff joins that host's attack alone.
-    pub equip_host: Option<usize>,
+    /// Uid of the creature this Equipment suits up (equipped gear
+    /// only). The buff joins that host's attack alone; a uid survives
+    /// battlefield shifts that would stale an index.
+    pub equip_host: Option<u32>,
     /// True when this is the cast commander on the battlefield.
     pub is_commander: bool,
     /// Commander slot (index into `SimDeck.commanders`); 0 otherwise.
@@ -65,7 +66,8 @@ pub struct InPlay {
 /// One played game's record.
 #[derive(Debug, Clone)]
 pub struct GameLog {
-    /// Land drops made each turn (0/1).
+    /// Land drops made each turn (0-3: extra-turn replays and
+    /// additional-land boards can push a single turn index past 1).
     pub land_drops: Vec<u8>,
     /// Mana available at the first main phase each turn.
     pub mana_available: Vec<f64>,
@@ -89,10 +91,12 @@ pub struct GameLog {
     pub mulliganed: bool,
     /// Sum of land drops made in turns 1-4 (the screw metric's input).
     pub lands_by_4: u8,
-    /// Lands seen (hand + battlefield) by end of turn 4: the flood
-    /// metric's measured value. 11 is the nominal card window that
-    /// expectation compares against (opener + 4 draws); draw engines
-    /// widen the window, which `cards_seen_by_4` records.
+    /// Lands seen (hand + battlefield + graveyard) by end of turn 4:
+    /// the flood metric's measured value. The graveyard counts because
+    /// the hypergeometric expectation scans everything seen, and a
+    /// discarded land still flooded its draw. 11 is the nominal card
+    /// window that expectation compares against (opener + 4 draws);
+    /// draw engines widen the window, which `cards_seen_by_4` records.
     pub lands_seen_by_11: u32,
     /// Cards seen by end of turn 4: the flood window's actual size.
     /// Draw engines widen it beyond the nominal 11, and the flood
@@ -205,6 +209,9 @@ pub(super) struct GameState {
     pub(super) hand: Vec<usize>,
     pub(super) seen: u32,
     pub(super) graveyard: Vec<usize>,
+    /// True once the player has become the Monarch. From the next turn
+    /// the Monarch draws one extra card at upkeep.
+    pub(super) is_monarch: bool,
     /// First turn each card index reached the battlefield. Filled by every
     /// zone transition (cast, cheat-in, blink, reanimation); copied into
     /// the log at the end of the game.
@@ -232,10 +239,8 @@ pub(super) struct GameState {
     pub(super) awareness_cards: u32,
     /// Extra turns queued by effects this game.
     pub(super) extra_turns_queued: u32,
-    /// True while the next Scry effect should surveil (put cards in the
-    /// graveyard). Set by the Surveil spell shape before the Scry fires.
-    /// Noncreature spells cast this turn (prowess power bumps), reset
-    /// at the start of each turn.
+    /// Noncreature spells cast this turn (prowess power bumps and
+    /// cast-count engines). Reset at the start of each turn.
     pub(super) prowess_casts: u32,
     /// True when a repeated zero-cost activation produced more mana than
     /// it cost this game (Basalt Monolith-class engine loop). A census
@@ -279,6 +284,31 @@ impl Pool {
     }
 }
 
+/// The basic land types a fetch/search land targets, by its printed
+/// name. Prismatic Vista / Terramorphic Expanse / Evolving Wilds /
+/// Escape Tunnel search any basic, so they count for all five; the
+/// named fetches carry their real target pair.
+fn fetch_target_pair(name: &str) -> &'static [&'static str] {
+    match name {
+        "Flooded Strand" => &["Plains", "Island"],
+        "Polluted Delta" => &["Island", "Swamp"],
+        "Windswept Heath" => &["Plains", "Forest"],
+        "Wooded Foothills" => &["Mountain", "Forest"],
+        "Scalding Tarn" => &["Island", "Mountain"],
+        "Arid Mesa" => &["Plains", "Mountain"],
+        "Marsh Flats" => &["Plains", "Swamp"],
+        "Misty Rainforest" => &["Island", "Forest"],
+        "Bloodstained Mire" => &["Swamp", "Mountain"],
+        "Verdant Catacombs" => &["Swamp", "Forest"],
+        "Fabled Passage"
+        | "Prismatic Vista"
+        | "Terramorphic Expanse"
+        | "Evolving Wilds"
+        | "Escape Tunnel" => &["Plains", "Island", "Swamp", "Mountain", "Forest"],
+        _ => &[],
+    }
+}
+
 /// True when the land's name marks a card the sim recognizes as a fetch
 /// ("search … for a … land"): playing it searches up another land.
 pub(super) fn fetches_land_text(card: &super::model::SimCard) -> bool {
@@ -305,8 +335,9 @@ pub(super) fn fetches_land_text(card: &super::model::SimCard) -> bool {
 }
 
 /// Basic land types a land name implies (verge gates). Match keys off
-/// known mana-base names because the sim has no type data; fetches count
-/// for their full target pair.
+/// known mana-base names because the sim has no type data. Fetches
+/// count only for their real target pair (Polluted Delta opens
+/// Island/Swamp verge gates, never a Mountain gate).
 pub(super) fn land_types(name: &str) -> &'static [&'static str] {
     match name {
         "Plains" => &["Plains"],
@@ -324,7 +355,7 @@ pub(super) fn land_types(name: &str) -> &'static [&'static str] {
         "Overgrown Tomb" => &["Swamp", "Forest"],
         "Stomping Ground" => &["Mountain", "Forest"],
         "Blood Crypt" => &["Swamp", "Mountain"],
-        // Fetches and generic search lands satisfy their whole target set.
+        // Fetches and generic search lands satisfy their target set.
         "Flooded Strand"
         | "Polluted Delta"
         | "Windswept Heath"
@@ -336,9 +367,10 @@ pub(super) fn land_types(name: &str) -> &'static [&'static str] {
         | "Bloodstained Mire"
         | "Verdant Catacombs"
         | "Fabled Passage"
+        | "Prismatic Vista"
         | "Terramorphic Expanse"
         | "Evolving Wilds"
-        | "Escape Tunnel" => &["Plains", "Island", "Swamp", "Mountain", "Forest"],
+        | "Escape Tunnel" => fetch_target_pair(name),
         _ => &[],
     }
 }
@@ -479,9 +511,10 @@ pub(super) fn fire_on_enter_opts(
         // deferred firing does not re-arm: one re-fire per entry. The
         // uid (not the card index) keys the re-arm: with two copies of
         // the blink card in play, the host copy re-arms itself, never a
-        // sibling.
+        // sibling. Land-search and Monarch ETBs parse to other effects
+        // and never arm the flag.
         if !deferred
-            && matches!(effect, Effect::ExtraLand)
+            && matches!(effect, Effect::Blink)
             && has_real_etb
             && perm_card < usize::MAX - 1
             && let Some(p) = st.battlefield.iter_mut().find(|p| p.uid == perm_uid)

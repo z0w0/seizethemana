@@ -137,9 +137,6 @@ impl CardFilters {
 
 /// The fields [`CardFilters`] tests against; implemented by card rows and
 /// collection-augmented rows alike.
-// `name`/`mana_cost` accessors serve card lookup and deck validation; the
-// rest drive the filter engine below.
-#[allow(dead_code)]
 pub trait Filterable {
     fn name(&self) -> &str;
     fn mana_cost(&self) -> &str;

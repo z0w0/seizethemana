@@ -278,6 +278,97 @@ fn plain_partner_keyword_pairs() {
 }
 
 #[test]
+fn partner_pair_identity_checks_the_ninety_nine() {
+    // A Partner pair counts as a resolved command zone: the 99 are
+    // checked against the combined identity of both commanders.
+    let mut cards = HashMap::new();
+    let mut tymna = card("Tymna", "Legendary Creature — Human Cleric", "WB", "");
+    tymna.keywords = r#"["Partner"]"#.into();
+    let mut thrasios = card("Thrasios", "Legendary Creature — Merfolk Wizard", "GU", "");
+    thrasios.keywords = r#"["Partner"]"#.into();
+    cards.insert("Thrasios".to_string(), thrasios);
+    cards.insert("Tymna".to_string(), tymna);
+    cards.insert(
+        "Bolt".to_string(),
+        card("Bolt", "Instant", "R", "Deal 3 to any target."),
+    );
+    // Combined identity is WUBG (Tymna WB + Thrasios GU): a white card
+    // passes, red does not.
+    cards.insert(
+        "Tithe".to_string(),
+        card("Tithe", "Instant", "W", "Search a Plains."),
+    );
+    cards.insert(
+        "Plains".to_string(),
+        card("Plains", "Basic Land — Plains", "", ""),
+    );
+    let deck =
+        Deck::parse("// COMMANDER\n1 Thrasios\n1 Tymna\n// DECK\n96 Plains\n1 Tithe\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
+    assert!(
+        violations
+            .iter()
+            .all(|v| v.rule != "commander color identity"),
+        "WUBG combined identity covers white Tithe: {violations:?}"
+    );
+    assert!(
+        violations.iter().all(|v| v.rule != "commander"),
+        "a Partner pair is a legal command zone: {violations:?}"
+    );
+
+    // Mono-G partner + mono-W partner = GW identity: a blue card and a
+    // red card both fail.
+    let mut green_partner = card("G Partner", "Legendary Creature — Elf", "G", "");
+    green_partner.keywords = r#"["Partner"]"#.into();
+    let mut white_partner = card("W Partner", "Legendary Creature — Human", "W", "");
+    white_partner.keywords = r#"["Partner"]"#.into();
+    cards.insert("G Partner".to_string(), green_partner);
+    cards.insert("W Partner".to_string(), white_partner);
+    cards.insert(
+        "Frog".to_string(),
+        card("Frog", "Creature — Frog", "U", "Swim."),
+    );
+    let deck =
+        Deck::parse("// COMMANDER\n1 G Partner\n1 W Partner\n// DECK\n96 Plains\n1 Frog\n1 Bolt\n")
+            .unwrap();
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
+    let identity_v = violations
+        .iter()
+        .find(|v| v.rule == "commander color identity")
+        .expect("a GW pair must identity-check the 99");
+    // Frog (U) and Bolt (R) both sit outside the GW combined identity.
+    assert_eq!(
+        identity_v.cards,
+        vec!["Frog".to_string(), "Bolt".to_string()]
+    );
+}
+
+#[test]
+fn unresolved_pair_skips_identity_but_flags_commander_rule() {
+    // One partner name not in the oracle: identity checking stays off
+    // (guessing "" would flag every colored card), but the unknown-name
+    // and commander checks still report.
+    let mut cards = HashMap::new();
+    let mut known = card("Known Partner", "Legendary Creature — Elf", "G", "");
+    known.keywords = r#"["Partner"]"#.into();
+    cards.insert("Known Partner".to_string(), known);
+    cards.insert(
+        "Frog".to_string(),
+        card("Frog", "Creature — Frog", "U", "Swim."),
+    );
+    let deck =
+        Deck::parse("// COMMANDER\n1 Known Partner\n1 Ghost Commander\n// DECK\n1 Frog\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
+    assert!(violations.iter().any(|v| v.rule == "unknown cards"));
+    assert!(
+        !violations
+            .iter()
+            .any(|v| v.rule == "commander color identity"),
+        "identity stays unchecked while a commander name is unknown: {violations:?}"
+    );
+}
+
+#[test]
 fn vehicle_commander_rules() {
     let mut cards = HashMap::new();
     let mut vehicle = card("Parhelion", "Legendary Artifact — Vehicle", "W", "Crew 4");
@@ -378,6 +469,38 @@ fn singleton_limit_excepts_basics_and_oracle_text() {
 }
 
 #[test]
+fn singleton_formats_flag_more_than_one_copy() {
+    let mut cards = HashMap::new();
+    cards.insert(
+        "Breya".to_string(),
+        card("Breya", "Legendary Creature — Human", "WUB", ""),
+    );
+    cards.insert("Bolt".to_string(), card("Bolt", "Instant", "R", "Deal 3."));
+    cards.insert(
+        "Plains".to_string(),
+        card("Plains", "Basic Land — Plains", "", ""),
+    );
+    // Three Bolt copies in a commander deck: the singleton copy limit
+    // (1 per non-basic card) fails even though 3 stays under the
+    // constructed limit of 4.
+    let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n3 Bolt\n95 Plains\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
+    assert!(
+        violations
+            .iter()
+            .any(|v| v.rule == "copy limit" && v.cards.iter().any(|c| c.contains("Bolt"))),
+        "singleton copy-limit violations: {violations:?}"
+    );
+    // A single copy stays clean.
+    let deck = Deck::parse("// COMMANDER\n1 Breya\n// DECK\n1 Bolt\n98 Plains\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("commander"), None);
+    assert!(
+        violations.iter().all(|v| v.rule != "copy limit"),
+        "single-copy violations: {violations:?}"
+    );
+}
+
+#[test]
 fn commander_size_ignores_sideboard() {
     let mut cards = HashMap::new();
     cards.insert(
@@ -416,14 +539,10 @@ fn game_changer_count_violates_bracket_3() {
         "Plains".to_string(),
         card("Plains", "Basic Land — Plains", "", ""),
     );
-    for (i, name) in ["GC One", "GC Two", "GC Three", "GC Four"]
-        .iter()
-        .enumerate()
-    {
+    for name in ["GC One", "GC Two", "GC Three", "GC Four"] {
         let mut gc = card(name, "Instant", "U", "Strong effect.");
         gc.game_changer = Some(true);
         gc.legalities = r#"{"commander":"legal"}"#.into();
-        let _ = i;
         cards.insert(name.to_string(), gc);
     }
     // 4 Game Changers + commander + 95 Plains = 100 cards.
@@ -478,6 +597,34 @@ fn sideboard_game_changers_ignore_bracket_count() {
         !checklist[0].contains("GC Four"),
         "checklist was {checklist:?}"
     );
+}
+
+#[test]
+fn game_changer_names_reports_maindeck_order() {
+    let mut cards = HashMap::new();
+    let mut gc_a = card("GC One", "Instant", "W", "");
+    gc_a.game_changer = Some(true);
+    let mut gc_b = card("GC Two", "Artifact", "W", "");
+    gc_b.game_changer = Some(true);
+    let plain = card("Plain", "Instant", "W", "");
+    cards.insert("GC One".to_string(), gc_a);
+    cards.insert("GC Two".to_string(), gc_b);
+    cards.insert("Plain".to_string(), plain);
+    cards.insert("GC Four".to_string(), {
+        let mut c = card("GC Four", "Enchantment", "W", "");
+        c.game_changer = Some(true);
+        c
+    });
+    let deck = Deck::parse("// DECK\n2 GC One\n1 Plain\n1 GC Two\n").unwrap();
+    let names = crate::deck::bracket::game_changer_names(&deck, &cards);
+    assert_eq!(
+        names,
+        vec!["GC One", "GC Two"],
+        "first-seen order, plain excluded"
+    );
+    // Unknown names (no card row) never read as Game Changers.
+    let deck = Deck::parse("// DECK\n1 Ghost Card\n").unwrap();
+    assert!(crate::deck::bracket::game_changer_names(&deck, &cards).is_empty());
 }
 
 #[test]
@@ -598,9 +745,13 @@ fn bracket_3_library_search_is_advisory_not_check() {
         .collect();
     let clean = Deck::parse("// COMMANDER\n1 Bear\n\n// DECK\n10 Forest\n").unwrap();
     let checks = scan_bracket_signals(&clean, &cards, 3);
+    let pass = checks
+        .iter()
+        .find(|c| c.contains("library search"))
+        .expect("zero searchers still emit a verdict line");
     assert!(
-        !checks.iter().any(|c| c.contains("library search")),
-        "no searchers, no advisory"
+        pass.starts_with("ADVISE library search: none found"),
+        "bracket 3 with no searchers emits the PASS-equivalent: {pass}"
     );
 }
 
@@ -803,5 +954,147 @@ fn legal_json_splits_advisories_from_violations() {
             .iter()
             .any(|c| c.starts_with("CHECK ") && c.contains("library search")),
         "soft searchers do not CHECK at bracket 3"
+    );
+}
+
+#[test]
+fn bench_sections_check_color_identity_but_not_bracket() {
+    // A GC in the sideboard or maybeboard never counts toward the bracket
+    // cap (maindeck only), but off-identity bench cards are flagged.
+    let mut cards = HashMap::new();
+    cards.insert(
+        "Breya".to_string(),
+        card("Breya", "Legendary Creature — Human", "WUB", ""),
+    );
+    cards.insert("Bolt".to_string(), card("Bolt", "Instant", "R", "Deal 3."));
+    cards.insert(
+        "Tithe".to_string(),
+        card("Tithe", "Enchantment", "W", "Pay or treasure."),
+    );
+    cards.get_mut("Tithe").unwrap().game_changer = Some(true);
+    let deck = Deck::parse(
+        "// COMMANDER\n1 Breya\n// DECK\n1 Birds\n// SIDEBOARD\n1 Tithe\n// MAYBEBOARD\n1 Bolt\n",
+    )
+    .unwrap();
+    cards.insert(
+        "Birds".to_string(),
+        card("Birds", "Creature — Bird", "WU", ""),
+    );
+    let (violations, advisories) = check(&deck, &cards, Some("commander"), Some(2));
+    assert!(
+        !violations.iter().any(|v| v.rule == "game changers"),
+        "sideboard Game Changers never count toward the bracket cap"
+    );
+    assert!(
+        advisories.iter().any(|a| a.contains("Tithe")),
+        "sideboard Game Changers surface as advisories"
+    );
+    let bench_v = violations
+        .iter()
+        .find(|v| v.rule == "bench color identity")
+        .expect("the off-identity maybeboard card is flagged");
+    assert_eq!(bench_v.cards, vec!["Bolt"]);
+}
+
+#[test]
+fn maybeboard_checks_format_legality() {
+    // Per-card legality covers the maybeboard: a banned card there is a
+    // violation, same as in the sideboard.
+    let mut cards = HashMap::new();
+    cards.insert("Ok".to_string(), card("Ok", "Instant", "R", "Deal 3."));
+    cards.insert(
+        "Banned One".to_string(),
+        card("Banned One", "Instant", "R", "Deal 4."),
+    );
+    cards.get_mut("Banned One").unwrap().legalities = r#"{"modern":"banned"}"#.into();
+    let deck = Deck::parse("// DECK\n1 Ok\n// MAYBEBOARD\n1 Banned One\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("modern"), None);
+    let banned = violations
+        .iter()
+        .find(|v| v.rule == "banned")
+        .expect("a banned card in the maybeboard is still checked");
+    assert_eq!(banned.cards, vec!["Banned One"]);
+}
+
+#[test]
+fn maybeboard_never_counts_toward_deck_size_or_sideboard_cap() {
+    // The maybeboard is free-form: it is not the BO3 sideboard and never
+    // hits the 15-card sideboard cap or the maindeck minimum.
+    let mut cards = HashMap::new();
+    cards.insert("Ok".to_string(), card("Ok", "Instant", "R", "Deal 3."));
+    let deck = Deck::parse("// DECK\n1 Ok\n// MAYBEBOARD\n20 Ok\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("modern"), None);
+    assert!(
+        !violations.iter().any(|v| v.rule == "sideboard size"),
+        "maybeboard cards never hit the sideboard cap"
+    );
+    assert!(
+        !violations
+            .iter()
+            .any(|v| v.rule == "copy limit" && v.cards.iter().any(|c| c.contains("21"))),
+        "maybeboard copies never count toward the copy limit"
+    );
+}
+
+#[test]
+fn restricted_cards_capped_at_one_copy() {
+    // Vintage rule: a restricted card is legal but limited to one copy.
+    let mut cards = HashMap::new();
+    cards.insert(
+        "Flash".to_string(),
+        card("Flash", "Instant", "U", "Return a creature to hand."),
+    );
+    cards.get_mut("Flash").unwrap().legalities = r#"{"vintage":"restricted"}"#.into();
+    let deck = Deck::parse("// DECK\n2 Flash\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("vintage"), None);
+    let cap = violations
+        .iter()
+        .find(|v| v.rule == "restricted copy limit")
+        .expect("2 copies of a restricted card violate the 1-copy cap");
+    assert_eq!(cap.cards, vec!["Flash ×2"]);
+
+    // One copy passes.
+    let deck = Deck::parse("// DECK\n1 Flash\n").unwrap();
+    let (violations, _) = check(&deck, &cards, Some("vintage"), None);
+    assert!(
+        !violations.iter().any(|v| v.rule == "restricted copy limit"),
+        "one copy of a restricted card is legal"
+    );
+}
+
+#[test]
+fn nonland_sweeper_with_mld_mode_still_scans() {
+    // Per-sentence exclusion: a modal card whose nonland sweeper sentence
+    // says "nonland" but whose other sentence destroys all lands must
+    // still flag mass land denial.
+    let mut cards: HashMap<String, CardRow> = HashMap::new();
+    cards.insert(
+        "Modal MLD".to_string(),
+        card(
+            "Modal MLD",
+            "Sorcery",
+            "R",
+            "Choose one —\n• Destroy all nonland permanents.\n• Destroy all lands.",
+        ),
+    );
+    cards.insert(
+        "Plain Sweeper".to_string(),
+        card(
+            "Plain Sweeper",
+            "Sorcery",
+            "W",
+            "Destroy all nonland permanents.",
+        ),
+    );
+    let deck = Deck::parse("// DECK\n1 Modal MLD\n1 Plain Sweeper\n").unwrap();
+    let lines = scan_bracket_signals(&deck, &cards, 2);
+    let mld = lines
+        .iter()
+        .find(|l| l.contains("mass land destruction"))
+        .expect("MLD verdict present");
+    assert!(mld.contains("Modal MLD"), "MLD mode still flags: {mld}");
+    assert!(
+        !mld.contains("Plain Sweeper"),
+        "a pure nonland sweeper stays excluded: {mld}"
     );
 }

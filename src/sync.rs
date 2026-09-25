@@ -1,6 +1,10 @@
 use anyhow::Context;
 use rusqlite::Connection;
 
+mod status;
+use status::{doc_version_current, embed_targets, tick_embed_progress};
+pub use status::{is_stale, stamp_combos_synced, stamp_synced, upsert_vector, write_status};
+
 // `stm sync`: keep card data, prices, and oracle tags fresh from one
 // download pass.
 //
@@ -34,9 +38,9 @@ pub struct SyncOptions {
 /// Interrupted runs leave `scryfall_synced_at` untouched, so the store stays marked
 /// stale and the next command retries.
 ///
-/// Tag changes refresh the `tags`/`card_tags` tables but never trigger
-/// re-embedding: embeddings only change when the document layout version
-/// changes or card content changes.
+/// Tag changes refresh `tags`/`card_tags` and re-embed cards whose selected
+/// document labels changed. Card content and document-layout changes also
+/// trigger re-embedding.
 ///
 /// # Errors
 /// Propagates network, SQLite, and embedding failures.
@@ -80,14 +84,18 @@ pub fn run_sync(
     // backfill set_type/franchise from the store + the curated mapping.
     backfill_universe(conn, out)?;
 
-    // Tags refresh the lookup tables only; embeddings ignore them.
-    out.status("Ingesting", "oracle tags from bulk data");
-    let tags_delta = crate::tags::ingest(conn, &tags_dest, out)?;
+    // Tag labels are part of embedding documents. Keep the prior documents
+    // so the tag ingest can identify cards whose selected labels changed.
+    let cards_before_tags = crate::db::load_all_cards(conn)?;
+    let tags_before = crate::tags::TagIndex::load(conn)?;
+    out.status("Preparing", "tag search");
+    let tags_delta = crate::tags::ingest(conn, &tags_dest)?;
+    let tags_after = crate::tags::TagIndex::load(conn)?;
+    let tag_targets = changed_tag_documents(&cards_before_tags, &tags_before, &tags_after);
 
     // Push the new labels into the full-text index: tag labels are FTS
     // content (weight second to name), so role words resolve through the
     // community vocabulary.
-    out.status("Indexing", "tag labels into full-text search");
     let tagged = crate::db::refresh_tags_text(conn)?;
     out.status(
         "Indexed",
@@ -107,11 +115,14 @@ pub fn run_sync(
         }
     };
 
-    if delta.to_embed.is_empty() && doc_version_current(paths)? {
+    let stale_layout = !doc_version_current(paths)?;
+    if delta.to_embed.is_empty() && tag_targets.is_empty() && !stale_layout {
         out.status("Embedding", "no card content changed, index up to date");
     } else {
-        let reason = if delta.to_embed.is_empty() {
+        let reason = if delta.to_embed.is_empty() && tag_targets.is_empty() {
             "embedding document layout is outdated"
+        } else if delta.to_embed.is_empty() {
+            "tag labels changed"
         } else {
             "cards"
         };
@@ -120,7 +131,7 @@ pub fn run_sync(
             &format!(
                 "{}: {} new/changed, {} added, {} updated",
                 reason,
-                delta.to_embed.len(),
+                delta.to_embed.len() + tag_targets.len(),
                 delta.added,
                 delta.changed
             ),
@@ -129,18 +140,16 @@ pub fn run_sync(
         // owned copy instead of the read-only query mapping.
         let mut store = crate::embed::VectorStore::load_owned(paths.root())?;
         let mut model = crate::embed::load_model(&paths.models_dir(), out.verbose)?;
-        let tag_index = crate::tags::TagIndex::load(conn)?;
-        // A layout bump re-embeds every stored card once; otherwise only the
-        // names this sync found changed.
-        let stale_layout = !doc_version_current(paths)?;
-        let targets: Vec<String> = if stale_layout {
-            store.meta.names.clone()
-        } else {
-            delta.to_embed.clone()
-        };
+        // A layout bump re-embeds every stored card once — plus every
+        // name this sync added or changed, which the store may not hold
+        // yet. The union keeps the vector store in step with the cards
+        // table in both cases.
+        let mut changed_content = delta.to_embed;
+        changed_content.extend(tag_targets);
+        let targets = embed_targets(stale_layout, &store.meta.names, &changed_content);
         for (pos, name) in targets.iter().enumerate() {
             if let Some(card) = crate::db::get_card(conn, name)? {
-                upsert_vector(&mut store, &mut model, &card, &tag_index)?;
+                upsert_vector(&mut store, model.as_mut(), &card, &tags_after)?;
                 tick_embed_progress(out, targets.len(), pos + 1);
             }
         }
@@ -149,7 +158,10 @@ pub fn run_sync(
         store.save_vectors(paths.root())?;
         // write_status already stamps doc_version as current.
         write_status(paths, &store)?;
-        out.status("Embedded", &format!("{} cards", targets.len()));
+        out.status(
+            "Embedded",
+            &format!("{} cards", crate::output::grouped_int(targets.len() as i64)),
+        );
     }
 
     stamp_synced(paths, now)?;
@@ -162,12 +174,12 @@ pub fn run_sync(
         "Finished",
         &format!(
             "sync: {} added, {} updated, {} rank-only, {} priced in-bulk, {} tags, {} combos",
-            delta.added,
-            delta.changed,
-            delta.rank_only,
-            delta.priced,
-            tags_delta.tags,
-            combos_delta
+            crate::output::grouped_int(delta.added as i64),
+            crate::output::grouped_int(delta.changed as i64),
+            crate::output::grouped_int(delta.rank_only as i64),
+            crate::output::grouped_int(delta.priced as i64),
+            crate::output::grouped_int(tags_delta.tags as i64),
+            crate::output::grouped_int(combos_delta as i64)
         ),
         start.elapsed(),
     );
@@ -190,18 +202,21 @@ pub struct SyncDelta {
     pub priced: usize,
 }
 
-/// Stream the bulk file once; diff cards and harvest prints in one sweep.
-///
-/// The pass reuses setup's dedup rules (one row per name) and, per stored
-/// name, compares an ingest signature to detect content changes. Every
-/// passing print row is upserted into `card_prints` (not just the per-name
-/// winner), so per-printing prices stay complete. Prints that vanished from
-/// the bulk keep their last known row (the snapshot is additive in this
-/// mode).
-///
-/// # Errors
-/// Propagates SQLite failures.
-///
+/// Return cards whose selected embedding labels changed after a tag refresh.
+fn changed_tag_documents(
+    cards: &[crate::db::CardRow],
+    before: &crate::tags::TagIndex,
+    after: &crate::tags::TagIndex,
+) -> Vec<String> {
+    cards
+        .iter()
+        .filter(|card| {
+            before.doc_tags_line(&card.oracle_id) != after.doc_tags_line(&card.oracle_id)
+        })
+        .map(|card| card.name.clone())
+        .collect()
+}
+
 /// Content signature of a stored row (what re-ingest can change).
 ///
 /// Includes every column the ingest can update *except* `edhrec_rank`:
@@ -266,23 +281,32 @@ fn signature_of(card: &crate::scryfall::ScryfallCard) -> String {
     })
 }
 
-/// One parse pass over the bulk that refreshes `cards`, `card_prints`, and
-/// `sets`.
+/// Stream the bulk file once; diff cards and harvest prints in one sweep.
+///
+/// The pass reuses setup's dedup rules (one row per name) and, per stored
+/// name, compares an ingest signature to detect content changes. Every
+/// passing print row is upserted into `card_prints` during the parse pass
+/// itself (not just the per-name winner), so per-printing prices stay
+/// complete without holding a second ~90k-row copy in memory. Prints that
+/// vanished from the bulk keep their last known row (the snapshot is
+/// additive in this mode).
+///
+/// # Errors
+/// Propagates SQLite failures.
 pub fn sync_cards(
     conn: &mut Connection,
     bulk_path: &std::path::Path,
     out: &mut crate::output::Output,
     updated_at: &str,
 ) -> anyhow::Result<SyncDelta> {
-    // Stored rows for the diff.
+    // Stored rows for the diff (read before the transaction opens).
     let existing = crate::db::load_all_cards(conn)?;
     let mut by_name: std::collections::HashMap<&str, &crate::db::CardRow> =
         existing.iter().map(|c| (c.name.as_str(), c)).collect();
 
     let mut added: Vec<crate::scryfall::ScryfallCard> = Vec::new();
-    let mut changed: Vec<(crate::db::CardRow, crate::scryfall::ScryfallCard)> = Vec::new();
+    let mut changed: Vec<(String, crate::scryfall::ScryfallCard)> = Vec::new();
     let mut rank_only: Vec<(String, Option<i64>)> = Vec::new();
-    let mut prints: Vec<crate::scryfall::ScryfallCard> = Vec::new();
 
     // Bulk rows repeat one name across many sets; keep the "best" print.
     // Non-card rows (tokens, art series) are recorded by name so imports can
@@ -290,239 +314,167 @@ pub fn sync_cards(
     let mut best: std::collections::HashMap<String, crate::scryfall::ScryfallCard> =
         std::collections::HashMap::new();
     let mut token_names: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
+    let mut malformed_prints = 0usize;
+    let mut priced = 0usize;
     let mut seen = 0usize;
     out.progress_bar("Parsing", "bulk records", 0);
-    let malformed = crate::scryfall::stream_records(bulk_path, |mut card| {
-        seen += 1;
-        out.set_progress_position(seen as u64);
-        // Never-released cards stay out of the store; the daily sync adds
-        // them once their set releases.
-        if crate::scryfall::should_skip(&card) || !crate::scryfall::should_ingest(&card) {
-            token_names.insert(card.name);
-            return;
+    conn.execute("BEGIN", []).context("begin sync pass")?;
+    let mut stream_err: Option<anyhow::Error> = None;
+    let result = (|| -> anyhow::Result<()> {
+        let malformed = crate::scryfall::stream_records(bulk_path, |mut card| {
+            seen += 1;
+            out.set_progress_position(seen as u64);
+            // Never-released cards stay out of the store; the daily sync
+            // adds them once their set releases. Only non-card layouts
+            // (tokens, art series…) count as "token names" — a
+            // digital-only print of a real paper card must not, or imports
+            // of that card would skip silently.
+            if crate::scryfall::is_non_card_layout(&card.layout) {
+                token_names.insert(card.name);
+                return;
+            }
+            if crate::scryfall::should_skip(&card) || !crate::scryfall::should_ingest(&card) {
+                return;
+            }
+            crate::scryfall::flatten_faces(&mut card);
+            // Every passing print row lands in `card_prints` as it streams
+            // (per-print prices, no full-card copy kept in memory), while
+            // the per-name winner feeds the `cards` dedup. Id-less rows
+            // are well-formed lines that cannot be upserted; they count
+            // separately from malformed lines so the warning names the
+            // real cause.
+            if card.id.as_deref().is_none_or(str::is_empty) {
+                malformed_prints += 1;
+            } else if let Err(err) = crate::scryfall::upsert_print(conn, &card, updated_at) {
+                // The visit callback cannot `?`; the first failure aborts
+                // the pass after streaming ends.
+                if stream_err.is_none() {
+                    stream_err = Some(err);
+                }
+                return;
+            } else {
+                priced += 1;
+            }
+            best.entry(card.name.clone())
+                .and_modify(|current| *current = crate::scryfall::prefer_row(current, &card))
+                .or_insert(card);
+        })
+        .context("streaming bulk records")?;
+        if let Some(err) = stream_err {
+            return Err(err);
         }
-        crate::scryfall::flatten_faces(&mut card);
-        // Every passing print row lands in `card_prints` (per-print prices),
-        // while the per-name winner feeds the `cards` dedup.
-        prints.push(card.clone());
-        best.entry(card.name.clone())
-            .and_modify(|current| *current = crate::scryfall::prefer_row(current, &card))
-            .or_insert(card);
-    })
-    .context("streaming bulk records")?;
-    if malformed > 0 {
-        out.warning(&format!("{malformed} malformed bulk line(s) skipped"));
+        if malformed > 0 {
+            out.warning(&format!("{malformed} malformed bulk line(s) skipped"));
+        }
+        if malformed_prints > 0 {
+            out.warning(&format!(
+                "{malformed_prints} print row(s) skipped (no scryfall id)"
+            ));
+        }
+        diff_against_stored(
+            &mut by_name,
+            &best,
+            &mut added,
+            &mut changed,
+            &mut rank_only,
+        );
+        apply_rank_updates(conn, &rank_only)?;
+        apply_card_updates(conn, &changed, &added, &token_names)?;
+        Ok(())
+    })();
+    match result {
+        Ok(()) => {
+            conn.execute("COMMIT", []).context("committing sync pass")?;
+        }
+        Err(err) => {
+            let _ = conn.execute("ROLLBACK", []);
+            return Err(err);
+        }
     }
-
     out.clear_progress();
-    out.status(
-        "Read",
-        &format!(
-            "{seen} bulk records ({} tokens, {} cards)",
-            token_names.len(),
-            best.len(),
-        ),
-    );
 
-    for (name, card) in &best {
+    let mut to_embed: Vec<String> = Vec::new();
+    for (name, _) in &changed {
+        to_embed.push(name.clone());
+    }
+    for card in &added {
+        to_embed.push(card.name.clone());
+    }
+    Ok(SyncDelta {
+        to_embed,
+        added: added.len(),
+        changed: changed.len(),
+        rank_only: rank_only.len(),
+        priced,
+    })
+}
+
+/// Classify each bulk winner against the stored rows: added, changed, or
+/// rank-only. Pure bookkeeping over the two maps; no database access.
+fn diff_against_stored<'a>(
+    by_name: &mut std::collections::HashMap<&'a str, &'a crate::db::CardRow>,
+    best: &std::collections::HashMap<String, crate::scryfall::ScryfallCard>,
+    added: &mut Vec<crate::scryfall::ScryfallCard>,
+    changed: &mut Vec<(String, crate::scryfall::ScryfallCard)>,
+    rank_only: &mut Vec<(String, Option<i64>)>,
+) {
+    for (name, card) in best {
         match by_name.remove(name.as_str()) {
             None => added.push(card.clone()),
             Some(stored) => {
                 if ingest_signature(stored) != signature_of(card) {
-                    changed.push((stored.clone(), card.clone()));
+                    changed.push((stored.name.clone(), card.clone()));
                 } else if rank_signature(stored) != card.edhrec_rank.unwrap_or(-1) {
                     rank_only.push((stored.name.clone(), card.edhrec_rank));
                 }
             }
         }
     }
-
-    let mut to_embed: Vec<String> = Vec::new();
-    let changed_n = changed.len();
-    if changed_n > 0 {
-        out.status("Updating", &format!("{changed_n} changed cards"));
-    }
-    // Rank-only churn: one cheap UPDATE per row, no re-embed (the rank
-    // never enters the embedding document).
-    let rank_only_n = rank_only.len();
-    if rank_only_n > 0 {
-        out.status("Updating", &format!("{rank_only_n} EDHREC ranks"));
-        conn.execute("BEGIN", []).context("begin rank updates")?;
-        let result = (|| -> anyhow::Result<()> {
-            let mut stmt = conn.prepare("UPDATE cards SET edhrec_rank = ?2 WHERE name = ?1")?;
-            for (name, rank) in &rank_only {
-                stmt.execute(rusqlite::params![name, rank])?;
-            }
-            Ok(())
-        })();
-        match result {
-            Ok(()) => {
-                conn.execute("COMMIT", [])
-                    .context("committing rank updates")?;
-            }
-            Err(err) => {
-                let _ = conn.execute("ROLLBACK", []);
-                return Err(err);
-            }
-        }
-    }
-    conn.execute("BEGIN", []).context("begin card updates")?;
-    let result = (|| -> anyhow::Result<()> {
-        for (stored, card) in &changed {
-            crate::scryfall::update_card(conn, stored.name.as_str(), card)?;
-            to_embed.push(stored.name.clone());
-        }
-        for card in &added {
-            crate::scryfall::insert_card(conn, card)?;
-            to_embed.push(card.name.clone());
-        }
-        // Token names refresh wholesale from this bulk.
-        conn.execute("DELETE FROM token_names", [])?;
-        let mut stmt = conn.prepare("INSERT OR IGNORE INTO token_names (name) VALUES (?1)")?;
-        for name in &token_names {
-            stmt.execute([name])?;
-        }
-        Ok(())
-    })();
-    match result {
-        Ok(()) => {
-            conn.execute("COMMIT", [])
-                .context("committing card updates")?;
-        }
-        Err(err) => {
-            let _ = conn.execute("ROLLBACK", []);
-            return Err(err);
-        }
-    }
-
-    // Prints are additive on top of the existing snapshot (prints missing
-    // from this bulk keep their last known row).
-    conn.execute("BEGIN", []).context("begin print upsert")?;
-    let result = (|| -> anyhow::Result<()> {
-        for card in &prints {
-            crate::scryfall::upsert_print(conn, card, updated_at)?;
-        }
-        Ok(())
-    })();
-    match result {
-        Ok(()) => {
-            conn.execute("COMMIT", [])
-                .context("committing print upsert")?;
-        }
-        Err(err) => {
-            let _ = conn.execute("ROLLBACK", []);
-            return Err(err);
-        }
-    }
-
-    Ok(SyncDelta {
-        to_embed,
-        added: added.len(),
-        changed: changed_n,
-        rank_only: rank_only_n,
-        priced: prints.len(),
-    })
 }
 
-/// True when the stored vectors were built with the current document layout.
-fn doc_version_current(paths: &crate::paths::Paths) -> anyhow::Result<bool> {
-    let status = crate::paths::Status::read(&paths.status_file())?;
-    Ok(status.doc_version == crate::embed::DOC_VERSION)
-}
-
-/// Emit a one-per-fraction progress line during re-embedding.
-/// `pos` is the 1-based index of the card just embedded.
-fn tick_embed_progress(out: &mut crate::output::Output, total: usize, pos: usize) {
-    if total < 10 {
-        return;
-    }
-    if pos.is_multiple_of(total / 10) {
-        out.status("Embedding", &format!("{pos} of {total} cards"));
-    }
-}
-
-/// True when the store needs a sync: never synced, or older than
-/// [`STALE_AFTER`].
-pub fn is_stale(status: &crate::paths::Status, now: chrono::DateTime<chrono::Utc>) -> bool {
-    if !status.setup_complete {
-        return false;
-    }
-    match chrono::DateTime::parse_from_rfc3339(&status.scryfall_synced_at) {
-        Ok(last) => now.signed_duration_since(last) > STALE_AFTER,
-        Err(_) => true,
-    }
-}
-
-/// Insert or update one card's vector at `name` in the in-memory store.
-///
-/// Appends when the name is new to the index; overwrites the row and keeps
-/// row order otherwise (row order must stay aligned with `status.json.names`).
-/// Saving the matrix to disk is the caller's job, once per loop.
+/// Apply rank-only updates in one prepared statement. Caller owns the
+/// transaction.
 ///
 /// # Errors
-/// Propagates model or storage failures.
-pub fn upsert_vector(
-    store: &mut crate::embed::VectorStore,
-    model: &mut fastembed::TextEmbedding,
-    card: &crate::db::CardRow,
-    tag_index: &crate::tags::TagIndex,
+/// Propagates SQLite failures.
+fn apply_rank_updates(
+    conn: &Connection,
+    rank_only: &[(String, Option<i64>)],
 ) -> anyhow::Result<()> {
-    let vector = crate::embed::embed_texts(model, &[crate::embed::doc_for_row(card, tag_index)])?
-        .pop()
-        .context("model returned no embedding")?;
-    match store.meta.index_of(&card.name) {
-        Some(idx) => {
-            // Push() normalizes; writing in place must too.
-            store.row_mut(idx).copy_from_slice(&vector);
-            crate::embed::normalize_row(store.row_mut(idx));
-        }
-        None => store.push(&card.name, vector)?,
+    if rank_only.is_empty() {
+        return Ok(());
+    }
+    let mut stmt = conn.prepare("UPDATE cards SET edhrec_rank = ?2 WHERE name = ?1")?;
+    for (name, rank) in rank_only {
+        stmt.execute(rusqlite::params![name, rank])?;
     }
     Ok(())
 }
 
-/// Rewrite `status.json` names/counts from the store, keeping `scryfall_synced_at`.
-pub fn write_status(
-    paths: &crate::paths::Paths,
-    store: &crate::embed::VectorStore,
-) -> anyhow::Result<()> {
-    let path = paths.status_file();
-    let mut status = crate::paths::Status::read(&path)?;
-    status.names = store.meta.names.clone();
-    status.ingested_cards = store.len();
-    status.embedded_cards = store.len();
-    status.model = store.meta.model.clone();
-    status.dim = store.meta.dim;
-    status.doc_version = crate::embed::DOC_VERSION;
-    status.write(&path)
-}
-
-/// Stamp `scryfall_synced_at` with `now` (RFC 3339) in status.json.
+/// Apply changed/added card rows and the token-name refresh. Caller owns
+/// the transaction.
 ///
 /// # Errors
-/// Propagates read/write failures.
-pub fn stamp_synced(
-    paths: &crate::paths::Paths,
-    now: chrono::DateTime<chrono::Utc>,
+/// Propagates SQLite failures.
+fn apply_card_updates(
+    conn: &Connection,
+    changed: &[(String, crate::scryfall::ScryfallCard)],
+    added: &[crate::scryfall::ScryfallCard],
+    token_names: &std::collections::BTreeSet<String>,
 ) -> anyhow::Result<()> {
-    let path = paths.status_file();
-    let mut status = crate::paths::Status::read(&path)?;
-    status.scryfall_synced_at = now.to_rfc3339();
-    status.write(&path)
-}
-
-/// Stamp `combos_synced_at` with `now` (RFC 3339) in status.json.
-///
-/// # Errors
-/// Propagates read/write failures.
-pub fn stamp_combos_synced(
-    paths: &crate::paths::Paths,
-    now: chrono::DateTime<chrono::Utc>,
-) -> anyhow::Result<()> {
-    let path = paths.status_file();
-    let mut status = crate::paths::Status::read(&path)?;
-    status.combos_synced_at = now.to_rfc3339();
-    status.write(&path)
+    for (name, card) in changed {
+        crate::scryfall::update_card(conn, name, card)?;
+    }
+    for card in added {
+        crate::scryfall::insert_card(conn, card)?;
+    }
+    // Token names refresh wholesale from this bulk.
+    conn.execute("DELETE FROM token_names", [])?;
+    let mut stmt = conn.prepare("INSERT OR IGNORE INTO token_names (name) VALUES (?1)")?;
+    for name in token_names {
+        stmt.execute([name])?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -540,6 +492,70 @@ mod tests {
             "prices": {"usd": "1.00"}
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn stale_layout_embeds_delta_cards_too() {
+        let stored = vec!["Old".to_string(), "Kept".to_string()];
+        // Normal sync: only the delta.
+        assert_eq!(
+            embed_targets(false, &stored, &["Added".to_string()]),
+            vec!["Added".to_string()]
+        );
+        // Layout bump with no delta: re-embed everything stored.
+        assert_eq!(embed_targets(true, &stored, &[]), stored);
+        // The bug this guards: a layout bump that ships with new cards must
+        // embed the union, or the vector store falls behind the cards table.
+        assert_eq!(
+            embed_targets(true, &stored, &["Old".to_string(), "Added".to_string()]),
+            vec!["Old".to_string(), "Kept".to_string(), "Added".to_string()]
+        );
+    }
+
+    #[test]
+    fn tag_document_changes_add_cards_to_embed_targets() {
+        let tmp = tempfile::tempdir().unwrap();
+        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at)
+             VALUES ('Tagged', 'oid-tagged', '', 0, 'Creature', '[]', '[]', '[]',
+                '', 'common', '{}', '', '', '', '')",
+            [],
+        )
+        .unwrap();
+        let cards = crate::db::load_all_cards(&conn).unwrap();
+        let before = crate::tags::TagIndex::load(&conn).unwrap();
+        conn.execute(
+            "INSERT INTO tags (id, slug, label, use_count) VALUES ('t1', 'ramp', 'Ramp', 1)",
+            [],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO card_tags (oracle_id, tag_id, weight) VALUES ('oid-tagged', 't1', 'strong')",
+            [],
+        )
+        .unwrap();
+        let after = crate::tags::TagIndex::load(&conn).unwrap();
+        assert_eq!(
+            changed_tag_documents(&cards, &before, &after),
+            vec!["Tagged"]
+        );
+    }
+
+    #[test]
+    fn embed_progress_reports_deciles_and_last_card() {
+        let mut out = crate::output::Output::new(true, false, false);
+        // Small batches stay silent (below the 20-card floor, decile
+        // steps of 1 would report every card).
+        tick_embed_progress(&mut out, 5, 5);
+        tick_embed_progress(&mut out, 15, 1);
+        tick_embed_progress(&mut out, 15, 15);
+        // At 100 the step is 10: positions 90 and 100 both report, and
+        // position 91 does not (a non-multiple inside the window).
+        tick_embed_progress(&mut out, 100, 90);
+        tick_embed_progress(&mut out, 100, 100);
     }
 
     #[test]
@@ -779,6 +795,54 @@ mod tests {
     }
 
     #[test]
+    fn sync_rank_only_updates_rank_without_reembed() {
+        use std::io::Write as _;
+
+        let tmp = tempfile::tempdir().unwrap();
+        let mut conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+        // A stored card identical to the bulk except the EDHREC rank: the
+        // bulk adds a rank where none was stored.
+        conn.execute(
+            "INSERT INTO cards (name, oracle_id, mana_cost, cmc, type_line, colors,
+                color_identity, keywords, oracle_text, rarity, legalities,
+                set_code, collector_number, scryfall_id, released_at)
+             VALUES ('Ranked', 'oid-Ranked', '{R}', 1.0, 'Instant', '[\"R\"]', '[\"R\"]', '[]',
+                'text', 'common', '{}', 'tst', '1', 'sid-Ranked', '2020-01-01')",
+            [],
+        )
+        .unwrap();
+
+        let bulk = tmp.path().join("bulk.jsonl.gz");
+        let enc = flate2::write::GzEncoder::new(
+            std::fs::File::create(&bulk).unwrap(),
+            flate2::Compression::fast(),
+        );
+        let mut enc = enc;
+        writeln!(
+            enc,
+            r#"{{"name":"Ranked","layout":"normal","games":["paper"],"id":"sid-Ranked","oracle_id":"oid-Ranked","released_at":"2020-01-01","mana_cost":"{{R}}","cmc":1.0,"type_line":"Instant","colors":["R"],"color_identity":["R"],"keywords":[],"oracle_text":"text","rarity":"common","set":"tst","collector_number":"1","prices":{{"usd":"1.00"}},"edhrec_rank":42}}"#
+        )
+        .unwrap();
+        drop(enc);
+
+        let mut out = crate::output::Output::new(true, false, false);
+        let delta = sync_cards(&mut conn, &bulk, &mut out, "now").unwrap();
+        assert_eq!(delta.rank_only, 1, "a rank change alone lands as rank_only");
+        assert_eq!(delta.changed, 0);
+        assert_eq!(delta.added, 0);
+        // Rank updated in place; nothing queued for re-embed.
+        let rank: Option<i64> = conn
+            .query_row(
+                "SELECT edhrec_rank FROM cards WHERE name = 'Ranked'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(rank, Some(42));
+        assert!(delta.to_embed.is_empty(), "rank-only must not re-embed");
+    }
+
+    #[test]
     fn sync_records_token_names() {
         use std::io::Write as _;
 
@@ -801,11 +865,17 @@ mod tests {
             r#"{{"name":"Bolt","layout":"normal","games":["paper"],"id":"sid-bolt","oracle_id":"oid","released_at":"2021-01-01","mana_cost":"{{R}}","cmc":1.0,"type_line":"Instant","colors":["R"],"color_identity":["R"],"keywords":[],"oracle_text":"Deal 3","rarity":"common","set":"tst","collector_number":"1","prices":{{"usd":"0.25"}}}}"#
         )
         .unwrap();
+        writeln!(
+            enc,
+            r#"{{"name":"Bolt","layout":"normal","games":["arena"],"id":"sid-bolt-arena","oracle_id":"oid","released_at":"2021-01-01","mana_cost":"{{R}}","cmc":1.0,"type_line":"Instant","colors":["R"],"color_identity":["R"],"keywords":[],"oracle_text":"Deal 3","rarity":"common","set":"hbg","collector_number":"1","prices":{{}}}}"#
+        )
+        .unwrap();
         drop(enc);
 
         let mut out = crate::output::Output::new(true, false, false);
         sync_cards(&mut conn, &bulk, &mut out, "now").unwrap();
-        // Tokens are recorded by name and resolvable; real cards are not.
+        // Tokens are recorded by name and resolvable; real cards are not —
+        // not even when they carry a digital-only print alongside paper.
         assert!(crate::db::is_token_name(&conn, "Elf Warrior").unwrap());
         assert!(!crate::db::is_token_name(&conn, "Bolt").unwrap());
     }

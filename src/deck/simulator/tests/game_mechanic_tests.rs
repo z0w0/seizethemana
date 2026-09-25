@@ -443,6 +443,53 @@ fn kicker_pays_from_spare_mana() {
 }
 
 #[test]
+fn kicker_ignores_restricted_bucket_mana() {
+    // Kicker {4} burn with mostly creature-only mana: bucket mana must
+    // not fund the kick (only the general pool pays). With the old
+    // pool.total() check the kick fires free and the drain bumps.
+    let kicked = card(
+        "Kicked Drain",
+        "{1}{R}",
+        "Sorcery",
+        "Kicker {4}\nKicked Drain deals 2 damage to each opponent.",
+    );
+    let courtyard = card(
+        "Secluded Courtyard",
+        "",
+        "Land",
+        "As this land enters, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type.",
+    );
+    let island = card("Island", "", "Basic Land — Island", "({T}: Add {U}.)");
+    let mut cards = Vec::new();
+    for _ in 0..26 {
+        cards.push(parse_sim_card(&courtyard));
+    }
+    for _ in 0..2 {
+        cards.push(parse_sim_card(&island));
+    }
+    for _ in 0..8 {
+        cards.push(parse_sim_card(&kicked));
+    }
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut rng = ChaCha8Rng::seed_from_u64(41);
+    let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 6)).collect();
+    // The kicked drain pays 5 total from a general pool of 2 lands' mana:
+    // by turn 6 the pool has at most ~5 general mana, so with the old
+    // bucket-inflated check the drain compounded past the real spend.
+    // With the fix, turn-5 drain stays at the unkicked rate mostly.
+    let over_drain = logs.iter().filter(|log| log.drain_total[5] > 10).count();
+    assert_eq!(
+        over_drain, 0,
+        "restricted-bucket mana must not fund a free kick: {over_drain}/200 games over-drain"
+    );
+}
+
+#[test]
 fn saga_chapters_fire_payoffs() {
     // Chapter III "Draw two cards" runs after two upkeep steps.
     let saga = card(

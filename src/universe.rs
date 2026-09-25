@@ -14,6 +14,8 @@
 // is honorary UB: Wizards owns D&D, so Scryfall does not flag its prints,
 // but players read AFR/CLB as crossover product.
 
+use rusqlite::OptionalExtension;
+
 use anyhow::Context;
 
 /// Sets in a UB franchise, curated by set code (lowercase).
@@ -194,17 +196,21 @@ pub fn card_universe(
     } else {
         "multiverse"
     };
-    let (set_name, set_type, block, set_franchise): (
-        Option<String>,
-        Option<String>,
-        Option<String>,
-        Option<String>,
-    ) = conn
+    let (set_name, set_type, block, set_franchise) = conn
         .query_row(
             "SELECT set_name, set_type, block, franchise FROM sets WHERE set_code = ?1",
             [set_code.to_ascii_lowercase()],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            |r| {
+                Ok((
+                    r.get::<_, Option<String>>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, Option<String>>(2)?,
+                    r.get::<_, Option<String>>(3)?,
+                ))
+            },
         )
+        .optional()
+        .with_context(|| format!("reading set metadata for {set_code}"))?
         .unwrap_or((None, None, None, None));
     // A franchise belongs to a universes-beyond card only: the
     // representative print may sit in an in-universe set while other
@@ -340,6 +346,20 @@ mod tests {
         let meta = card_universe(&conn, "Missing Card", "ghost").unwrap();
         assert_eq!(meta.universe, "multiverse");
         assert_eq!(meta.set_name, None);
+    }
+
+    #[test]
+    fn card_universe_propagates_set_query_errors() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE card_prints (name TEXT, universes_beyond INTEGER);
+             CREATE TABLE sets (set_code TEXT, set_name TEXT);",
+        )
+        .unwrap();
+        conn.execute("INSERT INTO card_prints VALUES ('Bolt', 0)", [])
+            .unwrap();
+        let error = card_universe(&conn, "Bolt", "tst").unwrap_err();
+        assert!(error.to_string().contains("reading set metadata"));
     }
 }
 

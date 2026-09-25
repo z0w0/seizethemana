@@ -21,7 +21,7 @@ wants an existing deck improved.
 | Command | Purpose |
 | --- | --- |
 | `stm query "<text>" [filters] [--max-price X]` | whole-oracle semantic search (BM25 + vectors) |
-| `stm card <name> [--json]` | one card's full detail: price, rank, tags, legalities |
+| `stm card <name> [--json]` | one card's full detail: price, rank, tags, legalities, owned/available counts |
 | `stm card similar <name> [--owned]` | cards that play like the exemplar |
 | `stm card combos <name> --json` | Spellbook combos a card appears in |
 | `stm collection [--json]` | collection value, curve, rarity overview |
@@ -37,7 +37,7 @@ wants an existing deck improved.
 | `stm deck mana <name> [--format F]` | static colored-source audit (Karsten floors; no simulation) |
 | `stm deck simulate <name> [--seed N] [--json]` | goldfish consistency report |
 | `stm deck combos <name> [--bracket B] --json` | Spellbook combo audit, split by section |
-| `stm deck cuts <name> [--for ROLE] [--format F] [--bracket B] [--max-price X] --json` | ranked expendability list, cut+fill pairing; pass `--bracket` or Game Changer over-cap cards never pin; `--max-price` caps the `--for` fill candidates |
+| `stm deck cuts <name> [--for ROLE] [--make-room-for sideboard\|maybeboard] [--format F] [--bracket B] [--max-price X] --json` | ranked expendability list, cut+fill pairing; pass `--bracket` or Game Changer over-cap cards never pin; `--max-price` caps the `--for` fill candidates; `--make-room-for` pairs each bench card with the maindeck cut that makes room for it (off-identity or illegal bench cards are skipped; JSON rows are `{bench_card, cut_candidate, reasons, score}`) |
 | `stm deck diff <A> <B-or-file> [--markdown] [--as-update] --json` | change instructions from A to B (`--as-update` prints `deck update --from` op lines; see the JSON shapes section for diff orientation) |
 | `stm deck buylist <name> [--store s]` | purchase gap lines/CSV |
 | `stm deck copy <src> <dst> [--force]` | duplicate a decklist + primer under a new name (ownership rows are never copied) |
@@ -284,7 +284,8 @@ stm deck suggest Froggy --bracket 2            # completions filtered to no Game
   entries and treated as the main deck). When no real COMMANDER section
   remains, a TTY import offers the legendary candidates to pick from
   (skip = decide later); piped or `--json` runs never prompt — they print
-  a `note:` with candidates. `// SIDEBOARD` and other sections import as-is.
+  a `note:` with candidates. `// SIDEBOARD` and `// MAYBEBOARD` sections
+  import as-is.
 - `stm deck delete` removes only the decklist + primer. Ownership rows in
   the collection survive; `stm deck list` shows collection decks that have
   no decklist (`has_decklist: false` in JSON) so the gap is visible.
@@ -301,7 +302,8 @@ is by card name, so any set version you own fills a deck line — keep
 reprints in mind when pricing buys. Section qualifiers drive format
 inference: `commander:1 Breya` puts the legend in the COMMANDER section
 (do this first — it drives color identity, format rules, and the sim's
-command zone), `sideboard:2 Bolt` to the sideboard, no qualifier for the
+command zone), `sideboard:2 Bolt` to the sideboard,
+`maybeboard:2 Bolt` to the maybeboard, no qualifier for the
 maindeck. `--from` batch files also accept `move 1 Name to:sideboard`
 lines.
 
@@ -350,9 +352,11 @@ exit 3 when there is nothing to fix. After long build sessions run
 lines and `#` comments are skipped. Large batches become one call instead
 of a `--add` flag list.
 
-**Basic lands are unlimited.** Plains/Island/Swamp/Mountain/Forest/Snow
-Lands/Wastes never count toward ownership or budget; `deck show` marks them
-`(basics unlimited)` and JSON entries carry `basic_land: true`. Add the
+**Basic lands are unlimited — except Wastes and snow basics.**
+Plains/Island/Swamp/Mountain/Forest never count toward ownership or budget;
+`deck show` marks them `(own ∞)` and JSON entries carry `basic_land: true`.
+Wastes and snow basics have a Basic Land type line but are tracked like any
+other card: owned copies count, missing copies show in the buylist. Add the
 counts the mana base needs without asking.
 
 ### Legality and brackets
@@ -366,12 +370,15 @@ stm deck legal <name> --format commander --bracket 3
 - Without `--format`, a `// COMMANDER` section means commander; otherwise
   only structural rules are checked (60-card maindeck minimum, sideboard
   ≤ 15, 4-copy limit). JSON marks this as `"format_assumed": true`.
-- **Sideboard counting depends on the format.** For commander, a
-  `// SIDEBOARD` section is extra deckbuilding advice (a wishlist), not a
-  legal zone: it never counts toward the 100-card deck size, and the
-  summary line shows it separately (`100 cards … + 3 sideboard`). For
-  60-card formats the sideboard is real and subtracted from the maindeck
-  count (maindeck ≥ 60, sideboard ≤ 15).
+- **Bench sections (SIDEBOARD / MAYBEBOARD).** Both check per-card
+  legality for the deck's format and, in commander, color identity
+  (`bench color identity` violation). Neither counts toward deck size,
+  copy limits, curve/ramp in `deck show`, or the bracket Game Changer cap
+  (maindeck only). Differences: in 60-card formats the sideboard is the
+  real BO3 zone (≤ 15 cards, 4-copy rule spans maindeck + sideboard);
+  the maybeboard is free-form candidates with no size cap and exempt from
+  the copy limit. In commander the sideboard is the upgrade kit (its
+  Game Changers surface as advisories); the maybeboard is loose "maybes".
 - Deterministic checks: deck size, copy limits (basics and "any number of
   cards named X" cards excepted), commander rules (1 commander, or 2 with
   Partner; legendary creature, planeswalker, or legendary
@@ -539,12 +546,16 @@ the full report as before.
   color_identity keywords power toughness loyalty oracle_text rarity
   edhrec_rank legalities game_changer oracle_id set set_name set_type
   block universe franchise collector_number scryfall_id
-  released_at tags price price_foil max_price max_price_foil`. All
+  released_at tags price price_foil max_price max_price_foil owned
+  available`. All
   prices are US dollars; `currency` names the unit. The `price*` fields
   are the **cheapest** released
   English printing per finish; the `max_price*` fields the most
   expensive. All null when no print is priced. Use `price` for budget
-  math instead of parsing human output.
+  math instead of parsing human output. `owned` counts copies across
+  binders and deck assignments; `available` counts binder copies only
+  (tradeable without dismantling a deck). Basics (Plains, Island, Swamp,
+  Mountain, Forest) report null for both — unlimited supply.
 - `card similar <name> --json` → array of hits: full card fields +
   `score shared_count shared_tags` (score semantics above; `null` score
   when the seed had no stored vector).
@@ -552,8 +563,8 @@ the full report as before.
   mana_value_needed, bracket_tag, popularity, legalities,
   requires_commander, pieces: [{name, zones, must_be_commander}]}`.
 - `query --json` → array of hits: the same full card object as
-  `card <name> --json` plus `score` (0–1, semantics above). Empty result
-  prints `[]` with exit 3.
+  `card <name> --json` (including `owned`/`available`) plus `score`
+  (0–1, semantics above). Empty result prints `[]` with exit 3.
 - `collection --json` → `unique_cards total_cards foils currency
   total_value purchase_total color_identity curve rarity top_sets
   by_universe by_franchise locations`. All money fields are US dollars;
@@ -584,15 +595,22 @@ the full report as before.
   price_usd, owned}], total_usd}, freed_usd, net_usd}, sim}`
   (`sim` = the ReportDiff with `--sim`, else null). Exit 1 with `--sim`
   only when the edit introduces a new problem. Nothing is written.
-- `deck show <name> --json` → `{name, cards, sideboard_cards, primer,
+- `deck update <name> --json` (apply) → `{name, added, removed, moved,
+  set, relocated, backfilled_basics, warnings, cards, maindeck_cards,
+  sideboard_cards, maybeboard_cards, commander_cards}` (`cards` is the
+  flat total; the section counts are the shape the human summary names:
+  "now 100 maindeck + 6 sideboard + 2 maybeboard + 1 commander").
+- `deck show <name> --json` → `{name, cards, sideboard_cards,
+  maybeboard_cards, primer,
   currency, owned_value, missing_cost, curve: {avg_mv, histogram (MV
   0..6+, 7 slots), target}, ramp: {lands, rocks, dorks, other},
   universe_census?, sections: [{section, cards:
   [{quantity, name, set, set_name?,
   collector_number, foil, owned, assigned_to_this_deck, owned_elsewhere,
   covered_by, missing_reason?, basic_land, price}]}]}`. `cards` is the
-  maindeck count (the legal deck); `sideboard_cards` reports the sideboard
-  separately. `target` is one of six curve sentences: commander decks by
+  maindeck count (the legal deck); `sideboard_cards` and
+  `maybeboard_cards` report the bench sections separately. Curve and
+  ramp describe the maindeck only. `target` is one of six curve sentences: commander decks by
   average MV (< 2.0 "comes together by t4-t6", < 3.0 "by t6-t8", else
   "by t8-t10"); 60-card decks (< 2.0 "does its thing by t4", < 3.0
   "by t4-t6", else "by t6"). `primer` is the file path; read the primer's contents
@@ -656,8 +674,8 @@ the full report as before.
   instruction table (`decks/<name>.changes.md` shape): basics as one
   "Remove 4 Forests and 2 Islands" line plus a remove/add table.
 - `deck list --json` → `[{name, has_decklist, cards, sideboard_cards,
-  owned, has_primer}]` (`cards` is maindeck; `has_decklist: false` marks
-  collection decks whose list is not imported).
+  maybeboard_cards, owned, has_primer}]` (`cards` is maindeck;
+  `has_decklist: false` marks collection decks whose list is not imported).
 - `deck legal <name> --json` → `{name, format, format_assumed, bracket,
   legal, violations, advisories, notes, summary}`.
 - `deck mana <name> --json` → static colored-source audit (no
@@ -690,8 +708,8 @@ the full report as before.
   pip_blocks, graveyard, card_castability, problems, summary,
   combo_access?, combos?, win_paths?, hypgeo?}`.
   `deck_shape.total_cards` is the simulated library
-  plus commander (sideboard excluded; `deck_shape.sideboard_cards` counts
-  it). `commander` is null for non-commander decks; `station` is null for
+  plus commander (bench sections excluded; `deck_shape.sideboard_cards`
+  and `deck_shape.maybeboard_cards` count them). `commander` is null for non-commander decks; `station` is null for
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
   **`mana_base` = `{lands, rocks, dorks, ramp_spells, total_sources,
   bracket_target_lands: [min, max], bracket_target_ramp: [min, max],
@@ -779,7 +797,8 @@ the full report as before.
   already runs duals of the extra color. With no query
   and no role the pool is one-card-away Spellbook
   completions ranked by variants completed, win-the-game, popularity,
-  EDHREC; each row carries `combo` (`{pieces, bracket_tag, produces,
+  EDHREC; each row carries `score` (0–1, variant count blended with
+  popularity) and `combo` (`{pieces, bracket_tag, produces,
   variants_completed}`) naming the best example. Commander decks complete
   commander combos; other decks drop combos that need a commander (pin a
   format with `--format` to filter to one). `--bracket 1-2` filters
@@ -1073,15 +1092,20 @@ each card:
   first pricing pass — the cap drops over-priced and unpriced candidates
   before ranking. `--limit N` widens the candidate pool past the default
   10 (max 50) when the top hits all fail the budget or the bracket.
-  Any of the 69 known role names works — on an
-  unknown role the error prints a hint list of all 69 role names. Pass a
+  Any of the 69 known role names works (`card-advantage`/`cardadv` =
+  draw). An unknown role exits 2 with the full name list in the hint on
+  stderr; a known role with zero survivors prints `[]` with exit 3 and a
+  stderr note naming nearby roles. Pass a
    free-text query for theme fills (`"frog payoff"`). `stm collection
   query "<role>"
   --color-identity <CI> --format commander --json` and `stm query` remain
   the fallbacks for deep browsing. When a
   candidate card fits the role but costs too much, `stm card similar
   <candidate> --owned --json` surfaces owned cards with the same
-  functional profile.
+  functional profile. When `--role ... --owned` returns fewer than 3
+  hits, widen in this order: drop `--owned`, then semantic
+  `collection query "<role description>" --color-identity <CI>
+  --format commander`, then `card similar <exemplar> --owned`.
 - Check `stm card <name> --json` for price, `game_changer`, and
   `legalities` before proposing (suggest already carries most of it).
   Respect the bracket's Game Changer limit.
@@ -1119,6 +1143,13 @@ exceed it.
 
 ### Mode B: improve an existing deck or precon
 
+0. **Count the open slots.** Before any swap batch, run
+   `stm deck list` (or read `stm deck show <name> --json`) and
+   `stm deck legal <name> --bracket <b>`: a deck under the size limit
+   (99 in commander, 59 in 60-card) has open slots to fill for free;
+   a size violation means cuts come first. Bench sections are not a slot
+   source — `deck cuts --make-room-for sideboard` (or `maybeboard`)
+   pairs each bench card with the maindeck cut that makes room for it.
 1. **Load and assess.** Import the decklist if needed (`stm deck import
    <name> <file>` — upserts by name; use a ManaBox deck txt export for a
    precon). Then `stm deck show <name> --json` (curve,
@@ -1228,6 +1259,10 @@ exceed it.
    SIDEBOARD`, verify with `deck legal --bracket 4` sideboard advisories,
    and audit the main deck's combo status with `deck combos <name>
    --bracket 3` (an S/K-tagged combo must not be in the main deck).
+   To move a sideboard card into the main deck at the size limit, run
+   `stm deck cuts <name> --make-room-for sideboard --json`: each row
+   pairs a `bench_card` with its `cut_candidate` (role-matched so
+   the swap keeps the deck's shape) plus `reasons` and `score`.
    State the swap plan explicitly ("move these N cards in, move these N
    out") so the user can play either power level.
 9. **Universes Beyond census.** When the deck carries crossover cards,

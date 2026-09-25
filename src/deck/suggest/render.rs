@@ -1,5 +1,5 @@
-// Rendering and theme-word helpers for `deck suggest`, split from
-// suggest.rs to keep files small.
+//! Rendering and theme-word helpers for `deck suggest`, split from
+//! suggest.rs to keep files small.
 
 use super::Suggestion;
 use crate::db::CardRow;
@@ -57,6 +57,13 @@ pub(super) fn deck_theme_words(
 
 /// JSON rows for the suggestion list.
 pub(super) fn print_json(suggestions: &[Suggestion]) -> anyhow::Result<()> {
+    println!("{}", suggestions_json(suggestions)?);
+    Ok(())
+}
+
+/// The pretty-printed JSON payload for the suggestion list (split from
+/// the printer so the shape is assertable).
+fn suggestions_json(suggestions: &[Suggestion]) -> anyhow::Result<String> {
     let items: Vec<serde_json::Value> = suggestions
         .iter()
         .map(|s| {
@@ -79,8 +86,20 @@ pub(super) fn print_json(suggestions: &[Suggestion]) -> anyhow::Result<()> {
             })
         })
         .collect();
-    println!("{}", serde_json::to_string_pretty(&items)?);
-    Ok(())
+    Ok(serde_json::to_string_pretty(&items)?)
+}
+
+#[cfg(test)]
+pub(super) fn theme_words_for_test(
+    deck: &Deck,
+    cards_by_name: &std::collections::HashMap<String, CardRow>,
+) -> String {
+    deck_theme_words(deck, cards_by_name)
+}
+
+#[cfg(test)]
+pub(super) fn json_for_test(suggestions: &[Suggestion]) -> anyhow::Result<String> {
+    suggestions_json(suggestions)
 }
 
 /// Human table for the suggestion list: owned block first, then the
@@ -146,3 +165,7 @@ pub(super) fn print_text(out: &crate::output::Output, suggestions: &[Suggestion]
         );
     }
 }
+
+#[cfg(test)]
+#[path = "tests/render_tests.rs"]
+mod render_tests;

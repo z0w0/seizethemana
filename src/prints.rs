@@ -69,7 +69,7 @@ pub fn names_under_price(conn: &Connection, max_price: f64) -> anyhow::Result<Ve
     // Cheapest normal finish per name; foil-only cards fall back to
     // their cheapest foil printing.
     let mut normal = conn.prepare(
-        "SELECT name, MIN(CAST(usd AS REAL)) FROM card_prints
+        "SELECT name, MIN(usd) FROM card_prints
          WHERE lang = 'en' AND (released_at = '' OR released_at <= ?1)
            AND usd IS NOT NULL
          GROUP BY name",
@@ -83,7 +83,7 @@ pub fn names_under_price(conn: &Connection, max_price: f64) -> anyhow::Result<Ve
         }
     }
     let mut foil = conn.prepare(
-        "SELECT name, MIN(CAST(usd_foil AS REAL)) FROM card_prints
+        "SELECT name, MIN(usd_foil) FROM card_prints
          WHERE lang = 'en' AND (released_at = '' OR released_at <= ?1)
            AND usd_foil IS NOT NULL
            AND name NOT IN (
@@ -134,8 +134,11 @@ pub fn retain_by_price<T>(
     Ok((kept, hidden))
 }
 
+/// Column order every print query selects; `map_print` and
+/// `map_print_offset` index into exactly this list.
 const PRINT_COLUMNS: &str = "scryfall_id, name, set_code, collector_number, lang, finishes, released_at, usd, usd_foil, usd_etched, (SELECT set_name FROM sets WHERE sets.set_code = card_prints.set_code)";
 
+/// Map one print row in `PRINT_COLUMNS` order.
 fn map_print(row: &rusqlite::Row<'_>) -> rusqlite::Result<Print> {
     let finishes_raw: String = row.get(5)?;
     Ok(Print {
@@ -153,18 +156,6 @@ fn map_print(row: &rusqlite::Row<'_>) -> rusqlite::Result<Print> {
         // table; fall back to empty (never fail the whole print).
         set_name: row.get::<_, Option<String>>(10)?.unwrap_or_default(),
     })
-}
-
-/// USD price for a print matching a finish kind (`normal`, `foil`, `etched`).
-///
-/// Falls back toward the plain price when the exact kind is unpriced, so a
-/// foil entry still gets a usable estimate.
-pub fn price_for_kind(print: &Print, foil: &str) -> Option<f64> {
-    match foil {
-        "foil" => print.usd_foil.or(print.usd),
-        "etched" => print.usd_etched.or(print.usd_foil).or(print.usd),
-        _ => print.usd,
-    }
 }
 
 /// Cheapest and most expensive released English printings of one card name.
@@ -341,42 +332,16 @@ fn map_print_offset(row: &rusqlite::Row<'_>, offset: usize) -> rusqlite::Result<
     })
 }
 
-/// Prints for many card names at once (map keyed by card name).
-///
-/// Prints of any language or release state are returned; callers that need
-/// buyable prints filter on `lang`/`released_at`. Set names resolve through
-/// the `sets` table and can be absent (empty) for unknown codes.
-///
-/// # Errors
-/// Propagates SQLite failures.
-// Exercised by tests; reserved for per-print UIs.
-pub fn prints_by_name(
-    conn: &Connection,
-    names: &[String],
-) -> anyhow::Result<std::collections::HashMap<String, Vec<Print>>> {
-    let mut map: std::collections::HashMap<String, Vec<Print>> = std::collections::HashMap::new();
-    if names.is_empty() {
-        return Ok(map);
-    }
-    let mut stmt = conn.prepare(&format!(
-        "SELECT {PRINT_COLUMNS} FROM card_prints
-         WHERE name = ?1 ORDER BY set_code, collector_number"
-    ))?;
-    for name in names {
-        let rows = stmt
-            .query_map([name], map_print)?
-            .collect::<Result<Vec<_>, _>>()
-            .context("reading prints")?;
-        map.insert(name.clone(), rows);
-    }
-    Ok(map)
-}
-
 /// Price of one owned collection row: exact print by (name, set, cn) with a
 /// finish-kind fallback.
 ///
 /// Returns None when the snapshot lacks the printing, or when the print and
 /// every fallback finish are unpriced.
+///
+/// Duplicate `(name, set, cn)` rows exist in Scryfall data (variant rows
+/// sharing a collector number). `ORDER BY` picks the lowest finish-kind
+/// price, with `scryfall_id` as the tiebreak, so the price comes from one
+/// row — matching [`prices_for_owned`].
 ///
 /// # Errors
 /// Propagates SQLite failures.
@@ -389,17 +354,18 @@ pub fn price_for_owned(
 ) -> anyhow::Result<Option<f64>> {
     Ok(conn
         .query_row(
-            &format!(
-                "SELECT {PRINT_COLUMNS} FROM card_prints
-             WHERE name = ?1 AND set_code = ?2 AND collector_number = ?3
-               AND lang = 'en'
-             LIMIT 1"
-            ),
-            rusqlite::params![name, set_code.to_ascii_lowercase(), collector_number],
-            |row| {
-                let print = map_print(row)?;
-                Ok(price_for_kind(&print, foil))
-            },
+            "SELECT CASE ?4
+                     WHEN 'foil' THEN COALESCE(usd_foil, usd)
+                     WHEN 'etched' THEN COALESCE(usd_etched, usd_foil, usd)
+                     ELSE usd
+                 END AS price
+               FROM card_prints
+               WHERE name = ?1 AND set_code = ?2 AND collector_number = ?3
+                 AND lang = 'en'
+               ORDER BY price ASC, scryfall_id ASC
+               LIMIT 1",
+            rusqlite::params![name, set_code.to_ascii_lowercase(), collector_number, foil],
+            |row| row.get::<_, Option<f64>>("price"),
         )
         .optional()
         .context("reading owned print price")?
@@ -680,34 +646,6 @@ mod tests {
     }
 
     #[test]
-    fn price_for_kind_matches_finish() {
-        let p = Print {
-            scryfall_id: "x".into(),
-            name: "Bolt".into(),
-            set_code: "m11".into(),
-            set_name: "Magic 2011".into(),
-            collector_number: "148".into(),
-            lang: "en".into(),
-            finishes: vec!["foil".into()],
-            released_at: "2010-01-01".into(),
-            usd: Some(1.0),
-            usd_foil: Some(4.0),
-            usd_etched: None,
-        };
-        assert_eq!(price_for_kind(&p, "normal"), Some(1.0));
-        assert_eq!(price_for_kind(&p, "foil"), Some(4.0));
-        // Etched with no etched price falls back to foil, then normal.
-        assert_eq!(price_for_kind(&p, "etched"), Some(4.0));
-        let bare = Print {
-            usd: None,
-            usd_foil: None,
-            usd_etched: None,
-            ..p
-        };
-        assert_eq!(price_for_kind(&bare, "normal"), None);
-    }
-
-    #[test]
     fn price_for_owned_joins_exact_print() {
         let conn = conn();
         seed(
@@ -742,6 +680,56 @@ mod tests {
         // Wrong collector number → no row.
         let missing = price_for_owned(&conn, "Bolt", "m11", "999", "normal").unwrap();
         assert_eq!(missing, None);
+    }
+
+    #[test]
+    fn price_for_owned_is_deterministic_on_duplicate_rows() {
+        // Duplicate (name, set, cn) rows (Scryfall variant rows sharing a
+        // collector number): the pick must not depend on row order.
+        let conn = conn();
+        seed(
+            &conn,
+            "d1",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            Some(3.0),
+            None,
+            "en",
+            "2010-01-01",
+        );
+        seed(
+            &conn,
+            "d2",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            Some(1.5),
+            None,
+            "en",
+            "2010-01-01",
+        );
+        let price = price_for_owned(&conn, "Bolt", "m11", "148", "normal").unwrap();
+        assert_eq!(price, Some(1.5), "MIN over the duplicate rows wins");
+        // Single-row behavior is unchanged.
+        seed(
+            &conn,
+            "solo",
+            "Fog",
+            "m11",
+            "Magic 2011",
+            "1",
+            Some(0.4),
+            Some(2.0),
+            "en",
+            "2010-01-01",
+        );
+        assert_eq!(
+            price_for_owned(&conn, "Fog", "m11", "1", "foil").unwrap(),
+            Some(2.0)
+        );
     }
 
     #[test]
@@ -790,41 +778,6 @@ mod tests {
         );
         // Missing printing is absent from the map.
         assert_eq!(prices.len(), 2);
-    }
-
-    #[test]
-    fn prints_by_name_groups_and_orders() {
-        let conn = conn();
-        seed(
-            &conn,
-            "b",
-            "Bolt",
-            "2xm",
-            "Double Masters",
-            "100",
-            Some(2.5),
-            None,
-            "en",
-            "2020-01-01",
-        );
-        seed(
-            &conn,
-            "a",
-            "Bolt",
-            "m11",
-            "Magic 2011",
-            "148",
-            Some(0.5),
-            Some(9.0),
-            "en",
-            "2010-01-01",
-        );
-        let map = prints_by_name(&conn, &["Bolt".into(), "Nope".into()]).unwrap();
-        let prints = &map["Bolt"];
-        assert_eq!(prints.len(), 2);
-        assert_eq!(prints[0].set_code, "2xm");
-        assert_eq!(prints[1].set_code, "m11");
-        assert!(map["Nope"].is_empty());
     }
 }
 

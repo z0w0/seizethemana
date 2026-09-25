@@ -48,9 +48,9 @@ Stationz  107 cards  primer: ~/.seizethemana/decks/Stationz.primer.md
           ...
 
 // DECK
-    1 Alibou, Ancient Witness (EOC) 113  ✓ (own 1/1)  @$0.35
-    1 Baleful Strix (FIC) 318  (own 0/1)  @$1.10
-    12 Island (SOS) 274  (basics unlimited)
+    1 Alibou, Ancient Witness (EOC) 113  ✓ (own 1/1)  $0.35
+    1 Baleful Strix (FIC) 318  (own 0/1)  $1.10
+    12 Island (SOS) 274  (own ∞)
 
 $ stm collection
 Collection: 412 unique cards, 938 total, 210 foils
@@ -149,21 +149,27 @@ if you want to see exactly what the assistant will be told.
 | `stm card combos <name> [--format FMT]` | Known combos with a card, from Commander Spellbook |
 | `stm query <text> [filters]` | Hybrid search (keywords + meaning) over every card |
 | `stm collection [--json]` | What you own: counts, value, colors, mana curve |
+| `stm collection conflicts` | Cards assigned to more than one deck (or over-assigned) |
 | `stm collection import <csv> [--add]` | Import a ManaBox export |
 | `stm collection query <text> [filters]` | Hybrid search over only the cards you own |
-| `stm deck create / list / show` | Manage deck files |
+| `stm deck create / list / show / delete / copy / dedupe` | Manage deck files |
 | `stm deck update <name> --add/--remove/--set` | Edit a deck (see [Building decks](#building-decks)) |
+| `stm deck hand <name>` | Sample opening hands with a mulligan verdict |
+| `stm deck mana <name>` | Mana-base audit against the bracket band |
 | `stm deck legal <name> [--format FMT] [--bracket N]` | Check deck legality and Commander brackets |
-| `stm deck import / export <name> <file>` | Move decks in and out of ManaBox format |
+| `stm deck import <name> [file] [--url URL]` | Import a deck file or an Archidekt deck URL |
 | `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first; works in any format |
 | `stm deck simulate <name> [--seed N]` | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation)) |
 | `stm deck combos <name> [--bracket B]` | Spellbook combo audit, split by section; flags bracket-breaking combos |
 | `stm deck cuts <name> [--for ROLE] [--bracket N]` | Rank the deck's cards by expendability, with cut/fill pairing; pass `--bracket` so Game Changers over the cap pin to the top |
 | `stm deck diff <A> <B> --markdown` | Exact change instructions between two lists (either side a deck name or a file) |
+| `stm deck buylist <name>` | Missing copies priced at their print, plain/CSV/JSON |
 | `stm deck export <name> <file> --format names` | Plain `qty Name` export (no set decorations) |
 | `stm deck primer <name> [--set <file>]` | Read or write a deck's strategy notes |
 
-Every read command takes `--json` for machine-readable output — the
+The table is the common surface; `--help` on any command shows every
+flag (including `deck suggest --role/--exclude`, `deck update --dry-run`,
+and `deck simulate --hypgeo`). Every read command takes `--json` for machine-readable output — the
 output is pure JSON, safe to pipe into `jq`. Every failure prints an
 `error:` line plus a `hint:` line that says what to do next. Exit codes
 follow a simple scheme: `0` success, `1` error, `2` bad usage, `3`
@@ -226,12 +232,15 @@ and the Game Changer allowance for Commander brackets 1–5. It exits `0`
 when the deck is legal and `1` when it isn't, and it tells you exactly
 which cards broke which rule. The judgment-call parts of brackets (tutor
 counts, combo speed, mass land destruction) come back as a short checklist
-to review rather than a guess.
+to review rather than a guess. With `--bracket N` the checklist gains a
+`bracket checks:` block with `✓`/`!` verdicts per signal (library search,
+extra turns, mass land denial, alternate wins); without it the plain
+checklist prints instead.
 
 ### Filling holes in a deck
 
 ```sh
-stm deck suggest Froggy --role ramp        # fill a role: draw, ramp, board-wipe, sacrifice, ...
+stm deck suggest Froggy --role ramp        # fill a role: draw, ramp, removal, board-wipe, sacrifice, ...
 stm deck suggest Froggy "frog payoff"      # or semantic search, owned first
 stm deck suggest Froggy --bracket 2        # stay inside a Commander bracket
 stm deck suggest Froggy --format modern    # filter to one format
@@ -285,7 +294,7 @@ Slow to cast (worst 3)
 Problems
   error: color_screw: W mana pips missed in 19.0% of games ...
     → swap basics for lands that also tap for W
-  error: dead_cards: 5 cards cast on time under 55%; worst: ...
+  error: dead_cards: 5 cards cast on time under 60%; worst: ...
     → cut or discount late cards, or add ramp
 
 note: solitaire sim: no opponents, no counters; enters-tapped honored

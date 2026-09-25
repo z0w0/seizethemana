@@ -13,9 +13,6 @@ pub struct Paths {
     root: PathBuf,
 }
 
-// `new` (and a few accessors) are exercised only from unit tests; the
-// binary reaches everything through `resolve`.
-#[allow(dead_code)]
 impl Paths {
     /// Build paths from an explicit root directory.
     pub fn new(root: PathBuf) -> Self {
@@ -121,7 +118,7 @@ pub struct Status {
     pub ingested_cards: usize,
     /// Vectors written during the last setup.
     pub embedded_cards: usize,
-    /// Embedding model name, e.g. "BAAI/bge-small-en-v1.5-Q".
+    /// Embedding model name, e.g. "BAAI/bge-small-en-v1.5".
     pub model: String,
     /// Vector dimension (columns of the matrix).
     pub dim: usize,
@@ -143,7 +140,6 @@ pub struct Status {
     pub combos_synced_at: String,
 }
 
-#[allow(dead_code)]
 impl Status {
     /// State for a store that has not been set up yet.
     pub fn empty() -> Self {

@@ -231,6 +231,32 @@ fn saga_iv_chapter_fires_and_saga_leaves_board() {
 }
 
 #[test]
+fn saga_with_extra_trigger_counts_chapters_only() {
+    // A saga whose oracle text also carries an ETB trigger: the extra
+    // trigger must not extend the chapter count (no phantom fourth
+    // chapter, no extra turn on the board).
+    let row = card(
+        "Rider Saga",
+        "{2}{U}",
+        "Enchantment — Saga",
+        "When this Saga enters, draw a card.\nI — Create a Treasure token.\nII — Create a Treasure token.\nIII — Draw two cards.",
+    );
+    let sim = parse_sim_card(&row);
+    assert_eq!(sim.chapter_count(), 3, "only the Activated abilities count");
+    // The ETB draw still parses as a trigger.
+    assert!(
+        sim.abilities().any(|a| a.trigger == Trigger::OnEnter),
+        "the enter trigger stays a trigger"
+    );
+    let chapters: Vec<Effect> = sim
+        .abilities()
+        .filter(|a| a.trigger == Trigger::Activated)
+        .map(|a| a.effect.clone())
+        .collect();
+    assert_eq!(chapters.len(), 3, "three real chapters");
+}
+
+#[test]
 fn helix_threshold_reaches_counters() {
     // "{X}: Put X tower counters" converts the leftover pool so the
     // 30-counter win threshold becomes reachable.
@@ -673,7 +699,6 @@ fn scaling_draw_engine_draws_by_board() {
         "scaling engine velocity: {:.1}",
         stats.cards_seen[7]
     );
-    let _ = engine;
 }
 
 #[test]
@@ -776,12 +801,6 @@ fn mdfc_spell_face_casts_when_flooded() {
 #[test]
 fn mdfc_plays_as_land_when_no_land_in_hand() {
     // A hand holding only MDFCs plays the land face (fallback rule).
-    let mdfc = card(
-        "Jwari Disruption // Jwari Ruins",
-        "{U} // ",
-        "Instant // Land",
-        "Counter target spell. // {T}: Add {U}.",
-    );
     let deck = SimDeck {
         cards: vec![
             SimCard {
@@ -799,7 +818,6 @@ fn mdfc_plays_as_land_when_no_land_in_hand() {
         format: Format::Constructed,
         rules: super::format::rules_inferred(false),
     };
-    let _ = mdfc;
     let mut rng = ChaCha8Rng::seed_from_u64(7);
     let logs: Vec<_> = (0..100).map(|_| run_game(&deck, &mut rng, 3)).collect();
     let stats = aggregate(&logs, &deck, 3);
@@ -965,7 +983,6 @@ fn cascade_with_no_valid_target_is_a_noop() {
     let deck = row_deck(12, &[agent, big], Format::Constructed);
     let mut rng = ChaCha8Rng::seed_from_u64(9);
     let logs: Vec<_> = (0..60).map(|_| run_game(&deck, &mut rng, 4)).collect();
-    let stats = aggregate(&logs, &deck, 4);
     // The cascade body still enters (the cast itself resolves); the
     // census runs normally with no extra seen cards beyond the cast.
     for log in &logs {
@@ -974,5 +991,4 @@ fn cascade_with_no_valid_target_is_a_noop() {
             "cascade loop ran away"
         );
     }
-    let _ = stats;
 }

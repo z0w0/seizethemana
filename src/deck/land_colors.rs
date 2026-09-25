@@ -57,6 +57,18 @@ pub fn land_producible_colors(card: &crate::db::CardRow, deck_colors: &str) -> L
             };
         }
     }
+    let tap_text = card.oracle_text.to_lowercase();
+    // Generic basic-fetch text ("search ... for a basic land card") names
+    // no type, so the land can fetch a basic of every deck color
+    // (Myriad Landscape, Escape Tunnel). Typed fetches ("basic Swamp
+    // cards") name their types and fall through to the subtype scan;
+    // Wastes never fetches, so it stays colorless.
+    if tap_text.contains("basic land card") {
+        return LandColors {
+            letters: deck_colors.to_string(),
+            any: true,
+        };
+    }
     let mut letters = String::new();
     let mut any = false;
     // Basic subtypes on the type line (typed duals, triomes, basics).
@@ -72,7 +84,6 @@ pub fn land_producible_colors(card: &crate::db::CardRow, deck_colors: &str) -> L
             letters.push(*letter);
         }
     }
-    let tap_text = card.oracle_text.to_lowercase();
     if tap_text.contains("add one mana of any color")
         || tap_text.contains("add {w} or {u} or {b} or {r} or {g}")
         || tap_text.contains("mana of any one color")

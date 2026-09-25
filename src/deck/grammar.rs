@@ -62,6 +62,24 @@ pub struct Deck {
     pub sections: Vec<(String, Vec<DeckEntry>)>,
 }
 
+/// True for a section that holds cards outside the legal deck:
+/// SIDEBOARD (upgrade kit / BO3 sideboard) or MAYBEBOARD (loose
+/// candidates). Bracket, size, and copy-limit rules never read these
+/// sections.
+pub fn is_bench_section(section: &str) -> bool {
+    section.eq_ignore_ascii_case("SIDEBOARD") || section.eq_ignore_ascii_case("MAYBEBOARD")
+}
+
+/// True for a SIDEBOARD section specifically.
+pub fn is_sideboard_section(section: &str) -> bool {
+    section.eq_ignore_ascii_case("SIDEBOARD")
+}
+
+/// True for a MAYBEBOARD section specifically.
+pub fn is_maybeboard_section(section: &str) -> bool {
+    section.eq_ignore_ascii_case("MAYBEBOARD")
+}
+
 impl Deck {
     /// Parse a ManaBox txt deck.
     ///
@@ -142,15 +160,16 @@ impl Deck {
         self.entries().map(|e| e.quantity).sum()
     }
 
-    /// Card count excluding SIDEBOARD sections.
+    /// Card count excluding SIDEBOARD and MAYBEBOARD sections.
     ///
-    /// For commander decks this is the legal deck (100 cards); the sideboard
-    /// is a wishlist, not a legal zone. For 60-card formats this is the
-    /// maindeck; the sideboard is subtracted from the deck size there too.
+    /// For commander decks this is the legal deck (100 cards); the
+    /// sideboard is the upgrade kit and the maybeboard holds candidates,
+    /// neither a legal zone. For 60-card formats this is the maindeck;
+    /// the sideboard is subtracted from the deck size there too.
     pub fn maindeck_total(&self) -> i64 {
         self.sections
             .iter()
-            .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+            .filter(|(s, _)| !is_bench_section(s))
             .flat_map(|(_, e)| e.iter())
             .map(|e| e.quantity)
             .sum()
@@ -161,6 +180,26 @@ impl Deck {
         self.sections
             .iter()
             .filter(|(s, _)| s.eq_ignore_ascii_case("SIDEBOARD"))
+            .flat_map(|(_, e)| e.iter())
+            .map(|e| e.quantity)
+            .sum()
+    }
+
+    /// Card count across MAYBEBOARD sections only.
+    pub fn maybeboard_total(&self) -> i64 {
+        self.sections
+            .iter()
+            .filter(|(s, _)| s.eq_ignore_ascii_case("MAYBEBOARD"))
+            .flat_map(|(_, e)| e.iter())
+            .map(|e| e.quantity)
+            .sum()
+    }
+
+    /// Card count across COMMANDER sections only.
+    pub fn commander_total(&self) -> i64 {
+        self.sections
+            .iter()
+            .filter(|(s, _)| s.eq_ignore_ascii_case("COMMANDER"))
             .flat_map(|(_, e)| e.iter())
             .map(|e| e.quantity)
             .sum()
@@ -425,5 +464,21 @@ mod tests {
         let text = deck.to_text();
         let reparsed = Deck::parse(&text).unwrap();
         assert_eq!(deck, reparsed);
+    }
+
+    #[test]
+    fn maybeboard_section_parses_and_counts_as_bench() {
+        let deck = Deck::parse("// DECK\n1 Bolt\n// SIDEBOARD\n2 Heal\n// MAYBEBOARD\n3 Ponder\n")
+            .unwrap();
+        assert_eq!(deck.sections.len(), 3);
+        assert_eq!(deck.sections[2].0, "MAYBEBOARD");
+        // Bench totals stay separate; maindeck excludes both.
+        assert_eq!(deck.total(), 6);
+        assert_eq!(deck.maindeck_total(), 1);
+        assert_eq!(deck.sideboard_total(), 2);
+        assert_eq!(deck.maybeboard_total(), 3);
+        assert!(is_bench_section("MAYBEBOARD"));
+        assert!(is_bench_section("sideboard"));
+        assert!(!is_bench_section("DECK"));
     }
 }

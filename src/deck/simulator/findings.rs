@@ -392,11 +392,33 @@ fn color_source_shape(deck: &SimDeck, color_index: usize) -> (usize, usize, &'st
 
 /// Find deck problems from the aggregated stats.
 pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
-    use super::model::COLORS;
-    let mut problems = Vec::new();
     let commander = !deck.commanders.is_empty();
     let turns = stats.turns as usize;
+    let mut problems = Vec::new();
+    screw_flood_problems(stats, deck, turns, &mut problems);
+    commander_late_problem(stats, deck, commander, turns, &mut problems);
+    color_screw_problems(stats, deck, &mut problems);
+    draw_unused_problems(stats, commander, turns, &mut problems);
+    dead_cards_problem(stats, deck, commander, &mut problems);
+    access_problems(stats, commander, turns, &mut problems);
+    // Cause-level detail: every problem gets its offender list (and, where
+    // the data supports it, a cause-specific suggestion) from the same
+    // aggregated stats — with the same dead-card threshold the finding
+    // itself used.
+    let dead_threshold = if commander { 0.60 } else { 0.55 };
+    for problem in &mut problems {
+        super::findings_detail::explain_with_threshold(problem, stats, deck, dead_threshold);
+    }
+    problems
+}
 
+/// Mana screw and flood findings, against the draw-adjusted expectation.
+fn screw_flood_problems(
+    stats: &SimStats,
+    deck: &SimDeck,
+    turns: usize,
+    problems: &mut Vec<Problem>,
+) {
     if turns >= 4 && stats.screw_pct >= 0.20 {
         let constructed = deck.format == super::model::Format::Constructed;
         let sources = ramp_source_count(deck);
@@ -472,6 +494,16 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             });
         }
     }
+}
+
+/// Commander-cast-too-late finding against the on-curve turn.
+fn commander_late_problem(
+    stats: &SimStats,
+    deck: &SimDeck,
+    commander: bool,
+    turns: usize,
+    problems: &mut Vec<Problem>,
+) {
     if commander && turns >= 4 {
         let cmc_turn =
             (deck.commanders.first().map(|c| c.cost.total()).unwrap_or(0) as usize).clamp(1, turns);
@@ -491,16 +523,17 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             });
         }
     }
-    /// True for the unlimited basic land names (the same exemption
-    /// `deck update`'s singleton guard uses).
-    fn is_basic_name(name: &str) -> bool {
-        matches!(
-            name,
-            "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
-        ) || name.starts_with("Snow-Covered")
-    }
+}
 
-    // Color screw: any color pip missed in 10%+ of games.
+/// Color screw findings: any color pip missed in 10%+ of games.
+fn color_screw_problems(stats: &SimStats, deck: &SimDeck, problems: &mut Vec<Problem>) {
+    use super::model::COLORS;
+    /// True for the unlimited basic land names (the same exemption
+    /// `deck update`'s singleton guard uses). Wastes and snow basics are
+    /// limited-supply cards, so they stay tracked.
+    fn is_basic_name(name: &str) -> bool {
+        matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
+    }
     let basic_count = deck
         .cards
         .iter()
@@ -546,6 +579,15 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             });
         }
     }
+}
+
+/// Draw starvation and unused-mana findings.
+fn draw_unused_problems(
+    stats: &SimStats,
+    commander: bool,
+    turns: usize,
+    problems: &mut Vec<Problem>,
+) {
     let draw_turn = if commander { 6 } else { 5 };
     if turns >= draw_turn && stats.starved_pct >= 0.25 {
         problems.push(Problem {
@@ -575,6 +617,15 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             offenders: Vec::new(),
         });
     }
+}
+
+/// Dead-cards finding: names cast on time under the format threshold.
+fn dead_cards_problem(
+    stats: &SimStats,
+    deck: &SimDeck,
+    commander: bool,
+    problems: &mut Vec<Problem>,
+) {
     let threshold = if commander { 0.60 } else { 0.55 };
     // Board-discount cards (improvise, affinity) cast far earlier in real
     // games than the parse-time floor implies; exempt them from the
@@ -642,6 +693,10 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             offenders: Vec::new(),
         });
     }
+}
+
+/// Starved-category and interaction-readiness findings.
+fn access_problems(stats: &SimStats, commander: bool, turns: usize, problems: &mut Vec<Problem>) {
     if turns >= 5 && stats.removal_count > 0 && stats.removal_access_5 < 0.40 {
         problems.push(Problem {
             kind: "category_starved",
@@ -693,13 +748,4 @@ pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
             offenders: Vec::new(),
         });
     }
-    // Cause-level detail: every problem gets its offender list (and, where
-    // the data supports it, a cause-specific suggestion) from the same
-    // aggregated stats — with the same dead-card threshold the finding
-    // itself used.
-    for problem in &mut problems {
-        let dead_threshold = if commander { 0.60 } else { 0.55 };
-        super::findings_detail::explain_with_threshold(problem, stats, deck, dead_threshold);
-    }
-    problems
 }

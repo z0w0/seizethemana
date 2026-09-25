@@ -5,7 +5,7 @@ use super::game::{Activation, BODY_POWER, GameState, InPlay, Pool, card_of, take
 use super::game_mana::{
     add_yield, add_yield_turns, effective_min_cost, pay_cost, payable, pips_ok,
 };
-use super::model::{Effect, Role, SimDeck, Trigger};
+use super::model::{Ability, Effect, Role, SimDeck, Trigger};
 
 /// Execute one ability effect against the game state. Pure helper for the
 /// trigger paths; the upkeep/combat paths call it too. `mill_opp` routes
@@ -53,6 +53,10 @@ pub(crate) fn apply_effect_at(
                 st.seen += 1;
             }
         }
+        Effect::Blink => {}
+        Effect::Monarch => {
+            st.is_monarch = true;
+        }
         Effect::Mill(n) => {
             for _ in 0..*n {
                 if let Some(i) = st.library.pop() {
@@ -78,11 +82,7 @@ pub(crate) fn apply_effect_at(
             // resolves once, an "each opponent" drain triples. Both
             // read as N×3 life off the table (best case: all resolve).
             // Constructed tables are one opponent: ×1.
-            let mult = if deck.format == super::model::Format::Commander {
-                3
-            } else {
-                1
-            };
+            let mult = deck.format.drain_mult();
             st.drained += *n * mult;
         }
         Effect::ExtraTurn => {
@@ -135,6 +135,7 @@ pub(crate) fn apply_effect_at(
                 if let Some(i) = st.library.pop() {
                     st.hand.push(i);
                     st.seen += 1;
+                    st.awareness_cards += 1;
                 }
             }
         }
@@ -155,6 +156,7 @@ pub(crate) fn apply_effect_at(
                 if let Some(i) = st.library.pop() {
                     st.hand.push(i);
                     st.seen += 1;
+                    st.awareness_cards += 1;
                 }
             }
         }
@@ -165,6 +167,11 @@ pub(crate) fn apply_effect_at(
                     st.seen += 1;
                 }
                 // Discard the oldest hand card into the graveyard.
+                // The front is the oldest; fresh draws sit at the back
+                // and survive the loot. A pending cast's hand entry can
+                // be eaten here; the cast pass resolves positions by
+                // card identity, so the stale slot never casts a
+                // different card.
                 if !st.hand.is_empty() {
                     let discarded = st.hand.remove(0);
                     st.graveyard_seen.entry(discarded).or_insert(turn);
@@ -290,7 +297,9 @@ pub(super) fn tap_budget(
         let bodies_needed = crew_n.div_ceil(BODY_POWER);
         // Check total power first: bodies only tap when the crew
         // succeeds (a failed crew leaves them ready for mana/station).
-        let candidates: Vec<usize> = (0..battlefield.len())
+        // Candidates come strongest first: the crew succeeds whenever
+        // the board's best bodies can cover the cost.
+        let mut candidates: Vec<usize> = (0..battlefield.len())
             .filter(|i| {
                 *i != vi
                     && !battlefield[*i].tapped
@@ -298,8 +307,9 @@ pub(super) fn tap_budget(
                     && !battlefield[*i].is_commander
                     && (card_of(deck, &battlefield[*i]).is_creature || battlefield[*i].animated)
             })
-            .take(bodies_needed as usize)
             .collect();
+        candidates.sort_by_key(|i| std::cmp::Reverse(body_power(&battlefield[*i], deck)));
+        candidates.truncate(bodies_needed as usize);
         let power: u32 = candidates
             .iter()
             .map(|i| body_power(&battlefield[*i], deck))
@@ -349,7 +359,7 @@ pub(super) fn tap_budget(
         if payable(&cost, pool) {
             pay_cost(&cost, pool);
             battlefield[ei].equipped = true;
-            battlefield[ei].equip_host = Some(hi);
+            battlefield[ei].equip_host = Some(battlefield[hi].uid);
             battlefield[ei].fired = true;
         }
     }
@@ -371,226 +381,250 @@ pub(super) fn body_power(perm: &InPlay, deck: &SimDeck) -> u32 {
 /// death triggers from the surviving board. Loyalty activations bypass
 /// the mana pool (they spend loyalty); drain activations resolve at the
 /// format's opponent multiplier. An untapped non-tapping activation
-/// whose yield covers its own cost repeats — the loop caps it and flags
-/// the census as a suspected infinite engine.
+/// whose yield covers its own cost repeats — the pass caps it at 24
+/// firings and flags the census as a suspected infinite engine.
 pub(super) fn spend_leftover(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) {
-    let drain_mult = if deck.format == super::model::Format::Commander {
-        3
-    } else {
-        1
-    };
+    let drain_mult = deck.format.drain_mult();
     let mut activations_this_turn: u32 = 0;
-    let mut suspect_infinite = false;
-    loop {
-        let mut best: Option<Activation> = None;
-        for (bi, perm) in st.battlefield.iter().enumerate() {
-            if perm.tapped || perm.sick {
+    while activations_this_turn < 24
+        && let Some(a) = pick_best_activation(deck, st, pool)
+    {
+        resolve_activation(deck, st, pool, turn, drain_mult, &a);
+        activations_this_turn += 1;
+    }
+    if activations_this_turn == 24 {
+        // Repeated zero-cost activations that produce mana: the
+        // engine loops (Basalt Monolith class). Cap the pass.
+        st.infinite_mana_suspected = true;
+    }
+}
+
+/// Find the cheapest usable activation on the battlefield. A candidate
+/// must be untapped (loyalty and banked shapes included), affordable,
+/// and ungated by `fired`; free untapped candidates win cost ties so the
+/// pass can keep looping.
+fn pick_best_activation(deck: &SimDeck, st: &GameState, pool: &Pool) -> Option<Activation> {
+    let mut best: Option<Activation> = None;
+    for (bi, perm) in st.battlefield.iter().enumerate() {
+        if perm.tapped || perm.sick {
+            continue;
+        }
+        let card = card_of(deck, perm);
+        // Loyalty activations gate on loyalty, not mana, so they pass
+        // the tap/counter filter too (planeswalker minus and plus
+        // abilities fire here).
+        let unlocked = card
+            .station_tiers
+            .iter()
+            .filter(|t| t.at == 0 || perm.counters >= t.at)
+            .flat_map(|t| t.abilities.iter())
+            .filter(|a| {
+                let free_mana = a.cost.total() == 0 && matches!(a.effect, Effect::Mana(_));
+                // X-sink counters ("{X}: Put X tower counters") cost
+                // mana without tapping: the leftover pool converts.
+                let x_sink = matches!(a.effect, Effect::Counters(0));
+                a.trigger == Trigger::Activated
+                    && (a.taps
+                        || a.uses_counters
+                        || a.loyalty_cost > 0
+                        || a.loyalty_gain > 0
+                        || free_mana
+                        || x_sink)
+            });
+        for ability in unlocked {
+            if !activation_usable(perm, ability, pool) {
                 continue;
             }
-            let card = card_of(deck, perm);
-            // Loyalty activations gate on loyalty, not mana, so they
-            // pass the tap/counter filter too (planeswalker minus and
-            // plus abilities fire here).
-            let unlocked = card
-                .station_tiers
-                .iter()
-                .filter(|t| t.at == 0 || perm.counters >= t.at)
-                .flat_map(|t| t.abilities.iter())
-                .filter(|a| {
-                    let free_mana = a.cost.total() == 0 && matches!(a.effect, Effect::Mana(_));
-                    // X-sink counters ("{X}: Put X tower counters") cost
-                    // mana without tapping: the leftover pool converts.
-                    let x_sink = matches!(a.effect, Effect::Counters(0));
-                    a.trigger == Trigger::Activated
-                        && (a.taps
-                            || a.uses_counters
-                            || a.loyalty_cost > 0
-                            || a.loyalty_gain > 0
-                            || free_mana
-                            || x_sink)
+            let candidate_cost = ability.cost.total() + ability.sacrifice_bodies.min(1);
+            if best.as_ref().is_none_or(|b| {
+                // Free untapped candidates win cost ties: they leave the
+                // source untapped so the pass can keep looping ({0}: Add
+                // mode beats the {T} mode for loop engines).
+                candidate_cost < b.cost
+                    || (candidate_cost == b.cost && b.ability.taps && !ability.taps)
+            }) {
+                let draws = match ability.effect {
+                    Effect::Draw(n) => n,
+                    Effect::Tutor => 1,
+                    Effect::Loot(n) => n,
+                    _ => 0,
+                };
+                let mana = match &ability.effect {
+                    Effect::Mana(y) => Some(y.clone()),
+                    _ => None,
+                };
+                let counters = match ability.effect {
+                    Effect::Counters(n) => n,
+                    _ => 0,
+                };
+                let drain = match ability.effect {
+                    Effect::Drain(n) => n,
+                    _ => 0,
+                };
+                best = Some(Activation {
+                    pos: bi,
+                    uid: perm.uid,
+                    ability: ability.clone(),
+                    cost: ability.cost.total(),
+                    draws,
+                    mana_yield: mana,
+                    counters,
+                    drain,
                 });
-            for ability in unlocked {
-                let loyalty_affordable =
-                    ability.loyalty_cost == 0 || perm.loyalty >= ability.loyalty_cost;
-                let usable = matches!(
-                    ability.effect,
-                    Effect::Draw(_)
-                        | Effect::Tutor
-                        | Effect::Mana(_)
-                        | Effect::Counters(_)
-                        | Effect::Loot(_)
-                        | Effect::Drain(_)
-                        | Effect::Tokens(_)
-                ) || ability.sacrifice_bodies > 0;
-                // Banked activations (Pentad Prism) consume a charge
-                // counter per fire; gate on the host's counters. Free
-                // untapped activations ({0}: Add ...) bypass `fired` —
-                // they repeat in real Magic and feed the loop census —
-                // unless the card bounds them ("Activate only once each
-                // turn").
-                let banked = ability.uses_counters && perm.counters > 0;
-                let free_loop = !ability.taps
-                    && !ability.uses_counters
-                    && ability.loyalty_cost == 0
-                    && ability.loyalty_gain == 0
-                    && ability.cost.total() == 0
-                    && !ability.once_per_turn;
-                // Free untapped activations repeat every turn regardless
-                // of `fired` (they have no once-per-turn cost marker);
-                // the cap catches runaway loops.
-                let gated = !free_loop && perm.fired;
-                if gated {
-                    continue;
-                }
-                if usable
-                    && loyalty_affordable
-                    && (banked
-                        || ability.loyalty_cost > 0
-                        || (payable(&ability.cost, pool) && pips_ok(&ability.cost, pool)))
-                    && best.as_ref().is_none_or(|b| {
-                        let candidate_cost = ability.cost.total() + ability.sacrifice_bodies.min(1);
-                        // Free untapped candidates win cost ties: they
-                        // leave the source untapped so the pass can
-                        // keep looping ({0}: Add mode beats the {T}
-                        // mode for loop engines).
-                        candidate_cost < b.cost
-                            || (candidate_cost == b.cost && b.ability.taps && !ability.taps)
-                    })
-                {
-                    let draws = match ability.effect {
-                        Effect::Draw(n) => n,
-                        Effect::Tutor => 1,
-                        Effect::Loot(n) => n,
-                        _ => 0,
-                    };
-                    let mana = match &ability.effect {
-                        Effect::Mana(y) => Some(y.clone()),
-                        _ => None,
-                    };
-                    let counters = match ability.effect {
-                        Effect::Counters(n) => n,
-                        _ => 0,
-                    };
-                    let drain = match ability.effect {
-                        Effect::Drain(n) => n,
-                        _ => 0,
-                    };
-                    best = Some(Activation {
-                        pos: bi,
-                        uid: perm.uid,
-                        ability: ability.clone(),
-                        cost: ability.cost.total(),
-                        draws,
-                        mana_yield: mana,
-                        counters,
-                        drain,
-                    });
-                }
-            }
-        }
-        let Some(a) = best else {
-            break;
-        };
-        activations_this_turn += 1;
-        if activations_this_turn > 24 {
-            // Repeated zero-cost activations that produce mana: the
-            // engine loops (Basalt Monolith class). Cap the pass.
-            suspect_infinite = true;
-            break;
-        }
-        let x_sink = matches!(a.ability.effect, Effect::Counters(0));
-        let perm = &mut st.battlefield[a.pos];
-        let ability = a.ability.clone();
-        // Loyalty activations spend/gain loyalty; mana costs do not apply.
-        if ability.loyalty_cost > 0 {
-            perm.loyalty = perm.loyalty.saturating_sub(ability.loyalty_cost);
-            perm.fired = true;
-        } else if ability.loyalty_gain > 0 {
-            perm.loyalty += ability.loyalty_gain;
-            perm.fired = true;
-        } else if ability.uses_counters {
-            // Banked activation: one charge counter buys the pip; the
-            // source stays untapped but can fire once per turn (fired
-            // gates the repeat pass; the counter decrement still applies).
-            perm.counters = perm.counters.saturating_sub(1);
-            perm.fired = true;
-        } else if !ability.taps && ability.cost.total() == 0 {
-            // Free untapped activation: stays untapped, never sets
-            // `fired` — the loop runs until the cap catches it. A
-            // once-per-turn bound sets `fired` (no loop).
-            if ability.once_per_turn {
-                perm.fired = true;
-            }
-        } else {
-            pay_cost(&ability.cost, pool);
-            // Only `{T}`-cost activations tap the source; free
-            // activations ({0}:) stay untapped.
-            if a.ability.taps {
-                perm.tapped = true;
-            }
-            perm.fired = true;
-        }
-        for _ in 0..a.draws {
-            if let Some(i) = st.library.pop() {
-                st.hand.push(i);
-                st.seen += 1;
-                st.awareness_cards += 1;
-            }
-        }
-        // Drain activations resolve at the format's opponent multiplier.
-        st.drained += a.drain * drain_mult;
-        // Sacrifice outlets feed an untapped non-token body to the
-        // cost: it leaves play and its OnDeath triggers fire.
-        for _ in 0..ability.sacrifice_bodies {
-            let victim = st.battlefield.iter().position(|p| {
-                !p.is_commander
-                    && p.card < usize::MAX - 1
-                    && p.uid != a.uid
-                    && card_of(deck, p).is_creature
-                    && !p.tapped
-            });
-            let Some(v) = victim else {
-                break;
-            };
-            let victim_card = st.battlefield[v].card;
-            st.battlefield.remove(v);
-            st.graveyard_seen.entry(victim_card).or_insert(turn);
-            st.graveyard.push(victim_card);
-            // Death triggers: draw/token payoffs fire from the
-            // surviving board.
-            let death_effects: Vec<Effect> = st
-                .battlefield
-                .iter()
-                .flat_map(|p| card_of(deck, p).abilities().cloned().collect::<Vec<_>>())
-                .filter(|ab| ab.trigger == Trigger::OnDeath)
-                .map(|ab| ab.effect)
-                .collect();
-            for effect in &death_effects {
-                // Death-trigger mills are graveyard fuel (self).
-                apply_effect(deck, effect, st, turn, false);
-            }
-        }
-        // Mana activations feed this turn's pool; counter engines
-        // (Moxite Refinery) charge their host.
-        if let Some(y) = &a.mana_yield {
-            add_yield_turns(deck, y, pool, turn, &st.battlefield);
-        }
-        if let Some(perm) = st.battlefield.get_mut(a.pos) {
-            if x_sink {
-                // X-sink: the printed {X} already paid 1 through
-                // `pay_cost` above. The rest of the pool is the
-                // player-chosen extra X (paying everything in is legal),
-                // so the paid X = 1 + leftover: the counters match the
-                // spend and the pool ends at zero with nothing swallowed.
-                let extra = pool.total();
-                perm.counters += 1 + extra;
-                *pool = super::game::Pool::default();
-            } else {
-                perm.counters += a.counters;
             }
         }
     }
-    if suspect_infinite {
-        st.infinite_mana_suspected = true;
+    best
+}
+
+/// True when an unlocked activation can fire right now: the `fired`
+/// gate, affordability, and the loyalty/counter gates.
+fn activation_usable(perm: &InPlay, ability: &Ability, pool: &Pool) -> bool {
+    let usable = matches!(
+        ability.effect,
+        Effect::Draw(_)
+            | Effect::Tutor
+            | Effect::Mana(_)
+            | Effect::Counters(_)
+            | Effect::Loot(_)
+            | Effect::Drain(_)
+            | Effect::Tokens(_)
+    ) || ability.sacrifice_bodies > 0;
+    // Banked activations (Pentad Prism) consume a charge counter per
+    // fire; gate on the host's counters. Free untapped activations
+    // ({0}: Add ...) bypass `fired` — they repeat in real Magic and
+    // feed the loop census — unless the card bounds them ("Activate
+    // only once each turn").
+    let banked = ability.uses_counters && perm.counters > 0;
+    let free_loop = !ability.taps
+        && !ability.uses_counters
+        && ability.loyalty_cost == 0
+        && ability.loyalty_gain == 0
+        && ability.cost.total() == 0
+        && !ability.once_per_turn;
+    // Free untapped activations repeat every turn regardless of
+    // `fired` (they have no once-per-turn cost marker); the cap
+    // catches runaway loops.
+    let gated = !free_loop && perm.fired;
+    let loyalty_affordable = ability.loyalty_cost == 0 || perm.loyalty >= ability.loyalty_cost;
+    usable
+        && !gated
+        && loyalty_affordable
+        && (banked
+            || (!ability.uses_counters
+                && (ability.loyalty_cost > 0
+                    || ability.loyalty_gain > 0
+                    || (payable(&ability.cost, pool) && pips_ok(&ability.cost, pool)))))
+}
+
+/// Apply one chosen activation: pay the cost (mana, loyalty, or a
+/// charge counter), tap the source, resolve the effect, and run the
+/// sacrifice-outlet death triggers.
+fn resolve_activation(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut Pool,
+    turn: u32,
+    drain_mult: u32,
+    a: &Activation,
+) {
+    let ability = &a.ability;
+    let x_sink = matches!(ability.effect, Effect::Counters(0));
+    let perm = &mut st.battlefield[a.pos];
+    // Loyalty activations spend/gain loyalty; mana costs do not apply.
+    if ability.loyalty_cost > 0 {
+        perm.loyalty = perm.loyalty.saturating_sub(ability.loyalty_cost);
+        perm.fired = true;
+    } else if ability.loyalty_gain > 0 {
+        perm.loyalty += ability.loyalty_gain;
+        perm.fired = true;
+    } else if ability.uses_counters {
+        // Banked activation: one charge counter buys the pip; the
+        // source stays untapped but can fire once per turn (fired
+        // gates the repeat pass; the counter decrement still applies).
+        perm.counters = perm.counters.saturating_sub(1);
+        perm.fired = true;
+    } else if !ability.taps && ability.cost.total() == 0 {
+        // Free untapped activation: stays untapped, never sets `fired`
+        // — the loop runs until the cap catches it. A once-per-turn
+        // bound sets `fired` (no loop).
+        if ability.once_per_turn {
+            perm.fired = true;
+        }
+    } else {
+        pay_cost(&ability.cost, pool);
+        // Only `{T}`-cost activations tap the source; free activations
+        // ({0}:) stay untapped.
+        if a.ability.taps {
+            perm.tapped = true;
+        }
+        perm.fired = true;
+    }
+    for _ in 0..a.draws {
+        if let Some(i) = st.library.pop() {
+            st.hand.push(i);
+            st.seen += 1;
+            st.awareness_cards += 1;
+        }
+    }
+    // Drain activations resolve at the format's opponent multiplier.
+    st.drained += a.drain * drain_mult;
+    // Sacrifice outlets feed an untapped non-token body to the cost: it
+    // leaves play and its OnDeath triggers fire.
+    for _ in 0..ability.sacrifice_bodies {
+        resolve_sacrifice(deck, st, turn, a.uid);
+    }
+    // Mana activations feed this turn's pool; counter engines
+    // (Moxite Refinery) charge their host.
+    if let Some(y) = &a.mana_yield {
+        add_yield_turns(deck, y, pool, turn, &st.battlefield);
+    }
+    // The sacrifice loop may have removed battlefield entries and
+    // shifted positions, so locate the permanent by uid (every other
+    // lookup in this file does) instead of the recorded index.
+    if let Some(perm) = st.battlefield.iter_mut().find(|p| p.uid == a.uid) {
+        if x_sink {
+            // X-sink: the printed {X} already paid 1 through `pay_cost`
+            // above. The rest of the pool is the player-chosen extra X
+            // (paying everything in is legal), so the paid X = 1 +
+            // leftover: the counters match the spend and the pool ends
+            // at zero with nothing swallowed.
+            let extra = pool.total();
+            perm.counters += 1 + extra;
+            *pool = super::game::Pool::default();
+        } else {
+            perm.counters += a.counters;
+        }
+    }
+}
+
+/// Consume one untapped non-token body for a sacrifice cost and fire
+/// the surviving board's death triggers (aristocrats outlets).
+fn resolve_sacrifice(deck: &SimDeck, st: &mut GameState, turn: u32, source_uid: u32) {
+    let victim = st.battlefield.iter().position(|p| {
+        !p.is_commander
+            && p.card < usize::MAX - 1
+            && p.uid != source_uid
+            && card_of(deck, p).is_creature
+            && !p.tapped
+    });
+    let Some(v) = victim else {
+        return;
+    };
+    let victim_card = st.battlefield[v].card;
+    st.battlefield.remove(v);
+    st.graveyard_seen.entry(victim_card).or_insert(turn);
+    st.graveyard.push(victim_card);
+    // Death triggers: draw/token payoffs fire from the surviving board.
+    let death_effects: Vec<Effect> = st
+        .battlefield
+        .iter()
+        .flat_map(|p| card_of(deck, p).abilities().cloned().collect::<Vec<_>>())
+        .filter(|ab| ab.trigger == Trigger::OnDeath)
+        .map(|ab| ab.effect)
+        .collect();
+    for effect in &death_effects {
+        // Death-trigger mills are graveyard fuel (self).
+        apply_effect(deck, effect, st, turn, false);
     }
 }

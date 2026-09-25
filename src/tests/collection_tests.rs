@@ -72,6 +72,27 @@ fn parse_csv_skips_list_rows() {
 }
 
 #[test]
+fn parse_csv_skips_bad_quantity_rows() {
+    // A blank or non-numeric quantity skips that one row with a warning;
+    // the import itself must not fail.
+    let tmp = tempfile::tempdir().unwrap();
+    let path = write_csv(
+        tmp.path(),
+        &format!(
+            "{CSV_HEADER}\
+             Collect,binder,Bolt,TST,S,1,normal,rare,,1,sid1,1.0\n\
+             Collect,binder,Fork,TST,S,2,normal,rare,two,2,sid2,1.0\n\
+             Collect,binder,Counter,TST,S,3,normal,rare,3,3,sid3,1.0\n"
+        ),
+    );
+    let (rows, skipped) = parse_csv(&path, &mut Output::new(true, false, false)).unwrap();
+    assert_eq!(skipped, 0);
+    assert_eq!(rows.len(), 1, "only the well-formed row survives");
+    assert_eq!(rows[0].name, "Counter");
+    assert_eq!(rows[0].quantity, 3);
+}
+
+#[test]
 fn parse_csv_requires_headers() {
     let tmp = tempfile::tempdir().unwrap();
     let path = write_csv(tmp.path(), "Name,Set code\nBolt,TST\n");
@@ -150,6 +171,104 @@ fn import_add_multiplies_purchase_price_by_quantity() {
 }
 
 #[test]
+fn import_skips_token_names_without_warning() {
+    // A token name that prefix-matches real cards ("Food" vs "Food Chain")
+    // must skip silently as a token, not warn as ambiguous.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!(
+            "{CSV_HEADER}Collect,binder,Food,TST,Test,1,normal,common,2,1,sid1,0\n\
+             {CSV_HEADER}Collect,binder,Food Chain,TST,Test,1,normal,common,1,1,sid2,0\n"
+        ),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id) VALUES ('Food Chain', 'oid', 'sid2')",
+        [],
+    )
+    .unwrap();
+    db.execute("INSERT INTO token_names (name) VALUES ('Food')", [])
+        .unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 1,
+        embedded_cards: 1,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Food Chain".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    import(&paths, &mut db, &mut out, &csv, false).unwrap();
+    let (qty,): (i64,) = db
+        .query_row(
+            "SELECT quantity FROM collection WHERE name = 'Food Chain'",
+            [],
+            |r| Ok((r.get(0).unwrap(),)),
+        )
+        .unwrap();
+    assert_eq!(qty, 1);
+    let (tokens,): (i64,) = db
+        .query_row(
+            "SELECT COUNT(*) FROM collection WHERE name = 'Food'",
+            [],
+            |r| Ok((r.get(0).unwrap(),)),
+        )
+        .unwrap();
+    assert_eq!(tokens, 0);
+}
+
+#[test]
+fn import_prefers_real_card_over_token_name() {
+    // A name can sit in token_names AND be a real card (digital-only
+    // prints of staples landed there before the sync fix). The real card
+    // must import, not skip silently as a token.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!("{CSV_HEADER}Collect,binder,Bolt,TST,Test,1,normal,rare,1,1,sid1,0\n"),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id) VALUES ('Bolt', 'oid', 'sid1')",
+        [],
+    )
+    .unwrap();
+    db.execute("INSERT INTO token_names (name) VALUES ('Bolt')", [])
+        .unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 1,
+        embedded_cards: 1,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Bolt".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    import(&paths, &mut db, &mut out, &csv, false).unwrap();
+    let (qty,): (i64,) = db
+        .query_row(
+            "SELECT quantity FROM collection WHERE name = 'Bolt'",
+            [],
+            |r| Ok((r.get(0).unwrap(),)),
+        )
+        .unwrap();
+    assert_eq!(qty, 1, "real card wins over the token_names entry");
+}
+
+#[test]
 fn stats_color_identity_uses_identity_column() {
     // Command Tower has empty `colors` but WUBRG `color_identity`: the
     // census must bucket by identity, not read colorless.
@@ -204,6 +323,59 @@ fn stats_json_shape() {
     assert_eq!(v["total_cards"], 5);
     assert_eq!(v["total_value"], 1.23);
     assert_eq!(v["currency"], "USD");
+}
+
+#[test]
+fn compute_stats_on_empty_collection() {
+    let tmp = tempfile::tempdir().unwrap();
+    let db = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    let stats = compute_stats(&db).unwrap();
+    assert_eq!(stats.unique_cards, 0);
+    assert_eq!(stats.total_cards, 0);
+    assert_eq!(stats.total_value, 0.0);
+    assert!(stats.top_sets.is_empty());
+    assert!(stats.binders.is_empty());
+    assert!(stats.by_universe.is_empty());
+}
+
+#[test]
+fn compute_stats_sums_values_and_counts() {
+    let tmp = tempfile::tempdir().unwrap();
+    let db = crate::db::open(&tmp.path().join("t.db")).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id, color_identity, cmc, rarity)
+         VALUES ('Bolt', 'oid', 'sid1', '[\"R\"]', 1.0, 'common'),
+                ('Fog', 'oid2', 'sid2', '[]', 2.0, 'common')",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "INSERT INTO card_prints (scryfall_id, name, set_code, collector_number, usd, updated_at)
+         VALUES ('sid1', 'Bolt', 'tst', '1', 1.25, ''),
+                ('sid2', 'Fog', 'tst', '1', 2.5, '')",
+        [],
+    )
+    .unwrap();
+    db.execute(
+        "INSERT INTO collection (name, set_code, collector_number, foil, quantity, purchase_price, binder, binder_type)
+         VALUES ('Bolt', 'TST', '1', 'normal', 3, 4.0, 'Main', 'binder'),
+                ('Fog', 'TST', '1', 'foil', 1, 2.0, 'Main', 'binder')",
+        [],
+    )
+    .unwrap();
+    let stats = compute_stats(&db).unwrap();
+    assert_eq!(stats.unique_cards, 2);
+    assert_eq!(stats.total_cards, 4);
+    assert_eq!(stats.foils, 1);
+    assert_eq!(stats.purchase_total, 6.0);
+    // 3 x 1.25 + 1 x 2.5
+    assert_eq!(stats.total_value, 6.25);
+    assert_eq!(stats.rarity.get("common"), Some(&4));
+    assert_eq!(stats.curve.get("1"), Some(&3));
+    assert_eq!(stats.curve.get("2"), Some(&1));
+    assert_eq!(stats.color_identity.get("R"), Some(&3));
+    assert_eq!(stats.color_identity.get("C"), Some(&1));
+    assert_eq!(stats.binders.len(), 1);
 }
 
 #[test]
@@ -395,4 +567,63 @@ fn by_universe_rolls_up_cards_and_value() {
     assert!(multi.value > 0.0, "multiverse value rolls up from prices");
     assert!(beyond.value > 0.0, "beyond value rolls up from prices");
     assert!(stats.by_franchise.contains_key("Marvel"));
+}
+
+#[test]
+fn show_stats_empty_collection_prints_zeroed_json() {
+    // The empty-collection JSON contract: exit 3 but a fully-shaped,
+    // zeroed stats object, so an agent gets one shape on both sides.
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 0,
+        embedded_cards: 0,
+        model: "m".into(),
+        dim: 384,
+        names: vec![],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = crate::collection_stats::show_stats(&paths, &mut db, &mut out, true).unwrap();
+    assert_eq!(code, crate::cli::codes::NO_RESULTS);
+}
+
+#[test]
+fn show_stats_renders_ok_for_populated_collection() {
+    let tmp = tempfile::tempdir().unwrap();
+    let paths = crate::paths::Paths::new(tmp.path().to_path_buf());
+    let csv = write_csv(
+        tmp.path(),
+        &format!("{CSV_HEADER}Collect,binder,Bolt,TST,Test,1,normal,common,2,1,sid1,0.5\n"),
+    );
+    let mut db = crate::db::open(&paths.db()).unwrap();
+    db.execute(
+        "INSERT INTO cards (name, oracle_id, scryfall_id) VALUES ('Bolt', 'oid', 'sid1')",
+        [],
+    )
+    .unwrap();
+    crate::paths::Status {
+        setup_complete: true,
+        ingested_cards: 1,
+        embedded_cards: 1,
+        model: "m".into(),
+        dim: 384,
+        names: vec!["Bolt".into()],
+        scryfall_synced_at: String::new(),
+        doc_version: 0,
+        combos_synced_at: String::new(),
+    }
+    .write(&paths.status_file())
+    .unwrap();
+    let mut out = crate::output::Output::new(true, false, false);
+    let code = crate::collection::import(&paths, &mut db, &mut out, &csv, false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
+    let code = crate::collection_stats::show_stats(&paths, &mut db, &mut out, false).unwrap();
+    assert_eq!(code, crate::cli::codes::OK);
 }

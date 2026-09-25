@@ -188,7 +188,22 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
         .filter(|c| c.is_interaction && c.is_instant_speed)
         .count();
 
-    // Opening-hand land distribution.
+    opener_stats(logs, &mut stats, n);
+    screw_flood_stats(logs, deck, &mut stats, turns, n);
+    commander_timing_stats(logs, deck, &mut stats, turns as u32, n);
+    velocity_stats(logs, deck, &mut stats, turns, n);
+    lethal_stats(logs, deck, &mut stats);
+    interaction_stats(logs, &mut stats, n);
+    misc_stats(logs, &mut stats, turns, n);
+    role_access_stats(logs, &mut stats, turns, n);
+    color_screw_stats(logs, deck, &mut stats, n);
+    graveyard_stats(logs, &mut stats, turns, n);
+    castability_stats(logs, deck, &mut stats, turns, n);
+    stats
+}
+
+/// Opening-hand land distribution and mulligan rate.
+fn opener_stats(logs: &[GameLog], stats: &mut SimStats, n: f64) {
     let mut opener_counts = [0i64; 7];
     for log in logs {
         opener_counts[(log.opener_lands as usize).min(6)] += 1;
@@ -204,8 +219,11 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
         opener_counts[4] as f64 / opener_total,
         (opener_counts[5] + opener_counts[6]) as f64 / opener_total,
     ];
+}
 
-    // Land-drop rates and screw/flood buckets.
+/// Land-drop rates and the screw/flood buckets against the
+/// hypergeometric expectation at each game's own draw volume.
+fn screw_flood_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns: usize, n: f64) {
     let mut drops_by_4: Vec<u32> = Vec::new();
     let mut seen_by_4: Vec<u32> = Vec::new();
     for log in logs {
@@ -223,9 +241,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
                 stats.screw_pct += 1.0 / n;
             }
             // Flood = a flood-grade window, not drops made: 6+ lands in
-            // hand + on the battlefield at end of turn 4. A deck whose
-            // lands exceed ~35 reports flood near its hypergeometric
-            // expectation (at the game's actual seen count).
+            // hand, on the battlefield, and in the graveyard at end of
+            // turn 4. A deck whose lands exceed ~35 reports flood near
+            // its hypergeometric expectation (at the game's actual seen
+            // count).
             if log.lands_seen_by_11 >= 6 {
                 stats.flood_pct += 1.0 / n;
             }
@@ -252,41 +271,55 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             .sum::<f64>()
             / seen_by_4.len() as f64
     };
+}
 
-    // Commander timing.
-    if let Some(cmd) = deck.commanders.first() {
-        let mut cast_turns: Vec<u32> = Vec::new();
-        for log in logs {
-            if let Some(t) = log.commander_castable {
-                cast_turns.push(t);
-                for t2 in t..=turns as u32 {
-                    if (t2 as usize) < 13 {
-                        stats.commander_castable_by[t2 as usize] += 1.0 / n;
-                    }
+/// Commander cast timing and station-online rates.
+fn commander_timing_stats(
+    logs: &[GameLog],
+    deck: &SimDeck,
+    stats: &mut SimStats,
+    turns: u32,
+    n: f64,
+) {
+    let Some(cmd) = deck.commanders.first() else {
+        return;
+    };
+    let mut cast_turns: Vec<u32> = Vec::new();
+    for log in logs {
+        if let Some(t) = log.commander_castable {
+            cast_turns.push(t);
+            for t2 in t..=turns {
+                // Cap at the array length: later games contribute
+                // nothing to the curve's tail.
+                if (t2 as usize) < stats.commander_castable_by.len() {
+                    stats.commander_castable_by[t2 as usize] += 1.0 / n;
                 }
             }
         }
-        if !cast_turns.is_empty() {
-            let mut sorted = cast_turns.clone();
-            stats.p50_commander_cast_turn = percentile(&mut sorted, 0.5);
-            stats.p95_commander_cast_turn = percentile(&mut sorted, 0.95);
-            stats.avg_commander_cast_turn =
-                cast_turns.iter().map(|t| f64::from(*t)).sum::<f64>() / cast_turns.len() as f64;
-        }
-
-        // Station online: commander spacecraft animated by turn 6.
-        if cmd.animate_at().is_some() {
-            let online: Vec<Option<u32>> = logs.iter().map(|l| l.station_online).collect();
-            stats.station_online_pct =
-                online.iter().filter(|t| t.is_some_and(|t| t <= 6)).count() as f64 / n;
-            let mut turns_vec: Vec<u32> = online.iter().flatten().copied().collect();
-            if !turns_vec.is_empty() {
-                stats.station_p50_turn = percentile(&mut turns_vec, 0.5);
-            }
-        }
+    }
+    if !cast_turns.is_empty() {
+        let mut sorted = cast_turns.clone();
+        stats.p50_commander_cast_turn = percentile(&mut sorted, 0.5);
+        stats.p95_commander_cast_turn = percentile(&mut sorted, 0.95);
+        stats.avg_commander_cast_turn =
+            cast_turns.iter().map(|t| f64::from(*t)).sum::<f64>() / cast_turns.len() as f64;
     }
 
-    // Mana and velocity per turn.
+    // Station online: commander spacecraft animated by turn 6.
+    if cmd.animate_at().is_some() {
+        let online: Vec<Option<u32>> = logs.iter().map(|l| l.station_online).collect();
+        stats.station_online_pct =
+            online.iter().filter(|t| t.is_some_and(|t| t <= 6)).count() as f64 / n;
+        let mut turns_vec: Vec<u32> = online.iter().flatten().copied().collect();
+        if !turns_vec.is_empty() {
+            stats.station_p50_turn = percentile(&mut turns_vec, 0.5);
+        }
+    }
+}
+
+/// Per-turn mana, velocity, board, and damage census averages.
+fn velocity_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns: usize, n: f64) {
+    let life_target = deck.format.life_target();
     for log in logs {
         for t in 0..turns {
             stats.unused_mana[t] += (log.mana_available[t] - log.mana_spent[t]).max(0.0) / n;
@@ -322,11 +355,6 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
                 stats.drain_total_by_turn[t] += f64::from(log.drain_total[t]) / n;
             }
             if t < log.player_damage.len() {
-                let life_target = if deck.format == super::model::Format::Commander {
-                    120.0
-                } else {
-                    20.0
-                };
                 // Player damage: combat damage to players + the drain
                 // census (burn/drain effects already carry the format
                 // multiplier for three opponents).
@@ -340,9 +368,11 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             }
         }
     }
-    // Interaction tempo tax: average spare mana on ready turns.
-    // Median lethal turn: the first turn each game crossed the life
-    // total, then the median over games that ever crossed.
+}
+
+/// Median lethal turn: the first turn each game crossed the life total,
+/// then the median over games that ever crossed.
+fn lethal_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats) {
     let mut lethal_turns: Vec<u32> = Vec::new();
     for log in logs {
         if let Some(t) = log
@@ -350,29 +380,22 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             .iter()
             .zip(log.drain_total.iter())
             .enumerate()
-            .find(|(_, (d, dr))| {
-                let life_target = if deck.format == super::model::Format::Commander {
-                    120.0
-                } else {
-                    20.0
-                };
-                f64::from(*d + *dr) >= life_target
-            })
+            .find(|(_, (d, dr))| f64::from(*d + *dr) >= deck.format.life_target())
             .map(|(t, _)| t as u32 + 1)
         {
             lethal_turns.push(t);
         }
     }
-    lethal_turns.sort_unstable();
     stats.p50_lethal_turn = if lethal_turns.is_empty() {
         None
     } else {
-        // Nearest-rank median, consistent with the other percentile
-        // lines in the same block.
-        let mut turns = lethal_turns;
-        Some(percentile(&mut turns, 0.5))
+        // Nearest-rank median; `percentile` sorts its input itself.
+        Some(percentile(&mut lethal_turns, 0.5))
     };
+}
 
+/// Interaction tempo: ready-turn share and average spare mana held.
+fn interaction_stats(logs: &[GameLog], stats: &mut SimStats, n: f64) {
     let ready_turns: usize = logs
         .iter()
         .map(|l| l.interaction_ready.iter().filter(|r| **r).count())
@@ -389,16 +412,21 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
         })
         .sum();
     stats.interaction_mana_held = held_total / f64::from(ready_turns as u32).max(1.0);
-    // Attack power p90 at turn 8 (or the last turn simulated).
-    if turns >= 8 {
-        let mut p90s: Vec<u32> = logs.iter().map(|l| l.attack_power[7]).collect();
-        stats.attack_power_p90 = percentile(&mut p90s, 0.9);
-    }
     stats.extra_turns_pct = logs
         .iter()
         .filter(|l| l.extra_turns.iter().any(|e| *e > 0))
         .count() as f64
         / n;
+}
+
+/// Misc one-off aggregates: percentiles, win/ultimate/infinite rates,
+/// role access, and per-card castability.
+fn misc_stats(logs: &[GameLog], stats: &mut SimStats, turns: usize, n: f64) {
+    // Attack power p90 at turn 8 (or the last turn simulated).
+    if turns >= 8 {
+        let mut p90s: Vec<u32> = logs.iter().map(|l| l.attack_power[7]).collect();
+        stats.attack_power_p90 = percentile(&mut p90s, 0.9);
+    }
     let mut win_turns: Vec<u32> = logs.iter().filter_map(|l| l.win_threshold_turn).collect();
     win_turns.sort_unstable();
     stats.win_threshold_p50_turn = win_turns
@@ -420,8 +448,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             .count() as f64
             / n;
     }
+}
 
-    // Role access from first-sighting turns.
+/// Role access from first-sighting turns (starvation and access rates).
+fn role_access_stats(logs: &[GameLog], stats: &mut SimStats, turns: usize, n: f64) {
     let starved = logs
         .iter()
         .filter(|l| {
@@ -479,8 +509,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
                 / n
         })
         .collect();
+}
 
-    // Color screw: casts blocked per color.
+/// Color screw: casts blocked per color and the top pip blocks.
+fn color_screw_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, n: f64) {
     for log in logs {
         for (i, blocked) in log.blocked_colors.iter().enumerate() {
             if *blocked {
@@ -519,8 +551,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     });
     pip_blocks.truncate(5);
     stats.pip_blocks = pip_blocks;
+}
 
-    // Graveyard census: average size at the end of each turn.
+/// Graveyard census: average size at the end of each turn.
+fn graveyard_stats(logs: &[GameLog], stats: &mut SimStats, turns: usize, n: f64) {
     if !logs.is_empty() {
         for t in 0..turns.min(logs[0].graveyard_size.len()) {
             stats
@@ -528,8 +562,10 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
                 .push(logs.iter().map(|log| log.graveyard_size[t]).sum::<u32>() as f64 / n);
         }
     }
+}
 
-    // Per-card castability from the draw-agnostic mana-readiness curve.
+/// Per-card castability from the draw-agnostic mana-readiness curve.
+fn castability_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns: usize, n: f64) {
     let mut by_target = vec![0u64; deck.cards.len()];
     let mut first_sum = vec![0.0f64; deck.cards.len()];
     let mut first_n = vec![0u64; deck.cards.len()];
@@ -562,7 +598,6 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
             },
         })
         .collect();
-    stats
 }
 
 /// Target turn to cast a card on curve (turn N casts N-mana spells).

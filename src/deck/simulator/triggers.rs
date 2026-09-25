@@ -92,20 +92,21 @@ fn etb_trigger(lower: &str, out: &mut Vec<Ability>) -> bool {
     }
     if lower.contains("exile") && lower.contains("return it to the battlefield") {
         // Blink: the exiled permanent comes back, so its ETB triggers
-        // fire again on the next turn.
+        // fire again on the next turn. The distinct effect keeps the
+        // re-arm separate from land-search ETBs.
         out.push(Ability {
             trigger: super::model::Trigger::OnEnter,
-            effect: Effect::ExtraLand,
+            effect: Effect::Blink,
             ..Ability::default()
         });
         return true;
     }
     if lower.contains("you become the monarch") {
-        // Monarch acquisition: modeled as an extra card per turn (the
-        // Monarch draws at their upkeep).
+        // Monarch acquisition: an extra card per turn from the turn
+        // after acquisition (the Monarch draws at their upkeep).
         out.push(Ability {
             trigger: super::model::Trigger::OnEnter,
-            effect: Effect::ExtraLand,
+            effect: Effect::Monarch,
             ..Ability::default()
         });
         return true;

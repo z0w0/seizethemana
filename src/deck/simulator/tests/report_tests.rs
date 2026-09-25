@@ -26,7 +26,15 @@ fn json_report_adds_station_and_body_fields() {
     };
     let logs: Vec<super::game::GameLog> = Vec::new();
     let stats = aggregate(&logs, &deck, 10);
-    let report = super::report::json_report(&stats, &deck, "test", 42, &[], 0, &Default::default());
+    let report = super::report::json_report(
+        &stats,
+        &deck,
+        "test",
+        42,
+        &[],
+        Default::default(),
+        &Default::default(),
+    );
     let obj = report.as_object().unwrap();
     // New additive fields exist.
     assert!(obj.contains_key("station"));
@@ -167,7 +175,15 @@ fn json_report_interaction_color_and_wincons_are_populated() {
     let mut rng = ChaCha8Rng::seed_from_u64(42);
     let logs: Vec<_> = (0..100).map(|_| run_game(&deck, &mut rng, 10)).collect();
     let stats = aggregate(&logs, &deck, 10);
-    let report = super::report::json_report(&stats, &deck, "pin", 42, &[], 0, &Default::default());
+    let report = super::report::json_report(
+        &stats,
+        &deck,
+        "pin",
+        42,
+        &[],
+        Default::default(),
+        &Default::default(),
+    );
     let obj = report.as_object().unwrap();
     // Interaction readiness shows up with a countable instant pool.
     assert!(obj["interaction"].is_object());

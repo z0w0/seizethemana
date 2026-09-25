@@ -31,7 +31,6 @@ pub mod embed;
 pub mod output;
 pub mod paths;
 pub mod prints;
-pub mod quality;
 pub mod query;
 pub mod release;
 pub mod scryfall;

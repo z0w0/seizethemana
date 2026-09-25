@@ -40,6 +40,13 @@ pub fn is_basic_land(card: &CardRow) -> bool {
     card.type_line.contains("Basic Land")
 }
 
+/// True when the card is one of the five tracked basic lands
+/// (Plains, Island, Swamp, Mountain, Forest). Wastes is not tracked
+/// as an unlimited basic for collection stats.
+pub fn is_tracked_basic(card: &CardRow) -> bool {
+    card.type_line.contains("Basic Land") && card.name != "Wastes"
+}
+
 /// True when the oracle text lets the deck run more than 4 copies
 /// ("a deck can have any number of cards named …"). Covers Relentless Rats,
 /// Shadowborn Apostle, Seven Dwarves in a Dwarven Deck, and similar.
@@ -153,7 +160,9 @@ pub fn lookup_names(
 /// Compute the overview stats for a deck joined to card metadata.
 ///
 /// Prints missing from the oracle contribute copies to totals but no curve,
-/// ramp, color, or type data.
+/// ramp, color, or type data. Bench sections (SIDEBOARD/MAYBEBOARD) never
+/// feed the curve, ramp, color, or type data: those describe the legal
+/// deck, and bench cards only count toward `total`.
 pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckStats {
     let mut stats = DeckStats::default();
     let mut curve: std::collections::BTreeMap<String, i64> = Default::default();
@@ -162,43 +171,49 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
     let mut cmc_sum = 0.0f64;
     let mut cmc_cards = 0i64;
 
-    for entry in deck.entries() {
-        stats.total += entry.quantity;
-        let Some(card) = cards_by_name.get(&entry.name) else {
-            continue;
-        };
-        let land = is_land(card);
-        if let Some(bucket) = cmc_bucket(card.cmc, land) {
-            *curve.entry(bucket).or_insert(0) += entry.quantity;
-            cmc_sum += card.cmc * entry.quantity as f64;
-            cmc_cards += entry.quantity;
-        }
-        if land {
-            stats.ramp.0 += entry.quantity;
-        } else if is_rock(card) {
-            stats.ramp.1 += entry.quantity;
-        } else if is_dork(card) {
-            stats.ramp.2 += entry.quantity;
-        } else if produces_mana(&card.oracle_text) {
-            stats.ramp.3 += entry.quantity;
-        }
-        if let Ok(identity) = serde_json::from_str::<Vec<String>>(&card.color_identity) {
-            for color in identity {
-                *colors
-                    .entry(color.chars().next().unwrap_or('C').to_string())
-                    .or_insert(0) += entry.quantity;
+    for (section, entries) in &deck.sections {
+        let bench = super::grammar::is_bench_section(section);
+        for entry in entries {
+            stats.total += entry.quantity;
+            if bench {
+                continue;
             }
-        }
-        // Collapse the type line to its primary word for the breakdown.
-        let primary = card
-            .type_line
-            .split('—')
-            .next()
-            .unwrap_or("")
-            .trim()
-            .to_string();
-        if !primary.is_empty() {
-            *types.entry(primary).or_insert(0) += entry.quantity;
+            let Some(card) = cards_by_name.get(&entry.name) else {
+                continue;
+            };
+            let land = is_land(card);
+            if let Some(bucket) = cmc_bucket(card.cmc, land) {
+                *curve.entry(bucket).or_insert(0) += entry.quantity;
+                cmc_sum += card.cmc * entry.quantity as f64;
+                cmc_cards += entry.quantity;
+            }
+            if land {
+                stats.ramp.0 += entry.quantity;
+            } else if is_rock(card) {
+                stats.ramp.1 += entry.quantity;
+            } else if is_dork(card) {
+                stats.ramp.2 += entry.quantity;
+            } else if produces_mana(&card.oracle_text) {
+                stats.ramp.3 += entry.quantity;
+            }
+            if let Ok(identity) = serde_json::from_str::<Vec<String>>(&card.color_identity) {
+                for color in identity {
+                    *colors
+                        .entry(color.chars().next().unwrap_or('C').to_string())
+                        .or_insert(0) += entry.quantity;
+                }
+            }
+            // Collapse the type line to its primary word for the breakdown.
+            let primary = card
+                .type_line
+                .split('—')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if !primary.is_empty() {
+                *types.entry(primary).or_insert(0) += entry.quantity;
+            }
         }
     }
 

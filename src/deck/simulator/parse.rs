@@ -10,7 +10,7 @@
 // proliferate chains, and replay mechanics (flashback, rebound, warp
 // beyond the one cheaper cost).
 
-use super::super::stats::{is_dork, is_land, is_rock};
+use super::super::stats::is_land;
 use super::model::{Ability, Cost, Effect, SimCard, TapYield, Tier, draw_amount};
 pub use super::parse_cost::{parse_activation_cost, parse_cost, parse_cost_faces};
 use super::parse_land::{charge_counters_on_cast, enters_tapped, parse_enter_counters};
@@ -228,6 +228,416 @@ fn token_amount_after(text: &str) -> u32 {
     super::triggers::token_amount(&lower)
 }
 
+/// One-shot effects on cast, parsed from oracle text. Split cards zero
+/// the riders (the cast pays the cheaper face).
+struct CastRiders {
+    mana_on_cast: Option<TapYield>,
+    draws_on_cast: u32,
+    tokens_on_cast: u32,
+    scry_on_cast: u32,
+    surveils: bool,
+    extra_turns_on_cast: bool,
+    drain_on_cast: u32,
+    mills_on_enter: u32,
+    wheel_on_cast: bool,
+    additional_cost_bodies: u32,
+    additional_cost_life: u32,
+    counters_on_cast: u32,
+    x_class: Option<super::model::XClass>,
+    mana_per_cast: Option<TapYield>,
+    kicker: Option<Cost>,
+}
+
+/// Parse every one-shot cast rider from oracle text. `cast_face` gates
+/// on a real cast face: a plain land has no cast, a land/spell MDFC's
+/// spell face does.
+/// One-shot scry/surveil on cast ("Scry 2", "Surveil 1") — awareness
+/// credit, not draw.
+fn scry_rider(row: &CardRow, cast_face: bool) -> u32 {
+    if !cast_face {
+        return 0;
+    }
+    row.oracle_text
+        .split(['.', '\n'])
+        .map(str::trim)
+        .find_map(|seg| {
+            let lower = seg.to_ascii_lowercase();
+            // Enter-trigger shapes ("When this creature enters,
+            // surveil 2") are ETB triggers, not cast riders: they
+            // already parse as OnEnter Scry abilities and would
+            // double-count awareness if credited here too.
+            let enter_trigger = lower.starts_with("when ") || lower.starts_with("whenever ");
+            if lower.contains("surveil") && !lower.contains("whenever") && !enter_trigger {
+                return Some(super::model::amount_after(&lower, "surveil").max(1));
+            }
+            if lower.starts_with("scry ") && !lower.contains("whenever") && !enter_trigger {
+                return Some(super::model::amount_after(&lower, "scry"));
+            }
+            None
+        })
+        .unwrap_or(0)
+}
+
+/// One-shot drain spells ("Deals N damage to target player/opponent",
+/// "each opponent loses N life"). Creature-target burn stays removal.
+fn drain_rider(row: &CardRow, cast_face: bool) -> u32 {
+    if !cast_face {
+        return 0;
+    }
+    row.oracle_text
+        .split(['.', '\n'])
+        .map(str::trim)
+        .find_map(|seg| {
+            let lower = seg.to_ascii_lowercase();
+            let player_scope = lower.contains("target player")
+                || lower.contains("target opponent")
+                || lower.contains("each opponent");
+            let loses = (lower.contains("loses") && lower.contains("life"))
+                || lower.contains("deals") && lower.contains("damage to");
+            if player_scope && loses {
+                let from_loses = super::model::amount_after(&lower, "loses ");
+                let from_deals = super::model::amount_after(&lower, "deals ");
+                Some(from_loses.max(from_deals).max(1))
+            } else {
+                None
+            }
+        })
+        .unwrap_or(0)
+}
+
+/// The one-shot cast riders of a spell: ritual mana, draws, mills, scry,
+/// drain, tokens, wheels, extra turns, and the X-cost class. `cast_face`
+/// gates MDFC spell faces (land faces have no cast riders) and
+/// `tap_is_none` rules out cards whose tap already models the mana.
+fn parse_cast_riders(row: &CardRow, text: &str, cast_face: bool, tap_is_none: bool) -> CastRiders {
+    let mana_on_cast = if cast_face && tap_is_none && text.contains("add ") {
+        find_cast_segment(row, &["add "], &["draw", "search"]).and_then(|seg| parse_tap_yield(&seg))
+    } else {
+        None
+    };
+    let draws_on_cast = if cast_face {
+        row.oracle_text
+            .split(['.', '\n'])
+            .map(str::trim)
+            .find_map(|seg| {
+                let lower = seg.to_ascii_lowercase();
+                // Enter-trigger shapes ("When this creature enters, draw")
+                // are ETB triggers, not cast riders: they already parse as
+                // OnEnter abilities and double count if credited here.
+                let enter_trigger = (lower.starts_with("when ") || lower.starts_with("whenever "))
+                    && lower.contains("enters");
+                // "When you cast this spell, draw a card" self-shapes are
+                // one-shot riders: the cast itself resolves them.
+                let self_cast = lower.starts_with("when you cast this spell");
+                let draws = ((lower.starts_with("draw ")
+                    || lower.contains(", draw ")
+                    || lower.starts_with("investigate")
+                    || lower.contains("then draw"))
+                    && !lower.contains("whenever")
+                    && !lower.contains("at the beginning")
+                    && !lower.contains(": ")
+                    // Wheel segments ("each player discards their hand,
+                    // then draws") parse as wheels, not plain draws;
+                    // loot shapes keep their draw credit.
+                    && !lower.contains("each player discards")
+                    && !enter_trigger)
+                    || self_cast;
+                if draws {
+                    Some(draw_amount(&lower))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(0)
+    } else {
+        0
+    };
+    let scry_on_cast = scry_rider(row, cast_face);
+    let drain_on_cast = drain_rider(row, cast_face);
+    // X-cost effect class: "target player loses X life" (Drain), "draw X
+    // cards" (Draw), "mill X" (Mill), "create X … creature tokens"
+    // (Tokens). Oracle text writes the X bare ("loses X life"), so the
+    // check is the mana cost carrying {X} plus the effect word.
+    let has_x_cost = row.mana_cost.to_ascii_uppercase().contains("{X}");
+    let x_class = if cast_face && has_x_cost {
+        x_cost_class(text)
+    } else {
+        None
+    };
+    // Repeatable per-cast mana: "add {N} for each spell you've cast this
+    // turn". Fires per spell cast while the host is untapped.
+    let mana_per_cast = if cast_face
+        && text.contains("add ")
+        && (text.contains("for each spell you've cast")
+            || text.contains("spell you've cast this turn"))
+    {
+        row.oracle_text
+            .split(['.', '\n'])
+            .map(str::trim)
+            .find_map(|seg| {
+                let lower = seg.to_ascii_lowercase();
+                (lower.contains("spell you've cast") && lower.contains("add "))
+                    .then(|| parse_tap_yield(seg))
+                    .flatten()
+            })
+    } else {
+        None
+    };
+    let mills_on_enter = if cast_face && parse_triggers(&row.oracle_text).is_empty() {
+        mill_amount(text).max(super::model::amount_after(text, "mills "))
+    } else {
+        0
+    };
+    let tokens_on_cast =
+        if cast_face && parse_triggers(&row.oracle_text).is_empty() && text.contains("token") {
+            text.find("create ")
+                .map(|i| token_amount_after(&text[i..]))
+                .unwrap_or(0)
+        } else {
+            0
+        };
+    CastRiders {
+        mana_on_cast,
+        draws_on_cast,
+        tokens_on_cast,
+        scry_on_cast,
+        surveils: cast_face && text.contains("surveil"),
+        extra_turns_on_cast: cast_face && text.contains("take an extra turn"),
+        drain_on_cast,
+        mills_on_enter,
+        wheel_on_cast: wheel_on_cast_shape(cast_face, text),
+        additional_cost_bodies: additional_cost_bodies_shape(text),
+        additional_cost_life: additional_cost_life_shape(text),
+        counters_on_cast: charge_counters_on_cast(text),
+        x_class,
+        mana_per_cast,
+        kicker: kicker_cost(text),
+    }
+}
+
+/// The first oracle segment containing every `must` needle and no
+/// `must_not` needle, lowercased.
+fn find_cast_segment(row: &CardRow, must: &[&str], must_not: &[&str]) -> Option<String> {
+    row.oracle_text
+        .split(['.', '\n'])
+        .map(str::trim)
+        .find(|seg| {
+            let lower = seg.to_ascii_lowercase();
+            must.iter().all(|m| lower.contains(m)) && !must_not.iter().any(|m| lower.contains(m))
+        })
+        .map(str::to_ascii_lowercase)
+}
+
+/// The X-cost effect class for an {X} spell, or None when the effect
+/// does not parse to a modeled X shape.
+fn x_cost_class(text: &str) -> Option<super::model::XClass> {
+    if (text.contains("loses x life")
+        || text.contains("each opponent loses x")
+        || text.contains("deals x damage"))
+        && (text.contains("target player") || text.contains("opponent"))
+    {
+        Some(super::model::XClass::Drain)
+    } else if text.contains("draw x") || text.contains("draws x") {
+        Some(super::model::XClass::Draw)
+    } else if text.contains("mill x") {
+        Some(super::model::XClass::Mill)
+    } else if text.contains("create x") && text.contains("token") {
+        Some(super::model::XClass::Tokens)
+    } else if text.contains("reveal the top x")
+        && text.contains("permanent")
+        && (text.contains("put any number") || text.contains("onto the battlefield"))
+    {
+        Some(super::model::XClass::RevealPermanents)
+    } else if enters_with_x_counters(text) {
+        Some(super::model::XClass::Counters)
+    } else {
+        None
+    }
+}
+
+/// One-shot wheel spell shape: "each player discards … then draws" with
+/// no trigger prefix (trigger wheels parse as OnUpkeep/Loot abilities).
+fn wheel_on_cast_shape(cast_face: bool, text: &str) -> bool {
+    cast_face
+        && text.contains("each player")
+        && text.contains("discard")
+        && text.contains("draw")
+        && !text.starts_with("whenever ")
+        && !text.starts_with("when ")
+        && !text.starts_with("at the beginning")
+}
+
+/// "Sacrifice a creature / sacrifice any number" additional-cost shape.
+fn additional_cost_bodies_shape(text: &str) -> u32 {
+    if text.contains("additional cost")
+        && (text.contains("sacrifice a creature") || text.contains("sacrifice any number"))
+    {
+        1
+    } else {
+        0
+    }
+}
+
+/// "Pay N life" additional-cost shape: the amount parsed from the
+/// "pay " tail.
+fn additional_cost_life_shape(text: &str) -> u32 {
+    if !text.contains("additional cost") {
+        return 0;
+    }
+    text.split("pay ")
+        .nth(1)
+        .and_then(|rest| rest.split([' ', '.', ',']).next().map(str::to_string))
+        .and_then(|n| n.parse::<u32>().ok())
+        .unwrap_or(0)
+}
+
+/// Kicker/multikicker cost ("Kicker {2}{R}"): the full cost shape,
+/// colored pips included.
+fn kicker_cost(text: &str) -> Option<Cost> {
+    let rest = text.split("kicker ").nth(1)?;
+    let head = rest.split(['(', '.', '\n', ',']).next()?.trim();
+    let cost = parse_cost(head);
+    (cost.total() > 0).then_some(cost)
+}
+
+/// Cast-time reductions (approximations documented in assumptions):
+/// (cheapest min cost, board-discount flag). Improvise and affinity
+/// scale with the artifact count on the board; the min_cost here keeps
+/// a conservative flat −2 as the floor.
+fn parse_min_cost(text: &str, cost: &Cost) -> (Cost, bool) {
+    let mut min_cost = cost.clone();
+    let mut board_discount = false;
+    if text.contains("warp ") {
+        let warp = text
+            .split("warp ")
+            .nth(1)
+            .and_then(|rest| rest.split(['(', '.', '\n']).next())
+            .map(str::trim)
+            .map(parse_cost);
+        if let Some(warp) = warp
+            && warp.total() < min_cost.total()
+        {
+            min_cost = warp;
+        }
+    }
+    // Reductions stack with affinity: the reminder text of "Affinity for
+    // X" reads "costs {1} less to cast for each X", which would fire both
+    // branches. Affinity wins (it scales with the board); the flat floor
+    // applies only when affinity did not.
+    let affinity = text.contains("improvise") || text.contains("affinity");
+    if (text.contains("costs {1} less") || text.contains("costs {x} less")) && !affinity {
+        min_cost.generic = min_cost.generic.saturating_sub(2);
+    }
+    if affinity {
+        min_cost.generic = min_cost.generic.saturating_sub(2);
+        board_discount = true;
+    }
+    (min_cost, board_discount)
+}
+
+/// Static card flags read from the keywords array and the oracle text.
+struct StaticFlags {
+    double_strike: bool,
+    prowess: bool,
+    landfall: bool,
+    evasion: bool,
+    has_haste: bool,
+    extra_land_drops: bool,
+    is_instant_speed: bool,
+    wipe: bool,
+    is_interaction: bool,
+    grant: Option<super::model::Grant>,
+    buff: Option<(i32, i32)>,
+    equipment: Option<super::model::Equipment>,
+    treasures_on_token: bool,
+}
+
+/// Parse the static keyword and interaction flags. `cast_face` gates
+/// wipes (a land face never sweeps).
+fn parse_static_flags(row: &CardRow, text: &str, type_line: &str, cast_face: bool) -> StaticFlags {
+    let double_strike = row.keywords.contains("Double strike") || text.contains("double strike");
+    let prowess = row.keywords.contains("Prowess") || text.contains("prowess");
+    let landfall = text.contains("landfall");
+    // Text "flying" joins the evasion census too ("has flying", "gains
+    // flying"); keyword-array Flying covered above.
+    let evasion = row.keywords.contains("Trample")
+        || row.keywords.contains("Flying")
+        || row.keywords.contains("Menace")
+        || text.contains("trample")
+        || text.contains("menace")
+        || text.contains("flying");
+    // Haste: keyword array or reminder text. "Creatures you control have
+    // haste" is a grant to other bodies — the granter itself does not
+    // attack on its entry turn — so the oracle mention does not set haste
+    // on this card.
+    let has_haste =
+        row.keywords.contains("Haste") || text.contains("has haste") || text.contains("with haste");
+    // "You may play an additional land" / "an additional land on each of
+    // your turns" (Aesi, Wayward Swordtooth, Burrowing Power).
+    let extra_land_drops = text.contains("additional land");
+    // Instant speed: Instant type or flash. "Flashback" contains
+    // "flash" as a substring; exclude it.
+    let is_instant_speed = type_line.contains("Instant")
+        || row.keywords.contains("Flash")
+        || (text.contains("flash") && !text.contains("flashback"));
+    // Interaction: removal or counterspell shapes (readiness metric).
+    // Wipes count too (capacity, not events). Damage shapes match any
+    // "deals N damage to target …" with N >= 2;
+    // player-targeted damage stays drain. Bounce ("return target … to
+    // its owner's hand") answers a threat the same way removal does.
+    let wipe = cast_face
+        && (text.contains("destroy all")
+            || text.contains("exile all")
+            || text.contains("return all")
+            || text.contains("sacrifice all")
+            || (text.contains("each creature") && text.contains("-x/-x")));
+    let damage_removal = damage_removal_shape(&row.oracle_text);
+    let is_interaction = type_line.contains("Instant") || type_line.contains("Sorcery");
+    let is_interaction = is_interaction
+        && (text.contains("destroy target")
+            || text.contains("exile target")
+            || text.contains("counter target")
+            || text.contains("return target")
+                && (text.contains("to its owner's hand")
+                    || text.contains("to their owner's hand"))
+            || damage_removal
+            || wipe);
+    // Static mana grants (Enduring Vitality, Chromatic Lantern).
+    let grant = if text.contains("lands you control have \"") {
+        Some(super::model::Grant::Lands)
+    } else if text.contains("creatures you control have \"") {
+        Some(super::model::Grant::Creatures)
+    } else {
+        None
+    };
+    // Static creature buff ("creatures you control get +2/+2").
+    let buff = super::parse_keywords::parse_creature_buff(text);
+    // Equipment: equip cost, equipped buff, Skullclamp death-draws.
+    let equipment = if type_line.contains("Equipment") {
+        super::parse_keywords::parse_equipment(text)
+    } else {
+        None
+    };
+    // Treasure creation: "create a Treasure token" / "create N Treasure
+    // tokens". Each treasure is a banked flexible pip.
+    let treasures_on_token = text.contains("treasure token");
+    StaticFlags {
+        double_strike,
+        prowess,
+        landfall,
+        evasion,
+        has_haste,
+        extra_land_drops,
+        is_instant_speed,
+        wipe,
+        is_interaction,
+        grant,
+        buff,
+        equipment,
+        treasures_on_token,
+    }
+}
+
 /// Parse a card row into the simulator's data model.
 pub fn parse_sim_card(row: &CardRow) -> SimCard {
     let text = row.oracle_text.to_ascii_lowercase();
@@ -339,202 +749,31 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         );
     }
 
-    // Cast-time reductions (approximations documented in assumptions).
-    // Improvise and affinity scale with the artifact count on the board;
-    // the min_cost here keeps a conservative flat −2 as the floor.
-    let mut min_cost = cost.clone();
-    let mut board_discount = false;
-    if text.contains("warp ") {
-        let warp = text
-            .split("warp ")
-            .nth(1)
-            .and_then(|rest| rest.split(['(', '.', '\n']).next())
-            .map(str::trim)
-            .map(parse_cost);
-        if let Some(warp) = warp
-            && warp.total() < min_cost.total()
-        {
-            min_cost = warp;
-        }
-    }
-    // Reductions stack with affinity: the reminder text of "Affinity for
-    // X" reads "costs {1} less to cast for each X", which would fire both
-    // branches. Affinity wins (it scales with the board); the flat floor
-    // applies only when affinity did not.
-    let affinity = text.contains("improvise") || text.contains("affinity");
-    if (text.contains("costs {1} less") || text.contains("costs {x} less")) && !affinity {
-        min_cost.generic = min_cost.generic.saturating_sub(2);
-    }
-    if affinity {
-        min_cost.generic = min_cost.generic.saturating_sub(2);
-        board_discount = true;
-    }
+    let (min_cost, board_discount) = parse_min_cost(&text, &cost);
 
     let enter_counters = parse_enter_counters(&text);
 
     // One-shot effects on cast. The gates read `!land || is_mdfc_spell`:
     // a land/spell MDFC's spell face is a real cast, so its riders fire.
     let cast_face = !land || is_mdfc_spell;
-    let mana_on_cast = if cast_face && tap.is_none() && text.contains("add ") {
-        row.oracle_text
-            .split(['.', '\n'])
-            .map(str::trim)
-            .find_map(|seg| {
-                let lower = seg.to_ascii_lowercase();
-                (lower.contains("add ") && !lower.contains("draw") && !lower.contains("search"))
-                    .then(|| parse_tap_yield(seg))
-                    .flatten()
-            })
-    } else {
-        None
-    };
-    let draws_on_cast = if cast_face {
-        row.oracle_text
-            .split(['.', '\n'])
-            .map(str::trim)
-            .find_map(|seg| {
-                let lower = seg.to_ascii_lowercase();
-                // Enter-trigger shapes ("When this creature enters, draw")
-                // are ETB triggers, not cast riders: they already parse as
-                // OnEnter abilities and double count if credited here.
-                let enter_trigger = (lower.starts_with("when ") || lower.starts_with("whenever "))
-                    && lower.contains("enters");
-                // "When you cast this spell, draw a card" self-shapes are
-                // one-shot riders: the cast itself resolves them.
-                let self_cast = lower.starts_with("when you cast this spell");
-                let draws = ((lower.starts_with("draw ")
-                    || lower.contains(", draw ")
-                    || lower.starts_with("investigate")
-                    || lower.contains("then draw"))
-                    && !lower.contains("whenever")
-                    && !lower.contains("at the beginning")
-                    && !lower.contains(": ")
-                    && !enter_trigger)
-                    || self_cast;
-                if draws {
-                    Some(draw_amount(&lower))
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(0)
-    } else {
-        0
-    };
-    let counters_on_cast = charge_counters_on_cast(&text);
-
-    // One-shot scry/surveil on cast ("Scry 2", "Surveil 1") — awareness
-    // credit, not draw.
-    let scry_on_cast = if cast_face {
-        row.oracle_text
-            .split(['.', '\n'])
-            .map(str::trim)
-            .find_map(|seg| {
-                let lower = seg.to_ascii_lowercase();
-                // Enter-trigger shapes ("When this creature enters,
-                // surveil 2") are ETB triggers, not cast riders: they
-                // already parse as OnEnter Scry abilities and would
-                // double-count awareness if credited here too.
-                let enter_trigger = lower.starts_with("when ") || lower.starts_with("whenever ");
-                if lower.contains("surveil") && !lower.contains("whenever") && !enter_trigger {
-                    return Some(super::model::amount_after(&lower, "surveil").max(1));
-                }
-                if lower.starts_with("scry ") && !lower.contains("whenever") && !enter_trigger {
-                    return Some(super::model::amount_after(&lower, "scry"));
-                }
-                None
-            })
-            .unwrap_or(0)
-    } else {
-        0
-    };
-    let surveils = cast_face && text.contains("surveil");
-
-    // One-shot extra-turn spells ("Take an extra turn after this one").
-    let extra_turns_on_cast = cast_face && text.contains("take an extra turn");
-
-    // Mill direction: opponent mills name a target player ("target
-    // player mills N", "each opponent mills N").
-    let mills_opponent = super::model::mills_opponent(&text);
-
-    // One-shot drain spells ("Deals N damage to target player/opponent",
-    // "each opponent loses N life"). Creature-target burn stays removal.
-    let drain_on_cast = if cast_face {
-        row.oracle_text
-            .split(['.', '\n'])
-            .map(str::trim)
-            .find_map(|seg| {
-                let lower = seg.to_ascii_lowercase();
-                let player_scope = lower.contains("target player")
-                    || lower.contains("target opponent")
-                    || lower.contains("each opponent");
-                let loses = (lower.contains("loses") && lower.contains("life"))
-                    || lower.contains("deals") && lower.contains("damage to");
-                if player_scope && loses {
-                    let from_loses = super::model::amount_after(&lower, "loses ");
-                    let from_deals = super::model::amount_after(&lower, "deals ");
-                    Some(from_loses.max(from_deals).max(1))
-                } else {
-                    None
-                }
-            })
-            .unwrap_or(0)
-    } else {
-        0
-    };
-
-    // X-cost effect class: "target player loses X life" (Drain), "draw X
-    // cards" (Draw), "mill X" (Mill), "create X … creature tokens"
-    // (Tokens). Oracle text writes the X bare ("loses X life"), so the
-    // check is the mana cost carrying {X} plus the effect word.
-    let has_x_cost = row.mana_cost.to_ascii_uppercase().contains("{X}");
-    let x_class = if cast_face && has_x_cost {
-        if (text.contains("loses x life")
-            || text.contains("each opponent loses x")
-            || text.contains("deals x damage"))
-            && (text.contains("target player") || text.contains("opponent"))
-        {
-            Some(super::model::XClass::Drain)
-        } else if text.contains("draw x") || text.contains("draws x") {
-            Some(super::model::XClass::Draw)
-        } else if text.contains("mill x") {
-            Some(super::model::XClass::Mill)
-        } else if text.contains("create x") && text.contains("token") {
-            Some(super::model::XClass::Tokens)
-        } else if text.contains("reveal the top x")
-            && text.contains("permanent")
-            && (text.contains("put any number") || text.contains("onto the battlefield"))
-        {
-            Some(super::model::XClass::RevealPermanents)
-        } else if enters_with_x_counters(&text) {
-            Some(super::model::XClass::Counters)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-
-    // Repeatable per-cast mana: "add {N} for each spell you've cast this
-    // turn". Fires per spell cast while the host
-    // is untapped, in the cast phase.
-    let mana_per_cast = if cast_face
-        && text.contains("add ")
-        && (text.contains("for each spell you've cast")
-            || text.contains("spell you've cast this turn"))
-    {
-        row.oracle_text
-            .split(['.', '\n'])
-            .map(str::trim)
-            .find_map(|seg| {
-                let lower = seg.to_ascii_lowercase();
-                (lower.contains("spell you've cast") && lower.contains("add "))
-                    .then(|| parse_tap_yield(seg))
-                    .flatten()
-            })
-    } else {
-        None
-    };
+    let riders = parse_cast_riders(row, &text, cast_face, tap.is_none());
+    let CastRiders {
+        mana_on_cast,
+        draws_on_cast,
+        tokens_on_cast,
+        scry_on_cast,
+        surveils,
+        extra_turns_on_cast,
+        drain_on_cast,
+        mills_on_enter,
+        wheel_on_cast,
+        additional_cost_bodies,
+        additional_cost_life,
+        counters_on_cast,
+        x_class,
+        mana_per_cast,
+        kicker,
+    } = riders;
     // The per-cast engine's own tap segment reads as a plain "{T}: add N"
     // tap too; when the engine parsed, drop the plain tap so the two
     // modes do not double count (the real card's tap yields the
@@ -545,20 +784,9 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         tap
     };
 
-    // Kicker/multikicker: an optional extra cost ("Kicker {2}"). The
-    // game loop pays it from leftover mana when affordable; the drain
-    // rider bumps the amount.
-    let kicker = if text.contains("kicker ") {
-        text.split("kicker ")
-            .nth(1)
-            .and_then(|rest| rest.split(['(', '.', '\n', ',']).next())
-            .map(str::trim)
-            .map(parse_cost)
-            .map(|c| c.total())
-            .filter(|n| *n > 0)
-    } else {
-        None
-    };
+    // Mill direction: opponent mills name a target player ("target
+    // player mills N", "each opponent mills N").
+    let mills_opponent = super::model::mills_opponent(&text);
 
     // Printed power for crew/station math; "*" and unknowns stay None
     // (flat body power). Tokens never carry a row.
@@ -577,62 +805,13 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         .as_deref()
         .and_then(|l| l.trim().parse::<u32>().ok());
 
-    // One-shot mill on entering ("mill N" ETB without a trigger segment).
-    let mills_on_enter = if cast_face && parse_triggers(&row.oracle_text).is_empty() {
-        mill_amount(&text).max(super::model::amount_after(&text, "mills "))
-    } else {
-        0
-    };
-    // One-shot token spells ("Create four 1/1 Soldier creature tokens"):
-    // no trigger prefix, so the trigger families skip them. The cast
-    // resolves the creation.
-    let tokens_on_cast =
-        if cast_face && parse_triggers(&row.oracle_text).is_empty() && text.contains("token") {
-            text.find("create ")
-                .map(|i| token_amount_after(&text[i..]))
-                .unwrap_or(0)
-        } else {
-            0
-        };
-
-    // One-shot wheel spells ("each player discards their hand, then
-    // draws seven"): the cast resolves a full wheel. Requires no
-    // trigger prefix (trigger wheels parse as OnUpkeep/Loot abilities).
-    let wheel_on_cast = cast_face
-        && text.contains("each player")
-        && text.contains("discard")
-        && text.contains("draw")
-        && !text.starts_with("whenever ")
-        && !text.starts_with("when ")
-        && !text.starts_with("at the beginning");
-
-    // Additional costs: "As an additional cost to cast this spell,
-    // sacrifice a creature / pay N life / discard a card". Best case:
-    // the agent pays the cost, so the cast consumes the resource.
-    let additional_cost_bodies = if text.contains("additional cost")
-        && (text.contains("sacrifice a creature") || text.contains("sacrifice any number"))
-    {
-        1
-    } else {
-        0
-    };
-    let additional_cost_life = if text.contains("additional cost") {
-        text.split("pay ")
-            .nth(1)
-            .and_then(|rest| rest.split([' ', '.', ',']).next().map(str::to_string))
-            .and_then(|n| n.parse::<u32>().ok())
-            .unwrap_or(0)
-    } else {
-        0
-    };
-
     // A land/spell MDFC is one card with two uses: the sim models it as
     // a spell (its dominant non-land role), and the land rule plays the
     // land face when no other land is in hand.
     let role = if is_mdfc_spell {
-        classify(row, &text, &tap, &mana_on_cast, false, is_station_card)
+        super::role_classify::classify(row, &text, &tap, &mana_on_cast, false, is_station_card)
     } else {
-        classify(row, &text, &tap, &mana_on_cast, land, is_station_card)
+        super::role_classify::classify(row, &text, &tap, &mana_on_cast, land, is_station_card)
     };
 
     // Printed colors for "per color among permanents" scaling.
@@ -643,85 +822,27 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
 
     // Treasure creation: "create a Treasure token" / "create N Treasure
     // tokens". Each treasure is a banked flexible pip.
-    let treasures_on_token = text.contains("treasure token");
-
-    // Static mana grants (Enduring Vitality, Chromatic Lantern).
-    let grant = if text.contains("lands you control have \"") {
-        Some(super::model::Grant::Lands)
-    } else if text.contains("creatures you control have \"") {
-        Some(super::model::Grant::Creatures)
-    } else {
-        None
-    };
-
-    // Static creature buff ("creatures you control get +2/+2").
-    let buff = super::parse_keywords::parse_creature_buff(&text);
-
-    // Equipment: equip cost, equipped buff, Skullclamp death-draws.
-    let equipment = if row.type_line.contains("Equipment") {
-        super::parse_keywords::parse_equipment(&text)
-    } else {
-        None
-    };
-
-    // Keywords that read from either the keywords array or the text.
-    let double_strike = row.keywords.contains("Double strike") || text.contains("double strike");
-    let prowess = row.keywords.contains("Prowess") || text.contains("prowess");
-    let landfall = text.contains("landfall");
-    // Text "flying" joins the evasion census too ("has flying", "gains
-    // flying"); keyword-array Flying covered above.
-    let evasion = row.keywords.contains("Trample")
-        || row.keywords.contains("Flying")
-        || row.keywords.contains("Menace")
-        || text.contains("trample")
-        || text.contains("menace")
-        || text.contains("flying");
-    // Haste: keyword array or reminder text. "Creatures you control have
-    // haste" is a grant to other bodies — the granter itself does not
-    // attack on its entry turn — so the oracle mention does not set haste
-    // on this card.
-    let has_haste =
-        row.keywords.contains("Haste") || text.contains("has haste") || text.contains("with haste");
-    // "You may play an additional land" / "an additional land on each of
-    // your turns" (Aesi, Wayward Swordtooth, Burrowing Power).
-    let extra_land_drops = text.contains("additional land");
-
-    // Instant speed: Instant type or flash. "Flashback" contains
-    // "flash" as a substring; exclude it.
-    let is_instant_speed = row.type_line.contains("Instant")
-        || row.keywords.contains("Flash")
-        || (text.contains("flash") && !text.contains("flashback"));
-
-    // Interaction: removal or counterspell shapes (readiness metric).
-    // Wipes count too (capacity, not events). Damage shapes match any
-    // "deals N damage to target …" with N >= 2;
-    // player-targeted damage stays drain. Bounce ("return target … to
-    // its owner's hand") answers a threat the same way removal does.
-    let wipe = cast_face
-        && (text.contains("destroy all")
-            || text.contains("exile all")
-            || text.contains("return all")
-            || text.contains("sacrifice all")
-            || (text.contains("each creature") && text.contains("-x/-x")));
-    let damage_removal = damage_removal_shape(&row.oracle_text);
-    let is_interaction = row.type_line.contains("Instant") || row.type_line.contains("Sorcery");
-    let is_interaction = is_interaction
-        && (text.contains("destroy target")
-            || text.contains("exile target")
-            || text.contains("counter target")
-            || text.contains("return target")
-                && (text.contains("to its owner's hand")
-                    || text.contains("to their owner's hand"))
-            || damage_removal
-            || wipe);
+    // Static flags: keywords, interaction, grants, equipment.
+    let flags = parse_static_flags(row, &text, &type_line, cast_face);
 
     // Split cards ("Fire // Ice"): the cast pays the cheaper face, so
     // one-shot on-cast credits (draw, mana, tokens) must not fire for a
     // face that was not cast. Triggers and roles still read from the
     // union text. Land/spell MDFCs are not split cards: casting the
-    // spell face is a real cast, so its on-cast effects stay.
-    let is_split =
-        !is_mdfc_spell && (row.oracle_text.contains("//") || row.mana_cost.contains("//"));
+    // spell face is a real cast, so its on-cast effects stay. Neither
+    // is an Adventure: the adventure is part of the spell's own cast
+    // sequence, so its on-cast riders belong to the card. Transform
+    // cards are not split cards either: only the front face is cast, so
+    // its on-cast riders stay.
+    let is_adventure = row
+        .type_line
+        .split(" // ")
+        .any(|face| face.split('—').next().unwrap_or("").contains("Adventure"));
+    let is_transform = row.keywords.contains("Transform");
+    let is_split = !is_mdfc_spell
+        && !is_adventure
+        && !is_transform
+        && (row.oracle_text.contains("//") || row.mana_cost.contains("//"));
     let draws_on_cast = if is_split { 0 } else { draws_on_cast };
     let mana_on_cast = if is_split { None } else { mana_on_cast };
     let tokens_on_cast = if is_split { 0 } else { tokens_on_cast };
@@ -735,6 +856,7 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         station_tiers,
         crew,
         is_creature: type_line.contains("Creature"),
+        is_legendary: type_line.contains("Legendary"),
         is_artifact: type_line.contains("Artifact"),
         is_station_card,
         enter_counters,
@@ -763,20 +885,20 @@ pub fn parse_sim_card(row: &CardRow) -> SimCard {
         starting_loyalty,
         board_discount,
         colors,
-        treasures_on_token,
-        grant,
-        buff,
-        equipment,
-        double_strike,
-        prowess,
-        landfall,
-        evasion,
-        is_instant_speed,
-        is_interaction,
-        has_haste,
-        extra_land_drops,
+        treasures_on_token: flags.treasures_on_token,
+        grant: flags.grant,
+        buff: flags.buff,
+        equipment: flags.equipment,
+        double_strike: flags.double_strike,
+        prowess: flags.prowess,
+        landfall: flags.landfall,
+        evasion: flags.evasion,
+        is_instant_speed: flags.is_instant_speed,
+        is_interaction: flags.is_interaction,
+        has_haste: flags.has_haste,
+        extra_land_drops: flags.extra_land_drops,
         kicker,
-        wipe,
+        wipe: flags.wipe,
         is_enchantment: type_line.contains("Enchantment") && !type_line.contains("Aura"),
         buffs_board_on_enter: text.contains("+x/+x")
             && (text.contains("where x is") || text.contains("equal to the number")),
@@ -881,106 +1003,4 @@ fn parse_saga_chapters(oracle_text: &str) -> Vec<Effect> {
         chapters[top as usize - 1] = effect;
     }
     chapters
-}
-
-/// Functional role classification.
-pub fn classify(
-    row: &CardRow,
-    text: &str,
-    tap: &Option<TapYield>,
-    mana_on_cast: &Option<TapYield>,
-    land: bool,
-    station: bool,
-) -> super::model::Role {
-    use super::model::Role;
-    if land {
-        return Role::Land;
-    }
-    if is_rock(row) {
-        return Role::Rock;
-    }
-    if is_dork(row) {
-        return Role::Dork;
-    }
-    if tap.is_some() || mana_on_cast.is_some() {
-        return Role::RampSpell;
-    }
-    // Removal first: "Destroy target creature. Draw a card." is a
-    // removal spell with a rider, not a draw engine. Draw-role counts
-    // would skew without this order. Protection grants ("gains
-    // hexproof") are not removal: they answer nothing in a goldfish.
-    let removal = text.contains("destroy target")
-        || text.contains("destroy all")
-        || text.contains("exile target")
-        || text.contains("counter target")
-        || text.contains("return target")
-            && (text.contains("to its owner's hand") || text.contains("to their owner's hand"))
-        || text.contains("prevent all combat damage")
-        || text.contains("prevent the next") && text.contains("damage")
-        || text.contains("creatures with power") && text.contains("can't attack")
-        || text.contains("can't attack or block")
-        || text.contains("regenerate target")
-        || damage_removal_shape(&row.oracle_text);
-    if removal {
-        return Role::Removal;
-    }
-    // Draw: repeatable engines and one-shot draws; tutors and look-at-top
-    // effects refuel the hand.
-    let draws = text.contains("draw ")
-        || text.contains("drawn")
-        || text.contains("investigate")
-        || text.contains("surveil")
-        || text.contains("search your library")
-        || (text.contains("look at the top") && text.contains("into your hand"));
-    if draws && !text.contains("opponent") {
-        return Role::Draw;
-    }
-    if station {
-        // Spacecraft/planets with no draw text are wincons when big.
-        if row.cmc >= 5.0 {
-            return Role::Wincon;
-        }
-        return Role::Other;
-    }
-    // Static tax/restriction pieces (stax): their timing is the question.
-    // "This spell costs {1} more to cast for each target" is a multi-target
-    // rider (multi-target X spells), not a tax: exclude "for each
-    // target" shapes.
-    let lock = (text.contains("cost")
-        && text.contains("more to cast")
-        && !text.contains("for each target")
-        && !text.contains("for each additional target"))
-        || text.contains("players can't cast more than")
-        || text.contains("can't untap")
-        || text.contains("doesn't untap")
-        || text.contains("don't untap")
-        || text.contains("skip your draw step") && !row.type_line.contains("Creature")
-        || (text.contains("activated abilities")
-            && text.contains("unless")
-            && !row.type_line.contains("Creature"));
-    if lock {
-        return Role::Lock;
-    }
-    // Equipment, auras, and pump spells: the suit-up cadence question.
-    let booster = row.type_line.contains("Equipment")
-        || row.type_line.contains("Aura")
-        || (text.contains("target creature")
-            && text.contains("gets +")
-            && (text.contains("until end of turn") || row.type_line.contains("Enchantment")));
-    if booster {
-        return Role::Booster;
-    }
-    let big_threat = row.cmc >= 5.0
-        || text.contains("win the game")
-        || text.contains("loses the game")
-        || (row.type_line.contains("Creature")
-            && row
-                .power
-                .as_deref()
-                .and_then(|p| p.trim_end_matches('*').parse::<i32>().ok())
-                .is_some_and(|p| p >= 5));
-    if big_threat {
-        return Role::Wincon;
-    }
-    Role::Other
 }

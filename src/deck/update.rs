@@ -120,40 +120,11 @@ pub fn update(
     backfill_basics: bool,
     json: bool,
 ) -> anyhow::Result<i32> {
-    let mut ops = Vec::new();
-    for spec in add {
-        ops.push(parse_op("add", spec)?);
-    }
-    for spec in remove {
-        ops.push(parse_op("remove", spec)?);
-    }
-    for spec in set {
-        ops.push(parse_op("set", spec)?);
-    }
-    for spec in move_specs {
-        ops.push(parse_op("move", spec)?);
-    }
-    if let Some(file) = from {
-        let text =
-            std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?;
-        let mut file_ops = 0usize;
-        for raw in text.lines() {
-            let spec = raw.trim();
-            if spec.is_empty() || spec.starts_with('#') {
-                continue;
-            }
-            ops.push(parse_spec_line(spec)?);
-            file_ops += 1;
-        }
-        if file_ops == 0 {
-            out.error(&format!("no specs found in {}", file.display()));
-            out.hint(
-                "one op per line: 'add 1 Name', 'remove 1 Name', 'set 2 Name', \
-                 'move 1 Name to:sideboard', or a bare spec (treated as add)",
-            );
-            return Ok(USAGE_EXIT);
-        }
-    }
+    let ops = parse_update_ops(add, remove, set, move_specs, from, out)?;
+    let ops = match ops {
+        Some(ops) => ops,
+        None => return Ok(USAGE_EXIT),
+    };
     if ops.is_empty() && !backfill_basics {
         out.error("no update operations given");
         out.hint("pass --add/--remove/--set/--move specs, e.g. --add '2 Bolt'");
@@ -202,6 +173,8 @@ pub fn update(
             backfilled = added;
         }
     }
+    // Missing removes: partial mode reports and continues (exit 1 still
+    // flags the incomplete batch); strict mode stops with exit 3.
     let mut had_missing = false;
     if !summary.missing.is_empty() {
         out.error(&format!(
@@ -209,29 +182,56 @@ pub fn update(
             summary.missing.len(),
             summary.missing.join(", ")
         ));
-        if allow_partial {
-            // Partial mode: the applied ops already mutated the deck
-            // in place; report and continue past the misses. The exit
-            // code still flags the incomplete batch.
-            out.warning("continuing without the missing cards (--allow-partial)");
-            summary.missing.clear();
-            had_missing = true;
-        } else {
+        if !allow_partial {
             out.hint("show the deck first: stm deck show");
             out.hint("apply the resolvable ops anyway with --allow-partial");
             return Ok(crate::cli::codes::NO_RESULTS);
         }
+        // The applied ops already mutated the deck in place; report and
+        // continue past the misses.
+        out.warning("continuing without the missing cards (--allow-partial)");
+        summary.missing.clear();
+        had_missing = true;
     }
+    report_applied_update(
+        paths,
+        conn,
+        out,
+        name,
+        &deck,
+        &ops,
+        &summary,
+        backfilled,
+        had_missing,
+        json,
+    )
+}
+
+/// The post-apply report: singleton warnings, save, and the human or JSON
+/// summary. Returns the exit code.
+#[allow(clippy::too_many_arguments)]
+fn report_applied_update(
+    paths: &crate::paths::Paths,
+    conn: &rusqlite::Connection,
+    out: &mut crate::output::Output,
+    name: &str,
+    deck: &Deck,
+    ops: &[DeckOp],
+    summary: &super::ops::DeckOpSummary,
+    backfilled: i64,
+    had_missing: bool,
+    json: bool,
+) -> anyhow::Result<i32> {
     // Singleton guard: commander-shape decks should hold one copy per
     // non-basic card. Computed against the post-apply deck, so a legal
     // remove+add pair (net one copy) does not warn; the write still
     // happens so agents keep flowing, and `deck legal` reports the real
     // violation.
-    let warnings = singleton_warnings(conn, &ops, &deck)?;
+    let warnings = singleton_warnings(conn, ops, deck)?;
     for w in &warnings {
         out.warning(w);
     }
-    save_deck(paths, name, &deck)?;
+    save_deck(paths, name, deck)?;
     let mut parts = Vec::new();
     if summary.added > 0 {
         parts.push(format!("+{}", summary.added));
@@ -268,20 +268,84 @@ pub fn update(
             "backfilled_basics": backfilled,
             "warnings": warnings,
             "cards": deck.total(),
+            "maindeck_cards": deck.maindeck_total(),
+            "sideboard_cards": deck.sideboard_total(),
+            "maybeboard_cards": deck.maybeboard_total(),
+            "commander_cards": deck.commander_total(),
         });
         println!("{}", serde_json::to_string_pretty(&payload)?);
     } else {
+        // Section-aware size: bench and commander zones change the deck's
+        // shape, so the summary names each zone's count.
+        let mut size = format!("{} maindeck", deck.maindeck_total());
+        let sideboard = deck.sideboard_total();
+        if sideboard > 0 {
+            size.push_str(&format!(" + {sideboard} sideboard"));
+        }
+        let maybeboard = deck.maybeboard_total();
+        if maybeboard > 0 {
+            size.push_str(&format!(" + {maybeboard} maybeboard"));
+        }
+        let commander = deck.commander_total();
+        if commander > 0 {
+            size.push_str(&format!(" + {commander} commander"));
+        }
         out.finish(
             "Updated",
-            &format!(
-                "deck {name:?}: {} (now {} cards)",
-                parts.join(", "),
-                deck.total()
-            ),
+            &format!("deck {name:?}: {} (now {size})", parts.join(", ")),
             std::time::Duration::ZERO,
         );
     }
     Ok(exit)
+}
+
+/// Parse every op spec (flags first, then the `--from` file).
+///
+/// Returns `None` after reporting an empty spec file (the caller exits
+/// with the usage code).
+fn parse_update_ops(
+    add: &[String],
+    remove: &[String],
+    set: &[String],
+    move_specs: &[String],
+    from: Option<&std::path::Path>,
+    out: &mut crate::output::Output,
+) -> anyhow::Result<Option<Vec<DeckOp>>> {
+    let mut ops = Vec::new();
+    for spec in add {
+        ops.push(parse_op("add", spec)?);
+    }
+    for spec in remove {
+        ops.push(parse_op("remove", spec)?);
+    }
+    for spec in set {
+        ops.push(parse_op("set", spec)?);
+    }
+    for spec in move_specs {
+        ops.push(parse_op("move", spec)?);
+    }
+    if let Some(file) = from {
+        let text =
+            std::fs::read_to_string(file).with_context(|| format!("reading {}", file.display()))?;
+        let mut file_ops = 0usize;
+        for raw in text.lines() {
+            let spec = raw.trim();
+            if spec.is_empty() || spec.starts_with('#') {
+                continue;
+            }
+            ops.push(parse_spec_line(spec)?);
+            file_ops += 1;
+        }
+        if file_ops == 0 {
+            out.error(&format!("no specs found in {}", file.display()));
+            out.hint(
+                "one op per line: 'add 1 Name', 'remove 1 Name', 'set 2 Name', \
+                 'move 1 Name to:sideboard', or a bare spec (treated as add)",
+            );
+            return Ok(None);
+        }
+    }
+    Ok(Some(ops))
 }
 
 /// Parse one line from a `--from` spec file.
@@ -696,7 +760,7 @@ fn cost_delta(
         });
         buy_names.push(card.clone());
     }
-    let ranges = crate::prints::price_ranges(conn, &buy_names).unwrap_or_default();
+    let ranges = crate::prints::price_ranges(conn, &buy_names)?;
     for item in &mut items {
         let price = ranges
             .get(&item.name)
@@ -721,7 +785,7 @@ fn cost_delta(
             }
         }
     }
-    let freed_ranges = crate::prints::price_ranges(conn, &freed_names).unwrap_or_default();
+    let freed_ranges = crate::prints::price_ranges(conn, &freed_names)?;
     let mut freed_total = 0.0f64;
     for (card, qty) in &freed {
         if let Some(p) = freed_ranges
@@ -799,13 +863,16 @@ fn reject_singleton_adds(
         return Ok(None);
     }
     let mut post = deck.clone();
-    let summary = apply_ops(&mut post, ops);
-    let summary = match summary {
+    let summary = match apply_ops(&mut post, ops) {
         Ok(summary) => summary,
         Err(err) => {
-            // The batch does not apply at all; the update flow reports the
-            // parse/apply error separately, so the guard stays silent.
-            let _ = err;
+            // The batch does not apply at all (a bad spec or a failed
+            // apply): the update flow reports the parse/apply error
+            // separately when it runs the ops for real, so the guard
+            // only notes the skip instead of swallowing the failure.
+            out.print_note(&format!(
+                "singleton check skipped: the ops do not apply cleanly ({err:#})"
+            ));
             return Ok(None);
         }
     };
@@ -816,7 +883,7 @@ fn reject_singleton_adds(
     }
     let mut rejected: Vec<String> = Vec::new();
     for (name, qty) in super::legal::maindeck_copies_by_name(&post) {
-        if qty <= 1 || rejected.contains(&name) || is_singleton_exempt(conn, &name) {
+        if qty <= 1 || rejected.contains(&name) || is_singleton_exempt(conn, &name)? {
             continue;
         }
         // Only names touched by an Add op are rejected: an oversized Set
@@ -840,7 +907,7 @@ fn reject_singleton_adds(
     for name in &rejected {
         out.hint(&format!(
             "{name} is already in the deck; use --set to change its quantity, \
-             or --allow-partial to skip this add"
+             or --remove it first"
         ));
     }
     Ok(Some(crate::cli::codes::NO_RESULTS))
@@ -875,13 +942,13 @@ fn singleton_warnings(
             continue;
         }
         // Sum across maindeck sections: a commander deck holds one copy
-        // outside the sideboard (the sideboard is a wishlist, not extra
+        // outside the bench sections (sideboard/maybeboard are not extra
         // copies), so a move that splits 2 copies as 1+1 across maindeck
         // sections still breaches the singleton rule.
         let held = deck
             .sections
             .iter()
-            .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+            .filter(|(s, _)| !super::grammar::is_bench_section(s))
             .flat_map(|(_, es)| es.iter())
             .filter(|e| e.name == entry.name)
             .map(|e| e.quantity)
@@ -892,7 +959,7 @@ fn singleton_warnings(
             // holds is the only state worth checking.
             OpKind::Add | OpKind::Move => held,
         };
-        if end_state <= 1 || is_singleton_exempt(conn, &entry.name) {
+        if end_state <= 1 || is_singleton_exempt(conn, &entry.name)? {
             continue;
         }
         warned.push(entry.name.clone());
@@ -905,36 +972,33 @@ fn singleton_warnings(
         .collect())
 }
 
-/// True for the names that never break singleton (basics and snow basics;
+/// True for the names that never break singleton (the five basic lands;
+/// Wastes and snow basics are limited-supply cards, so they stay tracked;
 /// "any number of cards named X" cards are rare enough that `deck legal`
 /// is the authority).
 fn is_unlimited_basics(name: &str) -> bool {
-    matches!(
-        name,
-        "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
-    ) || name.starts_with("Snow-Covered")
+    matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
 }
 
 /// True when a card may hold any number of copies in a commander deck:
 /// basic lands by name plus oracle-text cards ("a deck can have any number
 /// of cards named ..."). Mirrors the exemption `deck legal` applies.
-pub(super) fn is_singleton_exempt(conn: &rusqlite::Connection, name: &str) -> bool {
+pub(super) fn is_singleton_exempt(conn: &rusqlite::Connection, name: &str) -> anyhow::Result<bool> {
     if is_unlimited_basics(name) {
-        return true;
+        return Ok(true);
     }
-    crate::db::get_card(conn, name)
-        .ok()
-        .flatten()
-        .is_some_and(|c| super::stats::is_unlimited_copies(&c))
+    Ok(crate::db::get_card(conn, name)?.is_some_and(|c| super::stats::is_unlimited_copies(&c)))
 }
 
 /// Add basic lands after the ops until the deck reaches its format's
 /// exact size (100 with a COMMANDER section, 60 for brawl-shape decks, 59
 /// for oathbreaker, else 60). The basic name comes from the commander's
 /// (or deck's) color identity: the first identity color's basic; colorless
-/// decks get Wastes. Returns the added count. A missing commander row or
-/// unparseable identity warns and falls back to Wastes rather than failing
-/// the update.
+/// decks get Wastes. Two-color commanders therefore backfill only one
+/// basic type — fix the mana base by hand after `--backfill-basics`.
+/// Returns the added count. A missing commander row or unparseable
+/// identity warns and falls back to Wastes rather than failing the
+/// update.
 fn backfill_basics_to_size(
     conn: &rusqlite::Connection,
     out: &mut crate::output::Output,

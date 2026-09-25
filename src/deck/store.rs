@@ -187,13 +187,14 @@ pub(crate) fn ensure_valid_name(out: &mut crate::output::Output, name: &str) -> 
 
 /// Deck summary for `stm deck list`.
 ///
-/// `cards` is the maindeck count; `sideboard_cards` reports the sideboard
-/// separately (a commander wishlist, not a legal zone).
+/// `cards` is the maindeck count; `sideboard_cards` and `maybeboard_cards`
+/// report the bench sections separately (not legal-deck zones).
 #[derive(Debug, Clone)]
 pub struct DeckSummary {
     pub name: String,
     pub cards: i64,
     pub sideboard_cards: i64,
+    pub maybeboard_cards: i64,
     pub owned: i64,
     pub has_primer: bool,
 }
@@ -229,6 +230,7 @@ pub fn list(
                     "has_decklist": true,
                     "cards": d.cards,
                     "sideboard_cards": d.sideboard_cards,
+                    "maybeboard_cards": d.maybeboard_cards,
                     "owned": d.owned,
                     "has_primer": d.has_primer,
                 })
@@ -240,6 +242,7 @@ pub fn list(
                 "has_decklist": false,
                 "cards": 0,
                 "sideboard_cards": 0,
+                "maybeboard_cards": 0,
                 "owned": owned_count_for(conn, gap)?,
                 "has_primer": false,
             }));
@@ -251,11 +254,13 @@ pub fn list(
     println!("{}", styles.header("Decks"));
     for d in &decks {
         let primer = if d.has_primer { " primer" } else { "" };
-        let count = if d.sideboard_cards > 0 {
-            format!("{} cards + {} sideboard", d.cards, d.sideboard_cards)
-        } else {
-            format!("{} cards", d.cards)
-        };
+        let mut count = format!("{} cards", d.cards);
+        if d.sideboard_cards > 0 {
+            count.push_str(&format!(" + {} sideboard", d.sideboard_cards));
+        }
+        if d.maybeboard_cards > 0 {
+            count.push_str(&format!(" + {} maybeboard", d.maybeboard_cards));
+        }
         // Completion coloring: green when fully owned, yellow when partial,
         // red when nothing is owned.
         let owned_display = if d.owned >= d.cards && d.cards > 0 {
@@ -379,6 +384,7 @@ fn discover_decks(
         decks.push(DeckSummary {
             cards: deck.maindeck_total(),
             sideboard_cards: deck.sideboard_total(),
+            maybeboard_cards: deck.maybeboard_total(),
             owned: owned_count_for(conn, &name)?,
             has_primer: primer_file(paths, &name).exists(),
             name,

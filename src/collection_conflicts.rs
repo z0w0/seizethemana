@@ -215,46 +215,16 @@ pub(crate) fn locations_for(
     Ok(rows)
 }
 
-/// Every location of one card across all binders and deck assignments:
-/// (location, binder_type, quantity, foil), binders first. Read-only
-/// lookup for `stm card where` and the conflict report.
-///
-/// # Errors
-/// Propagates SQLite failures.
-pub fn locations_all(
-    conn: &Connection,
-    name: &str,
-) -> anyhow::Result<Vec<(String, String, i64, bool)>> {
-    let mut stmt = conn.prepare(
-        "SELECT binder, binder_type, SUM(quantity), foil FROM collection
-         WHERE name = ?1
-           AND (binder_type = 'binder' OR binder_type = 'deck')
-         GROUP BY binder, binder_type, foil
-         ORDER BY CASE binder_type WHEN 'binder' THEN 0 ELSE 1 END, binder",
-    )?;
-    let rows = stmt
-        .query_map([name], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, i64>(2)?,
-                // Etched copies read as foil: they are premium finishes.
-                row.get::<_, String>(3)? == "foil" || row.get::<_, String>(3)? == "etched",
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()
-        .context("reading card locations")?;
-    Ok(rows)
-}
-
 /// Deck names whose decklists include a card (read from the deck files).
 ///
 /// Ownership rows say where copies sit; this answers "which decks want
-/// the card". A deck without a decklist file contributes nothing.
-pub fn demanded_by(paths: &crate::paths::Paths, name: &str) -> Vec<(String, i64)> {
-    deck_demand(paths)
-        .map(|demand| demand.get(name).cloned().unwrap_or_default())
-        .unwrap_or_default()
+/// the card". A deck without a decklist file contributes nothing. Read
+/// errors propagate: a failing directory read must not undercount demand.
+///
+/// # Errors
+/// Propagates filesystem failures behind `deck_demand`.
+pub fn demanded_by(paths: &crate::paths::Paths, name: &str) -> anyhow::Result<Vec<(String, i64)>> {
+    Ok(deck_demand(paths)?.get(name).cloned().unwrap_or_default())
 }
 
 /// Slot demand per card name across every decklist on disk:
@@ -297,10 +267,20 @@ pub(crate) fn deck_demand(
                 continue;
             }
         };
-        for card in deck.entries() {
-            out.entry(card.name.clone())
-                .or_default()
-                .push((deck_name.clone(), card.quantity));
+        // Playable sections only: maybeboard entries are loose
+        // candidates, not slots that demand owned copies. Lines of the
+        // same card in one deck sum into one demand entry.
+        let mut demand: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
+        for (section, entries) in &deck.sections {
+            if crate::deck::grammar::is_maybeboard_section(section) {
+                continue;
+            }
+            for card in entries {
+                *demand.entry(card.name.clone()).or_default() += card.quantity;
+            }
+        }
+        for (name, qty) in demand {
+            out.entry(name).or_default().push((deck_name.clone(), qty));
         }
     }
     Ok(out)

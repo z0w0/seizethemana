@@ -7,13 +7,20 @@
 // command prints a checklist of what to review instead.
 //
 // Deck shape assumptions: a `// COMMANDER` section names the commander(s);
-// a `// SIDEBOARD` section holds sideboard cards for 60-card formats.
+// a `// SIDEBOARD` section holds sideboard cards for 60-card formats (or
+// the commander upgrade kit); a `// MAYBEBOARD` section holds loose
+// candidates. Both bench sections check per-card legality and, in
+// commander, color identity.
 
 use super::grammar::Deck;
 use super::stats::{is_basic_land, is_unlimited_copies};
 use crate::db::CardRow;
 
 use std::collections::HashMap;
+
+#[path = "bracket_scan.rs"]
+mod bracket_scan;
+pub use bracket_scan::{bracket_note, game_changer_limit, scan_bracket_signals};
 
 /// Formats `deck legal` knows. Keys match Scryfall legality names so
 /// `legalities` lookups are direct.
@@ -117,17 +124,34 @@ pub fn is_commander(deck: &Deck, pinned_format: Option<&str>) -> bool {
     }
 }
 
-/// Count copies per card name across all sections (sideboard included).
+/// Count copies per card name across all sections (sideboard and
+/// maybeboard included).
 pub(super) fn copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
     copies_in_sections(deck, |_| true)
 }
 
-/// Count copies per card name outside SIDEBOARD sections.
+/// Count copies per card name outside SIDEBOARD and MAYBEBOARD sections.
 ///
-/// For commander-style formats the sideboard is a wishlist, not a legal
-/// zone, so rules that bind the deck itself read this count.
+/// Size rules, copy limits, bracket counts, and color-identity offenders
+/// read this count: the sideboard is the upgrade kit and the maybeboard
+/// holds candidates, neither a legal zone.
 pub(super) fn maindeck_copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
-    copies_in_sections(deck, |s| !s.eq_ignore_ascii_case("SIDEBOARD"))
+    copies_in_sections(deck, |s| !super::grammar::is_bench_section(s))
+}
+
+/// Count copies per card name outside MAYBEBOARD sections.
+///
+/// Constructed copy limits read this count: the 4-copy rule spans the
+/// maindeck and sideboard (BO3 swaps included), but maybeboard cards
+/// are loose candidates and never count.
+pub(super) fn playable_copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
+    copies_in_sections(deck, |s| !super::grammar::is_maybeboard_section(s))
+}
+
+/// Count copies per card name across SIDEBOARD and MAYBEBOARD sections
+/// (the legal deck's bench).
+pub(super) fn bench_copies_by_name(deck: &Deck) -> Vec<(String, i64)> {
+    copies_in_sections(deck, super::grammar::is_bench_section)
 }
 
 /// Count copies per card name across the sections the filter keeps.
@@ -237,6 +261,24 @@ fn commander_legal(names: &[String], cards: &HashMap<String, CardRow>) -> Option
     }
 }
 
+/// Legality state for one format from a stored `legalities` JSON map.
+///
+/// The shared parser for every format gate (legal, suggest, cuts):
+/// `None` when the map is malformed or the format key is missing.
+pub fn legality_in(legalities_json: &str, format: &str) -> Option<String> {
+    serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(legalities_json)
+        .ok()
+        .and_then(|m| m.get(format).and_then(|v| v.as_str().map(String::from)))
+}
+
+/// The full `legalities` JSON map, empty when malformed (multi-format
+/// gates that probe several keys read this).
+pub fn legality_in_map(
+    legalities_json: &str,
+) -> Option<serde_json::Map<String, serde_json::Value>> {
+    serde_json::from_str(legalities_json).ok()
+}
+
 /// True when the card can lead a commander deck.
 ///
 /// Since Edge of Eternities (2025), legendary Vehicles and Spacecraft with a
@@ -250,13 +292,21 @@ pub fn is_commander_type(card: &CardRow) -> bool {
             && card.toughness.is_some())
 }
 
-/// Color identity letters for a stored card ("WU"), colorless as "".
-fn color_identity(card: &CardRow) -> String {
-    serde_json::from_str::<Vec<String>>(&card.color_identity)
+/// Color identity letters from a stored identity JSON array ("WU").
+///
+/// The one parser for every identity check (legal, suggest, cuts): colorless
+/// parses to "" and malformed JSON to "" as well.
+pub fn identity_letters(color_identity_json: &str) -> String {
+    serde_json::from_str::<Vec<String>>(color_identity_json)
         .unwrap_or_default()
         .into_iter()
         .filter_map(|c| c.chars().next())
         .collect()
+}
+
+/// Color identity letters for a stored card ("WU"), colorless as "".
+fn color_identity(card: &CardRow) -> String {
+    identity_letters(&card.color_identity)
 }
 
 /// True when every identity color of `card` is in the commander's identity.
@@ -264,6 +314,293 @@ fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
     color_identity(card)
         .chars()
         .all(|c| commander_identity.contains(c))
+}
+
+/// Violations for commander-style singleton formats: exact deck size, the
+/// singleton copy limit, commander rules, and color identity (maindeck and
+/// bench, against the combined identity of a resolved commander or
+/// Partner pair).
+fn singleton_violations(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow>,
+    format: &str,
+    maindeck_counts: &[(String, i64)],
+) -> Vec<Violation> {
+    let mut violations = Vec::new();
+    // Deck size: each singleton format carries its own exact count
+    // (commander 100 including commander, brawl 60, oathbreaker 59).
+    // Sideboard cards do not count (in commander it is a wishlist, not
+    // a legal sideboard).
+    let maindeck_total = deck.maindeck_total();
+    let expected = singleton_deck_size(format);
+    if maindeck_total != expected {
+        violations.push(Violation {
+            rule: "deck size".into(),
+            cards: Vec::new(),
+            detail: format!("{maindeck_total} cards; {format} decks are exactly {expected}"),
+        });
+    }
+    // Copy limit: singleton, so more than one copy is illegal;
+    // unlimited-copy oracle text and basics excepted. Sideboard
+    // copies are a wishlist, not extra maindeck copies, so they do
+    // not count here.
+    let limit_violations: Vec<String> = maindeck_counts
+        .iter()
+        .filter(|(name, qty)| {
+            *qty > 1
+                && cards
+                    .get(name)
+                    .is_some_and(|c| !is_basic_land(c) && !is_unlimited_copies(c))
+        })
+        .map(|(name, qty)| format!("{name} ×{qty}"))
+        .collect();
+    if !limit_violations.is_empty() {
+        violations.push(Violation {
+            rule: "copy limit".into(),
+            cards: limit_violations,
+            detail: "more than 1 copy (singleton; basics and 'any number' cards excepted)".into(),
+        });
+    }
+    violations.extend(commander_identity_violations(deck, cards, maindeck_counts));
+    violations
+}
+
+/// Commander-rule and color-identity violations for a deck with a
+/// COMMANDER section (called only for singleton formats).
+fn commander_identity_violations(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow>,
+    maindeck_counts: &[(String, i64)],
+) -> Vec<Violation> {
+    let commander_section = commander_names(deck);
+    if commander_section.is_empty() {
+        return Vec::new();
+    }
+    let mut violations = Vec::new();
+    if let Some(v) = commander_legal(&commander_section, cards) {
+        violations.push(v);
+    }
+    // A resolved commander (or both halves of a Partner pair) gates the
+    // identity check. An unresolved name is already reported as unknown;
+    // guessing "" identity would flag every colored card.
+    let commanders_resolved = commander_section
+        .iter()
+        .all(|name| cards.get(name).is_some_and(is_commander_type));
+    if !commanders_resolved {
+        return violations;
+    }
+    let identity = commander_section
+        .iter()
+        .filter_map(|n| cards.get(n))
+        .map(color_identity)
+        .collect::<String>();
+    let identity_offenders = |names: &[(String, i64)]| -> Vec<String> {
+        names
+            .iter()
+            .filter(|(name, _)| {
+                !commander_section.contains(name)
+                    && cards.get(name).is_some_and(|c| !identity_ok(c, &identity))
+            })
+            .map(|(name, _)| name.clone())
+            .collect()
+    };
+    let offenders = identity_offenders(maindeck_counts);
+    if !offenders.is_empty() {
+        violations.push(Violation {
+            rule: "commander color identity".into(),
+            cards: offenders,
+            detail: format!("cards fall outside the commander's color identity ({identity})"),
+        });
+    }
+    let bench_offenders = identity_offenders(&bench_copies_by_name(deck));
+    if !bench_offenders.is_empty() {
+        violations.push(Violation {
+            rule: "bench color identity".into(),
+            cards: bench_offenders,
+            detail: format!(
+                "sideboard/maybeboard cards outside the commander's color identity ({identity})"
+            ),
+        });
+    }
+    violations
+}
+
+/// Violations for 60-card constructed formats: maindeck minimum, sideboard
+/// cap, and the 4-copy limit spanning maindeck + sideboard.
+fn constructed_violations(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow>,
+    format: Option<&str>,
+) -> Vec<Violation> {
+    let mut violations = Vec::new();
+    let maindeck = deck.maindeck_total();
+    if maindeck < CONSTRUCTED_MIN {
+        violations.push(Violation {
+            rule: "deck size".into(),
+            cards: Vec::new(),
+            detail: format!(
+                "{maindeck} maindeck cards; {} needs at least {CONSTRUCTED_MIN}",
+                format.unwrap_or("this format")
+            ),
+        });
+    }
+    let sideboard = deck.sideboard_total();
+    if sideboard > SIDEBOARD_MAX {
+        violations.push(Violation {
+            rule: "sideboard size".into(),
+            cards: Vec::new(),
+            detail: format!("{sideboard} sideboard cards; maximum {SIDEBOARD_MAX}"),
+        });
+    }
+    // Copy limit spans maindeck + sideboard (BO3 swaps included); the
+    // maybeboard is exempt (loose candidates, not part of the deck).
+    let limit_violations: Vec<String> = playable_copies_by_name(deck)
+        .iter()
+        .filter(|(name, qty)| {
+            *qty > MAX_COPIES
+                && cards
+                    .get(name)
+                    .is_some_and(|c| !is_basic_land(c) && !is_unlimited_copies(c))
+        })
+        .map(|(name, qty)| format!("{name} ×{qty}"))
+        .collect();
+    if !limit_violations.is_empty() {
+        violations.push(Violation {
+            rule: "copy limit".into(),
+            cards: limit_violations,
+            detail: format!(
+                "more than {MAX_COPIES} copies (basics and 'any number' cards excepted)"
+            ),
+        });
+    }
+    violations
+}
+
+/// Per-card format legality: banned or not_legal fails. Skipped when the
+/// format is unknown (no legality key to test).
+fn format_legality_violations(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow>,
+    format: &str,
+) -> Vec<Violation> {
+    let format_key = format.to_ascii_lowercase();
+    let mut violations = Vec::new();
+    let mut not_legal: Vec<String> = Vec::new();
+    let mut banned: Vec<String> = Vec::new();
+    let mut restricted: Vec<(String, i64)> = Vec::new();
+    for (name, qty) in copies_by_name(deck) {
+        if let Some(card) = cards.get(name.as_str()) {
+            match legality_in(&card.legalities, &format_key).as_deref() {
+                Some("legal") => {}
+                // Restricted cards are capped at one copy (Vintage rule);
+                // legality itself passes here, the copy count is checked
+                // below.
+                Some("restricted") => restricted.push((name, qty)),
+                Some("banned") => banned.push(name),
+                _ => not_legal.push(name),
+            }
+        }
+    }
+    let over_copies: Vec<String> = restricted
+        .iter()
+        .filter(|(_, qty)| *qty > 1)
+        .map(|(name, qty)| format!("{name} ×{qty}"))
+        .collect();
+    if !over_copies.is_empty() {
+        violations.push(Violation {
+            rule: "restricted copy limit".into(),
+            cards: over_copies,
+            detail: "restricted cards are limited to one copy".into(),
+        });
+    }
+    let restricted_names: Vec<String> = restricted.into_iter().map(|(name, _)| name).collect();
+    if !restricted_names.is_empty() {
+        violations.push(Violation {
+            rule: "restricted".into(),
+            cards: restricted_names,
+            detail: format!("restricted in {format}"),
+        });
+    }
+    if !banned.is_empty() {
+        violations.push(Violation {
+            rule: "banned".into(),
+            cards: banned,
+            detail: format!("banned in {format}"),
+        });
+    }
+    if !not_legal.is_empty() {
+        violations.push(Violation {
+            rule: "not legal".into(),
+            cards: not_legal,
+            detail: format!("not legal in {format}"),
+        });
+    }
+    violations
+}
+
+/// Bracket check: the Game Changer hard cap (a violation when exceeded)
+/// plus a sideboard advisory naming Game Changers waiting in the upgrade
+/// kit. Returns `(violations, advisories)`.
+fn bracket_game_changer_check(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow>,
+    maindeck_counts: &[(String, i64)],
+    bracket: u8,
+) -> (Vec<Violation>, Vec<String>) {
+    let changers: Vec<String> = maindeck_counts
+        .iter()
+        .filter(|(name, _)| cards.get(name).is_some_and(is_game_changer))
+        .map(|(name, _)| name.clone())
+        .collect();
+    let limit = game_changer_limit(bracket);
+    let mut violations = Vec::new();
+    if let Some(limit) = limit
+        && changers.len() > limit as usize
+    {
+        violations.push(Violation {
+            rule: "game changers".into(),
+            cards: changers.clone(),
+            detail: format!(
+                "{} Game Changers; the bracket-{bracket} hard cap is {limit} (Game Changer count is the hard bracket rule)",
+                changers.len()
+            ),
+        });
+    }
+    // The sideboard is the upgrade kit: surface its Game Changers so a
+    // reader previewing a bracket bump can see what comes along. Every
+    // SIDEBOARD section counts (imports may keep more than one). The
+    // maybeboard never joins the deck as-is, so it stays out.
+    let mut sideboard_changers: Vec<String> = Vec::new();
+    for (name, entries) in &deck.sections {
+        if !super::grammar::is_sideboard_section(name) {
+            continue;
+        }
+        sideboard_changers.extend(
+            entries
+                .iter()
+                .filter(|e| cards.get(&e.name).is_some_and(is_game_changer))
+                .map(|e| e.name.clone()),
+        );
+    }
+    sideboard_changers.sort();
+    sideboard_changers.dedup();
+    let mut advisories = Vec::new();
+    if !sideboard_changers.is_empty() {
+        let names = sideboard_changers.join(", ");
+        match limit {
+            Some(l) => advisories.push(format!(
+                "ADVISE sideboard: {} sideboard Game Changer(s) not counted toward the bracket-{bracket} cap of {l}: {}",
+                sideboard_changers.len(),
+                names
+            )),
+            None => advisories.push(format!(
+                "ADVISE sideboard: {} sideboard Game Changer(s) (uncapped at bracket {bracket}): {}",
+                sideboard_changers.len(),
+                names
+            )),
+        }
+    }
+    (violations, advisories)
 }
 
 /// Run every deterministic check against one deck.
@@ -296,179 +633,23 @@ pub fn check(
     if !unknown.is_empty() {
         violations.push(Violation {
             rule: "unknown cards".into(),
-            cards: unknown.clone(),
+            cards: unknown,
             detail: "these names are not in the oracle; legality cannot be checked".into(),
         });
     }
 
-    let counts = copies_by_name(deck);
-    // Sideboard copies never count toward the deck size. Singleton formats
-    // (commander etc.) have no sideboard; 60-card formats subtract them for
-    // the maindeck minimum.
-    let sideboard = deck.sideboard_total();
-    let maindeck_total = deck.maindeck_total();
-    let commander_section = commander_names(deck);
     let maindeck_counts = maindeck_copies_by_name(deck);
 
     if SINGLETON_FORMATS.contains(&format.unwrap_or("")) {
-        // Deck size: each singleton format carries its own exact count
-        // (commander 100 including commander, brawl 60, oathbreaker 59).
-        // Sideboard cards do not count (in commander it is a wishlist, not
-        // a legal sideboard).
-        let expected = singleton_deck_size(format.unwrap_or(""));
-        if maindeck_total != expected {
-            violations.push(Violation {
-                rule: "deck size".into(),
-                cards: Vec::new(),
-                detail: format!(
-                    "{maindeck_total} cards; {} decks are exactly {expected}",
-                    format.unwrap_or("this format")
-                ),
-            });
-        }
-        // Copy limit: singleton; unlimited-copy oracle text and basics
-        // excepted. Sideboard copies are a wishlist, not extra maindeck
-        // copies, so they do not count here.
-        let limit_violations: Vec<String> = maindeck_counts
-            .iter()
-            .filter(|(name, qty)| {
-                *qty > MAX_COPIES
-                    && cards
-                        .get(name)
-                        .is_some_and(|c| !is_basic_land(c) && !is_unlimited_copies(c))
-            })
-            .map(|(name, qty)| format!("{name} ×{qty}"))
-            .collect();
-        if !limit_violations.is_empty() {
-            violations.push(Violation {
-                rule: "copy limit".into(),
-                cards: limit_violations,
-                detail: format!(
-                    "more than {MAX_COPIES} copies (basics and 'any number' cards excepted)"
-                ),
-            });
-        }
-        // Commander rules only apply to commander-style formats with a
-        // COMMANDER section.
-        if !commander_section.is_empty() {
-            if let Some(v) = commander_legal(&commander_section, cards) {
-                violations.push(v);
-            }
-            // Color identity of every other card must sit inside the
-            // commander's. Maindeck only: sideboard copies are a
-            // wishlist and never count as violations. Skip the check
-            // entirely when no commander resolved: an unknown name is
-            // already reported as an unknown card, and guessing ""
-            // identity would flag every colored card.
-            let commanders_resolved = commander_section.len() == 1
-                && cards
-                    .get(&commander_section[0])
-                    .is_some_and(is_commander_type);
-            let identity = commander_section
-                .iter()
-                .filter_map(|n| cards.get(n))
-                .map(color_identity)
-                .collect::<String>();
-            let offenders: Vec<String> = if !commanders_resolved {
-                Vec::new()
-            } else {
-                maindeck_counts
-                    .iter()
-                    .filter(|(name, _)| {
-                        !commander_section.contains(name)
-                            && cards.get(name).is_some_and(|c| !identity_ok(c, &identity))
-                    })
-                    .map(|(name, _)| name.clone())
-                    .collect()
-            };
-            if !offenders.is_empty() {
-                violations.push(Violation {
-                    rule: "commander color identity".into(),
-                    cards: offenders,
-                    detail: format!(
-                        "cards fall outside the commander's color identity ({identity})"
-                    ),
-                });
-            }
-        }
+        let format = format.unwrap_or("");
+        violations.extend(singleton_violations(deck, cards, format, &maindeck_counts));
     } else {
-        // 60-card constructed: maindeck >= 60, sideboard <= 15, max 4 copies.
-        let maindeck = maindeck_total;
-        if maindeck < CONSTRUCTED_MIN {
-            violations.push(Violation {
-                rule: "deck size".into(),
-                cards: Vec::new(),
-                detail: format!(
-                    "{maindeck} maindeck cards; {} needs at least {CONSTRUCTED_MIN}",
-                    format.unwrap_or("this format")
-                ),
-            });
-        }
-        if sideboard > SIDEBOARD_MAX {
-            violations.push(Violation {
-                rule: "sideboard size".into(),
-                cards: Vec::new(),
-                detail: format!("{sideboard} sideboard cards; maximum {SIDEBOARD_MAX}"),
-            });
-        }
-        let limit_violations: Vec<String> = counts
-            .iter()
-            .filter(|(name, qty)| {
-                *qty > MAX_COPIES
-                    && cards
-                        .get(name)
-                        .is_some_and(|c| !is_basic_land(c) && !is_unlimited_copies(c))
-            })
-            .map(|(name, qty)| format!("{name} ×{qty}"))
-            .collect();
-        if !limit_violations.is_empty() {
-            violations.push(Violation {
-                rule: "copy limit".into(),
-                cards: limit_violations,
-                detail: format!(
-                    "more than {MAX_COPIES} copies (basics and 'any number' cards excepted)"
-                ),
-            });
-        }
+        violations.extend(constructed_violations(deck, cards, format));
     }
 
-    // Per-card format legality: banned or not_legal fails. Skipped when the
-    // format is unknown (no legality key to test).
+    // Per-card format legality: banned or not_legal fails.
     if let Some(format) = format {
-        let format_key = format.to_ascii_lowercase();
-        let mut not_legal: Vec<String> = Vec::new();
-        let mut banned: Vec<String> = Vec::new();
-        for (name, _) in &counts {
-            if let Some(card) = cards.get(name) {
-                let state = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(
-                    &card.legalities,
-                )
-                .ok()
-                .and_then(|m| {
-                    m.get(&format_key)
-                        .and_then(|v| v.as_str().map(String::from))
-                });
-                match state.as_deref() {
-                    Some("legal") | Some("restricted") => {}
-                    Some("banned") => banned.push(name.clone()),
-                    _ => not_legal.push(name.clone()),
-                }
-            }
-        }
-        if !banned.is_empty() {
-            violations.push(Violation {
-                rule: "banned".into(),
-                cards: banned,
-                detail: format!("banned in {format}"),
-            });
-        }
-        if !not_legal.is_empty() {
-            violations.push(Violation {
-                rule: "not legal".into(),
-                cards: not_legal,
-                detail: format!("not legal in {format}"),
-            });
-        }
+        violations.extend(format_legality_violations(deck, cards, format));
     }
 
     // Bracket: game-changer count is the deterministic part. In commander
@@ -477,320 +658,24 @@ pub fn check(
     if let (Some(bracket), Some(format)) = (bracket, format)
         && SINGLETON_FORMATS.contains(&format)
     {
-        let changers: Vec<String> = maindeck_counts
-            .iter()
-            .filter(|(name, _)| {
-                cards
-                    .get(name)
-                    .is_some_and(|c| c.game_changer == Some(true))
-            })
-            .map(|(name, _)| name.clone())
-            .collect();
-        let limit = game_changer_limit(bracket);
-        if let Some(limit) = limit {
-            let capped = format!(
-                "{} Game Changers; the bracket-{bracket} hard cap is {limit} (Game Changer count is the hard bracket rule)",
-                changers.len()
-            );
-            if changers.len() > limit as usize {
-                violations.push(Violation {
-                    rule: "game changers".into(),
-                    cards: changers.clone(),
-                    detail: capped,
-                });
-            }
-        }
-        // The sideboard is the upgrade kit: surface its Game Changers so a
-        // reader previewing a bracket bump can see what comes along. Every
-        // SIDEBOARD section counts (imports may keep more than one).
-        let mut sideboard_changers: Vec<String> = Vec::new();
-        for (name, entries) in &deck.sections {
-            if !name.eq_ignore_ascii_case("SIDEBOARD") {
-                continue;
-            }
-            sideboard_changers.extend(
-                entries
-                    .iter()
-                    .filter(|e| {
-                        cards
-                            .get(&e.name)
-                            .is_some_and(|c| c.game_changer == Some(true))
-                    })
-                    .map(|e| e.name.clone()),
-            );
-        }
-        sideboard_changers.sort();
-        sideboard_changers.dedup();
-        if !sideboard_changers.is_empty() {
-            let names = sideboard_changers.join(", ");
-            match limit {
-                Some(l) => advisories.push(format!(
-                    "ADVISE sideboard: {} sideboard Game Changer(s) not counted toward the bracket-{bracket} cap of {l}: {}",
-                    sideboard_changers.len(),
-                    names
-                )),
-                None => advisories.push(format!(
-                    "ADVISE sideboard: {} sideboard Game Changer(s) (uncapped at bracket {bracket}): {}",
-                    sideboard_changers.len(),
-                    names
-                )),
-            }
-        }
+        let (bracket_violations, bracket_advisories) =
+            bracket_game_changer_check(deck, cards, &maindeck_counts, bracket);
+        violations.extend(bracket_violations);
+        advisories.extend(bracket_advisories);
     }
 
     (violations, advisories)
 }
 
-/// Game Changer allowance per Commander bracket: none for 1–2, at most 3 for
-/// bracket 3, unlimited (None) for 4–5.
-fn game_changer_limit(bracket: u8) -> Option<u8> {
-    match bracket {
-        1 | 2 => Some(0),
-        3 => Some(3),
-        _ => None,
-    }
-}
-
-/// Oracle-text signals for one bracket: library searchers, extra turns,
-/// mass land denial, and alternate wins.
-///
-/// Returns verdict lines ("PASS"/"CHECK"/"ADVISE" prefixes) plus advisory
-/// notes naming the matched cards. Counts are official bracket guidance,
-/// not hard rules.
-pub fn scan_bracket_signals(
-    deck: &Deck,
-    cards: &HashMap<String, CardRow>,
-    bracket: u8,
-) -> Vec<String> {
-    let maindeck = maindeck_copies_by_name(deck);
-    let scan = |needle: &str| -> Vec<String> {
-        maindeck
-            .iter()
-            .filter(|(name, _)| {
-                cards
-                    .get(name)
-                    .is_some_and(|c| c.oracle_text.to_lowercase().contains(needle))
-            })
-            .map(|(name, _)| name.clone())
-            .collect()
-    };
-
-    let mut out = Vec::new();
-    // Library searchers, split by how the official bracket guidance treats
-    // them. Hard tutors are one-shot spells ("search your library for a
-    // card"): they fetch combo pieces and are the class the best-of list
-    // sits on — several are Game Changers, so the GC count does the real
-    // work at bracket 3. Soft searchers are ETB/activated effects with
-    // restrictions ("into your hand", mana-value caps, sacrifice costs):
-    // utility, not combo delivery.
-    let is_land_ramp = |name: &str| -> bool {
-        let Some(card) = cards.get(name) else {
-            return false;
-        };
-        card.oracle_text
-            .to_lowercase()
-            .split('.')
-            .filter(|sentence| sentence.contains("search your library"))
-            .any(|sentence| {
-                sentence.contains("basic land")
-                    || sentence.contains("land card")
-                    || sentence.contains("plains")
-                    || sentence.contains("island")
-                    || sentence.contains("swamp")
-                    || sentence.contains("mountain")
-                    || sentence.contains("forest")
-            })
-    };
-    let mut searchers = scan("search your library for");
-    searchers.extend(scan("search your library and/or graveyard"));
-    searchers.sort();
-    searchers.dedup();
-    // Hard tutor: a spell (instant/sorcery) whose search is the card's
-    // whole job — a one-shot tutor. Soft: ETB/activated searchers and
-    // one-shots with utility twists (a "put it into your hand" clause on
-    // a spell is still a tutor; an activated "sacrifice an artifact:"
-    // cost, an MV cap, or a battlefield-reveal shape is not).
-    let is_hard_tutor = |name: &str| -> bool {
-        let Some(card) = cards.get(name) else {
-            return false;
-        };
-        let text = card.oracle_text.to_lowercase();
-        let spell = card.type_line.contains("Instant") || card.type_line.contains("Sorcery");
-        let activated_or_etb = text.contains("sacrifice an artifact")
-            || text.contains("mana value equal to")
-            || text.contains("when ")
-            || text.contains("whenever ")
-            || text.contains(", {t}")
-            || text.contains("reveal cards from the top");
-        spell && !activated_or_etb
-    };
-    let hard: Vec<String> = searchers
-        .iter()
-        .map(|name| (*name).clone())
-        .filter(|name| !is_land_ramp(name) && is_hard_tutor(name))
-        .collect();
-    let soft: Vec<String> = searchers
-        .iter()
-        .map(|name| (*name).clone())
-        .filter(|name| !is_land_ramp(name) && !is_hard_tutor(name))
-        .collect();
-    let ramp = searchers
-        .iter()
-        .map(|name| (*name).clone())
-        .filter(|name| is_land_ramp(name))
-        .collect::<std::collections::BTreeSet<_>>();
-    // Advisory counts are official guidance, not hard rules: tutors are
-    // "sparse" in brackets 1-2, and bracket 3's only hard cap is the
-    // Game Changer allowance (the best tutors are on that list).
-    match (bracket, hard.len() + soft.len()) {
-        (1 | 2, 0) => out.push("PASS library search: none found".to_string()),
-        (1 | 2, n) => out.push(format!(
-            "CHECK library search: {} card(s) search the library (official guidance: tutors should be sparse; no tutors for combo pieces): {}",
-            n,
-            {
-                let mut names = hard.clone();
-                names.extend(soft.clone());
-                names.join(", ")
-            }
-        )),
-        (3, n) if n > 0 => out.push(format!(
-            "ADVISE library search: {} card(s) search the library (advisory; the bracket-3 hard cap is 3 Game Changers, which includes the best tutors): {}",
-            n,
-            {
-                let mut names = hard.clone();
-                names.extend(soft.clone());
-                names.join(", ")
-            }
-        )),
-        _ => {}
-    }
-    if !hard.is_empty() {
-        out.push(format!(
-            "note hard tutors: {} card(s) are one-shot search spells (combo delivery): {}",
-            hard.len(),
-            hard.join(", ")
-        ));
-    }
-    if !soft.is_empty() {
-        out.push(format!(
-            "note soft searchers: {} card(s) are ETB/activated/restricted searchers (utility): {}",
-            soft.len(),
-            soft.join(", ")
-        ));
-    }
-    if !ramp.is_empty() {
-        out.push(format!(
-            "note ramp: {} card(s) search for lands (ramp, not combo tutors): {}",
-            ramp.len(),
-            ramp.into_iter().collect::<Vec<_>>().join(", ")
-        ));
-    }
-    // Extra turns: official wording is "low quantities, not chained".
-    let extra_turns = scan("extra turn");
-    match (bracket, extra_turns.len()) {
-        (1..=3, 0) => out.push("PASS extra turns: none found".to_string()),
-        (1..=3, n) => out.push(format!(
-            "CHECK extra turns: {} card(s) grant an extra turn (official guidance: low quantities, not chained in succession): {}",
-            n,
-            extra_turns.join(", ")
-        )),
-        _ => {}
-    }
-    // Mass land denial: officially "should not be expected anywhere in
-    // brackets 1-3". The needles cover the standard wordings: destroy,
-    // exile, bounce-all, and untap-lock.
-    let mld_needles = [
-        "destroy all lands",
-        "destroy all non",
-        "exile all lands",
-        "return all lands",
-        "lands don't untap",
-        "lands you control don't untap",
-        "doesn't untap lands",
-    ];
-    // "destroy all non" (Ruination-class) needs a land word nearby, but
-    // "nonland permanents" (a nonland sweeper) does not count: exclude any
-    // "nonland" hit and require the word "land" with a word boundary.
-    let mld: std::collections::BTreeSet<String> = mld_needles
-        .iter()
-        .flat_map(|needle| scan(needle))
-        .filter(|name| {
-            cards.get(name).is_some_and(|c| {
-                let text = c.oracle_text.to_lowercase();
-                !text.contains("nonland")
-                    && text
-                        .split(|c: char| !c.is_alphabetic())
-                        .any(|word| word == "land" || word == "lands")
-            })
-        })
-        .collect();
-    match (bracket, mld.len()) {
-        (1..=3, 0) => out.push("PASS mass land destruction: none found".to_string()),
-        (1..=3, _) => out.push(format!(
-            "CHECK mass land destruction: {} card(s) deny several lands (official rule: none in brackets 1-3): {}",
-            mld.len(),
-            mld.into_iter().collect::<Vec<_>>().join(", ")
-        )),
-        _ => {}
-    }
-    // Two-card combo markers (proxy, not proof): "you win the game".
-    let alt_wins = scan("you win the game");
-    match (bracket, alt_wins.len()) {
-        (1 | 2, 0) => out.push("PASS alternate wins: no 'you win the game' text found".to_string()),
-        (1 | 2, n) => out.push(format!(
-            "CHECK alternate wins: {} card(s) can win the game outright (verify no early two-card combo): {}",
-            n,
-            alt_wins.join(", ")
-        )),
-        (3, n) if n > 0 => out.push(format!(
-            "CHECK alternate wins: {} card(s) win the game outright (must only fire late): {}",
-            n,
-            alt_wins.join(", ")
-        )),
-        _ => {}
-    }
-    out
-}
-
-/// The non-deterministic checklist for a bracket, tailored to what that
-/// bracket asks players to avoid, with oracle-text scan verdicts where the
-/// CLI can decide. Brackets 4–5 carry no checklist.
-pub fn bracket_note(bracket: u8) -> Option<BracketNote> {
-    let checks: &[&str] = match bracket {
-        1 | 2 => &[
-            "no two-card combos that end the game early",
-            "no mass land denial",
-            "extra turns only in low quantities, not chained",
-            "tutors should be sparse",
-            "no Game Changers (hard cap)",
-        ],
-        3 => &[
-            "at most 3 Game Changers (hard cap)",
-            "no mass land denial",
-            "no intentional early-game two-card infinite combos",
-            "extra turns only in low quantities, not chained",
-        ],
-        _ => &[],
-    };
-    if checks.is_empty() {
-        None
-    } else {
-        Some(BracketNote {
-            checks: checks.iter().map(|c| (*c).to_string()).collect(),
-        })
-    }
-}
-
 /// Build the deck-size summary line.
 ///
-/// Counts the maindeck (sideboard excluded); the sideboard is noted
-/// separately when present (in commander it is a wishlist for extra
-/// deckbuilding advice, not a legal sideboard).
+/// Counts the maindeck (bench sections excluded); the sideboard and
+/// maybeboard are noted separately when present.
 pub fn summary_line(deck: &Deck, cards: &HashMap<String, CardRow>) -> String {
     let counts: Vec<(String, i64)> = deck
         .sections
         .iter()
-        .filter(|(s, _)| !s.eq_ignore_ascii_case("SIDEBOARD"))
+        .filter(|(s, _)| !super::grammar::is_bench_section(s))
         .flat_map(|(_, e)| e.iter())
         .fold(Vec::new(), |mut acc, entry| {
             if let Some((_, c)) = acc.iter_mut().find(|(n, _)| *n == entry.name) {
@@ -808,12 +693,15 @@ pub fn summary_line(deck: &Deck, cards: &HashMap<String, CardRow>) -> String {
         .map(|(_, q)| q)
         .sum();
     let sideboard = deck.sideboard_total();
-    let base = format!("{total} cards, {unique} unique ({basics} basic-land copies)");
+    let maybeboard = deck.maybeboard_total();
+    let mut base = format!("{total} cards, {unique} unique ({basics} basic-land copies)");
     if sideboard > 0 {
-        format!("{base} + {sideboard} sideboard")
-    } else {
-        base
+        base.push_str(&format!(" + {sideboard} sideboard"));
     }
+    if maybeboard > 0 {
+        base.push_str(&format!(" + {maybeboard} maybeboard"));
+    }
+    base
 }
 
 /// True when a stored card is on the Game Changer list.

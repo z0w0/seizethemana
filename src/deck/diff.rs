@@ -235,12 +235,10 @@ pub fn markdown(diff: &[SectionDiff]) -> String {
 }
 
 /// True for the unlimited basic names (display-side; diff keys are bare
-/// names outside `--exact`).
+/// names outside `--exact`). Wastes and snow basics are tracked like any
+/// other card.
 fn is_basic_display(name: &str) -> bool {
-    matches!(
-        name,
-        "Plains" | "Island" | "Swamp" | "Mountain" | "Forest" | "Wastes"
-    ) || name.starts_with("Snow-Covered")
+    matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
 }
 
 /// Output formats for `deck diff`.
@@ -286,7 +284,7 @@ pub fn diff(
     let sections = diff_decks(&deck_a_parsed, &deck_b_parsed, exact, |name| {
         cards_by_name
             .get(name)
-            .is_some_and(super::stats::is_basic_land)
+            .is_some_and(super::stats::is_tracked_basic)
     });
 
     if format == DiffFormat::Json {
@@ -395,7 +393,7 @@ pub fn diff_as_update(
     let sections = diff_decks(&deck_a_parsed, &deck_b_parsed, exact, |name| {
         cards_by_name
             .get(name)
-            .is_some_and(super::stats::is_basic_land)
+            .is_some_and(super::stats::is_tracked_basic)
     });
     let mut any = false;
     for s in &sections {
