@@ -6,35 +6,67 @@ use std::collections::HashMap;
 
 /// Per-game census arrays the turn loop fills and the log carries.
 pub(in crate::deck::simulator) struct TurnCensus {
+    /// Land drops made each turn (0-3).
     pub(in crate::deck::simulator) land_drops: Vec<u8>,
+    /// Spendable mana at the first main phase of each turn.
     pub(in crate::deck::simulator) mana_available: Vec<f64>,
+    /// Mana spent on casts each turn.
     pub(in crate::deck::simulator) mana_spent: Vec<f64>,
+    /// Cumulative cards seen (drawn) by end of each turn.
     pub(in crate::deck::simulator) cards_seen: Vec<u32>,
+    /// First turn the board could pay each card's cost, per deck index.
     pub(in crate::deck::simulator) mana_ready: Vec<Option<u32>>,
+    /// First turn each role was seen in hand.
     pub(in crate::deck::simulator) first_seen: HashMap<Role, u32>,
+    /// First turn a creature was seen in hand.
     pub(in crate::deck::simulator) first_creature: Option<u32>,
+    /// Colors a cast was blocked for (had total mana, missing pips).
     pub(in crate::deck::simulator) blocked_colors: [bool; 5],
+    /// First turn the commander was castable; None when never.
     pub(in crate::deck::simulator) commander_castable: Option<u32>,
+    /// First turn the commander spacecraft was animated (station online).
     pub(in crate::deck::simulator) station_online: Option<u32>,
+    /// Bodies (creatures, crewed vehicles, animated spacecraft) per turn.
     pub(in crate::deck::simulator) bodies: Vec<u32>,
+    /// Repeatable engines online per turn.
     pub(in crate::deck::simulator) engines_online: Vec<u32>,
+    /// Graveyard size at the end of each turn.
     pub(in crate::deck::simulator) graveyard_size: Vec<u32>,
+    /// First turn each card index was seen in hand (combo assembly).
     pub(in crate::deck::simulator) card_first_seen: HashMap<usize, u32>,
+    /// (card index, color index) pairs pip-blocked this game, one row per
+    /// blocked cast attempt.
     pub(in crate::deck::simulator) pip_blocks: Vec<(CardIdx, usize)>,
+    /// Total attacking power on the board at the combat phase of each turn.
     pub(in crate::deck::simulator) attack_power: Vec<u32>,
+    /// Attacking bodies each turn (denominator for the evasion census).
     pub(in crate::deck::simulator) attackers_turn: Vec<u32>,
+    /// Attacking bodies with evasion (trample/flying/menace) each turn.
     pub(in crate::deck::simulator) evasive_turn: Vec<u32>,
+    /// Library size at the end of each turn (deck-out proximity).
     pub(in crate::deck::simulator) library_size: Vec<u32>,
+    /// Lands seen (hand + battlefield + graveyard) by end of each turn.
     pub(in crate::deck::simulator) lands_seen: Vec<u32>,
+    /// Cards self-milled (own-library mill + surveil) by end of turn.
     pub(in crate::deck::simulator) self_milled: Vec<u32>,
+    /// Cards milled toward opponents by end of turn.
     pub(in crate::deck::simulator) opp_milled: Vec<u32>,
+    /// Cards evaluated (drawn + milled + scried/surveiled) per turn,
+    /// cumulative fraction of the library.
     pub(in crate::deck::simulator) awareness: Vec<f64>,
+    /// Life drained (burn, drain engines) by end of each turn.
     pub(in crate::deck::simulator) drain_total: Vec<u32>,
+    /// Player damage (combat + combat-damage triggers) per turn, cumulative.
     pub(in crate::deck::simulator) player_damage: Vec<u32>,
+    /// Extra turns taken by end of each turn (0 or 1 per slot).
     pub(in crate::deck::simulator) extra_turns: Vec<u32>,
+    /// First turn a win-threshold engine could fire (enough counters).
     pub(in crate::deck::simulator) win_threshold_turn: Option<u32>,
+    /// First turn a planeswalker ultimate became affordable.
     pub(in crate::deck::simulator) ultimate_online: Option<u32>,
+    /// Ready-to-fire interaction (in hand + affordable) per turn.
     pub(in crate::deck::simulator) interaction_ready: Vec<bool>,
+    /// Spare mana while interaction was ready, per turn.
     pub(in crate::deck::simulator) interaction_mana_held: Vec<f64>,
 }
 
