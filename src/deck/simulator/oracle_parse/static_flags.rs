@@ -90,7 +90,7 @@ pub(super) fn parse_static_flags(
     }
     // Equipment: equip cost, equipped buff, Skullclamp death-draws.
     let equipment = if type_line.contains("Equipment") {
-        super::super::parse_keywords::parse_equipment(text)
+        super::super::parse_equipment::parse_equipment(text)
     } else {
         None
     };

@@ -27,19 +27,54 @@ pub(super) fn add_yield(y: &TapYield, pool: &mut Pool) {
 /// Turn-aware variant with an empty board (no deck context: scaling
 /// resolves to nothing).
 pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u32) {
-    add_yield_turns(&empty_deck(), y, pool, turn, &[]);
-}
-
-/// A zero-card deck: the no-context callers need a deck only so
-/// `add_yield_turns` can resolve scaling, and an empty deck resolves
-/// every scale to zero (the old empty-board behavior).
-fn empty_deck() -> SimDeck {
-    SimDeck {
-        cards: Vec::new(),
-        commanders: Vec::new(),
-        format: super::model::Format::Constructed,
-        rules: super::format::rules_for("constructed"),
+    // No deck context: every scale resolves to zero (the old
+    // empty-board behavior). The hot tap-budget path builds no
+    // throwaway deck for this.
+    if y.opponent_any {
+        if turn >= 2 {
+            pool.colorless += y.any_pips;
+        }
+        return;
     }
+    let any_pips = y.any_pips;
+    if let Some(restriction) = y.restriction {
+        // Restricted buckets pay their own cast class; each pip still
+        // picks any color the source could produce.
+        let pips =
+            any_pips + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
+        if pips > 0 {
+            match restriction {
+                Restriction::Creature => pool.creature_only += pips,
+                Restriction::Legendary => pool.legendary_only += pips,
+                Restriction::Artifact => pool.artifact_only += pips,
+                Restriction::InstantSorcery => pool.instant_sorcery_only += pips,
+            }
+        } else {
+            pool.colorless += y.colorless;
+        }
+        return;
+    }
+    if y.alternatives {
+        let reachable = any_pips > 0 || y.choice.iter().any(|c| *c);
+        if reachable {
+            pool.flexible += 1;
+        } else if y.colorless > 0 {
+            pool.colorless += 1;
+        }
+        return;
+    }
+    for (i, p) in y.fixed.iter().enumerate() {
+        pool.fixed[i] += u32::from(*p);
+    }
+    let choice_colors = y.choice.iter().filter(|c| **c).count();
+    if any_pips > 0 || choice_colors > 1 {
+        pool.flexible += any_pips.max(1);
+    } else if choice_colors == 1
+        && let Some(i) = y.choice.iter().position(|c| *c)
+    {
+        pool.fixed[i] += 1;
+    }
+    pool.colorless += y.colorless;
 }
 
 /// Turn- and board-aware variant. Opponent-dependent mana is generic-only

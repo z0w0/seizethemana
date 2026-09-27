@@ -49,7 +49,7 @@ pub(crate) mod oracle_parse;
 mod oracle_parser;
 mod parse_cost;
 mod parse_cycle;
-mod parse_keywords;
+mod parse_equipment;
 mod parse_land;
 mod role_classify;
 

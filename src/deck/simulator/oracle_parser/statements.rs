@@ -134,7 +134,7 @@ pub(super) fn parse_oracle_static(source: &str) -> StaticAbility {
             .unwrap_or(u32::MAX);
         StaticEffect::WinThreshold(counters)
     } else if let Some((power, toughness)) =
-        super::super::parse_keywords::parse_creature_buff(&lower)
+        super::super::parse_equipment::parse_creature_buff(&lower)
     {
         StaticEffect::CreatureBuff { power, toughness }
     } else if lower.contains("you control have") && lower.contains("{t}: add ") {
