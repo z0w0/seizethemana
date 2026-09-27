@@ -28,10 +28,7 @@ pub(super) fn parse_oracle_trigger_event(source: &str) -> Option<TriggerEvent> {
         return Some(TriggerEvent::CombatDamageToPlayer(object_subject(&lower)));
     }
     if lower.contains("tap a nonland permanent for mana") {
-        return Some(TriggerEvent::TappedForMana {
-            nonland: true,
-            player: PlayerScope::You,
-        });
+        return Some(TriggerEvent::TappedForMana);
     }
     if (lower.starts_with("when you cast") || lower.starts_with("whenever you cast"))
         && lower.contains("spell")

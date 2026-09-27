@@ -318,6 +318,49 @@ fn ability_words_strip_to_their_trigger_and_stay_out_of_keyword_names() {
     assert!(matches!(unlabeled.keywords.as_slice(), []));
 }
 
+/// The keyword table carries its category tag and stays consistent:
+/// every entry maps its own spelling, Transform is a keyword action
+/// (CR 701.27), and no entry carries an ability word.
+#[test]
+fn keyword_table_categories_stay_consistent() {
+    use crate::deck::simulator::oracle_parser::keywords::{KEYWORDS, KeywordCategory};
+
+    for entry in KEYWORDS {
+        // Every spelling round-trips: the name lookup finds the same entry.
+        let parsed = parse_oracle_text(entry.text, &[]);
+        let known = parsed
+            .keywords
+            .first()
+            .expect("table entry parses to itself");
+        assert!(
+            entry.name == known.name,
+            "entry {entry:?} does not round-trip to its own variant"
+        );
+    }
+    let transform = KEYWORDS
+        .iter()
+        .find(|entry| entry.text == "transform")
+        .expect("transform in the table");
+    assert_eq!(transform.category, KeywordCategory::Action);
+    assert!(
+        KEYWORDS
+            .iter()
+            .all(|entry| !entry.text.eq_ignore_ascii_case("landfall")),
+        "ability words never appear as KeywordName variants"
+    );
+    // The prefix collision keeps the longer spelling first: a lookup of
+    // "basic landcycling" must not match "landcycling"'s shorter head.
+    let basic = KEYWORDS
+        .iter()
+        .position(|entry| entry.text == "basic landcycling")
+        .expect("basic landcycling entry");
+    let plain = KEYWORDS
+        .iter()
+        .position(|entry| entry.text == "landcycling")
+        .expect("landcycling entry");
+    assert!(basic < plain, "longer spelling must precede its prefix");
+}
+
 /// Parse every activation cost form and preserve activation restrictions.
 #[test]
 fn parses_all_activation_cost_shapes_and_limits() {
@@ -740,10 +783,7 @@ fn parses_trigger_events_scopes_conditions_and_subjects() {
         ),
         (
             "Whenever you tap a nonland permanent for mana, draw a card.",
-            TriggerEvent::TappedForMana {
-                nonland: true,
-                player: PlayerScope::You,
-            },
+            TriggerEvent::TappedForMana,
         ),
     ];
     for (source, expected) in cases {

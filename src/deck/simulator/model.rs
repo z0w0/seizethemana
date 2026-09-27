@@ -1,6 +1,6 @@
 // Card data model for the goldfish simulator: costs, tap yields, station
-// tiers, crew, and abilities. Pure data + small helpers; parsing lives in
-// `parse`, execution in `game`.
+// tiers, crew, riders, flags, and abilities. Pure data + small helpers;
+// parsing lives in `oracle_parse`, execution in `game`.
 //
 // Everything the model cannot express is dropped at parse time; the
 // documented limits ship in the output `assumptions` list (see `report`).
@@ -212,10 +212,6 @@ pub enum Effect {
     /// Discard the hand into the graveyard, then draw that many (a
     /// wheel). Cards seen jump by the hand size; the graveyard log fills.
     Wheel,
-    /// A wheel resolving mid-cast: skip one hand card (the cast spell
-    /// itself, whose removal is deferred) so it is not double-zoned.
-    /// Cast-phase detail: the shared effect set never produces it.
-    WheelSkip(CardIdx),
     /// Draw N, then discard N (loot). Net velocity +N; the graveyard
     /// log fills with the discards.
     Loot(u32),
@@ -828,62 +824,6 @@ impl std::ops::Index<CardIdx> for SimDeck {
     fn index(&self, idx: CardIdx) -> &SimCard {
         &self.cards[idx.0 as usize]
     }
-}
-
-/// Cards drawn when a draw spell resolves: numerals and number words win
-/// ("draw two cards", "draw seven cards"), otherwise 1.
-pub fn draw_amount(text: &str) -> u32 {
-    if !text.contains("draw ") && !text.contains("draws ") && !text.contains("investigate") {
-        return 0;
-    }
-    for (word, n) in [
-        ("seven", 7u32),
-        ("six", 6),
-        ("five", 5),
-        ("four", 4),
-        ("three", 3),
-        ("two", 2),
-        ("5", 5),
-        ("4", 4),
-        ("3", 3),
-        ("2", 2),
-    ] {
-        if text.contains(&format!("draw {word}")) || text.contains(&format!("draws {word}")) {
-            return n;
-        }
-    }
-    1
-}
-
-/// Number-word and numeral amounts for generic clauses ("scry 2",
-/// "look at the top three cards"). Returns 1 when present but uncounted.
-pub fn amount_after(text: &str, needle: &str) -> u32 {
-    let mut from = 0;
-    while let Some(rel) = text[from..].find(needle) {
-        let tail = &text[from + rel + needle.len()..];
-        let digits: String = tail
-            .trim_start()
-            .chars()
-            .take_while(|c| c.is_ascii_digit())
-            .collect();
-        if let Ok(n) = digits.parse::<u32>() {
-            return n;
-        }
-        for (word, n) in [
-            ("seven", 7u32),
-            ("six", 6),
-            ("five", 5),
-            ("four", 4),
-            ("three", 3),
-            ("two", 2),
-        ] {
-            if tail.trim_start().starts_with(word) {
-                return n;
-            }
-        }
-        from += rel + needle.len();
-    }
-    1
 }
 
 /// True when the text reads a mill clause against the opponent. Plain

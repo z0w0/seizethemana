@@ -123,6 +123,34 @@ fn resolve_library_graveyard_trigger(
     }
 }
 
+/// A wheel resolving mid-cast: the cast spell itself stays in the hand
+/// (its removal is deferred), everything else discards, then seven draws.
+/// Cast-phase detail: the shared `Effect` set never produces this.
+pub(super) struct CastWheelSkip {
+    /// The cast spell still in the hand, skipped by the discard pass.
+    pub(super) skip: CardIdx,
+}
+
+/// Resolve a mid-cast wheel with one hand card skipped.
+pub(super) fn resolve_wheel_with_skip(
+    deck: &SimDeck,
+    st: &mut GameState,
+    skip: CastWheelSkip,
+    turn: u32,
+) {
+    let hand = std::mem::take(&mut st.hand);
+    for i in hand {
+        if i == skip.skip {
+            st.hand.push(i);
+            continue;
+        }
+        move_to_graveyard(deck, st, i, turn, CardZone::Hand);
+    }
+    for _ in 0..7 {
+        draw_one(deck, st, turn);
+    }
+}
+
 /// The full variant: `source` is the battlefield card whose
 /// effect resolves (Treasure flags read from that card).
 pub(crate) fn apply_effect_at(
@@ -204,22 +232,6 @@ pub(crate) fn apply_effect_at(
         Effect::Wheel => {
             let discarded = std::mem::take(&mut st.hand);
             for i in discarded {
-                move_to_graveyard(deck, st, i, turn, CardZone::Hand);
-            }
-            for _ in 0..7 {
-                draw_one(deck, st, turn);
-            }
-        }
-        // A wheel resolving mid-cast: skip one hand card (the cast
-        // spell itself, whose removal is deferred) so it is not
-        // double-zoned, then draw seven.
-        Effect::WheelSkip(skip) => {
-            let hand = std::mem::take(&mut st.hand);
-            for i in hand {
-                if i == *skip {
-                    st.hand.push(i);
-                    continue;
-                }
                 move_to_graveyard(deck, st, i, turn, CardZone::Hand);
             }
             for _ in 0..7 {

@@ -383,7 +383,7 @@ fn library_graveyard_trigger(text: &str) -> Option<super::super::model::LibraryG
             if line.contains("put it onto the battlefield") {
                 Some(super::super::model::LibraryGraveyardTrigger::ReturnToBattlefield)
             } else if line.contains("you gain") {
-                Some(super::super::model::amount_after(line, "loses "))
+                Some(super::super::oracle_parser::amount_after(line, "loses "))
                     .filter(|amount| *amount > 0)
                     .map(super::super::model::LibraryGraveyardTrigger::DrainAndGain)
             } else {

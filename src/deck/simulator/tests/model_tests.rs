@@ -5,6 +5,7 @@ use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
 use super::oracle_parse::*;
+use super::oracle_parser::{amount_after, draw_amount};
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -484,7 +485,7 @@ fn saga_and_planeswalker_flags() {
     assert!(parse_sim_card(&real_saga).is_saga);
 }
 
-// draw_amount
+// draw_amount and amount_after (parser-layer text helpers)
 
 #[test]
 fn draw_amount_numerals_win() {

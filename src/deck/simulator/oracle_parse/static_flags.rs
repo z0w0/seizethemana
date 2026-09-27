@@ -112,10 +112,7 @@ pub(super) fn parse_static_flags(
             super::super::oracle_ast::OracleAbility::Triggered(trigger) => {
                 matches!(
                     &trigger.event,
-                    super::super::oracle_ast::TriggerEvent::TappedForMana {
-                        nonland: true,
-                        player: super::super::oracle_ast::PlayerScope::You
-                    }
+                    super::super::oracle_ast::TriggerEvent::TappedForMana
                 ) && trigger
                     .effects
                     .iter()

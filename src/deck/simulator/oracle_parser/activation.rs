@@ -1,7 +1,7 @@
 //! Parsing for activated abilities, their costs, and restrictions.
 
-use super::super::model::amount_after;
 use super::super::oracle_ast::*;
+use super::super::oracle_parser::amount_after;
 use super::effects::{parse_oracle_effects, parse_oracle_number_word};
 
 /// Parse an activated ability and its separate cost parts.

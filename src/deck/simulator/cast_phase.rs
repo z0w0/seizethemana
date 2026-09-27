@@ -735,7 +735,12 @@ fn resolve_cast(
     // The just-cast wheel is still in hand (removal is deferred), so
     // the skip variant keeps it out of the graveyard log.
     if card.riders.wheel_on_cast {
-        apply_effect_at(deck, &Effect::WheelSkip(idx), st, turn as u32, false, None);
+        super::game_effects::resolve_wheel_with_skip(
+            deck,
+            st,
+            super::game_effects::CastWheelSkip { skip: idx },
+            turn as u32,
+        );
     }
     // X-cost spells pay the leftover pool as X and scale the effect
     // (best case: X = everything floatable). The generic {X} already

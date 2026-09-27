@@ -1,6 +1,6 @@
 //! Parse one-shot effects and extra cast costs from Oracle data.
 
-use super::super::model::{Cost, TapYield};
+use super::super::model::Cost;
 use crate::db::CardRow;
 
 /// Parse an exile-from-hand alternate casting cost and its optional payoff.
@@ -19,7 +19,7 @@ fn alternative_cast_cost(text: &str) -> Option<super::super::model::AlternativeC
     .find_map(|(word, color)| text.contains(word).then_some(color));
     Some(super::super::model::AlternativeCastCost {
         filter: super::super::model::CardFilter { color },
-        count: super::super::model::amount_after(text, "exile "),
+        count: super::super::oracle_parser::amount_after(text, "exile "),
         payoff: if text.contains("gain x life") {
             super::super::model::AlternativeCostPayoff::GainLifeEqualToExiledManaValue
         } else {

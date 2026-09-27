@@ -8,7 +8,7 @@ use super::super::oracle_ast::{KeywordAbility, KeywordArgument, KeywordName};
 /// actions change game state; ability words (CR 702.200+) label triggers
 /// and never appear as a `KeywordName`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum KeywordCategory {
+pub(crate) enum KeywordCategory {
     /// A CR 702 keyword ability.
     Ability,
     /// A CR 701 keyword action (e.g. Transform, 701.27).
@@ -16,19 +16,20 @@ pub(super) enum KeywordCategory {
 }
 
 /// One table entry: the Oracle spelling and its parsed variant.
-pub(super) struct KeywordEntry {
+#[derive(Debug)]
+pub(crate) struct KeywordEntry {
     /// Lowercase Oracle spelling of the keyword head.
-    pub(super) text: &'static str,
+    pub(crate) text: &'static str,
     /// The parsed keyword variant.
-    pub(super) name: KeywordName,
+    pub(crate) name: KeywordName,
     /// The rules category of the keyword.
-    pub(super) category: KeywordCategory,
+    pub(crate) category: KeywordCategory,
 }
 
 /// Every known keyword, one source of truth for spelling lookup, name
 /// mapping, and head-length matching. Entries are longest-first where a
 /// prefix collision exists ("basic landcycling" before "landcycling").
-pub(super) const KEYWORDS: &[KeywordEntry] = &[
+pub(crate) const KEYWORDS: &[KeywordEntry] = &[
     KeywordEntry {
         text: "flying",
         name: KeywordName::Flying,

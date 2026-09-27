@@ -157,13 +157,10 @@ pub enum TriggerEvent {
     Dies(ObjectSubject),
     /// A land enters under a player's control.
     LandEnters(PlayerScope),
-    /// A permanent is tapped to activate a mana ability.
-    TappedForMana {
-        /// Whether the source is a nonland permanent.
-        nonland: bool,
-        /// Player who controls the source.
-        player: PlayerScope,
-    },
+    /// A nonland permanent you control is tapped to activate a mana
+    /// ability. Every supported wording taps one of your nonland
+    /// permanents, so the variant carries no fields.
+    TappedForMana,
     /// The event is kept as text because the event grammar is unsupported.
     Other(String),
 }

@@ -1,9 +1,8 @@
 //! Parsing for supported spell, trigger, activation, and Saga effects.
 
-use super::super::model::{
-    SearchCardType, SearchDestination, SearchSpec, amount_after, draw_amount,
-};
+use super::super::model::{SearchCardType, SearchDestination, SearchSpec};
 use super::super::oracle_ast::OracleEffect;
+use super::super::oracle_parser::{amount_after, draw_amount};
 
 /// Parse supported search words into explicit card constraints.
 fn parse_oracle_search_spec(text: &str) -> SearchSpec {

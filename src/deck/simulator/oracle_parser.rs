@@ -5,9 +5,11 @@ mod activation;
 /// Parse effects and their supported clause shapes.
 mod effects;
 /// Parse standalone keyword abilities.
-mod keywords;
+pub(crate) mod keywords;
 /// Split Oracle text and classify ability statements.
 mod statements;
+/// Number-word and numeral extraction from Oracle text.
+mod text;
 /// Parse triggered abilities and Saga chapter statements.
 mod triggers;
 
@@ -21,6 +23,7 @@ use triggers::{parse_oracle_saga_chapter, parse_oracle_trigger_event, parse_orac
 
 /// Keep the activated parser available at its existing simulator path.
 pub(super) use activation::parse_oracle_activated_ability;
+pub(super) use text::{amount_after, draw_amount};
 
 /// Parse Oracle text and its card-data keyword list into typed syntax nodes.
 pub fn parse_oracle_text(oracle_text: &str, keywords: &[String]) -> OracleCard {

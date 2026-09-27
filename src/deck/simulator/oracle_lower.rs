@@ -132,7 +132,7 @@ impl TriggerEvent {
             Self::CastsSpell { this_spell: false } => Some(AbilityTiming::OnCastSpell),
             Self::Dies(_) => Some(AbilityTiming::OnDeath),
             Self::CastsSpell { this_spell: true }
-            | Self::TappedForMana { .. }
+            | Self::TappedForMana
             | Self::BeginningOfStep { .. }
             | Self::LandEnters(PlayerScope::Opponent | PlayerScope::Any)
             | Self::Other(_) => None,
