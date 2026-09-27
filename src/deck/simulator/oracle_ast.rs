@@ -214,6 +214,11 @@ pub struct TriggeredAbility {
     pub effects: Vec<OracleEffect>,
     /// Whether the text limits this ability to once each turn.
     pub once_per_turn: bool,
+    /// Intervening "if" clause text (CR 603.4), when the trigger
+    /// sentence carries one between the event and the resolution. The
+    /// sim lowers the text but cannot evaluate any shape yet; the
+    /// runtime treats every condition as true.
+    pub condition: Option<String>,
 }
 
 /// A static ability and its continuous effects.

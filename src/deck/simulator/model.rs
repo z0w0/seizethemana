@@ -398,6 +398,11 @@ pub struct Ability {
     pub loyalty_gain: u32,
     /// Life paid as an activation cost.
     pub life_cost: u32,
+    /// Intervening "if" clause of a triggered ability (CR 603.4), when
+    /// the Oracle sentence carries one. No condition shape is evaluated
+    /// yet: the goldfish board makes most trivially true, and every
+    /// lowered condition fires as if true. Evaluation is future work.
+    pub condition: Option<String>,
 }
 
 /// A station tier: abilities unlocked at a charge-counter threshold.

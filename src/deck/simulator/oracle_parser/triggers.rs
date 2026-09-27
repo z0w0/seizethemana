@@ -95,10 +95,20 @@ pub(super) fn parse_oracle_triggered(source: String, event: TriggerEvent) -> Tri
     let once_per_turn = lower.contains("only once each turn")
         || lower.contains("only once each of your turns")
         || lower.contains("triggers only once each turn");
+    // Intervening "if" clause (CR 603.4): text between the event's
+    // comma and the resolution that starts with "if". The clause stays
+    // part of the resolution text, so trimming it changes nothing the
+    // effect parser reads twice.
+    let condition = trigger_resolution(&source)
+        .split_once(". ")
+        .map_or(trigger_resolution(&source), |(first, _)| first)
+        .strip_prefix("if ")
+        .map(|body| body.trim_end_matches('.').trim().to_string());
     TriggeredAbility {
         event,
         effects,
         once_per_turn,
+        condition,
     }
 }
 

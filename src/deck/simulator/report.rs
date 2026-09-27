@@ -66,6 +66,7 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "A card that enters and draws ('When this creature enters, draw a card') draws only once per entry. It is a trigger, not an extra cast effect.".to_string(),
         "Landfall draw, token, drain, and search effects resolve when a land enters. Mana-producing landfall triggers are parsed but do not add mana to the pool.".to_string(),
         "Unknown activation conditions and opponent-scoped triggers stay inert. Metalcraft remains modeled for supported mana sources.".to_string(),
+        "A trigger with an intervening 'if' clause (rule 603.4) always fires as if the condition is true. No condition shape is evaluated yet.".to_string(),
         "X-cost spells spend all leftover mana as X. Drain, draw, mill, tokens, reveal-permanents, and counter-power effects scale with that X.".to_string(),
         "X spells the model cannot execute pay X = 1 and do nothing extra.".to_string(),
         "A split card such as 'Fire // Ice' is cast as its cheaper face. The other face counts for deck categories but its cast effects never happen.".to_string(),

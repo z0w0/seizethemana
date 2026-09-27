@@ -56,6 +56,7 @@ impl ActivatedAbility {
             trigger: AbilityTiming::Activated,
             cost: mana_cost.unwrap_or_default(),
             effect,
+            condition: None,
             taps: self
                 .costs
                 .iter()
@@ -153,6 +154,7 @@ impl TriggeredAbility {
             trigger,
             effect,
             once_per_turn: self.once_per_turn,
+            condition: self.condition.clone(),
             ..Ability::default()
         })
     }

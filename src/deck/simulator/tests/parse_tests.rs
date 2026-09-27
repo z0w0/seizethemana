@@ -83,6 +83,28 @@ fn upkeep_draw_engine_parses() {
 }
 
 #[test]
+fn intervening_condition_lowers_and_inerts() {
+    // The condition parses and lowers with the ability. The runtime has
+    // no evaluated shapes yet, so the ability still lowers and the
+    // condition travels as text (see docs/simulator.md assumptions).
+    let gated = parse_sim_card(&card(
+        "Gated Mill",
+        "{1}{U}",
+        "Creature — Frog Horror",
+        "At the beginning of your upkeep, if you control another creature, mill two cards.",
+    ));
+    let fired = gated
+        .abilities()
+        .find(|a| a.trigger == AbilityTiming::OnUpkeep)
+        .expect("conditioned trigger lowers");
+    assert_eq!(
+        fired.condition.as_deref(),
+        Some("you control another creature, mill two cards")
+    );
+    assert!(matches!(fired.effect, Effect::Mill(2)));
+}
+
+#[test]
 fn attack_draw_trigger_parses() {
     let row = card(
         "Smuggler's Copter",

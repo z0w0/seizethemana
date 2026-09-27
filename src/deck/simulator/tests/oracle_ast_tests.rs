@@ -733,6 +733,16 @@ fn parses_trigger_events_scopes_conditions_and_subjects() {
         panic!("expected once-per-turn trigger");
     };
     assert!(once.once_per_turn);
+    assert_eq!(
+        once.condition.as_deref(),
+        Some("you control another creature, draw a card")
+    );
+
+    let plain = parse_oracle_text("At the beginning of your upkeep, mill three cards.", &[]);
+    let [OracleAbility::Triggered(plain)] = plain.abilities.as_slice() else {
+        panic!("expected plain trigger");
+    };
+    assert!(plain.condition.is_none());
 }
 
 /// Parse static targets, mana grants, buffs, cost reductions, and limits.
