@@ -1,4 +1,4 @@
-//!! Store-backed combo assembly: join the deck's simulated cards against the
+//! Store-backed combo assembly: join the deck's simulated cards against the
 //! Spellbook `combos`/`combo_pieces` tables and measure how often each
 //! variant's pieces reach their required zones by the target turn.
 //!

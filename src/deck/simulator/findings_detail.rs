@@ -1,4 +1,4 @@
-//!! Cause-level detail for sim problems: the offender lists and the
+//! Cause-level detail for sim problems: the offender lists and the
 //! plain-English problem strings. Split from `findings.rs` (already near
 //! its line limit); `find_problems` builds problems with empty offender
 //! lists and this module fills them from data the aggregation stage

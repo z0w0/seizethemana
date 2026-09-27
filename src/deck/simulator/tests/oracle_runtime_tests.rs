@@ -1,4 +1,4 @@
-//!! Keep the standard co-located test import for shared simulator helpers.
+//! Keep the standard co-located test import for shared simulator helpers.
 use super::game::{Activation, Pool, fire_on_enter, new_perm_with};
 use super::game_combat::combat_phase;
 use super::game_commander::CommanderProfile;

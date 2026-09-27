@@ -1,4 +1,4 @@
-//!! Exact hypergeometric cast-on-curve ceilings, `stm deck simulate
+//! Exact hypergeometric cast-on-curve ceilings, `stm deck simulate
 //! --hypgeo`. Static probability math, no RNG: for each nonland spell, the
 //! chance that enough of the deck's cards are visible by the on-curve turn
 //! to cover the cost. Printed beside the simulated castability as a drift

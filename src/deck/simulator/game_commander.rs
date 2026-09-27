@@ -1,4 +1,4 @@
-//!! Commander engine bookkeeping for the goldfish game loop: the
+//! Commander engine bookkeeping for the goldfish game loop: the
 //! per-deck commander profile (synthetic upkeep tiers) and the sentinel
 //! uids that key each cast commander's own engine.
 

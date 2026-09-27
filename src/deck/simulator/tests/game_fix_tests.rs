@@ -1,4 +1,4 @@
-//!! Regression tests for game-loop fixes: restricted-mana creature
+//! Regression tests for game-loop fixes: restricted-mana creature
 //! casts, crew expiry, blink vs land-search vs Monarch separation,
 //! graveyard timing, X-cost restricted-bucket wipes, fetch land pairs,
 //! and awareness accounting.

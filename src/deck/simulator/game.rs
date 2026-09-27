@@ -1,5 +1,16 @@
-//!! One goldfish game: shuffles, mulligans, plays best-case turns. Pure
+//! One goldfish game: shuffles, mulligans, plays best-case turns. Pure
 //! apart from the passed RNG: same deck + same seed = same game.
+//!
+//! State-representation contract:
+//!   - Zones (`library`, `hand`, `graveyard`, `exile`, and the seen maps)
+//!     hold indexes into the immutable `SimDeck.cards` table.
+//!   - Per-instance state (tapped, counters, entry turn, riders applied)
+//!     lives only on the battlefield `Permanent` and resets on zone
+//!     change (rule 122.2). The library/hand/graveyard entries are the
+//!     card itself.
+//!   - A card re-entering a zone is the same index; there is no
+//!     incarnation counter. A milled, returned, and discarded card is
+//!     one index throughout (the index-aliasing approximation).
 //!
 //! Turn pipeline (best-case agent):
 //!   1 UNTAP     everything untaps; creature sickness clears

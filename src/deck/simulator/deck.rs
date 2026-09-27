@@ -1,4 +1,4 @@
-//!! Deck construction for the simulator: joins parsed deck text to card
+//! Deck construction for the simulator: joins parsed deck text to card
 //! rows and converts each entry into a `SimCard` via `parse`.
 
 use super::model::{Ability, AbilityTiming, Effect, Format, Role, SimCard, SimDeck, Tier};

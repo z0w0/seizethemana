@@ -1,4 +1,4 @@
-//!! Convert Scryfall mana-cost strings into simulator Cost values.
+//! Convert Scryfall mana-cost strings into simulator Cost values.
 
 use super::model::Cost;
 

@@ -1,4 +1,4 @@
-//!! Cross-deck invariants: properties every real fixture deck must hold.
+//! Cross-deck invariants: properties every real fixture deck must hold.
 //! ---------------------------------------------------------------------------
 //! Cross-deck invariants (all twelve lists)
 //! ---------------------------------------------------------------------------

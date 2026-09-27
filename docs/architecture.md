@@ -420,9 +420,10 @@ Deck contents live in ManaBox txt files under `decks/`. The module covers:
   honored (shock duals untapped), no opponents or interaction, draw
   engines fire once per turn on a fixed delay, no commander recast tax,
   flat body power (2) for stationing and crewing, hybrid pips pay from
-  any of their colors, X-costs pay for one, and
-  energy/metalcraft/converge/proliferate/replay mechanics are not
-  modeled. This is a consistency diagnostic, not a win-rate predictor.
+  any of their colors, X-costs pay for one, and energy/converge/proliferate
+  are not modeled. Metalcraft mana gates and full extra-turn player phases
+  are modeled. Opponent-dependent mana is generic-only from turn 2. This
+  is a consistency diagnostic, not a win-rate predictor.
   The living reference for the model, assumptions, and limits is
   `docs/simulator.md`.
 

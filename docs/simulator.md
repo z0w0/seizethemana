@@ -37,15 +37,17 @@ src/deck/simulator/
 ├── mod.rs        Entry point: CLI wiring, run loop, exit codes
 ├── format.rs     Per-format rules: mulligan policy, turn defaults
 ├── model.rs      Card data model: Cost, TapYield, Tier, Ability, Role
-├── parse.rs      Oracle text → model (the sim's whole intelligence)
-├── parse_cost.rs / parse_land.rs / parse_keywords.rs   Cost, tap, and keyword readers
+├── oracle_ast.rs Typed Oracle syntax nodes
+├── oracle_parser.rs Oracle text → typed syntax nodes
+├── oracle_lower.rs AST nodes → executable simulator abilities and effects
+├── oracle_parse.rs Card rows + Oracle AST → SimCard
+├── parse_cost.rs / parse_land.rs / parse_keywords.rs / parse_cycle.rs   Cost, tap, keyword, and cycling readers
 ├── role_classify.rs   Role classification heuristics for parsed cards
 ├── deck.rs       Deck text + card rows → SimDeck
 ├── deal.rs       Shuffle, opener, and mulligan policies (pure, seeded)
 ├── game.rs       Game state, pools, permanents (pure, seeded)
 ├── game_run.rs   One game's turn loop, phases 1-11
 ├── game_*.rs     Turn phases split out of game_run (mana, cast, combat, effects, extra turns, commander)
-├── trigger_*.rs / triggers.rs   Trigger families and their parse rules
 ├── cast_phase.rs The cast pass: affordability sweep and cast riders
 ├── findings.rs / findings_detail.rs   Problem findings and their cause detail
 ├── aggregate.rs  Game logs → statistics
@@ -55,9 +57,8 @@ src/deck/simulator/
 └── tests/        Co-located test files + deck fixtures
 ```
 
-The file split follows the prefixes: `game_*.rs` holds the turn phases,
-`parse_*.rs` the oracle-text readers, `trigger_*.rs` the trigger
-families. `run_game` and everything under it is
+Oracle syntax, grammar parsing, and runtime lowering have separate modules.
+The `game_*.rs` files hold the turn phases. `run_game` and everything under it is
 pure and driven by one seeded `ChaCha8Rng`. Same deck + same seed = the
 same games, byte for byte. `aggregate`, `find_problems`, and the renders
 are separate functions the entry point joins. Mutable per-game state
@@ -77,30 +78,41 @@ mulligan: a 7-card opener with 0, 1, 6, or 7 lands redraws once, then
 the redrawn hand bottoms one card toward 3 lands (a land when holding
 4+ lands — shed the flood — else a spell). Kept hands stay at 7 cards;
 only the redrawn hand bottoms. The keep choice is not evaluated; the
-bottomed card rejoins the library at a random depth. Commander features (cast loop,
+bottomed card goes to the bottom of the library. Commander features (cast loop,
 engine tier) gate on the deck having commanders, not on the format enum.
 An unknown `--format` key plays as generic constructed.
 
 ## The card model
 
-Cards are data, not rules. The parser (`parse.rs`) reads each card's
-oracle text once, at deck build time, and produces a `SimCard`. Everything
-the turn loop does later is execution of that data. Shapes the parser
-cannot read become plain cards with no abilities: they still cost mana,
-still count toward the curve, and still show up in castability — they just
-do nothing on the battlefield.
+Cards are data, not rules. `oracle_parser.rs` reads each card's Oracle text
+once, at deck build time, and produces typed nodes in `oracle_ast.rs`.
+`oracle_lower.rs` converts supported nodes into simulator abilities and
+effects. The turn loop executes that data. Unsupported wording stays in the
+AST and has no game effect.
+
+This is a strict design rule: do not add custom mechanic handling based on
+the card name. Parse supported Oracle wording into model data and execute
+that data. An unknown card with the same Oracle text should get the same
+behavior. Unsupported text stays inert and the model's limits appear in
+runtime assumptions. Name-based exceptions are limited to basic-land
+identity and fetch-land target mapping when the target pair is absent from
+the type line. Fetch activation, life payment, sacrifice, and tapped-entry
+rules should come from Oracle text. Prefer parsing the fetch's target types
+from Oracle text too; a small name map is only a fallback for target pairs
+that cannot otherwise be recovered. Never use a card name to implement a
+spell-specific rule.
 
 ### Tap yields
 
 A permanent taps once per turn. What one tap yields splits into four
 shapes, keyed off the "or" in the text:
 
-| Oracle shape | Example | Model |
-| --- | --- | --- |
-| "or" choice | `Add {G} or {U}` (shock duals, Verge lands) | one tap, one mana of either color |
-| any-color prose | `Add one mana of any color` (Command Tower, Signet) | one tap, any color |
-| fixed simultaneous set | `Add {W}{U}{B}{R}{G}` (Jegantha) | one tap, all five at once |
-| colorless | `Add {C}{C}` (Sol Ring) | one tap, N colorless |
+| Oracle shape           | Example                                             | Model                             |
+| ---------------------- | --------------------------------------------------- | --------------------------------- |
+| "or" choice            | `Add {G} or {U}` (shock duals, Verge lands)         | one tap, one mana of either color |
+| any-color prose        | `Add one mana of any color` (Command Tower, Signet) | one tap, any color                |
+| fixed simultaneous set | `Add {W}{U}{B}{R}{G}` (Jegantha)                    | one tap, all five at once         |
+| colorless              | `Add {C}{C}` (Sol Ring)                             | one tap, N colorless              |
 
 A spend restriction ("Spend this mana only to cast a creature spell" —
 Secluded Courtyard, Unclaimed Territory) marks the yield restricted:
@@ -124,8 +136,10 @@ Beyond the four shapes, three extras:
 - **Any-pip counts.** "Add N mana of any color" / "any combination of
   colors" parse as N flexible pips (Gilded Lotus → 3), not one.
 - **Opponent-dependent.** "Any color a land an opponent controls could
-  produce" (Fellwar Stone) yields one any-color pip from turn 2 on;
-  nothing on turn 1.
+  produce" (Fellwar Stone) is an intentional goldfish approximation. It
+  produces one colorless-only pip from turn 2 on and does not tap on turn
+  1. This lets it pay generic costs without inventing an opponent's lands
+     or claiming access to colors the simulated player may not have.
 - **Scaling.** "For each color among permanents you control" (Faeburrow
   Elder) counts the colors actually on the board; "for each charge
   counter" (Astral Cornucopia) reads one pip per counter.
@@ -137,7 +151,7 @@ Two banked shapes:
   untapped, fires once per turn while counters last, and one counter
   buys one pip. Sunburst enters with one counter per color paid
   (best-case 2).
-- **Treasures.** "Create a Treasure token" effects on the *acting card*
+- **Treasures.** "Create a Treasure token" effects on the _acting card_
   bank one flexible pip per token (sacrificed to use) instead of
   creating a body. Only Treasure-labeled effects convert; other token
   spells in the same deck still create bodies, and the deck-wide
@@ -199,20 +213,33 @@ so they no longer hide the trigger underneath.
 Each ability has a trigger, an optional cost, and an effect.
 
 Triggers modeled: `Activated` (pay cost, consumes a tap or loyalty),
-`OnEnter`, `OnUpkeep` (also end-step engines — one per turn), `OnAttack`,
-`OnCastSpell`, `OnDeath` (dies or is sacrificed).
+`OnEnter`, `OnUpkeep`, `OnFirstMainPhase`, `OnEndStep`, `OnLandfall`,
+`OnAttack`, `OnCombatDamage`, `OnCastSpell`, and `OnDeath` (dies or is
+sacrificed). Opponent-scoped triggers stay inert.
 
-Effects modeled: `Draw(n)`, `Tutor` (search/look-into-hand),
+Effects modeled: `Draw(n)` through one draw operation (including dredge
+replacement), filtered `Search` (type, color, mana value, and hand or
+battlefield destination),
 `Mana(TapYield)` (unlocked mana activations feed the pool),
-`ManaPerCounter(TapYield)` (upkeep release of banked mana: Coalition
+`ManaPerCounter(TapYield)` (first-main release of banked mana: Coalition
 Relic's "remove all charge counters, add that many mana"),
 `Tokens(n)` (become battlefield bodies; "for each" shapes cap at 8),
 `Counters(n)` (charge the host),
-`ExtraLand`, `Mill(n)` (library top → graveyard census), 
+`ExtraLand`, `Mill(n)` (library top → graveyard census),
+`Surveil(n)` (library top → graveyard, with library-mill triggers),
 `ReturnFromGraveyard { to_hand, count }` (hand-return = draw credit;
 battlefield-return = a body once per card), `Wheel` (hand → graveyard,
 draw seven), `Loot(n)` (draw n, discard n), `Drain(n)` (life loss at a
-player: ×3 in commander, ×1 in 60-card formats).
+player: ×3 in commander, ×1 in 60-card formats). Dredge cards replace a
+draw only when the full dredge amount remains in the library. The sim uses
+the largest available dredge value, mills exactly that many cards, then
+returns that dredger to hand. Each new draw checks the graveyard again.
+
+Library-to-graveyard movement carries its source zone. Oracle triggers that
+require a card to enter the graveyard from the library resolve only for that
+transition, not for discards, sacrifices, or resolving spells. Parsed
+returns put the card onto the battlefield; parsed drain-and-gain effects
+exile the card and record damage and player life gain separately.
 
 Activations carry optional costs beyond mana: `sacrifice_bodies` consumes
 an untapped body and fires its death triggers (aristocrats outlets);
@@ -224,7 +251,7 @@ mark `ultimate_online` when loyalty covers the minus cost, they do not
 resolve.
 
 Commanders get one extra synthetic ability: when the commander's oracle
-shows an *unconditional* repeatable draw (upkeep or end-step triggers),
+shows an _unconditional_ repeatable draw (upkeep or end-step triggers),
 the command zone registers a draw-1-per-turn engine from the turn after it
 is cast. Attack-gated draws ("Whenever N attacks, draw…") never become
 synthetic engines: they need the permanent to animate and attack, which
@@ -233,18 +260,22 @@ the normal combat path models. Opponent-gated draw triggers
 opponents.
 
 Tap yields that reference opponents ("Add one mana of any color that a
-land an opponent controls could produce") produce nothing: the goldfish
-has no opponents. Lands whose oracle grants them a basic type ("This land
-is the chosen type") tap for one mana of any color — the chosen type is
-the player's choice each game. Static type-granting on *other* lands (The
+land an opponent controls could produce") produce one colorless-only pip
+from turn 2. This intentional constraint grants generic mana without
+assuming an opponent's board or colors. Kinnan's trigger adds one
+colorless pip when this approximate source is tapped. Lands whose oracle
+grants them a basic type ("This land is the chosen type") tap for one
+mana of any color — the chosen type is
+the player's choice each game. Static type-granting on _other_ lands (The
 World Tree's "lands you control have {T}: …") is not modeled.
 
-Sagas stage one chapter per turn, with a deliberate one-turn delay: the
-staging gate is `turn > entered_turn`, so chapter I fires the turn
-after the saga entered. Chapter lines ("I — Draw a card.",
-"II — Mill three.") parse into per-chapter abilities through the same
-effect shapes as triggers; a chapter with no readable effect draws one
-card instead. Combined numeral lines ("I, II, III — Create a token")
+Sagas resolve chapter I when they enter. Later chapters advance one per
+turn in the precombat main phase (lore counters are added in the first
+main phase, CR 714.3c). Chapter lines ("I — Draw a card.",
+"II — Mill three.") parse into a per-chapter effect list on the card
+(`SimCard.saga.chapters`, in play order — chapters are triggered
+abilities per CR 714.2, not activations); a chapter with no readable
+effect stays unsupported and does nothing. Combined numeral lines ("I, II, III — Create a token")
 give every listed chapter the same effect. A four-chapter saga runs its
 fourth chapter; once the final chapter resolves, the permanent leaves
 the battlefield (it sacrificed in real Magic).
@@ -253,25 +284,26 @@ Blink-shaped ETBs ("exile … return it to the battlefield") re-fire the
 host's OnEnter triggers once, the turn after (Skyskipper Duo, flicker
 engines). Land-search ETBs and Monarch acquisition parse to their own
 effects and never arm the blink re-fire: a fetch-style ETB searches
-once, and the Monarch is an upkeep engine, not a blink. Monarch
+once, and the Monarch is an engine, not a blink. Monarch
 acquisition ("you become the Monarch") draws one extra card per turn
-from the turn after acquisition (the Monarch draws at their upkeep).
-Tutor and extra-land effects add cards to the hand but give no
+from the turn after acquisition (the Monarch draws at the beginning of
+their end step, CR 725.2).
+Search and extra-land effects add cards to the hand but give no
 awareness credit (the card was searched, not seen from the library).
 
 ### Keywords modeled (goldfish-aligned)
 
 A keyword models only when it moves a metric:
 
-| Keyword | Model |
-| --- | --- |
-| Haste | hasted creatures skip summoning sickness: they attack, tap, and crew the turn they enter |
-| Landfall | "+1/+1 counter" shapes feed the combat power sum; full trigger lines ("Whenever a land you control enters, draw/create/add") parse as real OnEnter engines |
-| Double strike | attack power ×2 (no blockers exist) |
-| Prowess | +1 power per noncreature spell cast that turn |
-| Flying / Trample / Menace | evasion census (no math) |
-| Flash | instant-speed flag (feeds interaction readiness); "flashback" does not count as flash |
-| Cascade | casting the card also casts the cheapest cheaper castable card from the library, free, once (no chaining); the free cast fires ETB and per-cast credits |
+| Keyword                   | Model                                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Haste                     | hasted creatures skip summoning sickness: they attack, tap, and crew the turn they enter                                                                        |
+| Landfall                  | "+1/+1 counter" shapes feed the combat power sum; full trigger lines ("Whenever a land you control enters, draw/create/add") parse as real OnEnter engines      |
+| Double strike             | attack power ×2 (no blockers exist)                                                                                                                             |
+| Prowess                   | +1 power per noncreature spell cast that turn                                                                                                                   |
+| Flying / Trample / Menace | evasion census (no math)                                                                                                                                        |
+| Flash                     | instant-speed flag (feeds interaction readiness); "flashback" does not count as flash                                                                           |
+| Cascade                   | reveal from the library top until the first nonland card with lower printed mana value; cast it free once, no chaining; misses go to the bottom in reveal order |
 
 "Whenever … enters" ETBs parse like "When … enters". Landfall trigger
 lines form their own family (draw / tokens / mana-adds read as an
@@ -283,34 +315,70 @@ extra land drop per turn while on the battlefield, recorded in
 
 ### X-costs, kicker, and per-cast mana
 
-| Shape | Model |
-| --- | --- |
-| `{X}` spells with a scaling effect (drain/draw/mill/tokens) | the cast pays the whole leftover pool as X; the effect scales with it (drain ×N, draw ×N, mill ×N, up to 8 tokens) |
-| "Reveal the top X cards … put any number of permanent cards onto the battlefield" | the cast converts the leftover pool into X battlefield entries (capped at 8; every library card reads as a permanent) |
-| "Enters with X +1/+1 counters" | the entered X counters join the body's attack power (the leftover pool converts at entry) |
-| Kicker / multikicker | paid from spare mana when affordable; drain amounts scale with the kick; multikicker parses as one kick |
-| "Add one mana … for each spell you've cast this turn" (Vivi class) | the yield joins the pool once per spell cast every turn the host is on the battlefield; the same clause never also reads as a plain one-mana tap |
-| Additional costs ("as an additional cost …, sacrifice a creature / pay N life") | the cast consumes the resource (a real body leaves the battlefield; life is paid) |
-| "Create N …tokens" sorceries | the cast creates N token bodies (capped at 8) |
+| Shape                                                                             | Model                                                                                                                                            |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `{X}` spells with a scaling effect (drain/draw/mill/tokens)                       | the cast pays the whole leftover pool as X; the effect scales with it (drain ×N, draw ×N, mill ×N, up to 8 tokens)                               |
+| "Reveal the top X cards … put any number of permanent cards onto the battlefield" | the cast converts the leftover pool into X battlefield entries (capped at 8; every library card reads as a permanent)                            |
+| "Enters with X +1/+1 counters"                                                    | the entered X counters join the body's attack power (the leftover pool converts at entry)                                                        |
+| Kicker / multikicker                                                              | paid from spare mana when affordable; drain amounts scale with the kick; multikicker parses as one kick                                          |
+| "Add one mana … for each spell you've cast this turn" (Vivi class)                | the yield joins the pool once per spell cast every turn the host is on the battlefield; the same clause never also reads as a plain one-mana tap |
+| Additional costs ("as an additional cost …, sacrifice a creature / pay N life")   | the cast consumes the resource (a real body leaves the battlefield; life is paid)                                                                |
+| "Create N …tokens" sorceries                                                      | the cast creates N token bodies (capped at 8)                                                                                                    |
 
-### Free mana engines and the loop cap
+### Turn actions and the loop cap
 
-A zero-cost untapped non-tap activation ("{0}: Add {C}") repeats in real
-Magic. The sim lets it repeat but caps the pass at 24 activations per
-turn; crossing the cap flags `infinite_mana_pct` (share of games with a
-suspected infinite engine) and stops the loop. No engine runs away.
+After each draw or mana action, the sim checks the current hand again.
+Newly drawn spells can be cast in the same main phase. Newly cast
+noncreature mana rocks tap before the next cast choice. The fixed order is:
+land play, commander, cheapest cast, needed creature mana, new mana rocks,
+another cast pass, commander if newly payable, then leftover activations.
+Casts get another pass after an activation adds mana or cards. When a
+cascade spell and a graveyard-creature exchange are available, payable
+cycling and landcycling creatures cycle before the cascade choice. Each
+permanent taps at most once; a creature tapped for mana cannot station or
+crew. The player taps dorks only when the current pool cannot cover the
+cheapest spell.
+
+Each main phase runs at most 24 action passes, and each activation pass
+runs at most 24 activations. A capped activation pass sets
+`infinite_mana_pct` only if it added mana. A free draw or other bounded
+action does not count as infinite mana. The loop cap protects the simulator
+from unsupported repeated effects.
+
+Every draw source uses the same single-card operation. It applies dredge
+before drawing, then updates hand visibility and library awareness once.
+A dredge replacement counts its milled cards as evaluated and does not
+count the returned dredger as a new card seen. Mill effects use one
+library-to-graveyard move; Oracle triggers for cards moved from the library
+resolve from that event only. Discarding an identical card from hand does
+not trigger them.
+
+Cycling pays its parsed mana or life cost, discards that card, then draws
+one card through the shared operation. Landcycling pays its cost, discards
+that card, and searches for a land with the named basic land type. An alternate cast cost can exile
+two green cards from hand. A sacrifice search can find a creature with a
+mana value one higher than the sacrificed creature and put it onto the
+battlefield with a +1/+1 counter. A failed search does not undo the cast
+or sacrifice.
+
+Cascade uses printed mana value and the actual library order. The free hit
+uses the normal cast-resolution path, so on-cast effects and enter triggers
+resolve. A spell without a mana cost can be a cascade hit, but cannot be
+cast normally from hand. A graveyard-creature exchange affects only the
+player's cards: exile creature cards in the graveyard, sacrifice battlefield
+creatures, then return the exiled creatures.
 
 ### Cost reductions
 
 Modeled as discounts on the generic part, and only for castability
 (`min_cost`), never as extra mana:
 
-| Mechanic | Approximation |
-| --- | --- |
-| Warp | the warp cost when cheaper |
-| Improvise | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
-| Affinity | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
-| "costs {1} less" / "{X} less" | −2 generic |
+| Mechanic                      | Approximation                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| Warp                          | the warp cost when cheaper                                                                 |
+| Improvise                     | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
+| Affinity                      | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
+| "costs {1} less" / "{X} less" | −2 generic                                                                                 |
 
 The improvise/affinity discount grows while playing: a mid-game board casts
 big improvise spells a few turns earlier than the flat floor, and such
@@ -328,41 +396,44 @@ A best-case agent plays each turn in a fixed order:
    flags reset; crew animations expire. Blink-armed permanents re-fire
    their OnEnter triggers once (the blink re-fire pass).
 2. **Upkeep** — draw, mill, recursion, drain, and token engines fire (one
-   firing each, per turn); saga chapters advance through their parsed
-   abilities (one turn after entry — the staging gate is
-   `turn > entered_turn`); win-threshold engines check their counter
-   stock; planeswalker ultimates flag online when loyalty reaches the
+   firing each, per turn); win-threshold engines check their
+   counter stock; planeswalker ultimates flag online when loyalty reaches the
    minus cost.
-3. **Draw** — draw 1; the Monarch draws one extra card from the turn
-   after acquisition. Extra turns replay this step later (step 11).
-4. **Land** — play an untapped land when one is in hand, else any land
-   (tapped lands wait for a better turn when possible). Fetch lands search
-   up a non-fetch land, which enters tapped. An "additional land" board
-   (Aesi class) plays a second land the same turn.
-5. **Cast** — cheapest castable spells first, with the full pip check. A
+3. **Draw** — commander games draw on turn 1; constructed games on the
+   play skip the turn-1 draw.
+4. **First main phase and land** — first-main triggers resolve, then play
+   an untapped land when one is in hand, else any land (tapped lands wait
+   for a better turn when possible). Fetch lands search up a non-fetch land,
+   which enters tapped. Landfall triggers resolve for each land entry. An
+   "additional land" board (Aesi class) plays a second land the same turn.
+5. **Cast** — saga chapters advance through the card's chapter list (one
+   per turn, after chapter I on entry; CR 714.3c puts lore counters in the
+   precombat main phase). Cheapest castable spells first, with the full
+   pip check. A
    cast is blocked (and its color recorded for color-screw stats) when the
    pool has enough total mana but misses the pips. ETB triggers fire; ETB
    tokens join the battlefield as bodies. One-shot effects (ritual mana,
    draws, mills, scry/surveil, burn, extra turns, X-scaling, kicker)
    apply on cast. Per-cast mana engines (Vivi class) add their yield per
-   spell cast.
+   spell cast. Recheck the hand after each productive cast sweep, so
+   cantrips and rituals can enable same-phase follow-up casts.
 6. **Activate** — spend leftover mana on unlocked activations (draw,
    tutor, mana, counters, loot, sacrifice outlets, planeswalker loyalty
    abilities, drain activations). Cheapest first, one activation per
    permanent per turn (free zero-cost activations repeat until the cap).
-   Banked activations (Pentad Prism) consume a counter instead of
-   tapping.
+   Mana activations and new cards feed another cast pass. Banked
+   activations (Pentad Prism) consume a counter instead of tapping.
 7. **Tap budget** — remaining untapped bodies, in priority order:
    a. tap for **mana** only while the cheapest uncast spell still needs
-      mana;
+   mana;
    b. else tap to **station** the highest-threshold unfilled
-      spacecraft/planet (counters = body power);
+   spacecraft/planet (counters = body power);
    c. else tap to **crew** untapped Vehicles (total body power ≥ crew
-      cost; crewed vehicles count as bodies for the turn);
+   cost; crewed vehicles count as bodies for the turn);
    d. else pay **equip** costs once per Equipment — the gear suits up
-      its best untapped, unsick body and the buff joins only that
-      host's attack.
-7b. **Interaction readiness (measured, not forced)** — was instant-speed
+   its best untapped, unsick body and the buff joins only that
+   host's attack.
+   7b. **Interaction readiness (measured, not forced)** — was instant-speed
    interaction in hand while spare mana covered its cost? The goldfish
    never spends it; the spare amount is the "mana held" census.
 8. **Threshold** — station tiers unlock permanently when counters reach
@@ -372,10 +443,12 @@ A best-case agent plays each turn in a fixed order:
    equipped gear, double strike, prowess, and landfall join the power
    sum. Hasted creatures attack the turn they enter. Token payoffs join
    next turn's bodies.
-10. **End** — crew animations expire; hand-limit discards from the end;
-    queued extra turns replay a land drop (recorded in `land_drops[]`,
-    which can reach 3 on a turn with an extra-land board plus replays), a
-    draw, and one firing of each upkeep engine.
+10. **End** — the Monarch draws one extra card from the turn after
+    acquisition (the Monarch draws at the beginning of their end step,
+    CR 725.2); end-step triggers resolve, then hand-limit discards come from
+    the end of the hand. A queued extra turn makes the next configured turn
+    slot run the full pipeline; the turn log marks that slot as extra.
+    The configured `--turns` value remains the maximum number of turns taken.
 
 The commander casts from the command zone with the full pip check. Its
 cost is deducted (it counts in `mana_spent`), it joins the battlefield as
@@ -388,33 +461,34 @@ commander stays on the board in this model.
 All metrics aggregate over `--runs` games (default 10,000). Percentages
 carry ±0.5pp at 10k runs.
 
-| Block | Meaning |
-| --- | --- |
-| `opening_hand` | land distribution, mulligan rate (one free mulligan under 2 or over 6 lands in commander) |
-| `land_drops` | hit-all-N rates, screw (≤2 by t4), flood (6+ lands seen at end of t4 — hand, battlefield, and graveyard; drops made are the wrong lens), flood expectation at the deck's actual draw volume, percentiles |
-| `mana_base` | lands/rocks/dorks/ramp-spells/total sources + the bracket target band (see below) + a verdict sentence; top level `mana_base_bracket_inferred` says when the bracket was inferred |
-| `commander` | castable-by-turn curve, p50/p95/avg first cast turn, on-curve share |
-| `station` | commander spacecraft animated by t6 + p50 online turn (null when not a station card) |
-| `bodies_by_turn` | creatures + animated spacecraft + ETB tokens in play |
-| `engines_online_by_turn` | repeatable draw engines active |
-| `mana` | unspent mana per turn, share of games floating 3+ by t6 |
-| `draw` | games with no draw source by t6 (starvation); `pct_seen_by_turn` = share of games with a draw-role card in hand (hand visibility, not engines online) |
-| `role_access` | share of games with the role seen in hand: removal by t5, draw by t6, creature by t3, wincon by t8, lock by t3 |
-| `velocity` | cumulative cards seen per turn (milled and looted cards count) |
-| `library_awareness_by_turn` | share of the library evaluated per turn (drawn + milled + scried/surveiled). Scry/surveil give zero draw credit — a looked-at card is not a drawn card |
-| `self_milled_by_turn` / `opp_milled_by_turn` | mill split by direction: graveyard fuel vs deck-out pressure ("target player mills") |
-| `library_remaining_by_turn` | average library size (deck-out proximity) |
-| `combat` | attack power per turn + p90 by t8 (a power curve, never a kill estimate); attackers + evasion census (trample/flying/menace) |
-| `wincons` lethal census | `lethal_damage_by_turn` (share of games at/above the table life by turn — 120 in commander, 20 in 60-card; combat damage + burn/drain effects dealt to the table; life the goldfish pays itself (additional costs) does not count) and `p50_lethal_turn` (median first lethal turn, null when never). **Best-case goldfish, unblocked: an upper bound; real games have blockers, removal, and life gain.** |
-| `wincons` | life drained per turn (burn/drain engines; ×3 for "each opponent" in commander, ×1 in 60-card formats), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct, infinite-mana suspicion pct |
-| `interaction` | P(interaction in hand AND affordable with spare mana) per turn — instant-speed copies, spare mana while ready ("mana held"), instant vs sorcery by copy count. **Capacity, not events**: no opponent event is claimed |
-| `color_screw` | per-color share of games with a pip-blocked cast (WUBRG) |
-| `pip_blocks` | top card×color offenders: which card's cast was pip-blocked, worst 5 |
-| `graveyard` | average graveyard size per turn (mill + discards − returns) |
-| `card_castability` | per distinct card: share castable on-curve, avg first castable turn |
-| `combo_access` | (`--combo "A + B"`) share of games with both pieces seen in hand by the pair's target turn |
-| `combos` | store-backed Spellbook assembly: complete combos with assembly rates + one-card-away near-misses (`--combo-limit` caps each list, default 20) |
-| `hypgeo` | (`--hypgeo`) exact hypergeometric cast-on-curve ceilings: an upper bound on the real cast rate (lands × drawn). The sim's castability is draw-agnostic, so it naturally sits at or above its ceiling — the two answer different questions, not one scale |
+| Block                                        | Meaning                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `opening_hand`                               | land distribution, mulligan rate (one free mulligan under 2 or over 6 lands in commander)                                                                                                                                                                                                                                                                                                                  |
+| `land_drops`                                 | hit-all-N rates, screw (≤2 by t4), flood (6+ lands seen at end of t4 — hand, battlefield, and graveyard; drops made are the wrong lens), flood expectation at the deck's actual draw volume, percentiles                                                                                                                                                                                                   |
+| `mana_base`                                  | lands/rocks/dorks/ramp-spells/total sources + the bracket target band (see below) + a verdict sentence; top level `mana_base_bracket_inferred` says when the bracket was inferred                                                                                                                                                                                                                          |
+| `commander`                                  | castable-by-turn curve, p50/p95/avg first cast turn, on-curve share                                                                                                                                                                                                                                                                                                                                        |
+| `station`                                    | commander spacecraft animated by t6 + p50 online turn (null when not a station card)                                                                                                                                                                                                                                                                                                                       |
+| `bodies_by_turn`                             | creatures + animated spacecraft + ETB tokens in play                                                                                                                                                                                                                                                                                                                                                       |
+| `engines_online_by_turn`                     | repeatable draw engines active                                                                                                                                                                                                                                                                                                                                                                             |
+| `mana`                                       | unspent mana per turn, share of games floating 3+ by t6                                                                                                                                                                                                                                                                                                                                                    |
+| `draw`                                       | games with no draw source by t6 (starvation); `pct_seen_by_turn` = share of games with a draw-role card in hand (hand visibility, not engines online); `avg_life_paid` separates life spent on costs from damage dealt; `avg_life_funded_draws` counts cards drawn by life-paid activations or life-loss reveal effects                                                                                    |
+| `role_access`                                | share of games with the role seen in hand: removal by t5, draw by t6, creature by t3, wincon by t8, lock by t3                                                                                                                                                                                                                                                                                             |
+| `velocity`                                   | cumulative cards seen per turn (milled and looted cards count)                                                                                                                                                                                                                                                                                                                                             |
+| `library_awareness_by_turn`                  | share of the library evaluated per turn (drawn + milled + scried/surveiled). Scry/surveil give zero draw credit — a looked-at card is not a drawn card                                                                                                                                                                                                                                                     |
+| `self_milled_by_turn` / `opp_milled_by_turn` | mill split by direction: graveyard fuel vs deck-out pressure ("target player mills"). An opponent mill touches no player zone: the player's library and graveyard stay unchanged                                                                                                                                                                                                                           |     |
+| `library_remaining_by_turn`                  | average library size (deck-out proximity)                                                                                                                                                                                                                                                                                                                                                                  |
+| `combat`                                     | attack power per turn + p90 by t8 (a power curve, never a kill estimate); attackers + evasion census (trample/flying/menace)                                                                                                                                                                                                                                                                               |
+| `wincons` lethal census                      | `lethal_damage_by_turn` (share of games at/above the table life by turn — 120 in commander, 20 in 60-card; combat damage + burn/drain effects dealt to the table; life the goldfish pays itself (additional costs) does not count) and `p50_lethal_turn` (median first lethal turn, null when never). **Best-case goldfish, unblocked: an upper bound; real games have blockers, removal, and life gain.** |
+| `wincons`                                    | life drained per turn (burn/drain engines; ×3 for "each opponent" in commander, ×1 in 60-card formats), extra-turn share, win-threshold engines (Darksteel Reactor class: pct + p50 online turn), planeswalker ultimate online pct, infinite-mana suspicion pct                                                                                                                                            |
+| `interaction`                                | P(interaction in hand AND affordable with spare mana) per turn — instant-speed copies, spare mana while ready ("mana held"), instant vs sorcery by copy count. **Capacity, not events**: no opponent event is claimed                                                                                                                                                                                      |
+| `color_screw`                                | per-color share of games with a pip-blocked cast (WUBRG)                                                                                                                                                                                                                                                                                                                                                   |
+| `pip_blocks`                                 | top card×color offenders: which card's cast was pip-blocked, worst 5                                                                                                                                                                                                                                                                                                                                       |
+| `graveyard`                                  | average graveyard size per turn (mill + discards − returns) and `replay_casts_avg` (successful flashback and escape casts per game)                                                                                                                                                                                                                                                                        |
+| `milestones`                                 | per-turn free-cast permanents entered, dredge replacements, graveyard casts, life-funded draws, and positive-mana-loop reach; counts are events in that turn, loop values are game shares                                                                                                                                                                                                                  |
+| `card_castability`                           | per distinct card: share castable on-curve, avg first castable turn                                                                                                                                                                                                                                                                                                                                        |
+| `combo_access`                               | (`--combo "A + B"`) share of games with both pieces seen in hand by the pair's target turn                                                                                                                                                                                                                                                                                                                 |
+| `combos`                                     | store-backed Spellbook assembly: complete combos with assembly rates + one-card-away near-misses (`--combo-limit` caps each list, default 20)                                                                                                                                                                                                                                                              |
+| `hypgeo`                                     | (`--hypgeo`) exact hypergeometric cast-on-curve ceilings: an upper bound on the real cast rate (lands × drawn). The sim's castability is draw-agnostic, so it naturally sits at or above its ceiling — the two answer different questions, not one scale                                                                                                                                                   |
 
 `mana_ready` (the castability curve) is draw-agnostic: it asks when the
 board could first pay each cost, independent of whether the card was
@@ -431,20 +505,20 @@ sees, so "add lands" is never the only lever.
 
 Commander-family decks (a COMMANDER section) use bracket bands:
 
-| Bracket | Lands | Ramp (rocks + dorks + ramp spells) |
-| --- | --- | --- |
-| 1–2 (casual) | 34–40 | 7–12 |
-| 3 (upgraded) | 33–38 | 8–11 |
-| 4 (optimized) | 32–36 | 9–12 |
-| 5 (cEDH) | 25–31 | 10–16 |
+| Bracket       | Lands | Ramp (rocks + dorks + ramp spells) |
+| ------------- | ----- | ---------------------------------- |
+| 1–2 (casual)  | 34–40 | 7–12                               |
+| 3 (upgraded)  | 33–38 | 8–11                               |
+| 4 (optimized) | 32–36 | 9–12                               |
+| 5 (cEDH)      | 25–31 | 10–16                              |
 
 60-card constructed decks use bands derived from the deck's average
 mana value (Karsten's method):
 
-| Average nonland MV | Lands |
-| --- | --- |
-| < 2.0 (aggro) | 20–22 |
-| 2.0–3.0 (midrange) | 22–25 |
+| Average nonland MV         | Lands |
+| -------------------------- | ----- |
+| < 2.0 (aggro)              | 20–22 |
+| 2.0–3.0 (midrange)         | 22–25 |
 | ≥ 3.0 (control / big mana) | 25–28 |
 
 Every four cheap (cost ≤ 2) draw or cantrip spells count as one land,
@@ -494,17 +568,17 @@ card names.
 
 ### Findings (exit 1)
 
-| Kind | Trigger | Suggestion pattern |
-| --- | --- | --- |
-| `mana_screw` | ≥20% of games ≤2 lands by t4 | magnitude-scaled "add {N} land slots" — commander decks with fewer than 6 nonland ramp sources read "add two-mana rocks" instead (rock-heavy decks must not read as land-screwed); 60-card decks always get land slots |
-| `mana_flood` | rate exceeds its velocity-adjusted expectation by >10pp | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check your deck's game plan before trimming |
-| `commander_late` | <60% castable on curve | "add 2-3 ramp sources" |
-| `color_screw` | any color's pips missed in ≥10% of games | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts |
-| `draw_starvation` | ≥25% of games see no draw source by t6 | "add 2-3 draw engines" |
-| `mana_unused` | ≥2.5 mana unspent on average by t6 | "add cheaper spells or more draw" |
-| `dead_cards` | ≥3 distinct non-reactive cards cast on time under the threshold (60% commander, 55% constructed) | "cut or discount late cards, or add ramp" |
-| `category_starved` | removal by t5 <40% / wincons by t8 <40% | "add 2-3 interaction pieces" |
-| `interaction_unready` | instant-speed interaction ready by t5 <40% while access ≥40% | "add cheaper instant-speed answers" |
+| Kind                  | Trigger                                                                                          | Suggestion pattern                                                                                                                                                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mana_screw`          | ≥20% of games ≤2 lands by t4                                                                     | magnitude-scaled "add {N} land slots" — commander decks with fewer than 6 nonland ramp sources read "add two-mana rocks" instead (rock-heavy decks must not read as land-screwed); 60-card decks always get land slots                                                                                         |
+| `mana_flood`          | rate exceeds its velocity-adjusted expectation by >10pp                                          | magnitude-scaled "trim {N} land slots"; the expectation uses each game's actual cards seen by t4, so cantrip decks compare against their real window (a fixed 11-card window reads draw-heavy decks as floodier than they are). A lands-matter deck's note says to check your deck's game plan before trimming |
+| `commander_late`      | <60% castable on curve                                                                           | "add 2-3 ramp sources"                                                                                                                                                                                                                                                                                         |
+| `color_screw`         | any color's pips missed in ≥10% of games                                                         | "add ~2-3 {COLOR} sources" — or, when choice lands already exist, "swap basics for lands that also tap for {COLOR}"; when the deck runs 10+ ramp sources the suggestion points at the color fixes instead of land counts                                                                                       |
+| `draw_starvation`     | ≥25% of games see no draw source by t6                                                           | "add 2-3 draw engines"                                                                                                                                                                                                                                                                                         |
+| `mana_unused`         | ≥2.5 mana unspent on average by t6                                                               | "add cheaper spells or more draw"                                                                                                                                                                                                                                                                              |
+| `dead_cards`          | ≥3 distinct non-reactive cards cast on time under the threshold (60% commander, 55% constructed) | "cut or discount late cards, or add ramp"                                                                                                                                                                                                                                                                      |
+| `category_starved`    | removal by t5 <40% / wincons by t8 <40%                                                          | "add 2-3 interaction pieces"                                                                                                                                                                                                                                                                                   |
+| `interaction_unready` | instant-speed interaction ready by t5 <40% while access ≥40%                                     | "add cheaper instant-speed answers"                                                                                                                                                                                                                                                                            |
 
 Suggestions name categories and magnitudes, never card names. Exit 0 when
 no findings; exit 1 otherwise (the finding is the result, not a crash).
@@ -577,25 +651,32 @@ Two test layers cover the simulator:
   haste entry-turn attacks, planeswalker loyalty/ultimate flow, X drain
   totals, extra-land-drop ramp, extra-turn replay drops, per-cast mana
   velocity, the free-mana loop cap census, upkeep drain engines,
-  constructed ×1 drain, kicker payment, saga chapter payoffs, and token
-  body counts. `mechanic_tests.rs` pins the audit-remediation behavior:
+  constructed ×1 drain, kicker payment, saga chapter payoffs, token
+  body counts, dredge replacement and short-library fallback, chained
+  dredgers during one resolving draw effect, library-only graveyard
+  triggers, and separate drain/life-gain accounting. `mechanic_tests.rs`
+  pins the audit-remediation behavior:
   wheel execution, cast-trigger dedupe, commander upkeep drain + no
   double draw, combined-numeral sagas, chapter IV + leave-board, Helix
   X-sink counters, token-count bodies, once-per-turn engines (no
-   infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
-   consumption, X-entry counters, and the Vivi no-double-count parse.
-   Truth-fix tests pin: ETB draws never double count as cast
-   riders, protection spells stay out of Removal, wipes count as
-   interaction with the targeted/wipes deck-shape split, 2-damage burn
-   and bounce read as interaction, the modern "triggers only once each
-   turn" phrasing bounds engines, Treasure banking requires the
-   Treasure clause on the token-creating card, "draws X" and the
-   reveal-permanents and counter-power X classes, the one-shot +X/+X
-   board buff, ability-word prefix stripping, board-count scaling draw
-   engines, and split-card on-cast-credit suppression.
+  infinite flag), commander ×3 vs constructed ×1 drain, additional-cost
+  consumption, X-entry counters, and the Vivi no-double-count parse.
+  Truth-fix tests pin: ETB draws never double count as cast
+  riders, protection spells stay out of Removal, wipes count as
+  interaction with the targeted/wipes deck-shape split, 2-damage burn
+  and bounce read as interaction, the modern "triggers only once each
+  turn" phrasing bounds engines, Treasure banking requires the
+  Treasure clause on the token-creating card, "draws X" and the
+  reveal-permanents and counter-power X classes, the one-shot +X/+X
+  board buff, ability-word prefix stripping, board-count scaling draw
+  engines, and split-card on-cast-credit suppression.
   Dedicated archetype tests live in the per-format deck test files
   (commander/standard/modern) for every fixture that was previously
   invariants-only, plus degradation-fixture problem assertions.
+  `oracle_ast_tests.rs` covers every AST ability, cost, effect, keyword,
+  trigger, static target, and search field. `oracle_runtime_tests.rs` checks
+  exact zones and turn timing for surveil, landfall, combat, compound
+  spells, unsupported text, and the Kinnan/Basalt follow-up line.
 - `simulator/tests/deck_tests.rs` + `simulator/tests/deck_fixtures/*.json` —
   real tournament lists. Sources: mtggoldfish metagame, cEDH Decklist
   Database, EDHREC, and topdeck.gg competitive tournament standings
@@ -614,8 +695,8 @@ and a game-level assertion that the behavior shows up in the metrics.
 
 ## Assumptions and limits
 
-Everything the model cannot execute is dropped at parse time, and the
-`assumptions` array in every report lists the current limits:
+Unsupported wording stays in the AST and is not lowered to a game effect.
+The `assumptions` array in every report lists the current limits:
 
 - **No opponents, no interaction.** No countermagic fires, no removal is
   cast, no attacker is blocked. Removal and counterspells count toward
@@ -632,7 +713,10 @@ Everything the model cannot execute is dropped at parse time, and the
   opponent-gated commander draws fire no engine.
 - **Mill feeds velocity and the graveyard census, not replay quality.**
   Milled cards count as cards seen and fill the graveyard log; graveyard
-  return fires once per card (no recursion chains).
+  return fires once per card (no recursion chains). Zones hold card
+  indexes, not instances: a card that is milled, returned to hand, and
+  discarded again is the same index throughout, so per-card timelines
+  merge repeat visits (the index-aliasing approximation).
 - **Wheels and loot reset the hand.** A wheel discards the hand into the
   graveyard census, then draws seven (trigger wheels fire from their
   upkeep/cast trigger; plain wheel sorceries resolve on cast); loot is
@@ -663,15 +747,19 @@ Everything the model cannot execute is dropped at parse time, and the
   life (untapped); "enters tapped unless" clauses that self-solve early
   ("unless you control two or fewer other lands", first three turns) read
   untapped; other conditional-tap texts read tapped.
-- **Verge gates approximate.** The sim checks for another land whose name
-  maps to the gated basic type; exotic land names outside the known table
-  satisfy nothing.
+- **Land types come from card data.** Verge gates read the basic land
+  subtypes from type lines. Fetch activation, life costs, tapped entry,
+  and named target types come from Oracle text. A small fetch-name table
+  remains only as a fallback when Oracle text does not name the target
+  pair.
 - **Cost cuts are flat at parse, board-scaled for improvise/affinity.**
   Warp uses the cheaper cost; improvise/affinity start at a flat −2 and
   gain 1 more per 4 artifacts on the battlefield, capped at the printed
   generic; they are exempt from the `dead_cards` finding.
-- **Opponent-dependent production yields turn 2 on.** Fellwar Stone
-  reads as any-color from turn 2, nothing on turn 1.
+- **Opponent-dependent production is generic-only.** Fellwar Stone
+  yields one colorless-only pip from turn 2 on and does not tap on turn 1.
+  Kinnan's mana trigger adds one additional colorless pip from this source.
+  This avoids assumptions about an opponent's lands and colors.
 - **Type-granted lands read as any-color.** "This land is the chosen type"
   lands tap for one mana of any color (the choice is the player's). Static
   grants on other lands (The World Tree) do not model.
@@ -692,14 +780,35 @@ Everything the model cannot execute is dropped at parse time, and the
   counts an MDFC as land-able. In the mana base an MDFC counts 0.4 land
   (0.75 mythic); the colored-source audit counts the land face as 0.8
   source of its color.
-- **Cascade casts the cheapest cheaper card.** Casting a card with
-  Cascade (or battle-cascade wording) also casts the cheapest castable
-  card from the library whose cost is cheaper (ties keep the deeper
-  library position), for free, once per cascade trigger
-  (cap 1; no chaining cascade into cascade). Creature hits join the
-  battlefield and their ETB triggers fire; noncreature hits contribute
-  their on-cast effects only. Per-cast engines fire, and the card
-  leaves the library into the seen census.
+- **Cascade follows the library order.** Reveal from the top until the
+  first nonland card with lower printed mana value. Cast that card for
+  free through the normal resolution path. Misses go to the library
+  bottom in reveal order. The effect resolves once and does not chain.
+- **Searches use supported filters.** Parsed type, color, mana value,
+  optional-find, and destination limits select an eligible card instead
+  of taking the library top. Search does not grant cards-seen awareness.
+- **Cycling pays and moves its card.** Cycling pays its mana or life cost,
+  discards the card, then draws. Landcycling finds a land with its named
+  basic land type. Only these fixture-relevant forms are modeled.
+- **Graveyard casts use instance permissions and real resources.** Past in
+  Flames grants flashback only to instant and sorcery instances already in
+  the graveyard when it resolves; the permission ends with the turn, and a
+  flashed-back spell is exiled after resolution. Underworld Breach grants
+  escape to graveyard nonland cards while it remains on the battlefield.
+  Each escape pays the printed mana cost and exiles three other graveyard
+  instances. Replays consume mana and fuel; the action cap does not claim
+  that repeated casts are infinite.
+- **Life-funded actions use current life and visible cards.** Life costs
+  must leave the player above zero. Griselbrand-style activations repeat
+  only while life can pay, and draws use the shared draw path. Ad Nauseam
+  reveals in library order, adds each card to hand, and loses its printed
+  mana value in life. The current policy continues until life is zero or
+  the library is empty; it does not inspect hidden cards to avoid a lethal
+  reveal. Oracle shapes outside these parsed forms stay inert.
+- **The graveyard-creature exchange is player-only.** It exiles the
+  player's graveyard creatures, sacrifices the player's battlefield
+  creatures, and returns the exiled creatures. It does not process
+  opposing cards.
 - **"+X/+X where X is the number of creatures you control" is a one-shot
   entering board buff.** On the turn the buff body enters, each attacker
   gets +X (X = the body count, capped at 20). The buff does not persist.
@@ -708,17 +817,20 @@ Everything the model cannot execute is dropped at parse time, and the
 - **Per-cast mana engines fire per spell.** Vivi-class "add one mana for
   each spell you've cast this turn" joins the pool once per cast while
   the host is untapped.
-- **Free mana engines cap out.** A zero-cost untapped non-tap
-  activation repeats until the pass hits 24 activations, then flags
-  `infinite_mana_pct` and stops. No engine runs away.
+- **Actions are bounded.** A turn runs at most 24 action passes and an
+  activation pass at most 24 activations. Only a capped activation pass
+  that added mana flags `infinite_mana_pct`; a free draw does not.
 - **"For each" token counts cap at 8.** Go-wide boards stay bounded.
 - **Drain resolves ×3 in commander, ×1 in 60-card formats.** "Each
   opponent" and "target player" both read through the format multiplier.
-- **Extra turns replay a land drop, a draw, and upkeep engines.** No
-  full-turn replay: the cast/attack phases do not run again.
-- **Sagas fire parsed chapter abilities.** Chapters with no readable
-  effect draw one card instead; the saga leaves the battlefield after
-  its final chapter.
+- **Extra turns run the full player turn.** They untap, resolve upkeep,
+  draw, play lands, cast spells, activate abilities, and attack. Each extra
+  turn uses the next configured turn slot; chained turns stop at the
+  configured `--turns` horizon. Per-turn indexes include extra-turn slots.
+- **Sagas fire chapter I on entry and later chapters in the precombat
+  main phase.** Unsupported
+  chapters have no effect and are not replaced with an invented draw. The
+  saga leaves the battlefield after its final chapter.
 - **Once-per-turn activations stay once.** "Activate only once each
   turn" engines fire once per turn and never trip the infinite-mana
   census; unrestricted zero-cost engines cap and flag.
@@ -729,14 +841,18 @@ Everything the model cannot execute is dropped at parse time, and the
   token engines register like the draw engines (a synthetic draw tier
   only fills the gap when the parse produced no upkeep draw — no
   double draws).
-- **No energy, metalcraft, ascend, delirium.** Conditional producers and
-  discounts keyed on game state do not fire (Mox Opal reads as dead
-  colorless in the pool unless its text says otherwise).
+- **Metalcraft is modeled for mana sources.** A source that requires
+  metalcraft is available only while its controller has three artifacts.
+  Other metalcraft bonuses and energy, ascend, and delirium are not modeled.
 - **Proliferate stays one-shot.** "Put N charge counters" spells,
   enter-with-counters, and combat-damage proliferate (one counter per
   fire on the source) work; chained proliferate engines do not.
-- **No replay mechanics.** Flashback, rebound, splice, ninjutsu, warp
-  beyond the cheaper cost, and cast-from-graveyard chains fire once.
+- **Other replay mechanics are unsupported.** Rebound, splice, ninjutsu,
+  and cast-from-graveyard rules outside the supported flashback and escape
+  shapes stay inert.
+- **Unparsed conditions stay inert.** The AST retains activation conditions
+  and opponent-scoped trigger events, but lowering does not execute them.
+  Metalcraft has its own supported mana-source gate.
 - **Keyword support is goldfish-aligned only.** A keyword models only
   when it moves an existing metric: haste skips summoning sickness,
   combat-damage triggers fire per connecting attacker (draw/proliferate/
@@ -744,17 +860,16 @@ Everything the model cannot execute is dropped at parse time, and the
   buffs join only after the equip cost was paid (tap budget 7d),
   double strike doubles attack power, prowess adds +1 per noncreature
   spell cast that turn, landfall counter-shapes add +1 per later land
-  drop while full landfall trigger lines parse as real engines, scry/
-  surveil feed awareness only (surveil puts the cards in the graveyard),
+  drop while supported landfall draw, token, drain, and search effects
+  fire when a land enters. Landfall mana triggers are parsed but do not add
+  to the mana pool. Scry/surveil feed awareness only (surveil puts cards in
+  the graveyard and resolves library-to-graveyard triggers),
   and trample/flying/menace (from keywords or text) count as an evasion
   census with no math. Vigilance is free (attackers never tap). Imprint
   is out of scope.
 - **Drain is a census, not a life total.** "Each opponent loses N" /
   "deals N damage to target player" multiplies by 3 in commander (three
   opponents) and by 1 in 60-card formats. No life totals, no racing.
-- **Extra turns replay a land drop, a draw, and upkeep engines.** No
-  full-turn replay: cast and combat do not run again, no chaining beyond
-  the queued count.
 - **Win thresholds are checked at upkeep.** "N or more counters wins"
   engines record the first turn the stock reaches N; the sim does not
   declare a win.
@@ -775,8 +890,9 @@ Everything the model cannot execute is dropped at parse time, and the
 - **Combo assembly is a consistency diagnostic.** Store-backed Spellbook
   rows measure how often pieces reach their zones, never whether the
   combo wins; quality labels come from Spellbook data.
-- **Exile-zone combo pieces are excluded.** The sim has no exile path;
-  variants needing one drop out of the join (counted in
+- **Exile-zone combo pieces are excluded.** The game tracks exile, but
+  store-backed combo assembly does not evaluate exile-zone requirements.
+  Variants needing one drop out of the join (counted in
   `variants_considered`).
 - **Library-zone pieces read as hand-seen.** 1.6k Spellbook rows use the
   hand-sighting as the proxy; noted, not hidden.
@@ -793,9 +909,11 @@ One documented path for a new mechanic:
 
 1. **Model shape** in `model.rs` (Effect/Trigger/TapYield variant or
    field).
-2. **Parser** in `parse.rs`: an oracle-text branch with a unit test.
-3. **Game step** in `game.rs`: execute the shape in `apply_effect` or the
-   turn pipeline; record census data on `GameLog`.
-4. **Metric** in `aggregate.rs` (stats) + `report.rs` (JSON + human).
-5. **Docs**: a row in the metrics table, a line in `assumptions`.
-6. **Tests**: unit parse test + game-level assertion (see Tests).
+2. **AST and parser** in `oracle_ast.rs` and `oracle_parser.rs`: add a typed
+   node and an Oracle-text parse test.
+3. **Lowering** in `oracle_lower.rs`: map supported nodes to runtime data.
+4. **Game step** in `game_effects.rs` or `game_run.rs`: execute the shape and
+   record census data on `GameLog`.
+5. **Metric** in `aggregate.rs` (stats) + `report.rs` (JSON + human).
+6. **Docs**: a row in the metrics table, a line in `assumptions`.
+7. **Tests**: parser test + game-level assertion (see Tests).

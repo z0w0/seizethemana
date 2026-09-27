@@ -1,4 +1,4 @@
-//!! Tests for the simulator aggregate module.
+//! Tests for the simulator aggregate module.
 
 /// A minimal card row for tests.
 use super::aggregate::aggregate;

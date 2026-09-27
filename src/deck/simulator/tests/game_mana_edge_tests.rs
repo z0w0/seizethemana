@@ -1,4 +1,4 @@
-//!! Degenerate mana-base edges for the game loop: zero lands, all-tapland
+//! Degenerate mana-base edges for the game loop: zero lands, all-tapland
 //! bases, and a curve the base cannot pay for. These pin the loop's
 //! behavior where the calibration sweeps (mana_base_tests) never go.
 

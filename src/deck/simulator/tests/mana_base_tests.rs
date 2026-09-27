@@ -1,4 +1,4 @@
-//!! Mana-base calibration tests: the recalibrated flood detector, the
+//! Mana-base calibration tests: the recalibrated flood detector, the
 //! mana_base verdict block, and the bracket target bands. A 44-land deck
 //! must report flood near its hypergeometric expectation (the old
 //! drops-made detector read it as 0.0%); a 35-land deck must not flood.

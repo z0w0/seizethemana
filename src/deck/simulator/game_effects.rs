@@ -1,4 +1,4 @@
-//!! Effect execution and the tap-budget pass for the goldfish game loop,
+//! Effect execution and the tap-budget pass for the goldfish game loop,
 //! split from game.rs to keep files small.
 
 use super::game::{

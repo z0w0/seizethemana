@@ -1,4 +1,4 @@
-//!! New-mechanics parse tests: whenever-ETB, landfall family, haste,
+//! New-mechanics parse tests: whenever-ETB, landfall family, haste,
 //! tokens, X-costs, per-cast mana, kicker, sagas, loyalty activations,
 //! and the Phase 1 truth-fix grammar (interaction, treasure banking,
 //! X-scaling draws).

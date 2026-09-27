@@ -1,4 +1,4 @@
-//!! The combat phase for the goldfish game loop, split from game_run to
+//! The combat phase for the goldfish game loop, split from game_run to
 //! keep files small. Pure apart from the game state mutations (draws,
 //! counters, drains).
 

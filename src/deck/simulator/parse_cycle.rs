@@ -1,4 +1,4 @@
-//!! Oracle-text parsing for mana-paid and life-paid cycling.
+//! Oracle-text parsing for mana-paid and life-paid cycling.
 
 use super::model::Cost;
 

@@ -1,4 +1,4 @@
-//!! Opening-hand dealing for the goldfish simulator, split from
+//! Opening-hand dealing for the goldfish simulator, split from
 //! `game_run.rs` to serve both the sim and `stm deck hand`: shuffle the
 //! library, draw the opener, apply the format's mulligan policy. Pure
 //! apart from the passed RNG.

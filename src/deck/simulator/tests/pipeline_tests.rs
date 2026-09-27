@@ -1,4 +1,4 @@
-//!! Tests for the simulator pipeline module.
+//! Tests for the simulator pipeline module.
 
 /// A minimal card row for tests.
 use super::deck::build_sim_deck;

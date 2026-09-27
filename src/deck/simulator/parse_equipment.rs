@@ -1,4 +1,4 @@
-//!! Parse static buffs, equipment stats, and numeric keyword parameters.
+//! Parse static buffs, equipment stats, and numeric keyword parameters.
 
 use super::model::Equipment;
 

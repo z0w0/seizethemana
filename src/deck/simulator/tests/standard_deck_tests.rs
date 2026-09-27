@@ -1,4 +1,4 @@
-//!! Standard sweep: every Standard fixture must hold the shared invariants and
+//! Standard sweep: every Standard fixture must hold the shared invariants and
 //! show the deck-level insights the report surfaces (velocity, screw bounded,
 //! castability ordered by cost).
 
