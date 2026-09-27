@@ -5,7 +5,7 @@
 
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -16,7 +16,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
+        cmc: parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -108,13 +108,22 @@ fn crewed_vehicle_reverts_next_turn() {
         hand: Vec::new(),
         seen: 0,
         graveyard: Vec::new(),
+        exile: Vec::new(),
         battlefield_seen: Default::default(),
         graveyard_seen: Default::default(),
+        #[cfg(test)]
+        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
         drained: 0,
+        life_gained: 0,
+        flashback_permissions: std::collections::HashSet::new(),
+        replay_casts: 0,
+        milestones_by_turn: std::collections::HashMap::new(),
         life_paid: 0,
+        life_funded_draws: 0,
+        life: 20,
         is_monarch: false,
         awareness_cards: 0,
         extra_turns_queued: 0,
@@ -124,7 +133,7 @@ fn crewed_vehicle_reverts_next_turn() {
     };
     st.battlefield.push(super::game::InPlay {
         uid: 1,
-        card: usize::MAX - 1,
+        card: crate::deck::simulator::game::CardRef::Token,
         tapped: false,
         sick: false,
         counters: 0,
@@ -137,10 +146,8 @@ fn crewed_vehicle_reverts_next_turn() {
         loyalty: 0,
         equipped: false,
         equip_host: None,
-        is_commander: false,
-        commander_slot: 0,
     });
-    crate::deck::simulator::game_run::expire_crew(&mut st);
+    super::game_run::expire_crew(&mut st);
     assert!(!st.battlefield[0].crewed, "crew must expire at end of turn");
 }
 
@@ -175,13 +182,22 @@ fn equipment_buff_survives_board_shift() {
         hand: Vec::new(),
         seen: 0,
         graveyard: Vec::new(),
+        exile: Vec::new(),
         battlefield_seen: Default::default(),
         graveyard_seen: Default::default(),
+        #[cfg(test)]
+        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
         drained: 0,
+        life_gained: 0,
+        flashback_permissions: std::collections::HashSet::new(),
+        replay_casts: 0,
+        milestones_by_turn: std::collections::HashMap::new(),
         life_paid: 0,
+        life_funded_draws: 0,
+        life: 20,
         is_monarch: false,
         awareness_cards: 0,
         extra_turns_queued: 0,
@@ -191,12 +207,29 @@ fn equipment_buff_survives_board_shift() {
     };
     // Board: host (pos 0), gear (pos 1), a small body (pos 2). Bodies
     // enter unsick so equip can pick its host this turn.
-    let mut host_perm = super::game::new_perm_with(1, &deck, 0, 1, false);
+    let mut host_perm = super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    );
     host_perm.sick = false;
     st.battlefield.push(host_perm);
-    st.battlefield
-        .push(super::game::new_perm_with(2, &deck, 1, 1, false));
-    let mut tiny_perm = super::game::new_perm_with(3, &deck, 2, 1, false);
+    st.battlefield.push(super::game::new_perm_with(
+        2,
+        &deck,
+        crate::deck::simulator::model::CardIdx(1),
+        1,
+        false,
+    ));
+    let mut tiny_perm = super::game::new_perm_with(
+        3,
+        &deck,
+        crate::deck::simulator::model::CardIdx(2),
+        1,
+        false,
+    );
     tiny_perm.sick = false;
     st.battlefield.push(tiny_perm);
     // Equip: pay the equip cost onto the strongest body.
@@ -220,7 +253,7 @@ fn equipment_buff_survives_board_shift() {
     // A token enters before the next combat, shifting positions.
     let token = super::game::InPlay {
         uid: 9,
-        card: usize::MAX - 1,
+        card: crate::deck::simulator::game::CardRef::Token,
         tapped: false,
         sick: false,
         counters: 0,
@@ -233,11 +266,9 @@ fn equipment_buff_survives_board_shift() {
         loyalty: 0,
         equipped: false,
         equip_host: None,
-        is_commander: false,
-        commander_slot: 0,
     };
     st.battlefield.insert(0, token);
-    let combat = super::game_combat::combat_phase(&deck, &mut st, 2, 8, &[1, 1, 1, 1, 1, 1, 1, 1]);
+    let combat = super::game_combat::combat_phase(&deck, &mut st, 2, &[1, 1, 1, 1, 1, 1, 1, 1]);
     // Attack power = host (3) + gear buff (2) + small body (2) + the
     // token's flat 2. A stale battlefield index would put the buff on
     // the token (now at position 0), inflating the total by 2.
@@ -331,12 +362,12 @@ fn monarch_draws_extra_card_per_turn() {
                 .any(|i| log.card_first_battlefield.contains_key(i))
         })
         .collect::<Vec<_>>();
-    // A baseline deck sees ~13 cards by t5; the Monarch adds one card
-    // per turn after acquisition, so games with the Monarch out early
-    // see more by t5.
+    // Constructed skips the first draw. The Monarch adds one card per
+    // turn after acquisition, so games with the Monarch out early still
+    // exceed the baseline by turn 5.
     let fed = with_engine
         .iter()
-        .filter(|log| log.cards_seen[4] > 14)
+        .filter(|log| log.cards_seen[4] > 12)
         .count();
     assert!(
         fed > 10,
@@ -542,46 +573,60 @@ fn fetch_tables_stay_consistent() {
         "Escape Tunnel",
     ] {
         assert!(
-            !super::game::land_types(name).is_empty(),
+            !super::game::fetch_target_pair(name).is_empty(),
             "{name} must map to its fetch pair"
         );
-        let card = SimCard {
-            name: name.to_string(),
-            ..SimCard::default()
-        };
-        assert!(
-            super::game::fetches_land_text(&card),
-            "{name} must be recognized as a fetch"
-        );
+        let parsed = parse_sim_card(&card(
+            name,
+            "",
+            "Land",
+            "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+        ));
+        assert!(parsed.is_fetch_land, "{name} must parse as a fetch");
     }
     // Named fetches carry their real pair, never all five basics.
     assert_eq!(
-        super::game::land_types("Polluted Delta"),
+        super::game::fetch_target_pair("Polluted Delta"),
         &["Island", "Swamp"],
         "Polluted Delta targets the blue-black pair"
     );
     assert_eq!(
-        super::game::land_types("Flooded Strand"),
+        super::game::fetch_target_pair("Flooded Strand"),
         &["Plains", "Island"],
         "Flooded Strand targets the white-blue pair"
     );
     assert_eq!(
-        super::game::land_types("Marsh Flats"),
+        super::game::fetch_target_pair("Marsh Flats"),
         &["Plains", "Swamp"],
         "Marsh Flats targets the white-black pair"
     );
     assert_eq!(
-        super::game::land_types("Arid Mesa"),
+        super::game::fetch_target_pair("Arid Mesa"),
         &["Plains", "Mountain"],
         "Arid Mesa targets the red-white pair"
     );
     assert_eq!(
-        super::game::land_types("Misty Rainforest"),
+        super::game::fetch_target_pair("Misty Rainforest"),
         &["Island", "Forest"],
         "Misty Rainforest targets the blue-green pair"
     );
     // Generic search lands (any basic) keep the full set.
-    assert_eq!(super::game::land_types("Evolving Wilds").len(), 5);
+    assert_eq!(super::game::fetch_target_pair("Evolving Wilds").len(), 5);
+
+    let oracle_named_fetch = parse_sim_card(&card(
+        "Oracle Fetch",
+        "",
+        "Land",
+        "{T}, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle.",
+    ));
+    assert!(oracle_named_fetch.is_fetch_land);
+    assert_eq!(
+        oracle_named_fetch.fetch_target_types,
+        [false, true, false, false, true]
+    );
+    assert!(!oracle_named_fetch.fetch_basic_only);
+    let same_name_without_search = parse_sim_card(&card("Oracle Fetch", "", "Land", ""));
+    assert!(!same_name_without_search.is_fetch_land);
 }
 
 /// Misty Rainforest opens an Island-or-Forest gate and never a Plains
@@ -683,19 +728,18 @@ fn battlefield_self_mill_not_overridden_by_commander() {
         "At the beginning of your upkeep, each opponent mills two cards.",
     );
     let land = card("Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)");
-    let cards = vec![
-        parse_sim_card(&commander),
-        parse_sim_card(&self_miller),
-        parse_sim_card(&self_miller),
-        parse_sim_card(&self_miller),
-    ];
+    // One commander: partner copies of the self-miller in the command
+    // zone would each cast for their own slot and starve the library
+    // cast. The test needs a battlefield self-mill engine racing an
+    // opponent-milling commander.
+    let commanders = vec![parse_sim_card(&commander)];
     let mut lib = vec![parse_sim_card(&land); 20];
     lib.push(parse_sim_card(&self_miller));
     lib.push(parse_sim_card(&self_miller));
     lib.push(parse_sim_card(&self_miller));
     let deck = SimDeck {
         cards: lib,
-        commanders: cards,
+        commanders,
         format: Format::Commander,
         rules: super::format::rules_for("commander"),
     };
@@ -753,4 +797,203 @@ fn banked_activation_stops_when_counters_gone() {
         leaky, 0,
         "spent prisms must stop producing mana: {leaky}/200 games exceed 26 mana at t8"
     );
+}
+
+/// The graveyard-exchange sacrifice loop stays bounded while death
+/// triggers create tokens: two payoff creatures on the board refill
+/// it with token bodies every round while one survives, and the cast
+/// still resolves in bounded rounds instead of relying on an
+/// unbounded `while` loop.
+#[test]
+fn graveyard_exchange_sacrifice_loop_terminates_with_death_tokens() {
+    // Cascade drives the exchange out of hand (Living End has no mana
+    // cost). Two payoff creatures sit on the battlefield; each
+    // sacrifice of one fires the survivor's death trigger and adds
+    // two token bodies.
+    let rows = [
+        super::turn_loop_tests::row("Cascade spell", "{2}{U}", "Sorcery", "Cascade."),
+        super::turn_loop_tests::row(
+            "Living End",
+            "",
+            "Sorcery",
+            "Each player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield.",
+        ),
+        super::turn_loop_tests::row("Island", "", "Basic Land — Island", "({T}: Add {U}.)"),
+        super::turn_loop_tests::row(
+            "Death Token Maker",
+            "{3}",
+            "Creature — Zombie",
+            "Whenever another creature you control dies, create two 2/2 creature tokens.",
+        ),
+    ];
+    let cards = super::turn_loop_tests::deck(&rows);
+    let mut st = super::turn_loop_tests::state(vec![0, 3, 3], vec![1, 2]);
+    // Two payoff creatures on the board (card 3, two copies).
+    for _ in 0..2 {
+        let uid = super::game::take_uid(&mut st);
+        st.battlefield.push(super::game::new_perm_with(
+            uid,
+            &cards,
+            crate::deck::simulator::model::CardIdx(3),
+            1,
+            false,
+        ));
+    }
+    let mut pool = super::game::Pool {
+        flexible: 4,
+        ..super::game::Pool::default()
+    };
+    // This call is the test: the loop must finish in bounded rounds
+    // (the death-token refills keep the board alive for a while; the
+    // cap bounds the exchange regardless).
+    super::cast_phase::cast_phase(
+        &cards,
+        &mut st,
+        &mut pool,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+        &mut Vec::new(),
+        &mut [false; 5],
+    );
+    // The exchange drained every deck body (payoffs sacrificed; refill
+    // tokens consumed by later rounds), the cast left the hand, and
+    // the exchange card resolved through the cascade.
+    assert!(
+        st.battlefield.is_empty(),
+        "the capped loop drained every body: {:?}",
+        st.battlefield.iter().map(|p| p.card).collect::<Vec<_>>()
+    );
+    assert!(
+        st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx::new(3)),
+        "the payoffs were sacrificed"
+    );
+    assert!(
+        st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx::new(1)),
+        "the exchange card resolved"
+    );
+}
+
+/// An opponent mill touches no player zone: only the opponent census
+/// moves, the player's library and graveyard stay unchanged.
+#[test]
+fn opponent_mill_leaves_player_zones_untouched() {
+    let opp_mill = card(
+        "Opp Miller",
+        "{2}{B}",
+        "Sorcery",
+        "Target opponent mills three cards.",
+    );
+    let cards = super::turn_loop_tests::deck(&[
+        super::turn_loop_tests::row("Filler", "{9}", "Sorcery", ""),
+        opp_mill,
+    ]);
+    let mut st = super::turn_loop_tests::state(vec![1], vec![0]);
+    let mut pool = super::game::Pool {
+        flexible: 4,
+        ..super::game::Pool::default()
+    };
+    super::cast_phase::cast_phase(
+        &cards,
+        &mut st,
+        &mut pool,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+        &mut Vec::new(),
+        &mut [false; 5],
+    );
+    assert_eq!(st.milled_opp, 3, "the opponent mill feeds the opp census");
+    assert_eq!(
+        st.milled_self, 0,
+        "an opponent mill never feeds the self census"
+    );
+    assert_eq!(
+        st.library,
+        [0].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i))
+            .collect::<Vec<_>>(),
+        "the player's library is untouched by an opponent mill"
+    );
+    assert!(
+        !st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+        "the player's graveyard gains nothing from an opponent mill"
+    );
+}
+
+/// A graveyard cast with an additional life cost gates on life the
+/// same way hand casts do: with life at or below the cost, the spell
+/// stays in the graveyard.
+#[test]
+fn graveyard_cast_gates_on_additional_life_cost() {
+    // A flashback spell whose cost includes paying 4 life, with the
+    // flashback permission already active (a prior discard + enabler).
+    let spell = card(
+        "Costly Spell",
+        "{1}",
+        "Instant",
+        "As an additional cost to cast this spell, pay 4 life.\nDraw a card.",
+    );
+    let land = card("Island", "", "Basic Land — Island", "({T}: Add {U}.)");
+    let cards = super::turn_loop_tests::deck(&[spell, land]);
+    let mut st = super::turn_loop_tests::state(vec![], vec![1]);
+    st.graveyard.push(crate::deck::simulator::model::CardIdx(0));
+    st.flashback_permissions
+        .insert(crate::deck::simulator::model::CardIdx::new(0));
+    st.life = 4;
+    let mut pool = super::game::Pool {
+        flexible: 4,
+        ..super::game::Pool::default()
+    };
+    super::cast_phase::cast_graveyard_spells_probe(
+        &cards,
+        &mut st,
+        &mut pool,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+    );
+    // Life at 4 cannot pay the additional 4 (the same gate hand casts
+    // apply: life must stay above the additional cost), so the spell
+    // stays in the graveyard and no life is paid.
+    assert!(
+        st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+        "the costly spell stays in the graveyard: {:?}",
+        st.graveyard
+    );
+    assert_eq!(st.life, 4, "no additional life was paid");
+    // The gate lifts when life is above the cost: life 5 pays the 4
+    // and the spell resolves to exile.
+    let mut st_ok = super::turn_loop_tests::state(vec![], vec![1]);
+    st_ok
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(0));
+    st_ok
+        .flashback_permissions
+        .insert(crate::deck::simulator::model::CardIdx::new(0));
+    st_ok.life = 5;
+    let mut pool_ok = super::game::Pool {
+        flexible: 4,
+        ..super::game::Pool::default()
+    };
+    super::cast_phase::cast_graveyard_spells_probe(
+        &cards,
+        &mut st_ok,
+        &mut pool_ok,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+    );
+    assert!(
+        !st_ok
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+        "life above the cost lets the spell cast: {:?}",
+        st_ok.graveyard
+    );
+    assert_eq!(st_ok.life, 1, "the additional cost was paid");
 }
