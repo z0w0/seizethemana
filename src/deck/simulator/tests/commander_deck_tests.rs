@@ -117,8 +117,12 @@ fn sweep_commander_casual_legends_are_late() {
     let cards = fixture_map("the ur-dragon dragons");
     let deck = fixture_deck("the ur-dragon dragons");
     let stats = sim(&deck, &cards, 300, 10);
+    // The Lantern-class grant converts each land's tap to one
+    // any-color pip (same tap, one mana) instead of the old
+    // fixed-plus-capped-bonus double count, so the 5c base carries
+    // less total mana and the window sits a touch later.
     assert!(
-        stats.commander_castable_by[9] >= 0.3,
+        stats.commander_castable_by[9] >= 0.2,
         "Ur-Dragon castable by t9 only {:.0}%",
         stats.commander_castable_by[9] * 100.0
     );
@@ -512,4 +516,75 @@ fn shanna_energy_soldiers_early_creatures() {
         "shanna creature access by t3: {:.2}",
         stats.creature_access_3
     );
+}
+
+/// A phyrexian-pip commander ({B/P}) pays 2 life per pip (CR 118.3b):
+/// the cast gate demands the mana part only, the charge applies when
+/// life covers it, and a life-starred command zone skips the cast
+/// instead of driving life to zero.
+#[test]
+fn phyrexian_commander_charges_life_and_gates_low_life() {
+    let krrrik = real_card(
+        "K'rrik Test",
+        "{2}{B/P}{B/P}",
+        "Legendary Creature — Horror",
+        "menace",
+        "Menace. Other creatures you control have lifelink.",
+    );
+    let land = real_card("Swamp", "", "Basic Land — Swamp", "", "({T}: Add {B}.)");
+    let mut cards = Vec::new();
+    for _ in 0..30 {
+        cards.push(parse_sim_card(&land));
+    }
+    let deck = super::model::SimDeck {
+        cards,
+        commanders: vec![parse_sim_card(&krrrik)],
+        format: Format::Commander,
+        rules: super::format::rules_for("commander"),
+    };
+    let commander = super::game_commander::CommanderProfile::new(&deck);
+    let mut engines = Vec::new();
+    let mut census = super::game_run::TurnCensus::new(3, 1);
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    let mut pool = super::game::Pool::default();
+    pool.fixed[2] = 4;
+    pool.colorless = 2;
+    // Cost {2}{B/P}{B/P}: 2 generic + 2 pips paid with 4 life.
+    super::game_run::commander_phase_probe(
+        &deck,
+        &mut st,
+        &mut pool,
+        &mut census,
+        &commander,
+        1,
+        &mut engines,
+    );
+    assert_eq!(st.life, 20 - 4, "two phyrexian pips charge 4 life");
+    assert_eq!(
+        census.commander_castable,
+        Some(1),
+        "the pip cost casts with life covering the charge"
+    );
+    assert_eq!(pool.total(), 4, "the cast spends the 2-mana part only");
+    // A second commander cast at life 1: the gate skips (life must stay
+    // above the charge).
+    let mut st2 = super::turn_loop_tests::state(vec![], vec![]);
+    st2.life = 1;
+    let mut pool2 = super::game::Pool::default();
+    pool2.fixed[2] = 6;
+    let mut census2 = super::game_run::TurnCensus::new(3, 1);
+    super::game_run::commander_phase_probe(
+        &deck,
+        &mut st2,
+        &mut pool2,
+        &mut census2,
+        &commander,
+        1,
+        &mut engines,
+    );
+    assert_eq!(
+        census2.commander_castable, None,
+        "life at the charge level cannot cast the phyrexian commander"
+    );
+    assert_eq!(st2.life, 1, "the skipped cast charges no life");
 }

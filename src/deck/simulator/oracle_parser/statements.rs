@@ -126,6 +126,10 @@ pub(super) fn parse_oracle_static(source: &str) -> StaticAbility {
     let lower = source.to_ascii_lowercase();
     let effect = if lower.contains("additional land") {
         StaticEffect::AdditionalLandDrop
+    } else if lower.contains("doesn't untap during your untap step")
+        || lower.contains("does not untap during your untap step")
+    {
+        StaticEffect::DoesntUntap
     } else if lower.contains("or more") && lower.contains("counter") && lower.contains("win") {
         let counters = lower
             .split_once(" or more")
@@ -234,6 +238,7 @@ pub(super) fn is_static_statement(source: &str) -> bool {
         "if there are ",
         "if this card is in your opening hand",
         "you may play an additional land",
+        "doesn't untap during your untap step",
         "you may begin the game",
         "this creature has ",
         "this permanent has ",
@@ -242,6 +247,8 @@ pub(super) fn is_static_statement(source: &str) -> bool {
     .iter()
     .any(|prefix| lower.starts_with(prefix))
         || lower.contains("you control have {t}:")
+        || lower.contains("doesn't untap during your untap step")
+        || lower.contains("does not untap during your untap step")
 }
 
 /// Identify a one-shot spell statement or resolution clause.

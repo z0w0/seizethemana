@@ -470,6 +470,7 @@ fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
         entered_turn: 0,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -938,4 +939,42 @@ fn discarding_a_library_trigger_card_does_not_fire_its_mill_ability() {
     );
     assert_eq!(game_state.drained, 0);
     assert_eq!(game_state.life_gained, 0);
+}
+
+/// A phyrexian cycling pip pays with 2 life (CR 118.3b): the mana part
+/// drops by the pip, the cycle charges the life, and the draw still
+/// resolves.
+#[test]
+fn cycling_phyrexian_pip_pays_life() {
+    let cards = deck(&[row(
+        "Pip cycler",
+        "{3}{U}",
+        "Creature — Drake",
+        "[\"U\"]",
+        "Cycling—{U/P}. ({U/P}, Discard this card: Draw a card.)",
+    )]);
+    assert!(cards.cards[0].riders.cycling_cost.is_some());
+    assert_eq!(
+        cards.cards[0]
+            .riders
+            .cycling_cost
+            .as_ref()
+            .map(|c| c.phyrexian[1]),
+        Some(1),
+        "the U/P cycling pip parses into the phyrexian lane"
+    );
+    let mut cycle_state = state(vec![0], vec![]);
+    let mut pool = Pool::default();
+    pool.fixed[1] = 2;
+    cycle_state.life = 10;
+    cast(&cards, &mut cycle_state, &mut pool);
+    assert_eq!(cycle_state.life_paid, 2, "the pip charged 2 life");
+    assert_eq!(
+        cycle_state.life, 8,
+        "the cycle life drops by the phyrexian charge"
+    );
+    assert!(
+        pool.fixed[1] == 2,
+        "the goldfish preserves the mana the pip would have cost"
+    );
 }

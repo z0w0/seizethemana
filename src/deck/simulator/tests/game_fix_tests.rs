@@ -142,6 +142,7 @@ fn crewed_vehicle_reverts_next_turn() {
         entered_turn: 0,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -262,6 +263,7 @@ fn equipment_buff_survives_board_shift() {
         entered_turn: 2,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -460,7 +462,7 @@ fn x_cost_wipes_restricted_buckets() {
     // A cheap X draw spell: after it resolves, no restricted bucket
     // survives.
     let x_spell = card("X Draw", "{X}{W}", "Sorcery", "Draw X cards.");
-    let mut rows: Vec<(CardRow, usize)> = vec![(land, 24), (x_spell, 8)];
+    let mut rows: Vec<(CardRow, usize)> = vec![(land, 24), (x_spell.clone(), 8)];
     rows.push((courtyard, 6));
     let deck = deck_from(&rows);
     let mut rng = ChaCha8Rng::seed_from_u64(81);
@@ -472,7 +474,8 @@ fn x_cost_wipes_restricted_buckets() {
         spent.iter().any(|s| *s >= 3.0),
         "X spell should spend the leftover pool: {spent:?}"
     );
-    // Pool-level unit pin: after the wipe, the bucket reads zero.
+    // Pool-level unit pin: a plain sorcery X spell belongs to no cast
+    // class, so every bucket is illegal and discards.
     let mut pool = super::game::Pool {
         creature_only: 3,
         legendary_only: 2,
@@ -481,11 +484,27 @@ fn x_cost_wipes_restricted_buckets() {
         colorless: 5,
         ..Default::default()
     };
-    super::cast_phase::wipe_restricted_buckets(&mut pool);
+    let x = super::cast_phase::convert_pool_to_x_probe(&parse_sim_card(&x_spell), &mut pool);
+    assert_eq!(x, 5, "the X value counts only legally fundable mana");
     assert_eq!(
         pool.creature_only + pool.legendary_only + pool.artifact_only + pool.instant_sorcery_only,
         0
     );
+    // A creature X spell spends the creature-only bucket into X: that
+    // mana legally funds the cast, so it converts and drains. The other
+    // buckets stay illegal and discard.
+    let mut creature_card = parse_sim_card(&x_spell);
+    creature_card.is_creature = true;
+    let mut pool = super::game::Pool {
+        creature_only: 3,
+        legendary_only: 2,
+        colorless: 5,
+        ..Default::default()
+    };
+    let x = super::cast_phase::convert_pool_to_x_probe(&creature_card, &mut pool);
+    assert_eq!(x, 8, "the creature bucket funds X with the general pool");
+    assert_eq!(pool.creature_only, 0, "the member bucket is spent into X");
+    assert_eq!(pool.legendary_only, 0, "unrelated buckets discard");
 }
 
 /// Polluted Delta opens only its target pair's verge gates (Island and
@@ -996,4 +1015,852 @@ fn graveyard_cast_gates_on_additional_life_cost() {
         st_ok.graveyard
     );
     assert_eq!(st_ok.life, 1, "the additional cost was paid");
+}
+
+/// Summoning-sick bodies may crew and station: crewing taps other
+/// creatures (CR 702.122a); CR 302.6 only blocks a sick creature's own
+/// tap-symbol abilities and attacking.
+#[test]
+fn summoning_sick_bodies_crew_and_station() {
+    let vehicle = card("Test Copter", "{2}", "Artifact — Vehicle", "Crew 2");
+    let elf = card("Fresh Elf", "{G}", "Creature — Elf", "");
+    let cards = vec![parse_sim_card(&vehicle), parse_sim_card(&elf)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    st.battlefield.push(super::game::new_perm_with(
+        2,
+        &deck,
+        crate::deck::simulator::model::CardIdx(1),
+        1,
+        false,
+    ));
+    st.battlefield[1].sick = true;
+    let mut pool = super::game::Pool::default();
+    let empty: Vec<crate::deck::simulator::model::CardIdx> = Vec::new();
+    super::game_effects::tap_budget_probe(&deck, &mut st.battlefield, &mut pool, &empty);
+    assert!(
+        st.battlefield[0].crewed,
+        "a summoning-sick body may crew (CR 702.122a)"
+    );
+    assert!(
+        st.battlefield[1].tapped,
+        "the sick crew member is tapped by the crew"
+    );
+    assert!(
+        st.battlefield[0].entered_turn < 2,
+        "the vehicle's entry turn stays recorded for the attack gate"
+    );
+}
+
+/// A Vehicle crewed the turn it entered cannot attack that turn (CR
+/// 302.6): it becomes a creature only during that turn's main phase.
+#[test]
+fn entry_turn_crewed_vehicle_waits_one_turn_to_attack() {
+    let vehicle = card("Test Copter", "{2}", "Artifact — Vehicle", "Crew 2");
+    let elf = card("Elf", "{G}", "Creature — Elf", "");
+    let cards = vec![parse_sim_card(&vehicle), parse_sim_card(&elf)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    // A crewed vehicle that entered this turn (turn 2) cannot attack in
+    // turn 2's combat.
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield.push(super::game::Permanent {
+        uid: 1,
+        card: crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
+            0,
+        )),
+        tapped: false,
+        sick: false,
+        counters: 0,
+        animated: false,
+        crewed: true,
+        entered_turn: 2,
+        saga_step: 0,
+        fired: false,
+        trigger_fired: false,
+        blink_pending: false,
+        loyalty: 0,
+        equipped: false,
+        equip_host: None,
+    });
+    let combat = super::game_combat::combat_phase_probe(&deck, &mut st, 2, &[0]);
+    assert_eq!(
+        combat.attackers, 0,
+        "an entry-turn crewed vehicle cannot attack (CR 302.6)"
+    );
+    // The same vehicle crewed on a later turn attacks.
+    st.battlefield[0].entered_turn = 1;
+    let combat = super::game_combat::combat_phase_probe(&deck, &mut st, 2, &[0]);
+    assert_eq!(
+        combat.attackers, 1,
+        "a crewed vehicle controlled since turn start attacks"
+    );
+}
+
+#[test]
+fn once_each_turn_trigger_fires_once() {
+    let bounded = card(
+        "Once Landfall",
+        "{2}{G}",
+        "Creature — Elemental",
+        "Landfall — Whenever a land you control enters, draw a card. This ability triggers only once each turn.",
+    );
+    let unbounded = card(
+        "Per Landfall",
+        "{2}{G}",
+        "Creature — Elemental",
+        "Landfall — Whenever a land you control enters, draw a card.",
+    );
+    let cards = vec![parse_sim_card(&bounded), parse_sim_card(&unbounded)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let draws = |bounded_case: bool| -> usize {
+        let mut st = super::turn_loop_tests::state(vec![], vec![30, 31]);
+        st.seen = st.hand.len() as u32 + st.library.len() as u32;
+        st.battlefield.push(super::game::new_perm_with(
+            1,
+            &deck,
+            crate::deck::simulator::model::CardIdx(u32::from(!bounded_case)),
+            0,
+            false,
+        ));
+        // Two land drops in the same turn fire the landfall trigger
+        // twice; the bounded engine may draw only once.
+        let first = st.hand.len();
+        super::game::fire_triggers_probe(
+            &deck,
+            &mut st,
+            super::model::AbilityTiming::OnLandfall,
+            2,
+        );
+        let second = st.hand.len();
+        super::game::fire_triggers_probe(
+            &deck,
+            &mut st,
+            super::model::AbilityTiming::OnLandfall,
+            2,
+        );
+        (second - first) + (st.hand.len() - second)
+    };
+    assert_eq!(
+        draws(true),
+        1,
+        "a once-each-turn landfall trigger draws once on a two-drop turn"
+    );
+    assert_eq!(
+        draws(false),
+        2,
+        "an unbounded landfall trigger draws per land drop"
+    );
+}
+
+/// A once-each-turn trigger firing does not gate the same permanent's
+/// paid activation, and an activation resolving does not gate a later
+/// once-each-turn trigger: the two ledgers never cross.
+#[test]
+fn trigger_and_activation_once_flags_do_not_cross() {
+    let hybrid = card(
+        "Once and Tap",
+        "{2}{U}",
+        "Creature — Wizard",
+        "At the beginning of your upkeep, draw a card. This ability triggers only once each turn.\n{2}, {T}: Draw a card.",
+    );
+    let cards = vec![parse_sim_card(&hybrid)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut st = super::turn_loop_tests::state(vec![10], vec![]);
+    st.seen = st.hand.len() as u32 + st.library.len() as u32;
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    // The turn boundary cleared summoning sickness.
+    st.battlefield[0].sick = false;
+    let mut pool = super::game::Pool {
+        colorless: 6,
+        ..super::game::Pool::default()
+    };
+    // The once-each-turn upkeep trigger fires; the paid activation must
+    // stay usable.
+    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnUpkeep, 2);
+    assert!(
+        super::game_effects::pick_best_activation_public(&deck, &st, &pool).is_some(),
+        "the trigger's once-per-turn marker never gates the activation"
+    );
+    // The activation fires (its own ledger marks the permanent); a
+    // later once-each-turn trigger still fires.
+    let activation = super::game_effects::pick_best_activation_public(&deck, &st, &pool)
+        .expect("the activation is usable");
+    super::game_effects::resolve_activation_public(&deck, &mut st, &mut pool, 2, 1, &activation);
+    assert!(
+        st.battlefield[0].fired,
+        "the activation marks its own ledger"
+    );
+    let hand = st.hand.len();
+    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnEndStep, 2);
+    assert_eq!(
+        st.hand.len() - hand,
+        0,
+        "no end-step trigger exists on this card"
+    );
+    let hand = st.hand.len();
+    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnUpkeep, 2);
+    assert_eq!(
+        st.hand.len() - hand,
+        0,
+        "the upkeep trigger is once per turn: a same-turn refire draws nothing"
+    );
+}
+
+/// An unbounded sibling trigger keeps firing after the card's
+/// once-each-turn trigger has fired: one card with a bounded landfall
+/// draw and a plain landfall draw draws three across two land drops
+/// (1 bounded + 2 unbounded), not two.
+#[test]
+fn unbounded_sibling_fires_beside_the_once_trigger() {
+    let twin = card(
+        "Twin Landfall",
+        "{3}{G}",
+        "Creature — Elemental",
+        "Landfall — Whenever a land you control enters, draw a card. This ability triggers only once each turn.\nLandfall — Whenever a land you control enters, draw a card.",
+    );
+    let cards = vec![parse_sim_card(&twin)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut st = super::turn_loop_tests::state(vec![], vec![40, 41, 42]);
+    st.seen = st.hand.len() as u32 + st.library.len() as u32;
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    let first = st.hand.len();
+    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnLandfall, 2);
+    let second = st.hand.len();
+    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnLandfall, 2);
+    assert_eq!(
+        second - first,
+        2,
+        "the first land drop fires both the bounded and the unbounded draw"
+    );
+    assert_eq!(
+        st.hand.len() - second,
+        1,
+        "the second land drop still fires the unbounded sibling"
+    );
+}
+
+/// A counter-pump win condition works end to end (Darksteel Reactor
+/// class): the upkeep "put a charge counter" pump registers as an
+/// engine, the "When this has twenty or more charge counters, you win"
+/// state trigger lowers to the upkeep win check, and the threshold
+/// census records the turn.
+#[test]
+fn counter_pump_win_threshold_fires() {
+    let reactor = card(
+        "Darksteel Reactor",
+        "{4}",
+        "Artifact",
+        "Indestructible (Effects that say \"destroy\" don't destroy this artifact.)\nAt the beginning of your upkeep, you may put a charge counter on this artifact.\nWhen this artifact has twenty or more charge counters on it, you win the game.",
+    );
+    let deck = SimDeck {
+        cards: vec![parse_sim_card(&reactor)],
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    // The reactor's pump and win trigger parse to the runtime model.
+    let sim = &deck.cards[0];
+    let pump = sim
+        .abilities()
+        .find(|a| matches!(a.effect, Effect::Counters(_)))
+        .expect("the upkeep pump parses");
+    assert!(
+        matches!(pump.effect, Effect::Counters(1)),
+        "the upkeep pump lowers: {:?}",
+        pump.effect
+    );
+    let win = sim
+        .abilities()
+        .find(|a| matches!(a.effect, Effect::WinThreshold { .. }))
+        .expect("the state-trigger win lowers");
+    assert_eq!(
+        win.trigger,
+        super::model::AbilityTiming::OnUpkeep,
+        "a state-trigger win check normalizes to the upkeep check"
+    );
+    // The pump engine registers at cast; fire_upkeep_engine grows the
+    // host by uid; the win check fires at the threshold.
+    let mut engines = Vec::new();
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield.push(super::game::new_perm_with(
+        7,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    ));
+    let mut census = super::game_run::TurnCensus::new(3, 1);
+    super::cast_phase::engine_registration_probe(&deck, &mut st, &mut engines, 1);
+    assert!(
+        engines.iter().any(|(uid, _)| *uid == 7),
+        "the upkeep counter pump registers as an engine: {:?}",
+        engines
+    );
+    super::game_run::fire_upkeep_engine_probe(&deck, &mut st, 7, 1);
+    assert_eq!(
+        st.battlefield[0].counters, 1,
+        "the upkeep pump adds its counter to the host"
+    );
+    for _ in 0..19 {
+        super::game_run::fire_upkeep_engine_probe(&deck, &mut st, 7, 2);
+    }
+    super::game_run::check_win_thresholds_probe(&deck, &mut st, &mut census, 3);
+    assert_eq!(
+        census.win_threshold_turn,
+        Some(3),
+        "the reactor wins the game at twenty charge counters"
+    );
+}
+
+/// A counter-placement trigger is not a win-state trigger: "Whenever
+/// one or more counters are put on this permanent, draw a card." must
+/// not lower to a fabricated win threshold (any counter would "win")
+/// and keeps its real effect.
+#[test]
+fn one_or_more_counters_trigger_is_not_a_win() {
+    let watcher = card(
+        "Counter Watcher",
+        "{2}{U}",
+        "Creature",
+        "Whenever one or more +1/+1 counters are put on this creature, draw a card.",
+    );
+    let sim = parse_sim_card(&watcher);
+    assert!(
+        !sim.abilities()
+            .any(|a| matches!(a.effect, Effect::WinThreshold { .. })),
+        "a counter-placement trigger never parses as a win threshold"
+    );
+    // The shape also gates a win-worded event on the state form: a
+    // threshold event must name "counters on it" and resolve in a win.
+    let nonwin = parse_sim_card(&card(
+        "Counter Keeper",
+        "{2}",
+        "Artifact",
+        "When this artifact has ten or more charge counters on it, sacrifice it.",
+    ));
+    assert!(
+        !nonwin
+            .abilities()
+            .any(|a| matches!(a.effect, Effect::WinThreshold { .. })),
+        "a non-win threshold trigger never parses as a win"
+    );
+}
+
+/// Interaction readiness spends only legal mana: a creature-only
+/// bucket never marks an instant ready, and an instant/sorcery bucket
+/// + general mana does.
+#[test]
+fn interaction_readiness_spends_only_instant_legal_mana() {
+    let answer = card(
+        "Test Counterspell",
+        "{U}{U}",
+        "Instant",
+        "Counter target spell.",
+    );
+    let cards = vec![parse_sim_card(&answer)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut census = super::game_run::TurnCensus::new(1, 1);
+    let st = super::turn_loop_tests::state(vec![0], vec![]);
+    // Creature-only mana cannot fund the instant: readiness stays off.
+    let pool = super::game::Pool {
+        creature_only: 3,
+        ..super::game::Pool::default()
+    };
+    super::game_run::record_interaction_readiness_probe(&deck, &st, &pool, &mut census, 1);
+    assert!(
+        !census.interaction_ready[0],
+        "creature-only mana never readies an instant"
+    );
+    // The instant/sorcery bucket covers the pips: readiness turns on.
+    let pool = super::game::Pool {
+        instant_sorcery_only: 2,
+        ..super::game::Pool::default()
+    };
+    super::game_run::record_interaction_readiness_probe(&deck, &st, &pool, &mut census, 1);
+    assert!(
+        census.interaction_ready[0],
+        "instant/sorcery mana readies the answer"
+    );
+    assert_eq!(
+        census.interaction_mana_held[0], 0.0,
+        "the exact bucket covers the answer with nothing held"
+    );
+}
+
+/// A card's own printed flashback cost casts it from the graveyard at
+/// the flashback cost, then exiles it (CR 702.34).
+#[test]
+fn own_flashback_casts_from_the_graveyard() {
+    let looting = card(
+        "Test Looting",
+        "{1}{R}",
+        "Sorcery",
+        "Draw two cards, then discard a card.\nFlashback {2}{R}",
+    );
+    let cards = vec![parse_sim_card(&looting)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let sim = &deck.cards[0];
+    assert_eq!(
+        sim.riders.own_flashback.as_ref().map(|cost| cost.total()),
+        Some(3),
+        "the printed flashback cost parses"
+    );
+    // The instance in the graveyard casts for the flashback cost.
+    let mut st = super::turn_loop_tests::state(vec![], vec![1]);
+    st.graveyard.push(crate::deck::simulator::model::CardIdx(0));
+    st.seen = st.hand.len() as u32 + st.library.len() as u32;
+    let mut pool = super::game::Pool {
+        flexible: 3,
+        ..super::game::Pool::default()
+    };
+    let mut mana_spent = [0.0];
+    let mut engines = Vec::new();
+    super::cast_phase::cast_graveyard_spells_probe(
+        &deck,
+        &mut st,
+        &mut pool,
+        1,
+        &mut mana_spent,
+        &mut engines,
+    );
+    assert!(
+        !st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
+        "the flashback cast exiles the instance"
+    );
+    assert_eq!(st.replay_casts, 1, "the flashback cast counts as a replay");
+    assert!(
+        st.exile
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+}
+
+/// A card's own printed escape cost casts it from the graveyard by
+/// paying the escape cost and exiling three other cards (CR 702.138).
+#[test]
+fn own_escape_pays_the_printed_cost_and_exiles_fodder() {
+    let ogre = card(
+        "Test Ogre",
+        "{2}{R}",
+        "Creature — Ogre",
+        "Trample\nEscape—{3}{R}, Exile three other cards from your graveyard.",
+    );
+    let fodder = card("Fodder", "{1}", "Creature — Rat", "");
+    let cards = vec![
+        parse_sim_card(&ogre),
+        parse_sim_card(&fodder),
+        parse_sim_card(&fodder),
+        parse_sim_card(&fodder),
+    ];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let ogre_sim = &deck.cards[0];
+    assert_eq!(
+        ogre_sim.riders.own_escape.as_ref().map(|cost| cost.total()),
+        Some(4),
+        "the printed escape cost parses"
+    );
+    let mut st = super::turn_loop_tests::state(vec![], vec![30, 31, 32, 33]);
+    st.graveyard = vec![
+        crate::deck::simulator::model::CardIdx(0),
+        crate::deck::simulator::model::CardIdx(1),
+        crate::deck::simulator::model::CardIdx(2),
+        crate::deck::simulator::model::CardIdx(3),
+    ];
+    st.seen = st.hand.len() as u32 + st.library.len() as u32;
+    let mut pool = super::game::Pool {
+        flexible: 4,
+        ..super::game::Pool::default()
+    };
+    let mut mana_spent = [0.0];
+    let mut engines = Vec::new();
+    super::cast_phase::cast_graveyard_spells_probe(
+        &deck,
+        &mut st,
+        &mut pool,
+        1,
+        &mut mana_spent,
+        &mut engines,
+    );
+    assert_eq!(st.replay_casts, 1, "the escape cast counts as a replay");
+    assert!(
+        !st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
+        "the escaped creature left the graveyard"
+    );
+    assert_eq!(
+        st.exile.len(),
+        3,
+        "the escape cost exiled three other cards, not the creature"
+    );
+    // The creature joined the battlefield.
+    assert!(
+        st.battlefield.iter().any(|perm| perm
+            .card
+            .deck_idx()
+            .is_some_and(|idx| idx == crate::deck::simulator::model::CardIdx(0))),
+        "the escaped creature entered the battlefield"
+    );
+}
+
+/// A grant shape ("...gain flashback") without a printed cost never
+/// parses a self cost, and the granted path still casts at the card's
+/// own cost.
+#[test]
+fn flashback_grant_text_does_not_read_a_self_cost() {
+    let granter = card(
+        "Test Past",
+        "{4}{R}",
+        "Sorcery",
+        "Exile all cards from your graveyard. Until end of turn, you may play cards exiled this way.",
+    );
+    let looting = card("Test Looting", "{1}{R}", "Sorcery", "Flashback {2}{R}");
+    let cards = vec![parse_sim_card(&granter), parse_sim_card(&looting)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    assert!(
+        deck.cards[0].riders.own_flashback.is_none(),
+        "grant shapes carry no self cost"
+    );
+    assert_eq!(
+        deck.cards[1]
+            .riders
+            .own_flashback
+            .as_ref()
+            .map(|cost| cost.total()),
+        Some(3)
+    );
+}
+
+/// A multi-effect trigger lowers one runtime ability per supported
+/// effect: "draw a card and create a Treasure token" banks the draw
+/// and the token; "each opponent loses 1 life and you gain 1 life"
+/// drains and gains.
+#[test]
+fn multi_effect_triggers_lower_every_clause() {
+    let treasure = card(
+        "Test Cache",
+        "{2}{G}",
+        "Creature — Elf",
+        "When this creature enters, draw a card and create a Treasure token.",
+    );
+    let drain = card(
+        "Test Sting",
+        "{2}{B}",
+        "Creature — Zombie",
+        "Whenever this creature enters, each opponent loses 1 life and you gain 1 life.",
+    );
+    let cards = vec![parse_sim_card(&treasure), parse_sim_card(&drain)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Commander,
+        rules: super::format::rules_for("commander"),
+    };
+    let cache = &deck.cards[0];
+    let entries: Vec<_> = cache
+        .abilities()
+        .filter(|a| a.trigger == super::model::AbilityTiming::OnEnter)
+        .collect();
+    assert_eq!(
+        entries.len(),
+        2,
+        "the draw clause and the token clause lower separately: {:?}",
+        entries
+            .iter()
+            .map(|a| format!("{:?}", a.effect))
+            .collect::<Vec<_>>()
+    );
+    assert!(entries.iter().any(|a| matches!(a.effect, Effect::Draw(1))));
+    assert!(
+        entries
+            .iter()
+            .any(|a| matches!(a.effect, Effect::Tokens(_)))
+    );
+    let sting = &deck.cards[1];
+    let entries: Vec<_> = sting
+        .abilities()
+        .filter(|a| a.trigger == super::model::AbilityTiming::OnEnter)
+        .collect();
+    assert_eq!(entries.len(), 2);
+    assert!(entries.iter().any(|a| matches!(a.effect, Effect::Drain(_))));
+    assert!(
+        entries
+            .iter()
+            .any(|a| matches!(a.effect, Effect::GainLife(_)))
+    );
+}
+
+/// A phyrexian pip pays with 2 life (CR 118.3b): `{1}{B/P}` casts with
+/// colorless-only mana, charging 2 life; a life-starved cast stays in
+/// hand.
+#[test]
+fn phyrexian_pip_pays_life() {
+    let probe = card("Test Probe", "{1}{B/P}", "Sorcery", "Draw a card.");
+    let cards = vec![parse_sim_card(&probe)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let sim = &deck.cards[0];
+    assert_eq!(sim.cost.phyrexian[2], 1, "the phyrexian pip parses");
+    // Colorless-only mana + 2 life covers the cast.
+    let mut st = super::turn_loop_tests::state(vec![0], vec![]);
+    st.life = 10;
+    let mut pool = super::game::Pool {
+        colorless: 1,
+        ..super::game::Pool::default()
+    };
+    let mut engines = Vec::new();
+    super::cast_phase::cast_phase_probe(&deck, &mut st, &mut pool, &mut engines, 1);
+    assert_eq!(st.life, 8, "the phyrexian pip charged 2 life");
+    assert_eq!(st.life_paid, 2, "the life payment lands in the life ledger");
+    assert!(
+        st.battlefield_seen.is_empty() && st.hand.is_empty(),
+        "the cast left the hand"
+    );
+    // A life-starved agent (2 life) cannot pay the pip.
+    let mut st = super::turn_loop_tests::state(vec![0], vec![]);
+    st.life = 2;
+    let mut pool = super::game::Pool {
+        colorless: 1,
+        ..super::game::Pool::default()
+    };
+    let mut engines = Vec::new();
+    super::cast_phase::cast_phase_probe(&deck, &mut st, &mut pool, &mut engines, 1);
+    assert_eq!(st.life, 2, "a cast at lethal life never pays the pip");
+    assert!(
+        st.hand.contains(&crate::deck::simulator::model::CardIdx(0)),
+        "the unpayable cast stays in hand"
+    );
+}
+
+/// A "doesn't untap during your untap step" static keeps the permanent
+/// tapped across the turn boundary (Basalt Monolith class): no free
+/// mana from an untap the card never gets.
+#[test]
+fn doesnt_untap_static_survives_the_untap_step() {
+    let basalt = card(
+        "Basalt Monolith",
+        "{3}",
+        "Artifact",
+        "Basalt Monolith doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact.",
+    );
+    let cards = vec![parse_sim_card(&basalt)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    assert!(
+        deck.cards[0].flags.doesnt_untap,
+        "the doesn't-untap static parses into a flag"
+    );
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    st.battlefield[0].tapped = true;
+    // The turn-boundary untap leaves a doesn't-untap permanent tapped:
+    // the pool builds nothing from it the next turn.
+    let pool = super::game_run::build_pool_probe(&deck, &mut st, 2);
+    assert_eq!(
+        pool.total(),
+        0,
+        "a tapped doesn't-untap permanent yields nothing while tapped"
+    );
+}
+
+/// A static mana grant converts every matching permanent's tap: five
+/// lands with a Chromatic Lantern yield five any-color pips (the same
+/// tap, one mana), not fixed pips plus a capped bonus.
+#[test]
+fn static_grant_converts_every_land_tap() {
+    let lantern = card(
+        "Test Lantern",
+        "{2}",
+        "Artifact",
+        "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color.",
+    );
+    let land = card("Plains", "", "Basic Land — Plains", "({T}: Add {W}.)");
+    let cards = vec![
+        parse_sim_card(&lantern),
+        parse_sim_card(&land),
+        parse_sim_card(&land),
+        parse_sim_card(&land),
+        parse_sim_card(&land),
+        parse_sim_card(&land),
+    ];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    for i in 1..6 {
+        st.battlefield.push(super::game::new_perm_with(
+            1 + i,
+            &deck,
+            crate::deck::simulator::model::CardIdx(i),
+            0,
+            false,
+        ));
+    }
+    let pool = super::game_run::build_pool_probe(&deck, &mut st, 1);
+    assert_eq!(
+        pool.flexible, 6,
+        "the lantern and the five lands each yield one any-color pip"
+    );
+    assert_eq!(
+        pool.fixed.iter().sum::<u32>(),
+        0,
+        "the grant replaces the lands' printed fixed pips"
+    );
+}
+
+/// A phyrexian activation pip pays with 2 life (CR 118.3b): the
+/// resolution charges the life and spends no pool mana for the pip,
+/// and a life-starved board skips the activation.
+#[test]
+fn phyrexian_activation_charges_life() {
+    let drain_mage = card(
+        "Pip Mage",
+        "{2}{B}",
+        "Creature — Wizard",
+        "{2}{B/P}, {T}: Draw a card.",
+    );
+    let cards = vec![parse_sim_card(&drain_mage)];
+    let deck = SimDeck {
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut st = super::turn_loop_tests::state(vec![0], vec![10, 11]);
+    st.seen = st.hand.len() as u32 + st.library.len() as u32;
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    st.battlefield[0].sick = false;
+    let mut pool = super::game::Pool {
+        colorless: 6,
+        ..super::game::Pool::default()
+    };
+    // Cost {2}{B/P}: gate needs 2 mana + life above 2.
+    let hand_before = st.hand.len();
+    let activation = super::game_effects::pick_best_activation_public(&deck, &st, &pool)
+        .expect("the pip activation is usable with 6 mana and full life");
+    super::game_effects::resolve_activation_public(&deck, &mut st, &mut pool, 1, 1, &activation);
+    assert_eq!(st.life, 18, "the phyrexian pip charged 2 life");
+    assert_eq!(
+        pool.colorless, 4,
+        "only the generic part came from the pool"
+    );
+    assert_eq!(
+        st.hand.len(),
+        hand_before + 1,
+        "the activation resolved its draw"
+    );
+    // Life at the charge level: the activation skips instead of
+    // driving life to zero.
+    let mut low = super::turn_loop_tests::state(vec![0], vec![]);
+    low.seen = low.hand.len() as u32 + low.library.len() as u32;
+    low.battlefield.push(super::game::new_perm_with(
+        2,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    low.battlefield[0].sick = false;
+    let pool = super::game::Pool {
+        colorless: 6,
+        ..super::game::Pool::default()
+    };
+    low.life = 2;
+    assert!(
+        super::game_effects::pick_best_activation_public(&deck, &low, &pool).is_none(),
+        "life at the charge level cannot fire the pip activation"
+    );
 }

@@ -577,7 +577,7 @@ fn free_sacrifice_outlet_needs_a_body() {
     );
 }
 
-// Phase 1 game-level assertions: the parse fixes hold end to end.
+// Game-level assertions: the parse fixes hold end to end.
 
 #[test]
 fn etb_drawer_draws_two_not_four() {

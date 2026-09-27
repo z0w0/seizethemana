@@ -12,19 +12,22 @@ impl OracleCard {
     pub(super) fn runtime_abilities(&self) -> Vec<Ability> {
         self.abilities
             .iter()
-            .filter_map(OracleAbility::to_runtime)
+            .flat_map(OracleAbility::to_runtime)
             .collect()
     }
 }
 
 impl OracleAbility {
-    /// Lower executable ability nodes into the simulator's turn-loop model.
-    pub(super) fn to_runtime(&self) -> Option<Ability> {
+    /// Lower every executable effect of an ability node into the
+    /// simulator's turn-loop model. A triggered node lowers one entry
+    /// per supported effect ("draw a card and create a Treasure token"
+    /// fires both), so a multi-effect resolution loses nothing.
+    pub(super) fn to_runtime(&self) -> Vec<Ability> {
         match self {
-            Self::Activated(ability) => ability.to_runtime(),
-            Self::Triggered(ability) => ability.to_runtime(),
-            Self::Static(ability) => ability.to_runtime(),
-            Self::Spell(_) | Self::SagaChapter(_) | Self::Unsupported(_) => None,
+            Self::Activated(ability) => ability.to_runtime().into_iter().collect(),
+            Self::Triggered(ability) => ability.to_runtime_all(),
+            Self::Static(ability) => ability.to_runtime().into_iter().collect(),
+            Self::Spell(_) | Self::SagaChapter(_) | Self::Unsupported(_) => Vec::new(),
         }
     }
 }
@@ -131,6 +134,9 @@ impl TriggerEvent {
             Self::CombatDamageToPlayer(_) => Some(AbilityTiming::OnCombatDamage),
             Self::CastsSpell { this_spell: false } => Some(AbilityTiming::OnCastSpell),
             Self::Dies(_) => Some(AbilityTiming::OnDeath),
+            // A state trigger on a counter threshold normalizes to the
+            // upkeep win check: the census reads counters, not events.
+            Self::WinThreshold(_) => Some(AbilityTiming::OnUpkeep),
             Self::CastsSpell { this_spell: true }
             | Self::TappedForMana
             | Self::BeginningOfStep { .. }
@@ -141,22 +147,54 @@ impl TriggerEvent {
 }
 
 impl TriggeredAbility {
-    /// Lower a supported trigger to the simulator's turn-loop model.
+    /// Lower the trigger's first supported effect (test reading of the
+    /// full lowering; production lowers through `to_runtime_all`).
+    #[cfg(test)]
     pub(super) fn to_runtime(&self) -> Option<Ability> {
-        let trigger = self.event.to_runtime()?;
-        let effect = self
-            .effects
+        self.to_runtime_all().into_iter().next()
+    }
+
+    /// Lower one runtime ability per supported effect: a multi-effect
+    /// trigger resolution ("draw a card and create a Treasure token")
+    /// fires every parsed clause, so a later clause is never lost to an
+    /// earlier one.
+    pub(super) fn to_runtime_all(&self) -> Vec<Ability> {
+        // A state trigger on a counter threshold ("When [this] has N or
+        // more [kind] counters on it, you win the game.") is its own
+        // win check; the resolution text repeats the win.
+        let win_threshold = match self.event {
+            TriggerEvent::WinThreshold(counters) => Some((counters, AbilityTiming::OnUpkeep)),
+            _ => None,
+        }
+        .or_else(|| {
+            self.effects.iter().find_map(|effect| match effect {
+                OracleEffect::WinThreshold(counters) => Some((*counters, AbilityTiming::OnUpkeep)),
+                _ => None,
+            })
+        });
+        if let Some((counters, trigger)) = win_threshold {
+            return vec![Ability {
+                trigger,
+                effect: Effect::WinThreshold { counters },
+                once_per_turn: self.once_per_turn,
+                condition: self.condition.clone(),
+                ..Ability::default()
+            }];
+        }
+        let Some(trigger) = self.event.to_runtime() else {
+            return Vec::new();
+        };
+        self.effects
             .iter()
-            .find(|effect| matches!(effect, OracleEffect::Draw(_) | OracleEffect::Loot(_)))
-            .and_then(OracleEffect::to_runtime)
-            .or_else(|| self.effects.iter().find_map(OracleEffect::to_runtime))?;
-        Some(Ability {
-            trigger,
-            effect,
-            once_per_turn: self.once_per_turn,
-            condition: self.condition.clone(),
-            ..Ability::default()
-        })
+            .filter_map(OracleEffect::to_runtime)
+            .map(|effect| Ability {
+                trigger,
+                effect,
+                once_per_turn: self.once_per_turn,
+                condition: self.condition.clone(),
+                ..Ability::default()
+            })
+            .collect()
     }
 }
 

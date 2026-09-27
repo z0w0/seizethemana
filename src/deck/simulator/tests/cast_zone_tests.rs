@@ -428,7 +428,7 @@ fn resolved_self_exiling_spell_goes_to_exile_and_sacrifice_triggers_fire() {
         Cost {
             generic: 1,
             pips: [0, 0, 0, 0, 2],
-            flex_pips: 0
+            ..Cost::default()
         }
     );
     assert_eq!(st.life_paid, 0);

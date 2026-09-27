@@ -54,12 +54,18 @@ pub struct Cost {
     pub pips: [u8; 5],
     /// Hybrid/phyrexian pips, payable from any of their colors.
     pub flex_pips: u32,
+    /// Phyrexian pips per WUBRG letter (`{W/P}`): each payable by its
+    /// color or 2 life (CR 118.3b). The best-case agent pays life.
+    pub phyrexian: [u8; 5],
 }
 
 impl Cost {
     /// Total mana value (generic plus every pip).
     pub fn total(&self) -> u32 {
-        self.generic + self.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + self.flex_pips
+        self.generic
+            + self.pips.iter().map(|p| u32::from(*p)).sum::<u32>()
+            + self.flex_pips
+            + self.phyrexian.iter().map(|p| u32::from(*p)).sum::<u32>()
     }
 }
 
@@ -398,15 +404,16 @@ pub struct Ability {
     /// the Oracle sentence carries one. No condition shape is evaluated
     /// yet: the goldfish board makes most trivially true, and every
     /// lowered condition fires as if true. Evaluation is future work,
-    /// so the field is carried data (the 4.4 decision in PLAN.md).
+    /// so the field is carried data.
     #[allow(dead_code)]
     pub condition: Option<String>,
 }
 
 /// A station tier: abilities unlocked at a charge-counter threshold.
 ///
-/// Rule source: CR 702.184/721 — a station card's text box has one or two
-/// striations, each led by an `{N+}` symbol meaning "as long as this
+/// Station card rules come from CR 702.184 and 721: a station card's text
+/// box has one or two striations,
+/// each led by an `{N+}` symbol meaning "as long as this
 /// permanent has N or more charge counters, it has [abilities]" and, when a
 /// P/T box is printed in the same striation, "…and is a creature with base
 /// P/T". Planets never animate (no P/T box); a spacecraft animates only at
@@ -498,6 +505,13 @@ pub struct CastRiders {
     /// Nonland cards in the graveyard may be cast with escape while this
     /// permanent remains on the battlefield.
     pub grants_escape: bool,
+    /// The card's own printed flashback cost (CR 702.34): the instance
+    /// in the graveyard may cast for this cost, then exiles.
+    pub own_flashback: Option<Cost>,
+    /// The card's own printed escape cost (CR 702.138): the instance in
+    /// the graveyard may cast by paying this plus exiling three other
+    /// cards.
+    pub own_escape: Option<Cost>,
     /// Cycling activation cost.
     pub cycling_cost: Option<Cost>,
     /// Life paid for cycling (Street Wraith-style cycling).
@@ -529,6 +543,10 @@ pub struct CombatFlags {
     /// Extra land drop each turn ("you may play an additional land").
     /// Feeds `land_drops[]` as one extra drop per turn while in play.
     pub extra_land_drops: bool,
+    /// Skips the untap step ("This artifact doesn't untap during your
+    /// untap step", Basalt Monolith class). The untap step leaves it
+    /// tapped; only an untap activation clears the tap.
+    pub doesnt_untap: bool,
     /// Castable at instant speed (Instant type or flash). Powers the
     /// interaction-readiness metric.
     pub is_instant_speed: bool,
@@ -720,6 +738,15 @@ pub enum Grant {
     Lands,
     /// Creatures you control each tap for one any-color pip.
     Creatures,
+}
+
+/// Which static mana grants are live on the battlefield.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Grants {
+    /// A creatures grant is live.
+    pub creatures: bool,
+    /// A lands grant is live.
+    pub lands: bool,
 }
 
 /// The effect class of an X-cost spell: what scales with the paid X.

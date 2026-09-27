@@ -183,7 +183,11 @@ Animation is permanent: once a spacecraft is a creature, it stays one.
 ### Crew
 
 Vehicles crew with bodies: total untapped body power ≥ the crew cost.
-Crew animation lasts until end of turn. Bodies are creatures, animated
+Crewing taps other creatures (CR 702.122a), so summoning-sick bodies may
+crew and station — sickness blocks only the body's own tap abilities and
+attacking (CR 302.6). A Vehicle crewed the turn it entered cannot attack
+that turn; it becomes a creature only during its main phase. Crew
+animation lasts until end of turn. Bodies are creatures, animated
 spacecraft, and ETB tokens. Body power uses the card's printed power when
 the row carries one; tokens and unknowns stay flat (`BODY_POWER = 2`).
 
@@ -275,9 +279,8 @@ the player's choice each game. Static type-granting on _other_ lands (The
 World Tree's "lands you control have {T}: …") is not modeled.
 
 Sagas resolve chapter I when they enter. Later chapters advance one per
-turn in the precombat main phase (lore counters are added in the first
-main phase, CR 714.3c), so chapter II resolves on the cast turn — one
-turn after entry — not two turns after. Chapter lines ("I — Draw a card.",
+turn as the precombat main phase begins (CR 714.3c — before the main-phase
+triggers and land drops), so chapter II resolves on the turn after entry. Chapter lines ("I — Draw a card.",
 "II — Mill three.") parse into a per-chapter effect list on the card
 (`SimCard.saga.chapters`, in play order — chapters are triggered
 abilities per CR 714.2, not activations); a chapter with no readable
@@ -379,26 +382,29 @@ creatures, then return the exiled creatures.
 Modeled as discounts on the generic part, and only for castability
 (`min_cost`), never as extra mana:
 
-| Mechanic                      | Approximation                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| Warp                          | the warp cost when cheaper                                                                 |
-| Improvise                     | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
-| Affinity                      | −2 generic, plus 1 more per 4 artifacts on the battlefield (capped at the printed generic) |
-| "costs {1} less" / "{X} less" | −2 generic                                                                                 |
+| Mechanic                      | Approximation                                                 |
+| ----------------------------- | ------------------------------------------------------------- |
+| Warp                          | the warp cost when cheaper                                    |
+| Improvise                     | −1 generic per artifact on the battlefield (never below zero) |
+| Affinity                      | −1 generic per artifact on the battlefield (never below zero) |
+| "costs {1} less" / "{X} less" | −2 generic                                                    |
 
-The improvise/affinity discount grows while playing: a mid-game board casts
-big improvise spells a few turns earlier than the flat floor, and such
-cards are exempt from the `dead_cards` finding (their real cast time is
-much earlier than the floor implies).
+The improvise/affinity discount grows with the artifact board at the
+rule rate (one generic per artifact, CR 702.126a/702.41a): a mid-game
+board casts big improvise spells early, and such cards are exempt from
+the `dead_cards` finding.
 
-Hybrid pips (`{W/U}`, `{B/P}`) pay from any of their colors. {S} (snow)
-pays as colorless. X-costs follow the X-cost section above.
+Hybrid pips (`{W/U}`) pay from either color. Phyrexian pips (`{B/P}`)
+pay their color or 2 life; the goldfish pays life when it has room. {S}
+(snow) pays as colorless. X-costs follow the X-cost section above.
 
 ## The turn pipeline
 
 A best-case agent plays each turn in a fixed order:
 
-1. **Untap** — everything untaps; summoning sickness clears; once-per-turn
+1. **Untap** — everything untaps, except permanents whose card says it
+   doesn't untap during the untap step (they stay tapped until an untap
+   activation clears them); summoning sickness clears; once-per-turn
    flags reset; crew animations expire. Blink-armed permanents re-fire
    their OnEnter triggers once (the blink re-fire pass).
 2. **Upkeep** — draw, mill, recursion, drain, and token engines fire (one
@@ -413,12 +419,13 @@ A best-case agent plays each turn in a fixed order:
    land; tapped entry follows the found land's Oracle text (many modern
    duals enter untapped). Landfall triggers resolve for each land entry. An
    "additional land" board (Aesi class) plays a second land the same turn.
-5. **Cast** — saga chapters advance through the card's chapter list (one
-   per turn, after chapter I on entry; CR 714.3c puts lore counters in the
-   precombat main phase). Cheapest castable spells first, with the full
-   pip check. A
+5. **Cast** — cheapest castable spells first, with the full
+   pip check (lore counters were already added above; CR 714.3c puts
+   lore counters at the start of the precombat main phase). A
    cast is blocked (and its color recorded for color-screw stats) when the
-   pool has enough total mana but misses the pips. ETB triggers fire; ETB
+   pool has enough total mana but misses the pips. ETB triggers fire —
+   every parsed clause of a multi-effect trigger lowers separately, so
+   "draw a card and create a Treasure token" does both; ETB
    tokens join the battlefield as bodies. One-shot effects (ritual mana,
    draws, mills, scry/surveil, burn, extra turns, X-scaling, kicker)
    apply on cast. Per-cast mana engines (Vivi class) add their yield per
@@ -771,9 +778,9 @@ The `assumptions` array in every report lists the current limits:
   remains only as a fallback when Oracle text does not name the target
   pair.
 - **Cost cuts are flat at parse, board-scaled for improvise/affinity.**
-  Warp uses the cheaper cost; improvise/affinity start at a flat −2 and
-  gain 1 more per 4 artifacts on the battlefield, capped at the printed
-  generic; they are exempt from the `dead_cards` finding.
+  Warp uses the cheaper cost; improvise/affinity cut the printed generic
+  by one per artifact on the battlefield at resolve time (capped at the
+  printed generic); they are exempt from the `dead_cards` finding.
 - **Opponent-dependent production is generic-only.** Fellwar Stone
   yields one colorless-only pip from turn 2 on and does not tap on turn 1.
   Kinnan's mana trigger adds one additional colorless pip from this source.
@@ -808,14 +815,16 @@ The `assumptions` array in every report lists the current limits:
 - **Cycling pays and moves its card.** Cycling pays its mana or life cost,
   discards the card, then draws. Landcycling finds a land with its named
   basic land type. Only these fixture-relevant forms are modeled.
-- **Graveyard casts use instance permissions and real resources.** Past in
-  Flames grants flashback only to instant and sorcery instances already in
-  the graveyard when it resolves; the permission ends with the turn, and a
-  flashed-back spell is exiled after resolution. Underworld Breach grants
-  escape to graveyard nonland cards while it remains on the battlefield.
-  Each escape pays the printed mana cost and exiles three other graveyard
-  instances. Replays consume mana and fuel; the action cap does not claim
-  that repeated casts are infinite.
+- **Graveyard casts use instance permissions, printed costs, and real
+  resources.** A card's own printed flashback cost casts it from the
+  graveyard, then the spell exiles; a card's own printed escape cost
+  casts it by paying that cost plus exiling three other graveyard
+  instances. Granted shapes work too: Past in Flames grants flashback to
+  instant and sorcery instances already in the graveyard when it
+  resolves (the permission ends with the turn), and Underworld Breach
+  grants escape to graveyard nonland cards while it remains on the
+  battlefield. Replays consume mana and fuel; the action cap does not
+  claim that repeated casts are infinite.
 - **Life-funded actions use current life and visible cards.** Life costs
   must leave the player above zero. Griselbrand-style activations repeat
   only while life can pay, and draws use the shared draw path. Ad Nauseam

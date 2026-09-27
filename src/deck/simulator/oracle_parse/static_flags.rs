@@ -42,6 +42,10 @@ pub(super) fn parse_static_flags(
     // your turns" (Aesi, Wayward Swordtooth, Burrowing Power).
     let extra_land_drops =
         static_effects(oracle).any(|effect| matches!(effect, StaticEffect::AdditionalLandDrop));
+    let doesnt_untap = static_effects(oracle)
+        .any(|effect| matches!(effect, StaticEffect::DoesntUntap))
+        || text.contains("doesn't untap during your untap step")
+        || text.contains("does not untap during your untap step");
     // Instant speed: Instant type or flash. "Flashback" contains
     // "flash" as a substring; exclude it.
     let is_instant_speed = type_line.contains("Instant")
@@ -104,6 +108,7 @@ pub(super) fn parse_static_flags(
         evasion,
         has_haste,
         extra_land_drops,
+        doesnt_untap,
         is_instant_speed,
         wipe,
         is_interaction,

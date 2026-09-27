@@ -89,6 +89,7 @@ impl CommanderProfile {
                                     | Effect::ReturnFromGraveyard { .. }
                                     | Effect::Drain(_)
                                     | Effect::Tokens(_)
+                                    | Effect::Counters(_)
                                     | Effect::Wheel
                                     | Effect::Loot(_)
                             )

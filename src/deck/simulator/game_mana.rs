@@ -142,7 +142,9 @@ pub(super) fn add_yield_turns(
 
 /// True when the cost is payable in total from the pool.
 pub(super) fn payable(cost: &super::model::Cost, pool: &Pool) -> bool {
-    pool.total() >= cost.total()
+    // Phyrexian pips pay with 2 life each, not mana, so the pool owes
+    // only the mana part.
+    pool.total() >= cost.total() - phyrexian_life_charge(cost) / 2
 }
 
 /// True when every monocolor pip is covered. The flexible pool is ONE
@@ -158,6 +160,8 @@ pub(super) fn pips_ok(cost: &super::model::Cost, pool: &Pool) -> bool {
     // for the flexible pool only when generic needs are small. The
     // conservative sound check: the pip shortfall across colors must
     // fit in the flexible pool, and total cost must fit in the pool.
+    // Phyrexian pips ride outside this check: the best-case agent pays
+    // them with 2 life each (see `phyrexian_life_charge`).
     let pip_shortfall: u32 = cost
         .pips
         .iter()
@@ -189,43 +193,72 @@ pub(super) fn usable_for_noncreature(pool: &Pool) -> u32 {
     pool.fixed.iter().sum::<u32>() + pool.flexible + pool.colorless
 }
 
-/// The spend restriction of a card's cast class, or `None` for an
-/// unrestricted cast. Creature and legendary casts gate on the card's
-/// type line (Secluded Courtyard, Plaza of Heroes); the artifact class
-/// skips lands; the instant/sorcery class reads the interaction flag's
-/// type-line gate (flash creatures are not instant casts).
-pub(super) fn cast_restriction(card: &super::model::SimCard) -> Option<Restriction> {
+/// The spend-restriction classes of a card's cast. A card can belong to
+/// several classes: an artifact creature may be paid with creature-only
+/// mana (Secluded Courtyard) and artifact-only mana alike. Creature and
+/// legendary classes gate on the card's type line (Secluded Courtyard,
+/// Plaza of Heroes); the artifact class skips lands; the
+/// instant/sorcery class reads the interaction flag's type-line gate
+/// (flash creatures are not instant casts).
+pub(super) fn cast_restrictions(card: &super::model::SimCard) -> Vec<Restriction> {
+    let mut classes = Vec::new();
+    if card.flags.is_interaction {
+        classes.push(Restriction::InstantSorcery);
+    }
     if card.is_artifact && card.role != Role::Land {
-        Some(Restriction::Artifact)
-    } else if card.flags.is_interaction {
-        Some(Restriction::InstantSorcery)
-    } else if card.is_creature {
-        Some(Restriction::Creature)
-    } else if card.is_legendary {
-        Some(Restriction::Legendary)
-    } else {
-        None
+        classes.push(Restriction::Artifact);
+    }
+    if card.is_creature {
+        classes.push(Restriction::Creature);
+    }
+    if card.is_legendary {
+        classes.push(Restriction::Legendary);
+    }
+    classes
+}
+
+/// The mana a cast of these classes may legally spend: the general pool
+/// plus every restricted bucket whose class the card belongs to.
+pub(super) fn usable_for_classes(pool: &Pool, classes: &[Restriction]) -> u32 {
+    let mut usable = usable_for_noncreature(pool);
+    for class in classes {
+        usable += bucket_of(pool, *class);
+    }
+    usable
+}
+
+/// The restricted bucket for a cast class.
+pub(super) fn bucket_of(pool: &Pool, restriction: Restriction) -> u32 {
+    match restriction {
+        Restriction::Creature => pool.creature_only,
+        Restriction::Legendary => pool.legendary_only,
+        Restriction::Artifact => pool.artifact_only,
+        Restriction::InstantSorcery => pool.instant_sorcery_only,
     }
 }
 
-/// Pay a restricted cast's cost: the class's own bucket spends first
-/// (its mana is one color of the source's choice, so it can pay
-/// generic, flex pips, and monocolor pips), then the general pool
-/// pays the rest. Any unused bucket stays for a later cast of the
-/// same class.
+/// Pay a restricted cast's cost: every class bucket the card belongs to
+/// spends first (each bucket's mana is one color of the source's
+/// choice, so it can pay generic, flex pips, and monocolor pips), then
+/// the general pool pays the rest. Any unused bucket stays for a later
+/// cast of the same class. Phyrexian pips pay with life, not mana, so
+/// the buckets only owe the mana part of the cost.
 pub(super) fn pay_restricted_cost(
     cost: &super::model::Cost,
     pool: &mut Pool,
-    restriction: Restriction,
+    classes: &[Restriction],
 ) {
-    let bucket = match restriction {
-        Restriction::Creature => &mut pool.creature_only,
-        Restriction::Legendary => &mut pool.legendary_only,
-        Restriction::Artifact => &mut pool.artifact_only,
-        Restriction::InstantSorcery => &mut pool.instant_sorcery_only,
-    };
-    let mut paid = (*bucket).min(cost.total());
-    *bucket -= paid;
+    let mana_total = cost.total() - phyrexian_life_charge(cost) / 2;
+    let mut paid = 0u32;
+    for class in classes {
+        if paid >= mana_total {
+            break;
+        }
+        let room = mana_total - paid;
+        let spent = bucket_of(pool, *class).min(room);
+        spend_bucket(pool, *class, spent);
+        paid += spent;
+    }
     let mut rest = cost.clone();
     rest.generic = rest.generic.saturating_sub(paid);
     paid = paid.saturating_sub(cost.generic);
@@ -240,6 +273,22 @@ pub(super) fn pay_restricted_cost(
         paid -= spent;
     }
     pay_cost(&rest, pool);
+}
+
+/// Drain one class's bucket by `spent` mana.
+fn spend_bucket(pool: &mut Pool, class: Restriction, spent: u32) {
+    match class {
+        Restriction::Creature => pool.creature_only -= spent,
+        Restriction::Legendary => pool.legendary_only -= spent,
+        Restriction::Artifact => pool.artifact_only -= spent,
+        Restriction::InstantSorcery => pool.instant_sorcery_only -= spent,
+    }
+}
+
+/// The life a phyrexian-pip cost charges when the best-case agent pays
+/// it with life instead of mana (2 life per `{X/P}` pip, CR 118.3b).
+pub(super) fn phyrexian_life_charge(cost: &super::model::Cost) -> u32 {
+    2 * cost.phyrexian.iter().map(|p| u32::from(*p)).sum::<u32>()
 }
 
 /// Pay a cost from the pool. Pips come from fixed sources first, then
@@ -278,11 +327,11 @@ pub(super) fn consume_flexible(pool: &mut Pool, n: u32) {
     pool.flexible -= pool.flexible.min(n);
 }
 
-/// The effective minimum cost for a card right now. Board-discount cards
-/// (improvise, affinity) cut generic by 2 at parse time plus one more per
-/// 4 artifacts on the battlefield, never past the printed generic: a
-/// mid-game board casts big improvise spells a few turns early, while one
-/// early rock cannot pay for everything.
+/// The effective minimum cost for a card right now. Board-discount
+/// cards (improvise, affinity) cut the printed generic by one per
+/// artifact on the battlefield, never past it: a mid-game board casts
+/// big improvise spells a few turns early, while one early rock cannot
+/// pay for everything.
 pub(super) fn effective_min_cost(
     deck: &SimDeck,
     card: &super::model::SimCard,
@@ -291,15 +340,16 @@ pub(super) fn effective_min_cost(
     if !card.board_discount {
         return card.min_cost.clone();
     }
-    // Affinity for artifacts / improvise: only artifacts on the
-    // battlefield count (creatures and enchantments do not).
+    // Affinity for artifacts / improvise (CR 702.41a, 702.126a): the
+    // cost drops one generic per artifact, capped at the printed
+    // generic. Only artifacts on the battlefield count (creatures and
+    // enchantments do not); pips never change.
     let artifacts = battlefield
         .iter()
         .filter(|p| p.card.deck_idx().is_some() && card_of(deck, p).role != Role::Land)
         .filter(|p| card_of(deck, p).is_artifact)
-        .count();
-    let headroom = card.cost.generic.saturating_sub(card.min_cost.generic);
-    let mut eff = card.min_cost.clone();
-    eff.generic += (artifacts as u32 / 4).min(headroom);
+        .count() as u32;
+    let mut eff = card.cost.clone();
+    eff.generic = eff.generic.saturating_sub(artifacts);
     eff
 }

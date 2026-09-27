@@ -1,6 +1,6 @@
 //! New-mechanics parse tests: whenever-ETB, landfall family, haste,
 //! tokens, X-costs, per-cast mana, kicker, sagas, loyalty activations,
-//! and the Phase 1 truth-fix grammar (interaction, treasure banking,
+//! and the truth-fix grammar (interaction, treasure banking,
 //! X-scaling draws).
 
 use super::model::*;
@@ -349,7 +349,7 @@ fn removal_beats_draw_when_both_match() {
     assert_eq!(both.role, Role::Removal, "removal wins over the draw rider");
 }
 
-// Phase 1 truth fixes: ETB-draw double count, interaction grammar,
+// Truth fixes: ETB-draw double count, interaction grammar,
 // wipes, protection, X-classes, ability words, split cards.
 
 #[test]

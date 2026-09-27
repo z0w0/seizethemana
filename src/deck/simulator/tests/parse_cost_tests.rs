@@ -33,9 +33,12 @@ fn hybrid_pip_is_flexible() {
 
 #[test]
 fn phyrexian_pip_is_its_color() {
+    // {B/P} pays black or 2 life (CR 118.3b): the pip rides in the
+    // phyrexian lane, payable by life.
     let cost = parse_cost("{1}{B/P}");
     assert_eq!(cost.generic, 1);
-    assert_eq!(cost.pips[2], 1);
+    assert_eq!(cost.pips[2], 0);
+    assert_eq!(cost.phyrexian[2], 1);
     assert_eq!(cost.total(), 2);
 }
 

@@ -54,6 +54,7 @@ fn test_perm(card_idx: usize) -> super::game::Permanent {
         entered_turn: 1,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -72,10 +73,12 @@ fn cost_parses_generic_pips_hybrid_and_faces() {
     assert_eq!(hybrid.flex_pips, 1);
     assert!(hybrid.pips.iter().all(|p| *p == 0));
 
-    // Phyrexian {B/P}: payable with black — a single-color pip.
+    // Phyrexian {B/P}: payable with black or 2 life (CR 118.3b).
     let phyrexian = parse_oracle_cost("{1}{B/P}");
     assert_eq!(phyrexian.generic, 1);
-    assert_eq!(phyrexian.pips[2], 1);
+    assert_eq!(phyrexian.pips[2], 0);
+    assert_eq!(phyrexian.phyrexian[2], 1);
+    assert_eq!(phyrexian.total(), 2);
 
     let faces = parse_oracle_cost("{2}{B} // {B}");
     assert_eq!(faces.generic, 2);
@@ -214,9 +217,9 @@ fn type_granted_land_taps_for_any_color() {
 
 #[test]
 fn improvise_discount_grows_with_artifacts() {
-    // Pure improvise shape: 6 generic + improvise. Parse-time floor is
-    // −2 (generic 4); a 4-artifact board reaches −3, an 8-artifact board
-    // the full −5.
+    // Pure improvise shape (CR 702.126a): 6 generic + improvise. The
+    // cost drops one generic per artifact, capped at the printed
+    // generic (zero here); creatures and enchantments never count.
     let act = card(
         "Organic Extinction",
         "{6}{W}{W}",
@@ -225,7 +228,10 @@ fn improvise_discount_grows_with_artifacts() {
     );
     let sim = parse_sim_card(&act);
     assert!(sim.board_discount);
-    assert_eq!(sim.min_cost.generic, 4);
+    assert_eq!(
+        sim.min_cost.generic, 6,
+        "no parse-time floor: the board decides"
+    );
 
     let rock = card("Iron Lump", "{2}", "Artifact", "{T}: Add {C}.");
     let rock_sim = parse_sim_card(&rock);
@@ -236,27 +242,26 @@ fn improvise_discount_grows_with_artifacts() {
         format: Format::Constructed,
         rules: super::format::rules_for("constructed"),
     };
-    // No artifacts: the flat floor.
-    assert_eq!(
-        super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
-        4
-    );
-    // 4 artifacts: one extra discount step (generic grows toward printed).
-    for _ in 0..4 {
-        battlefield.push(test_perm(1));
-    }
-    assert_eq!(
-        super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
-        5
-    );
-    // 8 artifacts: two extra steps (generic caps at the printed 6).
-    for _ in 0..4 {
-        battlefield.push(test_perm(1));
-    }
+    // No artifacts: the printed cost.
     assert_eq!(
         super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
         6
     );
+    // 4 artifacts: four generic less.
+    for _ in 0..4 {
+        battlefield.push(test_perm(1));
+    }
+    assert_eq!(
+        super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield).generic,
+        2
+    );
+    // 8 artifacts: the generic floor (zero), pips stay.
+    for _ in 0..4 {
+        battlefield.push(test_perm(1));
+    }
+    let eff = super::game_mana::effective_min_cost(&deck, &deck.cards[0], &battlefield);
+    assert_eq!(eff.generic, 0);
+    assert_eq!(eff.pips[0], 2, "the white pips never change");
     // Creatures do not count toward the discount even in bulk.
     let body = card("Bear Cub", "{1}{G}", "Creature — Bear", "");
     let body_sim = parse_sim_card(&body);
@@ -273,7 +278,7 @@ fn improvise_discount_grows_with_artifacts() {
     assert_eq!(
         super::game_mana::effective_min_cost(&deck_bodies, &deck_bodies.cards[0], &creature_board)
             .generic,
-        4
+        6
     );
 }
 
@@ -323,7 +328,7 @@ fn commander_relic_banks_and_releases() {
     );
 }
 
-// Station tiers (CR 702.184/721)
+// Station tiers
 
 #[test]
 fn station_single_tier_with_pt_animates() {

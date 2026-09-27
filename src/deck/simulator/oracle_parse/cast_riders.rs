@@ -193,6 +193,8 @@ pub(super) fn parse_cast_riders(
             && (text.contains("nonland cards in your graveyard have escape")
                 || text.contains("each nonland card in your graveyard has escape"))
             && text.contains("exile three other cards from your graveyard"),
+        own_flashback: own_flashback_cost(text),
+        own_escape: own_escape_cost(text),
         cycling_cost: super::cycling_cost(text),
         cycling_life: super::cycling_life(text),
         landcycling_type: super::landcycling_type(text),
@@ -271,6 +273,32 @@ fn additional_cost_life_shape(text: &str) -> u32 {
 }
 
 /// Parse the full kicker or multikicker cost, including colored pips.
+/// The card's own printed flashback cost ("Flashback {2}{R}"): the
+/// keyword's head segment carries the cost (CR 702.34).
+fn own_flashback_cost(text: &str) -> Option<Cost> {
+    let rest = text.split("flashback ").nth(1)?;
+    let head = rest.split(['(', '.', '\n', ',']).next()?.trim();
+    // A grant shape ("instant and sorcery cards ... gain flashback")
+    // carries no cost after the keyword; a self shape carries braces.
+    (head.starts_with('{'))
+        .then(|| super::parse_oracle_cost(head))
+        .filter(|cost| cost.total() > 0)
+}
+
+/// The card's own printed escape cost ("Escape—{3}{U}{U}, Exile four
+/// other cards from your graveyard"): the keyword's cost segment comes
+/// right after the dash (CR 702.138).
+fn own_escape_cost(text: &str) -> Option<Cost> {
+    let rest = text
+        .split("escape")
+        .nth(1)?
+        .trim_start_matches(['—', '–', '-', ' ']);
+    let head = rest.split(['(', '.', '\n', ',']).next()?.trim();
+    (head.starts_with('{'))
+        .then(|| super::parse_oracle_cost(head))
+        .filter(|cost| cost.total() > 0)
+}
+
 fn kicker_cost(text: &str) -> Option<Cost> {
     let rest = text.split("kicker ").nth(1)?;
     let head = rest.split(['(', '.', '\n', ',']).next()?.trim();
@@ -295,11 +323,10 @@ pub(super) fn parse_min_cost(text: &str, cost: &Cost) -> (Cost, bool) {
             min_cost = warp;
         }
     }
-    // Improvise and affinity scale with the artifact board: the parse-time
-    // floor cuts 2 generic and the runtime adds one pip back per 4
-    // artifacts (game_mana::effective_min_cost).
+    // Improvise and affinity scale with the artifact board at the real
+    // rate: one generic less per artifact, resolved at runtime against
+    // the live board (game_mana::effective_min_cost).
     if text.contains("improvise") || text.contains("affinity") {
-        min_cost.generic = min_cost.generic.saturating_sub(2);
         board_discount = true;
     }
     (min_cost, board_discount)

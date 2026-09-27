@@ -6,6 +6,17 @@ use super::game::{BODY_POWER, GameState, card_of};
 use super::game_effects::{apply_effect_at, draw_one};
 use super::model::{AbilityTiming, Effect, SimDeck};
 
+/// Probe entry for the combat phase (test only).
+#[cfg(test)]
+pub(super) fn combat_phase_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    turn: usize,
+    land_drops: &[u8],
+) -> CombatOutcome {
+    combat_phase(deck, st, turn, land_drops)
+}
+
 /// One combat phase's census for the turn log.
 pub(super) struct CombatOutcome {
     /// Total attacking power this turn (buffs, equipment, double strike
@@ -97,7 +108,16 @@ pub(super) fn combat_phase(
         })
         .collect();
     for (pi, animated, crewed, untapped_creature) in snapshot {
-        let attacks = animated || crewed || untapped_creature;
+        // Summoning sickness (CR 302.6): a creature that has not been
+        // under its controller's control since the turn began cannot
+        // attack. A crewed Vehicle or animated spacecraft that entered
+        // the battlefield this turn becomes a creature only now, so it
+        // waits one turn unless it has haste.
+        let entered = st.battlefield[pi].entered_turn;
+        let has_haste = card_of(deck, &st.battlefield[pi]).flags.has_haste;
+        let entry_turn_is_past = entered < turn;
+        let attacks =
+            (animated || crewed) && (entry_turn_is_past || has_haste) || untapped_creature;
         if !attacks {
             continue;
         }

@@ -285,6 +285,29 @@ fn tapped_and_summoning_sick_sources_cannot_produce_mana() {
 }
 
 #[test]
+fn healthy_dork_taps_when_the_pool_cannot_pay_the_cheapest_spell() {
+    let cards = deck(&[
+        row("Mana Dork", "{G}", "Creature — Elf", "{T}: Add {G}."),
+        row("Bear", "{1}{G}", "Creature — Bear", ""),
+    ]);
+    let mut st = state(vec![1], vec![]);
+    st.battlefield.push(super::game::new_perm_with(
+        0,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    st.battlefield[0].sick = false;
+    let mut pool = Pool::default();
+
+    tap_dorks_for_mana(&cards, &mut st, &mut pool, 1);
+
+    assert_eq!(pool.fixed[4], 1, "the dork joins the pool on demand");
+    assert!(st.battlefield[0].tapped, "the dork is tapped for mana");
+}
+
+#[test]
 fn only_a_capped_positive_mana_loop_sets_the_infinite_flag() {
     let mut cards = deck(&[
         row("Free Mana", "{1}", "Artifact", "{0}: Add {C}."),

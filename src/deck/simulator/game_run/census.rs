@@ -1,6 +1,7 @@
 //! Track per-turn game metrics and assemble the final game log.
 
 use super::super::game::{GameLog, GameState, HAND_LIMIT, card_of};
+use super::super::game_mana::usable_for_noncreature;
 use super::super::model::{CardIdx, Role, SimDeck};
 use std::collections::HashMap;
 
@@ -130,7 +131,11 @@ pub(super) fn record_hand_sightings(
 
 /// 7b INTERACTION READINESS (measured, not forced): was instant-speed
 /// interaction in hand while spare mana covered its cost? The cheapest
-/// answer in hand decides; the goldfish never spends it.
+/// answer in hand decides; the goldfish never spends it. Instant-speed
+/// answers spend the general pool plus the instant/sorcery bucket, and
+/// a bucket pip is one mana of the source's chosen color, so the
+/// bucket + general-covered pips must reach the pip total (the cast
+/// gate's mixed-pip rule).
 pub(super) fn record_interaction_readiness(
     deck: &SimDeck,
     st: &GameState,
@@ -141,17 +146,36 @@ pub(super) fn record_interaction_readiness(
     let cheapest = st
         .hand
         .iter()
-        .filter_map(|i| {
-            let c = &deck[*i];
-            (c.flags.is_interaction && c.flags.is_instant_speed).then(|| c.min_cost.total())
+        .filter(|i| {
+            let c = &deck[**i];
+            c.flags.is_interaction && c.flags.is_instant_speed
         })
-        .min();
-    if let Some(cheapest) = cheapest
-        && pool.total() >= cheapest
-    {
-        census.interaction_ready[turn - 1] = true;
-        census.interaction_mana_held[turn - 1] = f64::from(pool.total() - cheapest);
+        .min_by_key(|i| deck[**i].min_cost.total());
+    let Some(card_idx) = cheapest else {
+        return;
+    };
+    let cost = &deck[*card_idx].min_cost;
+    let general = usable_for_noncreature(pool);
+    let bucket = pool.instant_sorcery_only;
+    if general + bucket < cost.total() {
+        return;
     }
+    let pip_total: u32 = cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cost.flex_pips;
+    // Pips the general pool covers: fixed pips in place, flexible
+    // filling the rest.
+    let mut flexible = pool.flexible;
+    let mut covered = 0u32;
+    for (i, need) in cost.pips.iter().enumerate() {
+        let need = u32::from(*need);
+        covered += need.min(pool.fixed[i]);
+        flexible = flexible.saturating_sub(need.saturating_sub(pool.fixed[i]));
+    }
+    covered += flexible;
+    if bucket > 0 && bucket + covered < pip_total {
+        return;
+    }
+    census.interaction_ready[turn - 1] = true;
+    census.interaction_mana_held[turn - 1] = f64::from(general + bucket - cost.total());
 }
 
 /// 9 COMBAT: run the combat phase and record the per-turn census.
@@ -317,4 +341,16 @@ pub(super) fn end_step_discard(deck: &SimDeck, st: &mut GameState, turn: usize) 
             super::super::game_effects::CardZone::Hand,
         );
     }
+}
+
+/// Probe entry for the interaction-readiness census (test only).
+#[cfg(test)]
+pub(crate) fn record_interaction_readiness_probe(
+    deck: &SimDeck,
+    st: &GameState,
+    pool: &super::super::game::Pool,
+    census: &mut TurnCensus,
+    turn: usize,
+) {
+    record_interaction_readiness(deck, st, pool, census, turn);
 }

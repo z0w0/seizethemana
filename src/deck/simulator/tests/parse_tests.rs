@@ -241,7 +241,8 @@ fn cost_reduction_approximates() {
         "Artifact Creature — Turtle Warrior",
         "Improvise (Your artifacts can help cast this spell.)",
     );
-    assert_eq!(parse_sim_card(&big).min_cost.total(), 4);
+    // No parse-time floor: the runtime board decides (CR 702.126a).
+    assert_eq!(parse_sim_card(&big).min_cost.total(), 6);
 }
 
 // Enters with charge counters, counter injection

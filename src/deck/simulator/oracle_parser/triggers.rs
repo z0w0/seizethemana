@@ -1,6 +1,7 @@
 //! Parsing for triggered abilities and Saga chapter statements.
 
 use super::super::oracle_ast::*;
+use super::effects::parse_oracle_number_word;
 use super::statements::{is_trigger_start, strip_ability_word};
 
 /// Parse a triggered event from the ability's opening words.
@@ -16,9 +17,6 @@ pub(super) fn parse_oracle_trigger_event(source: &str) -> Option<TriggerEvent> {
     let event_text = lower
         .split_once(',')
         .map_or(lower.as_str(), |(event, _)| event);
-    if event_text.contains("opponent") || event_text.contains("attacks you") {
-        return Some(TriggerEvent::Other(event_prefix(event_text).to_string()));
-    }
     if lower.starts_with("when you cast this spell") {
         return Some(TriggerEvent::CastsSpell { this_spell: true });
     }
@@ -26,6 +24,12 @@ pub(super) fn parse_oracle_trigger_event(source: &str) -> Option<TriggerEvent> {
         || lower.contains("deals combat damage to an opponent")
     {
         return Some(TriggerEvent::CombatDamageToPlayer(object_subject(&lower)));
+    }
+    // Opponent-scoped events stay inert; the combat-damage check above
+    // must come first ("deals combat damage to an opponent" is a
+    // combat-damage trigger, not a generic opponent trigger).
+    if event_text.contains("opponent") || event_text.contains("attacks you") {
+        return Some(TriggerEvent::Other(event_prefix(event_text).to_string()));
     }
     if lower.contains("tap a nonland permanent for mana") {
         return Some(TriggerEvent::TappedForMana);
@@ -47,7 +51,36 @@ pub(super) fn parse_oracle_trigger_event(source: &str) -> Option<TriggerEvent> {
     if lower.contains("enters") {
         return Some(TriggerEvent::Enters(object_subject(&lower)));
     }
+    // A state trigger on a counter threshold: "When [this] has N or
+    // more [kind] counters on it, you win the game." (Darksteel Reactor
+    // class). The threshold number rides in the event text; the
+    // resolution must win, so counter-placement triggers ("Whenever one
+    // or more counters are put on this permanent, draw a card.") stay
+    // out of the win check.
+    if let Some(counters) = state_trigger_threshold(&lower, event_text) {
+        return Some(TriggerEvent::WinThreshold(counters));
+    }
     Some(TriggerEvent::Other(event_prefix(&lower).to_string()))
+}
+
+/// The counter threshold of a win-state trigger ("When this artifact
+/// has twenty or more charge counters on it, you win the game."): the
+/// event names "counters on it" and the resolution wins.
+fn state_trigger_threshold(lower: &str, event_text: &str) -> Option<u32> {
+    if !event_text.contains("counter") || !event_text.contains("counters on it") {
+        return None;
+    }
+    if !lower.contains("you win") {
+        return None;
+    }
+    let before = event_text
+        .split_once(" or more")
+        .map_or(event_text, |(before, _)| before);
+    let amount = before
+        .split_whitespace()
+        .last()?
+        .trim_end_matches(['.', ',', ':']);
+    parse_oracle_number_word(amount).or_else(|| amount.parse::<u32>().ok())
 }
 
 /// Parse the turn step and player for a beginning-of-step trigger.

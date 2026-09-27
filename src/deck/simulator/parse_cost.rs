@@ -32,12 +32,19 @@ pub fn parse_cost(mana_cost: &str) -> Cost {
             cost.generic += 1;
             continue;
         }
-        let colored: Vec<usize> = upper
+        let phyrexian = upper.ends_with("/P");
+        let letters: String = upper
+            .trim_end_matches("/P")
             .chars()
             .filter(|c| *c != '/' && *c != 'P')
-            .filter_map(|c| super::model::COLORS.iter().position(|w| *w == c))
             .collect();
-        if colored.len() == 1 {
+        let colored: Vec<usize> = letters
+            .chars()
+            .filter_map(|c| super::model::COLORS.iter().position(|w| c == *w))
+            .collect();
+        if colored.len() == 1 && phyrexian {
+            cost.phyrexian[colored[0]] += 1;
+        } else if colored.len() == 1 {
             cost.pips[colored[0]] += 1;
         } else if colored.len() > 1 {
             cost.flex_pips += 1;

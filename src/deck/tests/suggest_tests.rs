@@ -510,7 +510,7 @@ fn apply_suggest_price_caps_and_reports_hidden() {
 
 #[test]
 fn suggest_price_helper_keeps_only_priced_rows() {
-    // Phase 6.1: the shared helper is the whole price gate — priced rows
+    // The shared helper is the whole price gate: priced rows
     // at or under the cap stay, unpriced and above-cap rows go.
     let dir = tempfile::tempdir().unwrap();
     let conn = crate::db::open(&dir.path().join("t.db")).unwrap();
@@ -656,7 +656,7 @@ fn deck_show_json_curve_block_reports_commander_target() {
 
 #[test]
 fn combo_suggest_price_cap_excludes_unpriced_and_above_cap() {
-    // Phase 6.1/8.5: the cap applies BEFORE the limit cut, proven on the
+    // The cap applies BEFORE the limit cut, proven on the
     // command's own JSON output.
     let dir = tempfile::tempdir().unwrap();
     let mut conn = crate::db::open(&dir.path().join("t.db")).unwrap();
@@ -766,7 +766,7 @@ fn combo_suggest_price_cap_excludes_unpriced_and_above_cap() {
 
 #[test]
 fn commander_search_truncates_to_limit() {
-    // Phase 10.1: the commander path must respect --limit. `suggest` with
+    // The commander path must respect --limit. `suggest` with
     // commander=true runs the real pipeline (semantic leg off; the tag
     // leg supplies 6 candidates) and must not error on limit 3.
     let dir = tempfile::tempdir().unwrap();

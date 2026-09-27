@@ -10,8 +10,8 @@ use super::game_effects::{
     CardZone, apply_effect_at, draw_one, mill_library_card, move_to_graveyard,
 };
 use super::game_mana::{
-    add_yield_turns_empty_board, cast_restriction, effective_min_cost, pay_cost,
-    pay_restricted_cost, payable, pips_ok, usable_for_noncreature,
+    add_yield_turns_empty_board, bucket_of, cast_restrictions, effective_min_cost, pay_cost,
+    pay_restricted_cost, payable, phyrexian_life_charge, pips_ok, usable_for_noncreature,
 };
 use super::model::{AbilityTiming, CardIdx, Cost, Effect, Role, SimDeck};
 
@@ -279,15 +279,21 @@ fn cast_graveyard_spells(
             .battlefield
             .iter()
             .any(|permanent| card_of(deck, permanent).riders.grants_escape);
+        // Own printed flashback/escape costs (CR 702.34, 702.138) sit
+        // next to the granted shapes: a self-flashback costs its printed
+        // flashback cost and exiles; a self-escape costs its printed
+        // escape cost plus three exiled cards.
         let mut candidates: Vec<(CardIdx, bool)> = st
             .graveyard
             .iter()
             .copied()
             .filter_map(|index| {
                 let card = &deck[index];
-                let flashback =
-                    st.flashback_permissions.contains(&index) && card.is_instant_or_sorcery;
-                let escape = escape_active && card.role != Role::Land;
+                let flashback = st.flashback_permissions.contains(&index)
+                    && card.is_instant_or_sorcery
+                    || card.riders.own_flashback.is_some() && card.is_instant_or_sorcery;
+                let escape =
+                    (escape_active || card.riders.own_escape.is_some()) && card.role != Role::Land;
                 (flashback || escape).then_some((index, escape && !flashback))
             })
             .collect();
@@ -307,11 +313,23 @@ fn cast_graveyard_spells(
             if escape && fodder.len() < 3 {
                 continue;
             }
-            let cost = effective_min_cost(deck, &deck[index], &st.battlefield);
+            let own_costs = &deck[index].riders;
+            let cost = if !escape && own_costs.own_flashback.is_some() {
+                own_costs.own_flashback.clone().expect("checked above")
+            } else if escape && own_costs.own_escape.is_some() {
+                own_costs.own_escape.clone().expect("checked above")
+            } else {
+                effective_min_cost(deck, &deck[index], &st.battlefield)
+            };
             // Additional life costs gate the same way hand casts gate
             // (the cast would pay the life and could drive life
             // negative).
             if st.life <= deck[index].riders.additional_cost_life as i32 {
+                continue;
+            }
+            // Phyrexian pips pay with 2 life each (CR 118.3b).
+            let charge = phyrexian_life_charge(&cost);
+            if st.life <= charge as i32 {
                 continue;
             }
             if !payable(&cost, pool) || !pips_ok(&cost, pool) {
@@ -328,6 +346,8 @@ fn cast_graveyard_spells(
                 st.graveyard.remove(position);
             }
             st.flashback_permissions.remove(&index);
+            st.life -= charge as i32;
+            st.life_paid += charge;
             let mut replay_ids = Vec::new();
             let mut replay_ets = Vec::new();
             let mut spent = 0;
@@ -347,7 +367,9 @@ fn cast_graveyard_spells(
             st.replay_casts += 1;
             super::game::milestone_for_turn(st, turn as u32).graveyard_casts += 1;
             mana_spent[turn - 1] += spent as f64;
-            if deck[index].is_instant_or_sorcery {
+            if deck[index].is_instant_or_sorcery
+                || (deck[index].riders.own_flashback.is_some() && !st.graveyard.contains(&index))
+            {
                 st.exile.push(index);
             }
             for (uid, card_index) in replay_ets {
@@ -386,16 +408,19 @@ fn cycle_unusable_cards(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, tur
             .as_ref()
             .cloned()
             .unwrap_or_default();
+        // Phyrexian pips in the cycling cost pay with 2 life each
+        // (CR 118.3b), on top of any "pay N life" rider.
+        let charge = phyrexian_life_charge(&cost);
         if !st.hand.contains(&index)
-            || st.life <= card.riders.cycling_life as i32
+            || st.life <= (card.riders.cycling_life + charge) as i32
             || !payable(&cost, pool)
             || !pips_ok(&cost, pool)
         {
             continue;
         }
         pay_cost(&cost, pool);
-        st.life -= card.riders.cycling_life as i32;
-        st.life_paid += card.riders.cycling_life;
+        st.life -= (card.riders.cycling_life + charge) as i32;
+        st.life_paid += card.riders.cycling_life + charge;
         let funded_draw =
             u32::from(card.riders.cycling_life > 0 && card.riders.landcycling_type.is_none());
         st.life_funded_draws += funded_draw;
@@ -498,12 +523,18 @@ fn resolve_cast(
     let card = &deck[idx];
     let alternative_cards = select_alternative_cost_cards(deck, st, idx);
     if alternative_cards.is_empty() {
-        if let Some(restriction) = cast_restriction(card) {
-            pay_restricted_cost(eff, pool, restriction);
-        } else {
+        // Phyrexian pips pay with 2 life each (CR 118.3b): the
+        // best-case agent preserves mana.
+        let charge = phyrexian_life_charge(eff);
+        st.life -= charge as i32;
+        st.life_paid += charge;
+        let classes = cast_restrictions(card);
+        if classes.is_empty() {
             pay_cost(eff, pool);
+        } else {
+            pay_restricted_cost(eff, pool, &classes);
         }
-        *spent_total += eff.total();
+        *spent_total += eff.total() - charge / 2;
     } else {
         #[cfg(test)]
         st.alternate_casts.push(idx);
@@ -515,14 +546,19 @@ fn resolve_cast(
     // Kicker: an optional extra cost paid from leftover mana. Best
     // case the goldfish kicks when the pool covers it (the colored
     // pips are paid from fixed and flexible sources like any cost).
-    // The rider bumps the drain/damage amount (the modeled kicker
-    // payoff).
+    // Phyrexian kicker pips pay with 2 life each (CR 118.3b), so the
+    // pool owes only their mana part. The rider bumps the drain/damage
+    // amount (the modeled kicker payoff).
+    let kicker_charge = card.riders.kicker.as_ref().map_or(0, phyrexian_life_charge);
     let kicked = if let Some(k) = card.riders.kicker.clone()
-        && usable_for_noncreature(pool) >= k.total()
+        && usable_for_noncreature(pool) >= k.total() - kicker_charge / 2
         && pips_ok(&k, pool)
+        && st.life > kicker_charge as i32
     {
         pay_cost(&k, pool);
-        *spent_total += k.total();
+        st.life -= kicker_charge as i32;
+        st.life_paid += kicker_charge;
+        *spent_total += k.total() - kicker_charge / 2;
         true
     } else {
         false
@@ -658,11 +694,7 @@ fn resolve_cast(
     // convert the cast's leftover pool into counters (Astral
     // Cornucopia class).
     let entry_counters = if card.enter_counters == super::parse_land::X_ENTRY_COUNTERS {
-        let x = pool.total();
-        pool.colorless = 0;
-        pool.flexible = 0;
-        pool.fixed = [0; 5];
-        wipe_restricted_buckets(pool);
+        let x = convert_pool_to_x(card, pool);
         *spent_total += x;
         x
     } else {
@@ -754,11 +786,7 @@ fn resolve_cast(
     if let Some(class) = card.riders.x_class
         && class != super::model::XClass::Counters
     {
-        let x = pool.total().max(1);
-        pool.colorless = 0;
-        pool.flexible = 0;
-        pool.fixed = [0; 5];
-        wipe_restricted_buckets(pool);
+        let x = convert_pool_to_x(card, pool).max(1);
         // Spent accounting is single-counted: the entered X counters
         // ARE the paid X; `spent_total` records it once here.
         *spent_total += x;
@@ -915,13 +943,26 @@ fn resolve_cast(
     }
 }
 
-/// Zero every restricted bucket (an X-cost or counters spell spends the
-/// whole pool; restricted mana cannot outlive the conversion).
-pub(super) fn wipe_restricted_buckets(pool: &mut Pool) {
+/// The X value an X-cost spell pays: the general pool plus every
+/// restricted bucket whose class the spell belongs to (that mana can
+/// legally fund the cast). The conversion then drains the whole pool:
+/// the member buckets are spent into X, the unrelated buckets are
+/// discarded, and nothing counts twice.
+fn convert_pool_to_x(card: &super::model::SimCard, pool: &mut Pool) -> u32 {
+    let x = {
+        let classes = cast_restrictions(card);
+        let general = usable_for_noncreature(pool);
+        let buckets: u32 = classes.iter().map(|c| bucket_of(pool, *c)).sum();
+        general + buckets
+    };
+    pool.colorless = 0;
+    pool.flexible = 0;
+    pool.fixed = [0; 5];
     pool.creature_only = 0;
     pool.legendary_only = 0;
     pool.artifact_only = 0;
     pool.instant_sorcery_only = 0;
+    x
 }
 
 /// The upkeep-engine payload of an ability: the draw count for
@@ -935,7 +976,8 @@ fn engine_effect_or_draws(trigger: &AbilityTiming, effect: &Effect) -> Option<u3
             Effect::Mill(_)
             | Effect::ReturnFromGraveyard { .. }
             | Effect::Drain(_)
-            | Effect::Tokens(_),
+            | Effect::Tokens(_)
+            | Effect::Counters(_),
         ) => Some(0),
         _ => None,
     }
@@ -952,4 +994,53 @@ pub(crate) fn cast_graveyard_spells_probe(
     engines: &mut Vec<(u32, u32)>,
 ) {
     cast_graveyard_spells(deck, st, pool, turn, mana_spent, engines);
+}
+
+/// Probe entry for the upkeep-engine registration of one cast permanent
+/// (test only).
+#[cfg(test)]
+pub(super) fn engine_registration_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    engines: &mut Vec<(u32, u32)>,
+    turn: usize,
+) {
+    for perm in &st.battlefield {
+        let Some(idx) = perm.card.deck_idx() else {
+            continue;
+        };
+        for ability in deck[idx].abilities() {
+            if let Some(draws) = engine_effect_or_draws(&ability.trigger, &ability.effect) {
+                engines.push((perm.uid, draws));
+            }
+        }
+    }
+    let _ = turn;
+}
+
+/// Probe entry for the pool-to-X conversion (test only).
+#[cfg(test)]
+pub(crate) fn convert_pool_to_x_probe(card: &super::model::SimCard, pool: &mut Pool) -> u32 {
+    convert_pool_to_x(card, pool)
+}
+
+/// Probe entry for the cast phase (test only).
+#[cfg(test)]
+pub(crate) fn cast_phase_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut Pool,
+    engines: &mut Vec<(u32, u32)>,
+    turn: usize,
+) {
+    cast_phase(
+        deck,
+        st,
+        pool,
+        turn,
+        &mut [0.0],
+        engines,
+        &mut Vec::new(),
+        &mut [false; 5],
+    );
 }

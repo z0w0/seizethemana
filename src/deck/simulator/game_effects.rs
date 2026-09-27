@@ -6,7 +6,8 @@ use super::game::{
     new_token_perm, take_uid,
 };
 use super::game_mana::{
-    add_yield, add_yield_turns, effective_min_cost, pay_cost, payable, pips_ok,
+    add_yield, add_yield_turns, effective_min_cost, pay_cost, payable, phyrexian_life_charge,
+    pips_ok,
 };
 use super::model::{
     Ability, AbilityTiming, CardIdx, Effect, LibraryGraveyardTrigger, Role, SearchCardType,
@@ -360,6 +361,17 @@ fn place_search_result(
     }
 }
 
+/// Probe entry for the tap-budget pass (test only).
+#[cfg(test)]
+pub(super) fn tap_budget_probe(
+    deck: &SimDeck,
+    battlefield: &mut [Permanent],
+    pool: &mut Pool,
+    hand: &[CardIdx],
+) {
+    tap_budget(deck, battlefield, pool, hand);
+}
+
 /// The tap-budget pass: mana only while casting still needs mana, then
 /// station, then crew, then equip (suit up a body so its buff counts in
 /// combat).
@@ -376,13 +388,29 @@ pub(super) fn tap_budget(
         .map(|i| effective_min_cost(deck, &deck[*i], battlefield).total())
         .min();
 
-    // Creatures and crewed vehicles able to tap this turn.
+    // Creatures and crewed vehicles able to tap this turn. Summoning
+    // sickness blocks their own tap-symbol abilities (CR 302.6), so the
+    // mana-tap list is unsick only.
     let tappable: Vec<usize> = battlefield
         .iter()
         .enumerate()
         .filter(|(_, p)| {
             !p.tapped
                 && !p.sick
+                && p.card.deck_idx().is_some()
+                && !card_of(deck, p).is_station_card
+                && (card_of(deck, p).is_creature || p.animated)
+        })
+        .map(|(i, _)| i)
+        .collect();
+    // Stationing and crewing tap other creatures, not the body's own
+    // tap-symbol ability, so summoning-sick bodies qualify (CR 302.6,
+    // 702.122a).
+    let stationable: Vec<usize> = battlefield
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| {
+            !p.tapped
                 && p.card.deck_idx().is_some()
                 && !card_of(deck, p).is_station_card
                 && (card_of(deck, p).is_creature || p.animated)
@@ -406,7 +434,7 @@ pub(super) fn tap_budget(
 
     // 7b Station: tap remaining bodies into the highest-threshold unfilled
     // spacecraft/planet, one at a time, counters = body power.
-    for &bi in &tappable {
+    for &bi in &stationable {
         if battlefield[bi].tapped {
             continue;
         }
@@ -446,7 +474,6 @@ pub(super) fn tap_budget(
             .filter(|i| {
                 *i != vi
                     && !battlefield[*i].tapped
-                    && !battlefield[*i].sick
                     && battlefield[*i].card.deck_idx().is_some()
                     && (card_of(deck, &battlefield[*i]).is_creature || battlefield[*i].animated)
             })
@@ -462,7 +489,6 @@ pub(super) fn tap_budget(
                 battlefield[i].tapped = true;
             }
             battlefield[vi].crewed = true;
-            battlefield[vi].sick = false;
             // OnCrewed triggers fire now (tokens join next turn's bodies).
         }
     }
@@ -658,7 +684,7 @@ fn pick_best_activation(deck: &SimDeck, st: &GameState, pool: &Pool) -> Option<A
             if eligible_bodies.len() < ability.sacrifice_bodies as usize {
                 continue;
             }
-            if !activation_usable(perm, ability, pool) {
+            if !activation_usable(perm, ability, pool, st.life) {
                 continue;
             }
             let candidate_cost = ability.cost.total();
@@ -713,8 +739,9 @@ fn pick_best_activation(deck: &SimDeck, st: &GameState, pool: &Pool) -> Option<A
 }
 
 /// True when an unlocked activation can fire right now: the `fired`
-/// gate, affordability, and the loyalty/counter gates.
-fn activation_usable(perm: &Permanent, ability: &Ability, pool: &Pool) -> bool {
+/// gate, affordability, the loyalty/counter gates, and life covering
+/// any phyrexian pips (the resolution would charge them).
+fn activation_usable(perm: &Permanent, ability: &Ability, pool: &Pool, life: i32) -> bool {
     let usable = matches!(
         ability.effect,
         Effect::Draw(_)
@@ -755,7 +782,9 @@ fn activation_usable(perm: &Permanent, ability: &Ability, pool: &Pool) -> bool {
             || (!ability.uses_counters
                 && (ability.loyalty_cost > 0
                     || ability.loyalty_gain > 0
-                    || (payable(&ability.cost, pool) && pips_ok(&ability.cost, pool)))))
+                    || (payable(&ability.cost, pool)
+                        && pips_ok(&ability.cost, pool)
+                        && life > phyrexian_life_charge(&ability.cost) as i32))))
 }
 
 /// Apply one chosen activation: pay the cost (mana, loyalty, or a
@@ -794,6 +823,12 @@ fn resolve_activation(
         }
     } else {
         pay_cost(&ability.cost, pool);
+        // Phyrexian pips pay with 2 life each (CR 118.3b): the
+        // best-case agent preserves mana, so the resolution charges the
+        // life the gate already checked.
+        let charge = phyrexian_life_charge(&ability.cost);
+        st.life -= charge as i32;
+        st.life_paid += charge;
         // Only `{T}`-cost activations tap the source; free activations
         // ({0}:) stay untapped.
         if a.ability.taps {

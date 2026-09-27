@@ -27,7 +27,7 @@
 //!  10 END       Monarch draw; hand-limit discard
 
 use super::game_effects::apply_effect_at;
-use super::model::{Ability, AbilityTiming, CardIdx, Effect, Restriction, Role, SimDeck, TapYield};
+use super::model::{Ability, AbilityTiming, CardIdx, Effect, Role, SimDeck, TapYield};
 use std::collections::{HashMap, HashSet};
 
 /// One permanent on the battlefield.
@@ -56,6 +56,11 @@ pub struct Permanent {
     pub saga_step: u32,
     /// Once-per-turn abilities already fired this turn.
     pub fired: bool,
+    /// Once-per-turn triggered abilities already fired this turn (a
+    /// separate ledger from `fired`, which tracks activations and
+    /// equips: one subsystem's once-per-turn marker never gates the
+    /// other's).
+    pub trigger_fired: bool,
     /// Blink-shaped ETBs re-fire the host's OnEnter triggers once, next
     /// turn (Conjurer's Closet-style flickers).
     pub blink_pending: bool,
@@ -357,20 +362,6 @@ impl Pool {
             + self.artifact_only
             + self.instant_sorcery_only
     }
-
-    /// Mana reachable for a cast of the given restricted class: the
-    /// general pool plus the class's own bucket. A restricted bucket
-    /// never pays another cast class.
-    pub(super) fn usable_for(&self, restriction: Restriction) -> u32 {
-        let general = self.fixed.iter().sum::<u32>() + self.flexible + self.colorless;
-        general
-            + match restriction {
-                Restriction::Creature => self.creature_only,
-                Restriction::Legendary => self.legendary_only,
-                Restriction::Artifact => self.artifact_only,
-                Restriction::InstantSorcery => self.instant_sorcery_only,
-            }
-    }
 }
 
 /// Fallback target types for fetch lands whose Oracle text omits its target
@@ -483,6 +474,7 @@ pub(super) fn new_perm_with(
         entered_turn: turn as usize,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: sim.starting_loyalty.unwrap_or(0),
         equipped: false,
@@ -503,6 +495,7 @@ pub(super) fn new_token_perm(uid: u32, turn: u32) -> Permanent {
         entered_turn: turn as usize,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -523,6 +516,7 @@ pub(super) fn new_commander_perm(uid: u32, slot: usize, loyalty: u32, turn: usiz
         entered_turn: turn,
         saga_step: 0,
         fired: false,
+        trigger_fired: false,
         blink_pending: false,
         loyalty,
         equipped: false,
@@ -532,18 +526,54 @@ pub(super) fn new_commander_perm(uid: u32, slot: usize, loyalty: u32, turn: usiz
 
 /// Resolve battlefield triggers for one player-controlled event.
 pub(super) fn fire_triggers(deck: &SimDeck, st: &mut GameState, trigger: AbilityTiming, turn: u32) {
-    let effects = st
+    // Per-source grouping keeps a once-per-turn trigger's effects
+    // together: "This ability triggers only once each turn" gates the
+    // whole trigger, not each lowered effect separately.
+    let groups = st
         .battlefield
         .iter()
-        .flat_map(|permanent| {
+        .enumerate()
+        .map(|(pos, permanent)| {
             let card = card_of(deck, permanent);
-            card.abilities()
-                .filter(|ability| ability.trigger == trigger)
-                .map(move |ability| (permanent.card, card.mills_opponent, ability.effect.clone()))
+            (
+                pos,
+                permanent.trigger_fired,
+                card.abilities()
+                    .filter(|ability| ability.trigger == trigger)
+                    .map(|ability| {
+                        (
+                            ability.once_per_turn,
+                            card.mills_opponent,
+                            ability.effect.clone(),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            )
         })
         .collect::<Vec<_>>();
-    for (source, mills_opponent, effect) in effects {
-        apply_effect_at(deck, &effect, st, turn, mills_opponent, source.deck_idx());
+    for (pos, fired, abilities) in groups {
+        if abilities.is_empty() {
+            continue;
+        }
+        let source = st.battlefield[pos].card;
+        let mills_opponent = card_of(deck, &st.battlefield[pos]).mills_opponent;
+        // Unbounded triggers fire on every event of their timing; the
+        // once-per-turn batch (one trigger's lowered effects stay
+        // together) fires only on the first event of the turn.
+        let mut once_batch = Vec::new();
+        for (once_per_turn, mills, effect) in abilities {
+            if once_per_turn {
+                once_batch.push((mills, effect));
+            } else {
+                apply_effect_at(deck, &effect, st, turn, mills_opponent, source.deck_idx());
+            }
+        }
+        if !once_batch.is_empty() && !fired {
+            for (mills, effect) in &once_batch {
+                apply_effect_at(deck, effect, st, turn, *mills, source.deck_idx());
+            }
+            st.battlefield[pos].trigger_fired = true;
+        }
     }
 }
 
@@ -614,3 +644,14 @@ pub(super) const HAND_LIMIT: usize = 7;
 
 /// The turn loop lives in `game_run`; re-exported for callers.
 pub use super::game_run::run_game;
+
+/// Probe entry for fire_triggers (test only).
+#[cfg(test)]
+pub(super) fn fire_triggers_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    trigger: AbilityTiming,
+    turn: u32,
+) {
+    fire_triggers(deck, st, trigger, turn);
+}

@@ -14,8 +14,9 @@ use super::game_commander::{
 };
 use super::game_effects::{apply_effect_at, spend_leftover, tap_budget};
 use super::game_mana::{
-    add_yield, add_yield_turns, cast_restriction, effective_min_cost, pay_cost,
-    pay_restricted_cost, payable, pips_ok, usable_for_noncreature,
+    add_yield, add_yield_turns, bucket_of, cast_restrictions, effective_min_cost, pay_cost,
+    pay_restricted_cost, payable, phyrexian_life_charge, pips_ok, usable_for_classes,
+    usable_for_noncreature,
 };
 use super::model::{AbilityTiming, CardIdx, Effect, Role, Scale, SimDeck};
 use rand_chacha::ChaCha8Rng;
@@ -24,6 +25,8 @@ use std::collections::HashMap;
 /// Per-turn census and end-of-game log assembly.
 mod census;
 pub(super) use census::TurnCensus;
+#[cfg(test)]
+pub(super) use census::record_interaction_readiness_probe;
 
 /// Play one goldfish game and return its log. Pure apart from the
 /// passed RNG: same deck + same seed = same game. The log carries the
@@ -117,14 +120,20 @@ pub(super) fn run_turn(
     expire_crew(st);
     fire_blink_refires(deck, st, turn as u32);
     for perm in st.battlefield.iter_mut() {
-        perm.tapped = false;
+        // "Doesn't untap during your untap step" statics stay tapped
+        // (Basalt Monolith class); only an untap activation clears the
+        // tap. Every other permanent untaps normally.
+        if !card_of(deck, perm).flags.doesnt_untap {
+            perm.tapped = false;
+        }
         perm.sick = false;
         perm.fired = false;
+        perm.trigger_fired = false;
     }
     st.prowess_casts = 0;
 
     // 2 UPKEEP: engines fire; win checks run. Saga chapters advance in
-    // the precombat main phase (phase 5, CR 714.3c).
+    // the precombat main phase (turn-pipeline step 5, CR 714.3c).
     run_upkeep(deck, st, engines, turn);
     check_win_thresholds(deck, st, census, turn);
     check_ultimates(deck, st, census, turn);
@@ -134,6 +143,10 @@ pub(super) fn run_turn(
     if draws_on_turn {
         super::game_effects::draw_one(deck, st, turn as u32);
     }
+    // Saga lore counters are added as the precombat main phase begins
+    // (CR 714.3c), before the main-phase triggers and land drops; the
+    // entry chapter fired at cast time.
+    run_sagas(deck, st, turn);
     fire_triggers(deck, st, AbilityTiming::PrecombatMainPhase, turn as u32);
     census::record_hand_sightings(deck, st, census, turn);
 
@@ -141,9 +154,6 @@ pub(super) fn run_turn(
     play_land_drops(deck, st, census, turn);
 
     // 5 POOL, commander cast, casts, 6 ACTIVATE, 7 TAP BUDGET.
-    // Saga lore counters are added in the precombat main phase, after
-    // the draw step (CR 714.3c); the entry chapter fired at cast time.
-    run_sagas(deck, st, turn);
     let mut pool = build_pool(deck, st, turn as u32);
     commander_phase(deck, st, &mut pool, census, commander, turn, engines, true);
     // Revisit casts after draw and mana actions. Cheapest legal casts run
@@ -236,8 +246,20 @@ pub(super) fn add_nonland_mana(
     pool: &mut Pool,
     turn: u32,
 ) -> bool {
+    // A static grant ("creatures/lands you control have '{T}: Add one
+    // mana of any color'") converts the permanent's own tap: the tap
+    // yields one any-color pip instead of its printed yield (the same
+    // tap, one mana).
+    let grants = grants_active(deck, st);
+    let card = card_of(deck, source);
+    let grant_conversion =
+        (card.role == Role::Land && grants.lands) || (card.is_creature && grants.creatures);
     let mana_before = pool.total();
-    add_yield_turns(deck, yield_, pool, turn, &st.battlefield);
+    if grant_conversion {
+        pool.flexible += 1;
+    } else {
+        add_yield_turns(deck, yield_, pool, turn, &st.battlefield);
+    }
     let produced = pool.total() > mana_before;
     if !produced {
         return false;
@@ -367,6 +389,14 @@ fn fire_upkeep_engine(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize)
     for effect in &upkeep_effects {
         match effect {
             Effect::Draw(n) => run_scaling_draw(deck, st, host_idx, *n, turn as u32),
+            Effect::Counters(n) => {
+                // An upkeep counter pump ("At the beginning of your
+                // upkeep, put a charge counter on this artifact") grows
+                // its own host by uid (Darksteel Reactor class).
+                if let Some(perm) = st.battlefield.iter_mut().find(|p| p.uid == uid) {
+                    perm.counters += *n;
+                }
+            }
             Effect::Mill(_)
             | Effect::ReturnFromGraveyard { .. }
             | Effect::Drain(_)
@@ -621,7 +651,6 @@ pub(super) fn build_pool(deck: &SimDeck, st: &mut GameState, turn: u32) -> Pool 
             st.battlefield[pos].tapped = true;
         }
     }
-    add_static_grants(deck, st, &mut pool);
     // Treasure bank: spend up to the full bank as flexible pips (the
     // player would sacrifice them when needed; best-case the whole bank
     // converts this turn). Treasures are consumed on use, so the bank
@@ -649,12 +678,7 @@ pub(super) fn tap_dorks_for_mana(deck: &SimDeck, st: &mut GameState, pool: &mut 
         }
         let perm = &st.battlefield[pos];
         let card = card_of(deck, perm);
-        if perm.tapped
-            || perm.sick
-            || perm.card.deck_idx().is_some()
-            || !card.is_creature
-            || !mana_condition_met(deck, st, card)
-        {
+        if perm.tapped || perm.sick || !card.is_creature || !mana_condition_met(deck, st, card) {
             continue;
         }
         let Some(yield_) = card.tap.clone() else {
@@ -816,36 +840,19 @@ fn add_gated_yield(
     add_yield(&ungated, pool);
 }
 
-/// Static mana grants (Enduring Vitality, Chromatic Lantern): each
-/// matching permanent adds one flexible pip per turn, capped at two
-/// pips per grant. The grant source itself must be on the battlefield.
-fn add_static_grants(deck: &SimDeck, st: &GameState, pool: &mut Pool) {
-    for grantor_idx in 0..st.battlefield.len() {
-        let grant = {
-            let perm = &st.battlefield[grantor_idx];
-            card_of(deck, perm).flags.grant
-        };
-        let Some(grant) = grant else {
-            continue;
-        };
-        let want_creatures = matches!(grant, super::model::Grant::Creatures);
-        let matches = st
-            .battlefield
-            .iter()
-            .filter(|p| {
-                let card = card_of(deck, p);
-                // Creatures grant empowers creatures; lands grant
-                // empowers lands. Commanders are never granted mana
-                // by their own static engine here.
-                if want_creatures {
-                    card.is_creature && p.card.deck_idx().is_some()
-                } else {
-                    card.role == Role::Land && p.card.deck_idx().is_some()
-                }
-            })
-            .count() as u32;
-        pool.flexible += matches.min(2);
+/// The static mana grants live on the battlefield (Enduring Vitality,
+/// Chromatic Lantern): each grant converts every matching permanent's
+/// tap to one any-color pip.
+fn grants_active(deck: &SimDeck, st: &GameState) -> super::model::Grants {
+    let mut grants = super::model::Grants::default();
+    for perm in &st.battlefield {
+        match card_of(deck, perm).flags.grant {
+            Some(super::model::Grant::Creatures) => grants.creatures = true,
+            Some(super::model::Grant::Lands) => grants.lands = true,
+            None => {}
+        }
     }
+    grants
 }
 
 /// Commander cast: full pip check against the general pool, cost
@@ -875,34 +882,38 @@ fn commander_phase(
         {
             continue;
         }
-        // Gate on the general pool only: `pay_cost` never spends the
-        // restricted buckets (creature/legendary/artifact/instant-
-        // sorcery mana pays only its own cast class), so counting them
-        // here would cast commanders with mana never deducted.
-        let restriction = cast_restriction(cmd);
-        let mana_ok = restriction.map_or_else(
-            || usable_for_noncreature(pool) >= cmd.cost.total() && pips_ok(&cmd.cost, pool),
-            |class| {
-                let pip_total =
-                    cmd.cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cmd.cost.flex_pips;
-                pool.usable_for(class) >= cmd.cost.total()
-                    && (pips_ok(&cmd.cost, pool)
-                        || pool.usable_for(class) - usable_for_noncreature(pool) + pool.flexible
-                            >= pip_total)
-            },
-        );
-        if !mana_ok {
+        // Gate on the general pool plus every matching restricted
+        // bucket: creature/legendary/artifact/instant-sorcery mana pays
+        // only its own cast class, so unrelated buckets must not count
+        // (or the cast would spend mana never deducted). Phyrexian pips
+        // pay with 2 life each (CR 118.3b), so the pool owes only the
+        // mana part and life must cover the charge.
+        let charge = phyrexian_life_charge(&cmd.cost);
+        let mana_total = cmd.cost.total() - charge / 2;
+        let classes = cast_restrictions(cmd);
+        let mana_ok = if classes.is_empty() {
+            usable_for_noncreature(pool) >= mana_total && pips_ok(&cmd.cost, pool)
+        } else {
+            let pip_total =
+                cmd.cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cmd.cost.flex_pips;
+            let bucket = classes.iter().map(|c| bucket_of(pool, *c)).sum::<u32>();
+            usable_for_classes(pool, &classes) >= mana_total
+                && (pips_ok(&cmd.cost, pool) || bucket + pool.flexible >= pip_total)
+        };
+        if !mana_ok || st.life <= charge as i32 {
             // Skip this commander; the next partner still gets its try
             // this turn.
             continue;
         }
-        // Deduct from the general pool only, mirroring the gate.
-        if let Some(class) = restriction {
-            pay_restricted_cost(&cmd.cost, pool, class);
-        } else {
+        // Deduct mirroring the gate.
+        st.life -= charge as i32;
+        st.life_paid += charge;
+        if classes.is_empty() {
             pay_cost(&cmd.cost, pool);
+        } else {
+            pay_restricted_cost(&cmd.cost, pool, &classes);
         }
-        census.mana_spent[turn - 1] += cmd.cost.total() as f64;
+        census.mana_spent[turn - 1] += (cmd.cost.total() - charge / 2) as f64;
         if census.commander_castable.is_none() {
             census.commander_castable = Some(turn as u32);
         }
@@ -978,4 +989,41 @@ fn unlock_thresholds(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus
             }
         }
     }
+}
+
+/// Probe entry for the upkeep engine firing (test only).
+#[cfg(test)]
+pub(super) fn fire_upkeep_engine_probe(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize) {
+    fire_upkeep_engine(deck, st, uid, turn);
+}
+
+/// Probe entry for the win-threshold check (test only).
+#[cfg(test)]
+pub(super) fn check_win_thresholds_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    turn: usize,
+) {
+    check_win_thresholds(deck, st, census, turn);
+}
+
+/// Probe entry for the mana-pool build (test only).
+#[cfg(test)]
+pub(crate) fn build_pool_probe(deck: &SimDeck, st: &mut GameState, turn: u32) -> Pool {
+    build_pool(deck, st, turn)
+}
+
+/// Probe entry for the commander cast phase (test only).
+#[cfg(test)]
+pub(super) fn commander_phase_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut Pool,
+    census: &mut TurnCensus,
+    commander: &CommanderProfile,
+    turn: usize,
+    engines: &mut Vec<(u32, u32)>,
+) {
+    commander_phase(deck, st, pool, census, commander, turn, engines, false);
 }

@@ -161,6 +161,10 @@ pub enum TriggerEvent {
     /// ability. Every supported wording taps one of your nonland
     /// permanents, so the variant carries no fields.
     TappedForMana,
+    /// A state trigger on a counter threshold: "When [this] has N or
+    /// more [kind] counters on it" (Darksteel Reactor class). The
+    /// threshold number rides in the event text, not the resolution.
+    WinThreshold(u32),
     /// The event is kept as text because the event grammar is unsupported.
     Other(String),
 }
@@ -260,6 +264,9 @@ pub enum StaticEffect {
     },
     /// Allow an additional land play.
     AdditionalLandDrop,
+    /// A permanent that skips the untap step ("This artifact doesn't
+    /// untap during your untap step").
+    DoesntUntap,
     /// Win when this permanent reaches a stated counter threshold.
     WinThreshold(u32),
     /// Preserve a static rule not yet modeled. Kept in the syntax tree for

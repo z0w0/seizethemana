@@ -632,3 +632,51 @@ fn sparse_deck_still_reports_screw() {
         stats.screw_pct
     );
 }
+
+/// A phyrexian kicker pip pays with 2 life (CR 118.3b): the kick's
+/// mana part drops by the pip, the cast charges the life, and a
+/// life-starved board skips the kick.
+#[test]
+fn kicker_phyrexian_pip_pays_life() {
+    // Kicker {R/P} burn: the kick costs 3 mana + 2 life; the goldfish
+    // preserves mana and pays the life.
+    let kicked = card(
+        "Pip Kicked Bolt",
+        "{1}{R}",
+        "Sorcery",
+        "Kicker {R/P}\nPip Kicked Bolt deals 3 damage to target player.",
+    );
+    let mut cards = Vec::new();
+    for _ in 0..30 {
+        cards.push(card(
+            "Mountain",
+            "",
+            "Basic Land — Mountain",
+            "({T}: Add {R}.)",
+        ));
+    }
+    for _ in 0..8 {
+        cards.push(kicked.clone());
+    }
+    let deck = SimDeck {
+        cards: cards.iter().map(parse_sim_card).collect(),
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut rng = ChaCha8Rng::seed_from_u64(41);
+    let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
+    let stats = aggregate(&logs, &deck, 8);
+    // The kick fires in most games (1 mana + 2 life is cheap) and the
+    // drain bumps from 3 to 5; the kick costs life, so life_paid moves.
+    assert!(
+        stats.drain_total_by_turn[7] > 8.0,
+        "phyrexian kicker burn should drain across games, got {:.1}",
+        stats.drain_total_by_turn[7]
+    );
+    let life_paid = stats.life_paid_avg;
+    assert!(
+        life_paid > 1.0,
+        "the phyrexian kicker charges life, avg life_paid: {life_paid:.1}"
+    );
+}
