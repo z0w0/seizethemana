@@ -68,10 +68,13 @@ fn keep_band_for(deck: &crate::deck::simulator::model::SimDeck) -> (u8, u8) {
 }
 
 /// Count spells in the hand castable by turn 2 (cost 2 or less, nonland).
-fn early_play_count(deck: &crate::deck::simulator::model::SimDeck, hand: &[usize]) -> usize {
+fn early_play_count(
+    deck: &crate::deck::simulator::model::SimDeck,
+    hand: &[crate::deck::simulator::model::CardIdx],
+) -> usize {
     hand.iter()
         .filter(|i| {
-            let c = &deck.cards[**i];
+            let c = &deck[**i];
             !c.opens_in_play && c.cost.total() <= 2 && c.role != super::simulator::model::Role::Land
         })
         .count()
@@ -81,12 +84,12 @@ fn early_play_count(deck: &crate::deck::simulator::model::SimDeck, hand: &[usize
 /// when the oracle has no row (unknown name).
 fn hand_cards(
     deck: &super::simulator::model::SimDeck,
-    hand: &[usize],
+    hand: &[super::simulator::model::CardIdx],
     cards: &HashMap<String, CardRow>,
 ) -> Vec<HandCard> {
     hand.iter()
         .map(|i| {
-            let sim = &deck.cards[*i];
+            let sim = &deck[*i];
             match cards.get(&sim.name) {
                 Some(row) => HandCard {
                     name: row.name.clone(),

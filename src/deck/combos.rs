@@ -151,7 +151,7 @@ pub fn combos(
     json: bool,
 ) -> anyhow::Result<i32> {
     let (_path, deck) = super::store::load_deck(paths, name)?;
-    if !super::simulator::store_has_combos_pub(conn) {
+    if !super::simulator::store_has_combos(conn) {
         out.error("no combo data in the store");
         out.hint("run 'stm setup' or 'stm sync' to refresh combo data");
         return Ok(crate::cli::codes::NO_RESULTS);
