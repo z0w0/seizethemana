@@ -281,6 +281,43 @@ fn parses_every_keyword_name_and_parameter_type() {
     ));
 }
 
+/// Ability words never parse as keyword names: their labels strip off
+/// (CR 702.200+), the trigger behind the label parses, and no
+/// `KeywordName` variant carries an ability word.
+#[test]
+fn ability_words_strip_to_their_trigger_and_stay_out_of_keyword_names() {
+    let landfall = parse_oracle_text(
+        "Landfall — Whenever a land you control enters, you gain 1 life.",
+        &[],
+    );
+    assert!(
+        !landfall.keywords.iter().any(|keyword| matches!(
+            &keyword.name,
+            KeywordName::Other(name) if name.eq_ignore_ascii_case("landfall")
+        )),
+        "landfall is an ability word, not a keyword name"
+    );
+    assert!(
+        !matches!(landfall.abilities.as_slice(), []),
+        "the trigger behind the landfall label still parses"
+    );
+
+    let spellcraft = parse_oracle_text(
+        "Spellcraft — Whenever you cast your second spell each turn, draw a card.",
+        &[],
+    );
+    assert!(
+        matches!(spellcraft.keywords.as_slice(), []),
+        "no ability word becomes a keyword"
+    );
+
+    let unlabeled = parse_oracle_text(
+        "Constellation — Whenever an enchantment enters, draw a card.",
+        &[],
+    );
+    assert!(matches!(unlabeled.keywords.as_slice(), []));
+}
+
 /// Parse every activation cost form and preserve activation restrictions.
 #[test]
 fn parses_all_activation_cost_shapes_and_limits() {
