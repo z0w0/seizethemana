@@ -336,6 +336,9 @@ fn run_upkeep(deck: &SimDeck, st: &mut GameState, engines: &mut Vec<(u32, u32)>,
 /// commander's abilities; a battlefield engine reads its host card's.
 fn fire_upkeep_engine(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize) {
     let is_cmd = is_commander_sentinel(uid);
+    // Commanders fire from the command zone; battlefield engines need a
+    // live host, and a permanent that left between the retain and the
+    // firing has nothing to fire.
     let host_idx: Option<CardIdx> = if is_cmd {
         None
     } else {
@@ -347,17 +350,18 @@ fn fire_upkeep_engine(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize)
     if !is_cmd && host_idx.is_none() {
         return;
     }
-    let upkeep_effects: Vec<Effect> = if is_cmd {
-        // One sentinel per cast commander; the firing reads only that
-        // commander's own abilities, so two partners each fire once per
-        // turn instead of every upkeep effect firing per sentinel.
-        commander_upkeep_effects(deck, commander_sentinel_slot(uid))
-    } else {
-        deck[host_idx.unwrap()]
+    let upkeep_effects: Vec<Effect> = match host_idx {
+        None => {
+            // One sentinel per cast commander; the firing reads only that
+            // commander's own abilities, so two partners each fire once
+            // per turn instead of every upkeep effect firing per sentinel.
+            commander_upkeep_effects(deck, commander_sentinel_slot(uid))
+        }
+        Some(idx) => deck[idx]
             .abilities()
             .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
             .map(|a| a.effect.clone())
-            .collect()
+            .collect(),
     };
     for effect in &upkeep_effects {
         match effect {
@@ -373,11 +377,12 @@ fn fire_upkeep_engine(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize)
                 // the firing source; a battlefield host keeps its own
                 // flag (a self-mill engine must not reroute because the
                 // commander mills opponents).
-                let mill_opp = if is_cmd {
-                    let slot = commander_sentinel_slot(uid);
-                    deck.commanders.get(slot).is_some_and(|c| c.mills_opponent)
-                } else {
-                    deck[host_idx.unwrap()].mills_opponent
+                let mill_opp = match host_idx {
+                    None => {
+                        let slot = commander_sentinel_slot(uid);
+                        deck.commanders.get(slot).is_some_and(|c| c.mills_opponent)
+                    }
+                    Some(idx) => deck[idx].mills_opponent,
                 };
                 apply_effect_at(deck, effect, st, turn as u32, mill_opp, None);
             }

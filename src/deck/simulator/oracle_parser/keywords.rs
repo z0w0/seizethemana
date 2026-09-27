@@ -22,7 +22,9 @@ pub(crate) struct KeywordEntry {
     pub(crate) text: &'static str,
     /// The parsed keyword variant.
     pub(crate) name: KeywordName,
-    /// The rules category of the keyword.
+    /// The rules category of the keyword. Classification data for rule
+    /// documentation and tests; no parser branch reads it yet.
+    #[allow(dead_code)]
     pub(crate) category: KeywordCategory,
 }
 

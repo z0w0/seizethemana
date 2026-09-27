@@ -233,7 +233,7 @@ pub(super) fn cast_phase(
         .filter(|p| {
             p.entered_turn == turn && p.card.deck_idx().is_some() && cast_uids.contains(&p.uid)
         })
-        .map(|p| (p.uid, p.card.deck_idx().unwrap()))
+        .filter_map(|p| p.card.deck_idx().map(|idx| (p.uid, idx)))
         .collect();
     for (uid, card_idx) in &newly_cast {
         // Re-resolve the position at fire time: earlier fires can push

@@ -397,7 +397,9 @@ pub struct Ability {
     /// Intervening "if" clause of a triggered ability (CR 603.4), when
     /// the Oracle sentence carries one. No condition shape is evaluated
     /// yet: the goldfish board makes most trivially true, and every
-    /// lowered condition fires as if true. Evaluation is future work.
+    /// lowered condition fires as if true. Evaluation is future work,
+    /// so the field is carried data (the 4.4 decision in PLAN.md).
+    #[allow(dead_code)]
     pub condition: Option<String>,
 }
 
