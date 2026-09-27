@@ -1,56 +1,59 @@
-// Goldfish Monte Carlo simulation for decks: `stm deck simulate <name>`.
-//
-// Submodules:
-// - `model`: card data model (costs, tap yields, station tiers, abilities)
-// - `oracle_ast`, `oracle_parser`, `oracle_lower`: Oracle syntax and lowering
-// - `oracle_parse`: card-row and runtime-model construction
-// - `deck`: deck construction (deck text → `SimDeck`)
-// - `game`: shared per-game types (`GameLog`, battlefield permanents,
-//   the mana pool)
-// - `deal`: opening-hand dealing + mulligan policy
-// - `game_run`: the per-game turn loop (pure, seeded)
-// - `cast_phase`: the cast pass and land-drop helpers
-// - `game_effects`: effect execution + tap budget
-// - `game_mana`: pool building and cost payment
-// - `game_combat`: the combat phase
-// - Oracle trigger grammar lives in `oracle_parser`; typed events live in `model`
-// - `combos`: combo assembly measurement
-// - `findings`: problem findings + mana-base verdict
-// - `findings_detail`: finding detail helpers
-// - `aggregate`: log aggregation + stats
-// - `report`: JSON payload; `report_view`: human stdout render
-// - `hypgeo`: hypergeometric cast ceilings
-// - `format`: format rules (mulligan policy, turn count)
-//
-// Cards are modeled as data, not as rules: the Oracle parser builds typed
-// syntax nodes, and lowering maps supported nodes to game actions. Unsupported
-// syntax stays inert and the documented limits ship in `assumptions`.
-// This is a consistency diagnostic, not a win-rate predictor.
+//! Goldfish Monte Carlo simulation for decks: `stm deck simulate <name>`.
+//!
+//! Cards are modeled as data, not as rules: the Oracle parser builds typed
+//! syntax nodes, and lowering maps supported nodes to game actions. Unsupported
+//! syntax stays inert and the documented limits ship in `assumptions`.
+//! This is a consistency diagnostic, not a win-rate predictor.
 
+/// Log aggregation and stats.
 pub(crate) mod aggregate;
+/// The cast pass and land-drop helpers.
 mod cast_phase;
+/// Combo assembly measurement.
 mod combos;
+/// Opening-hand dealing plus the mulligan policy.
 pub(crate) mod deal;
+/// Deck construction: deck text to `SimDeck`.
 pub(crate) mod deck;
+/// Problem findings and the mana-base verdict.
 mod findings;
+/// Finding detail helpers.
 mod findings_detail;
+/// Format rules: mulligan policy and turn count.
 pub(crate) mod format;
+/// Shared per-game types: `GameLog`, battlefield permanents, the mana pool.
 pub(crate) mod game;
+/// The combat phase.
 mod game_combat;
+/// Commander casts, command-zone sentinel handling, commander damage.
 mod game_commander;
+/// Effect execution plus the tap budget.
 mod game_effects;
+/// Pool building and cost payment.
 mod game_mana;
+/// The per-game turn loop (pure, seeded).
 mod game_run;
+/// Hypergeometric cast ceilings.
 mod hypgeo;
+/// Card data model: costs, tap yields, station tiers, abilities.
 pub(crate) mod model;
+/// Oracle syntax tree: typed nodes for parsed Oracle text.
 mod oracle_ast;
+/// Lowering of Oracle syntax nodes to runtime model data.
 mod oracle_lower;
+/// Card-row parsing and runtime-model construction.
 pub(crate) mod oracle_parse;
+/// Oracle trigger grammar and text parsing.
 mod oracle_parser;
+/// Mana cost text parsing.
 mod parse_cost;
+/// Cycling text parsing.
 mod parse_cycle;
+/// Static buffs, equipment stats, and numeric keyword parameters.
 mod parse_equipment;
+/// Land-specific Oracle text parsing.
 mod parse_land;
+/// Card role and class classification.
 mod role_classify;
 
 #[cfg(test)]
@@ -62,7 +65,9 @@ mod library_effect_tests;
 #[cfg(test)]
 #[path = "tests/parse_cost_tests.rs"]
 mod parse_cost_tests;
+/// JSON report payload.
 mod report;
+/// Human stdout render of the report.
 pub(crate) mod report_view;
 #[cfg(test)]
 #[path = "tests/turn_loop_tests.rs"]
