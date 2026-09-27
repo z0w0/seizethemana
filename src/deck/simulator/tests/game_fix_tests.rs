@@ -1,7 +1,7 @@
-// Regression tests for game-loop fixes: restricted-mana creature
-// casts, crew expiry, blink vs land-search vs Monarch separation,
-// graveyard timing, X-cost restricted-bucket wipes, fetch land pairs,
-// and awareness accounting.
+//!! Regression tests for game-loop fixes: restricted-mana creature
+//! casts, crew expiry, blink vs land-search vs Monarch separation,
+//! graveyard timing, X-cost restricted-bucket wipes, fetch land pairs,
+//! and awareness accounting.
 
 use super::game::run_game;
 use super::model::*;

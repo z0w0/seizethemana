@@ -1,5 +1,5 @@
-// Land-shape and tap-yield parsing for the simulator: tap yields, verge
-// gates, enters-tapped, enter counters, and spend restrictions.
+//!! Land-shape and tap-yield parsing for the simulator: tap yields, verge
+//! gates, enters-tapped, enter counters, and spend restrictions.
 
 use super::model::{Restriction, Scale, TapYield};
 use crate::db::CardRow;

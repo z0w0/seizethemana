@@ -1,5 +1,5 @@
-// Deck construction for the simulator: joins parsed deck text to card
-// rows and converts each entry into a `SimCard` via `parse`.
+//!! Deck construction for the simulator: joins parsed deck text to card
+//! rows and converts each entry into a `SimCard` via `parse`.
 
 use super::model::{Ability, AbilityTiming, Effect, Format, Role, SimCard, SimDeck, Tier};
 use super::oracle_parse::parse_sim_card;

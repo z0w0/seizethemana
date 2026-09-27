@@ -1,6 +1,6 @@
-// Standard sweep: every Standard fixture must hold the shared invariants and
-// show the deck-level insights the report surfaces (velocity, screw bounded,
-// castability ordered by cost).
+//!! Standard sweep: every Standard fixture must hold the shared invariants and
+//! show the deck-level insights the report surfaces (velocity, screw bounded,
+//! castability ordered by cost).
 
 use super::deck_test_support::*;
 use crate::db::CardRow;

@@ -1,9 +1,9 @@
-// Card data model for the goldfish simulator: costs, tap yields, station
-// tiers, crew, riders, flags, and abilities. Pure data + small helpers;
-// parsing lives in `oracle_parse`, execution in `game`.
-//
-// Everything the model cannot express is dropped at parse time; the
-// documented limits ship in the output `assumptions` list (see `report`).
+//! Card data model for the goldfish simulator: costs, tap yields, station
+//! tiers, crew, riders, flags, and abilities. Pure data + small helpers;
+//! parsing lives in `oracle_parse`, execution in `game`.
+//!
+//! Everything the model cannot express is dropped at parse time; the
+//! documented limits ship in the output `assumptions` list (see `report`).
 
 /// Colors tracked for mana modeling, WUBRG order.
 pub const COLORS: [char; 5] = ['W', 'U', 'B', 'R', 'G'];

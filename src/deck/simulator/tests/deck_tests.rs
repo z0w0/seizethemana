@@ -1,4 +1,4 @@
-// Tests for the simulator deck module.
+//!! Tests for the simulator deck module.
 
 /// A minimal card row for tests.
 use super::deck::build_sim_deck;

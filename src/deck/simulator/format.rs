@@ -1,8 +1,8 @@
-// Per-format simulation rules. Format semantics (mulligan policy, default
-// turn count) live in one table keyed by format name; the simulator reads
-// rules from the deck's `SimDeck.rules` and never branches on a format
-// enum. Commander features (cast loop, engine tier) gate on the deck
-// having commanders, not on the format.
+//!! Per-format simulation rules. Format semantics (mulligan policy, default
+//! turn count) live in one table keyed by format name; the simulator reads
+//! rules from the deck's `SimDeck.rules` and never branches on a format
+//! enum. Commander features (cast loop, engine tier) gate on the deck
+//! having commanders, not on the format.
 
 use super::model::Format;
 

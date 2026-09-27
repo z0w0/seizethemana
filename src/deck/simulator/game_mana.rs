@@ -1,5 +1,5 @@
-// Mana payment for the goldfish game loop: pool building, pip matching,
-// and cost payment split from game.rs to keep files small.
+//!! Mana payment for the goldfish game loop: pool building, pip matching,
+//! and cost payment split from game.rs to keep files small.
 
 use super::game::{Permanent, Pool, card_of};
 use super::model::{Restriction, Role, Scale, SimDeck, TapYield};

@@ -1,6 +1,6 @@
-// The cast pass and land-drop helpers for the goldfish game loop, split
-// from game_run.rs to keep files small. Pure apart from the game state
-// mutations they drive.
+//!! The cast pass and land-drop helpers for the goldfish game loop, split
+//! from game_run.rs to keep files small. Pure apart from the game state
+//! mutations they drive.
 
 use super::game::{
     GameState, Pool, card_of, fire_on_enter, fire_triggers, new_perm_with,

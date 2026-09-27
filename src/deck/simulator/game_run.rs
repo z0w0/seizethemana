@@ -1,6 +1,6 @@
-// The per-game turn loop for the goldfish simulator, split from game.rs
-// to keep files small. Pure apart from the passed RNG. `run_game` owns
-// the game scope; each pipeline step is one helper in this file.
+//!! The per-game turn loop for the goldfish simulator, split from game.rs
+//! to keep files small. Pure apart from the passed RNG. `run_game` owns
+//! the game scope; each pipeline step is one helper in this file.
 
 use super::cast_phase::{cast_phase, play_land};
 use super::deal::{Opener, deal_opener};

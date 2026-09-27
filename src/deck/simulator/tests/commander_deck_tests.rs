@@ -1,6 +1,6 @@
-// Commander sweep: every Commander fixture must hold the shared invariants
-// and the commander-specific telemetry must behave (cast windows, partners,
-// engine tiers).
+//!! Commander sweep: every Commander fixture must hold the shared invariants
+//! and the commander-specific telemetry must behave (cast windows, partners,
+//! engine tiers).
 
 use super::deck_test_support::*;
 use super::model::Format;

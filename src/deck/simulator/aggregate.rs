@@ -1,6 +1,6 @@
-// Aggregation of game logs into the report values: per-game stats, role
-// access, castability, and color-screw census. Problem findings and the
-// mana-base verdict live in `findings`.
+//!! Aggregation of game logs into the report values: per-game stats, role
+//! access, castability, and color-screw census. Problem findings and the
+//! mana-base verdict live in `findings`.
 
 use std::collections::HashMap;
 

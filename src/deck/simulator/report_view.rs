@@ -1,6 +1,6 @@
-// Combo and hypgeo human output, plus baseline diffing for
-// `deck simulate --baseline`: the print helpers and the delta view,
-// split from `report` to keep files small.
+//!! Combo and hypgeo human output, plus baseline diffing for
+//! `deck simulate --baseline`: the print helpers and the delta view,
+//! split from `report` to keep files small.
 
 use crate::output::Output;
 

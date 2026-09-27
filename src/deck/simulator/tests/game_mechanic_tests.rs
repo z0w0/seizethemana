@@ -1,7 +1,7 @@
-// Game-level assertions for the new mechanics: haste, landfall engines,
-// planeswalker activations, X-costs, extra land drops, extra-turn drops,
-// per-cast mana, upkeep drains, infinite-mana census, and the London
-// mulligan policy alignment.
+//!! Game-level assertions for the new mechanics: haste, landfall engines,
+//! planeswalker activations, X-costs, extra land drops, extra-turn drops,
+//! per-cast mana, upkeep drains, infinite-mana census, and the London
+//! mulligan policy alignment.
 
 use super::aggregate::aggregate;
 use super::game::run_game;

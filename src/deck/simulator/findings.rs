@@ -1,6 +1,6 @@
-// Problem findings from the aggregated simulation stats: the deck
-// problems (`find_problems`), the mana-base verdict, and combo-pair
-// assembly timing. Split from `aggregate` to keep files small.
+//!! Problem findings from the aggregated simulation stats: the deck
+//! problems (`find_problems`), the mana-base verdict, and combo-pair
+//! assembly timing. Split from `aggregate` to keep files small.
 
 use super::aggregate::{CardCast, SimStats};
 use super::game::GameLog;

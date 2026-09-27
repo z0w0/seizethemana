@@ -1,10 +1,10 @@
-// Store-backed combo assembly: join the deck's simulated cards against the
-// Spellbook `combos`/`combo_pieces` tables and measure how often each
-// variant's pieces reach their required zones by the target turn.
-//
-// This is a consistency diagnostic, not a combo-quality judgment: the sim
-// says how often the pieces come together, never whether the combo wins.
-// Quality labels (`produces`, bracket tag) come from Spellbook data.
+//!! Store-backed combo assembly: join the deck's simulated cards against the
+//! Spellbook `combos`/`combo_pieces` tables and measure how often each
+//! variant's pieces reach their required zones by the target turn.
+//!
+//! This is a consistency diagnostic, not a combo-quality judgment: the sim
+//! says how often the pieces come together, never whether the combo wins.
+//! Quality labels (`produces`, bracket tag) come from Spellbook data.
 
 use super::game::GameLog;
 use super::model::SimDeck;

@@ -1,13 +1,13 @@
-// Cause-level detail for sim problems: the offender lists and the
-// plain-English problem strings. Split from `findings.rs` (already near
-// its line limit); `find_problems` builds problems with empty offender
-// lists and this module fills them from data the aggregation stage
-// already computed.
-//
-// Plain-English policy: every user-facing finding follows
-// **what is wrong → how often → which cards → what to do**, in short
-// sentences with no jargon. The `kind` values in JSON stay stable — only
-// the human strings change.
+//!! Cause-level detail for sim problems: the offender lists and the
+//! plain-English problem strings. Split from `findings.rs` (already near
+//! its line limit); `find_problems` builds problems with empty offender
+//! lists and this module fills them from data the aggregation stage
+//! already computed.
+//!
+//! Plain-English policy: every user-facing finding follows
+//! **what is wrong → how often → which cards → what to do**, in short
+//! sentences with no jargon. The `kind` values in JSON stay stable — only
+//! the human strings change.
 
 use super::aggregate::SimStats;
 use super::findings::Problem;

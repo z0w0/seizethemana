@@ -1,9 +1,9 @@
-// Shared support for the per-format real-deck tests: JSON fixture loading,
-// card-row building, the sim runner, and the cross-deck consistency
-// invariants. Each format test file pulls these through `use super::*`.
-// Real lists come from published sources (mtggoldfish metagame, cEDH
-// Decklist Database, EDHREC) with real oracle text; the tests assert
-// simulator consistency properties, never deck-quality judgments.
+//! Shared support for the per-format real-deck tests: JSON fixture loading,
+//! card-row building, the sim runner, and the cross-deck consistency
+//! invariants. Each format test file pulls these through `use super::*`.
+//! Real lists come from published sources (mtggoldfish metagame, cEDH
+//! Decklist Database, EDHREC) with real oracle text; the tests assert
+//! simulator consistency properties, never deck-quality judgments.
 
 // JSON fixtures (tests/deck_fixtures/*.json): real lists from published
 // sources, with oracle text. Loaded with include_str! and parsed per test.

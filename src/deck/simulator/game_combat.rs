@@ -1,6 +1,6 @@
-// The combat phase for the goldfish game loop, split from game_run to
-// keep files small. Pure apart from the game state mutations (draws,
-// counters, drains).
+//!! The combat phase for the goldfish game loop, split from game_run to
+//! keep files small. Pure apart from the game state mutations (draws,
+//! counters, drains).
 
 use super::game::{BODY_POWER, GameState, card_of};
 use super::game_effects::{apply_effect_at, draw_one};

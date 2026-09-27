@@ -1,19 +1,19 @@
-// One goldfish game: shuffles, mulligans, plays best-case turns. Pure
-// apart from the passed RNG: same deck + same seed = same game.
-//
-// Turn pipeline (best-case agent):
-//   1 UNTAP     everything untaps; creature sickness clears
-//   2 UPKEEP    upkeep engines fire (per-turn draws)
-//   3 DRAW      draw 1
-//   4 LAND      play a land (verge gates, fetch searches, ETB triggers)
-//   5 CAST      saga chapters advance; cheapest castable spells
-//               (pip-aware); ETB triggers fire
-//   6 ACTIVATE  spend leftover mana on draw engines; each costs a tap
-//   7 TAP BUDGET remaining untapped creatures: mana only while casting
-//               still needs it, else station, else crew
-//   8 THRESHOLD station tiers unlock (permanent); crew reverts at end
-//   9 COMBAT    bodies attack; attack triggers fire
-//  10 END       Monarch draw; hand-limit discard
+//!! One goldfish game: shuffles, mulligans, plays best-case turns. Pure
+//! apart from the passed RNG: same deck + same seed = same game.
+//!
+//! Turn pipeline (best-case agent):
+//!   1 UNTAP     everything untaps; creature sickness clears
+//!   2 UPKEEP    upkeep engines fire (per-turn draws)
+//!   3 DRAW      draw 1
+//!   4 LAND      play a land (verge gates, fetch searches, ETB triggers)
+//!   5 CAST      saga chapters advance; cheapest castable spells
+//!               (pip-aware); ETB triggers fire
+//!   6 ACTIVATE  spend leftover mana on draw engines; each costs a tap
+//!   7 TAP BUDGET remaining untapped creatures: mana only while casting
+//!               still needs it, else station, else crew
+//!   8 THRESHOLD station tiers unlock (permanent); crew reverts at end
+//!   9 COMBAT    bodies attack; attack triggers fire
+//!  10 END       Monarch draw; hand-limit discard
 
 use super::game_effects::apply_effect_at;
 use super::model::{Ability, AbilityTiming, CardIdx, Effect, Restriction, Role, SimDeck, TapYield};

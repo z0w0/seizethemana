@@ -1,6 +1,6 @@
-// Commander engine bookkeeping for the goldfish game loop: the
-// per-deck commander profile (synthetic upkeep tiers) and the sentinel
-// uids that key each cast commander's own engine.
+//!! Commander engine bookkeeping for the goldfish game loop: the
+//! per-deck commander profile (synthetic upkeep tiers) and the sentinel
+//! uids that key each cast commander's own engine.
 
 use super::model::{AbilityTiming, Effect, SimDeck};
 

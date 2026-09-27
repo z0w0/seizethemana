@@ -1,5 +1,5 @@
-// Effect execution and the tap-budget pass for the goldfish game loop,
-// split from game.rs to keep files small.
+//!! Effect execution and the tap-budget pass for the goldfish game loop,
+//! split from game.rs to keep files small.
 
 use super::game::{
     Activation, BODY_POWER, CardRef, GameState, Permanent, Pool, card_of, new_perm_with,

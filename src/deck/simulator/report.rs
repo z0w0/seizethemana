@@ -1,6 +1,6 @@
-// Report renders for the simulator: the JSON payload and the human
-// stdout view. JSON adds station/bodies/engines metrics; the human view
-// gains a station line when the commander is a spacecraft.
+//!! Report renders for the simulator: the JSON payload and the human
+//! stdout view. JSON adds station/bodies/engines metrics; the human view
+//! gains a station line when the commander is a spacecraft.
 
 use super::aggregate::SimStats;
 use super::model::{Role, SimDeck};

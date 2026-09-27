@@ -1,5 +1,5 @@
-// Modern sweep: every Modern fixture must hold the shared invariants. The
-// assertions check the simulator's mechanics, not deck quality.
+//!! Modern sweep: every Modern fixture must hold the shared invariants. The
+//! assertions check the simulator's mechanics, not deck quality.
 
 use super::deck_test_support::*;
 use super::model::SimDeck;

@@ -1,5 +1,5 @@
-// Tests for the offender assembly in `findings_detail`: each problem kind
-// gets its card-level causes from data the aggregation stage produced.
+//!! Tests for the offender assembly in `findings_detail`: each problem kind
+//! gets its card-level causes from data the aggregation stage produced.
 
 use crate::deck::simulator::aggregate::{SimStats, aggregate};
 use crate::deck::simulator::findings::{Problem, find_problems};

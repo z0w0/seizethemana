@@ -1,4 +1,4 @@
-// Classify a card's deckbuilding role from its card row and Oracle text.
+//!! Classify a card's deckbuilding role from its card row and Oracle text.
 
 use super::super::stats::{is_dork, is_rock};
 use super::model::TapYield;

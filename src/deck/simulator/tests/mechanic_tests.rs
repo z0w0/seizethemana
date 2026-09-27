@@ -1,6 +1,6 @@
-// Regression tests for the audit remediation: wheel/loot execution,
-// cast-trigger dedupe, commander upkeep engines, sagas, X-sink counters,
-// equipment hosts, once-per-turn engines, and additional costs.
+//!! Regression tests for the audit remediation: wheel/loot execution,
+//! cast-trigger dedupe, commander upkeep engines, sagas, X-sink counters,
+//! equipment hosts, once-per-turn engines, and additional costs.
 
 use super::aggregate::aggregate;
 use super::game::run_game;

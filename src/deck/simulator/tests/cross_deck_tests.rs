@@ -1,7 +1,7 @@
-// Cross-deck invariants: properties every real fixture deck must hold.
-// ---------------------------------------------------------------------------
-// Cross-deck invariants (all twelve lists)
-// ---------------------------------------------------------------------------
+//!! Cross-deck invariants: properties every real fixture deck must hold.
+//! ---------------------------------------------------------------------------
+//! Cross-deck invariants (all twelve lists)
+//! ---------------------------------------------------------------------------
 
 use super::deck_test_support::*;
 use crate::db::CardRow;

@@ -1,4 +1,4 @@
-// Tests for the simulator report module.
+//!! Tests for the simulator report module.
 
 use super::aggregate::aggregate;
 use super::model::*;

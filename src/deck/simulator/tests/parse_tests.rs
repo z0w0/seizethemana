@@ -1,4 +1,4 @@
-// Tests for the simulator parse module.
+//!! Tests for the simulator parse module.
 
 /// A minimal card row for tests.
 use super::game::run_game;

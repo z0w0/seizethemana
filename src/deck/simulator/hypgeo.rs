@@ -1,9 +1,9 @@
-// Exact hypergeometric cast-on-curve ceilings, `stm deck simulate
-// --hypgeo`. Static probability math, no RNG: for each nonland spell, the
-// chance that enough of the deck's cards are visible by the on-curve turn
-// to cover the cost. Printed beside the simulated castability as a drift
-// check: the Monte Carlo must not beat its own ceiling by much, and a big
-// gap below the ceiling points at the mana base rather than the draw.
+//!! Exact hypergeometric cast-on-curve ceilings, `stm deck simulate
+//! --hypgeo`. Static probability math, no RNG: for each nonland spell, the
+//! chance that enough of the deck's cards are visible by the on-curve turn
+//! to cover the cost. Printed beside the simulated castability as a drift
+//! check: the Monte Carlo must not beat its own ceiling by much, and a big
+//! gap below the ceiling points at the mana base rather than the draw.
 
 /// n choose k.
 pub(super) fn choose(n: u64, k: u64) -> f64 {
