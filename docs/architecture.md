@@ -356,24 +356,28 @@ Deck contents live in ManaBox txt files under `decks/`. The module covers:
   target `DECK` first, then fall back to other sections with a note.
   `set`/`remove` of absent cards exit 3 and name them.
 - **`legal`** — format and Commander-bracket legality. Deterministic
-  checks only: deck size (exactly 100 maindeck for commander — bench
-  sections never count; 60+ maindeck and sideboard ≤ 15 for
-  constructed, sideboard subtracted), copy limits (4 across maindeck +
-  sideboard for constructed, singleton for commander-style formats;
-  the maybeboard is exempt from copy limits; basics and cards whose
-  oracle text allows "any number" are exempt), per-card format legality
-  for every section including the bench, color identity (maindeck as
-  violations, bench cards as a separate `bench color identity`
-  violation), commander rules
-  (exactly 1, or 2 with Partner/`Friends forever`; legendary creature,
-  planeswalker, or legendary Vehicle/Spacecraft with a printed
-  power/toughness box — the Edge of Eternities rules change), commander
-  color identity, per-card format legality
-  (`legal`/`restricted` pass; `banned`/`not_legal` fail), and Game Changer
-  count vs bracket (0 for brackets 1–2, ≤ 3 for bracket 3, unlimited 4–5,
-  from the `cards.game_changer` column). Judgment calls (tutor density,
-  early extra turns, mass land destruction, combo speed) are printed as a
-  review checklist, not a verdict. Exit 0 = legal, 1 = violations.
+  checks only:
+  - Deck size: exactly 100 maindeck for commander (bench sections never
+    count); 60+ maindeck and sideboard ≤ 15 for constructed
+    (sideboard subtracted).
+  - Copy limits: 4 across maindeck + sideboard for constructed,
+    singleton for commander-style formats. The maybeboard is exempt.
+    Basics and cards whose oracle text allows "any number" are exempt.
+  - Per-card format legality for every section including the bench.
+  - Color identity: maindeck as violations; bench cards as a separate
+    `bench color identity` violation.
+  - Commander rules: exactly 1, or 2 with Partner/`Friends forever`;
+    legendary creature, planeswalker, or legendary Vehicle/Spacecraft
+    with a printed power/toughness box (the Edge of Eternities rules
+    change).
+  - Commander color identity.
+  - Per-card format legality (`legal`/`restricted` pass;
+    `banned`/`not_legal` fail).
+  - Game Changer count vs bracket (0 for brackets 1–2, ≤ 3 for bracket
+    3, unlimited 4–5, from the `cards.game_changer` column).
+    Judgment calls (tutor density,
+    early extra turns, mass land destruction, combo speed) are printed as a
+    review checklist, not a verdict. Exit 0 = legal, 1 = violations.
 - **`io`** — decklist `import` (upsert by name; ManaBox's whole-deck-under-
   `// COMMANDER` quirk normalized; interactive commander pick on a TTY) and
   `export` (`--force` guard), plus the primer file (`deck primer <name>`
@@ -387,27 +391,32 @@ Deck contents live in ManaBox txt files under `decks/`. The module covers:
   prices and the estimated market total. Nothing is moved.
 - **`simulate`** — `deck simulate <name>`: Monte Carlo goldfish
   (`stm deck simulate`), split into the `simulator/` submodule tree
-  (`model`/`parse`/`deck`/`game`/`aggregate`/`report`). Pure core driven
-  by one seeded `ChaCha8Rng` (`run_game`), aggregation and findings
-  separate, so a fixed `--seed` reproduces a run exactly (the
-  simulate → deck update → re-simulate workflow depends on that). Cards
-  are modeled as data, not as rules: `parse` converts oracle text into a
-  tap yield (one tap = the listed mana: "or" choices, fixed simultaneous
-  sets like Jegantha, colorless, any-color), station tiers
+  (`model`/`oracle_parser`/`oracle_lower`/`oracle_parse`/`deck`/`game`/
+  `aggregate`/`report`). Pure core driven by one seeded `ChaCha8Rng`
+  (`run_game`), aggregation and findings separate, so a fixed `--seed`
+  reproduces a run exactly (the simulate → deck update → re-simulate
+  workflow depends on that). Cards are modeled as data, not as rules.
+  `oracle_parse` converts oracle text into a tap yield (one tap = the
+  listed mana: "or" choices, fixed simultaneous sets like Jegantha,
+  colorless, any-color), station tiers
   (`{N+}` striations per CR 702.184/721; only the P/T striation animates),
   crew costs (from the Crew keyword), and abilities (activated, ETB,
   upkeep, attack, cast-spell triggers with draw/tutor/tokens/mana/
-  counters effects). `game` plays best-case turns: play an untapped land
-  when possible (enters-tapped honored per oracle; shock-dual life
-  payments always paid), cast the cheapest pip-payable spells, fire ETB
-  triggers (tokens become battlefield bodies), spend leftover mana on
-  unlocked activations, then spend remaining creature taps — mana only
+  counters effects). `game` plays best-case turns:
+  play an untapped land when possible (enters-tapped honored per oracle;
+  shock-dual life payments always paid),
+  cast the cheapest pip-payable spells,
+  fire ETB triggers (tokens become battlefield bodies),
+  spend leftover mana on unlocked activations,
+  then spend remaining creature taps — mana only
   while casting still needs it, then station the highest-threshold
   spacecraft/planet, then crew Vehicles. Station tiers unlock
   permanently; crew animations last the turn. Commanders cast with the
   full pip check (a 5c commander needs one of each pip) and count as a
   draw engine when their oracle shows a repeatable draw. Cost
-  reductions (warp, improvise, affinity) approximate to flat cuts. The
+  reductions: warp cuts to the cheaper cost at parse; improvise and
+  affinity start at a flat −2 and gain 1 more per 4 artifacts on the
+  battlefield, capped at the printed generic. The
   bench (sideboard/maybeboard) never enters the library: it is not part
   of the legal deck.
   Reported per run: opening-hand shape, land-drop curve, commander
@@ -416,12 +425,17 @@ Deck contents live in ManaBox txt files under `decks/`. The module covers:
   online metrics, and bodies/engines timelines. Findings (mana
   screw/flood, color screw, commander late, draw starvation, dead cards,
   starved categories) carry a category + magnitude suggestion and drive
-  exit 1. Model limits are printed in `assumptions`: enters-tapped
-  honored (shock duals untapped), no opponents or interaction, draw
-  engines fire once per turn on a fixed delay, no commander recast tax,
-  flat body power (2) for stationing and crewing, hybrid pips pay from
-  any of their colors, X-costs pay for one, and energy/converge/proliferate
-  are not modeled. Metalcraft mana gates and full extra-turn player phases
+  exit 1. Model limits are printed in `assumptions`:
+  enters-tapped honored (shock duals untapped),
+  no opponents or interaction,
+  draw engines fire once per turn on a fixed delay,
+  no commander recast tax,
+  body power from printed power (unknowns and tokens count 2) for
+  stationing and crewing,
+  hybrid pips pay from any of their colors,
+  X-scaling spells pay the leftover pool into X,
+  and energy/converge/proliferate are not modeled.
+  Metalcraft mana gates and full extra-turn player phases
   are modeled. Opponent-dependent mana is generic-only from turn 2. This
   is a consistency diagnostic, not a win-rate predictor.
   The living reference for the model, assumptions, and limits is

@@ -24,6 +24,16 @@ Rules:
   comments (`///`). Say what they are for, not what the code mechanically does.
 - Keep it simple, stupid. Smallest correct change. No speculative abstractions,
   no fallbacks for impossible states, no cleverness.
+- Simulator rules must come from card type data, keywords, and Oracle text.
+  Do not add card-name checks to grant a custom cast, trigger, cost, or effect.
+  Parse the Oracle wording into a supported mechanic and execute that data.
+  Unsupported wording stays inert and must be documented in the simulator
+  assumptions. The only narrow name-based exceptions are basic-land identity
+  and fetch-land target mapping when type-line data does not identify the
+  target restriction. Prefer deriving fetch eligibility, life costs, tapped
+  entry, and target types from Oracle text; use a name map only for the
+  target pair that the text does not spell out. Add tests for both matching
+  and nonmatching targets. Do not add name exceptions for individual spells.
 - Large test modules live in their own file, next to the code they test.
   When a module file nears the 1000-line limit, move its `mod tests` into a
   co-located `tests/` **folder** (not a flat sibling file): module
