@@ -324,16 +324,16 @@ together. Keep field grouping shallow — one level, no behavior.
 
 ## Phase 5: wrappers and performance
 
-- [ ] `game_mana.rs`: `add_yield` → `add_yield_turns_empty_board` →
+- [x] `game_mana.rs`: `add_yield` → `add_yield_turns_empty_board` →
       `add_yield_turns(&empty_deck(), ...)` — the tap budget builds a
       throwaway `SimDeck` (two Vec allocations plus a format lookup)
       per tap, per turn, per game, across 10,000 runs. Change
       `add_yield_turns` to take `Option<&SimDeck>` or split a
       non-scaling fast path, and delete `empty_deck()`.
-- [ ] `mod.rs`: `sim_report_for` (lines 269-293) and `simulate`
+- [x] `mod.rs`: `sim_report_for` (lines 269-293) and `simulate`
       (lines 371-395) duplicate a 25-line stats/classify block.
       Extract one helper.
-- [ ] `parse_keywords.rs` → rename to `parse_equipment.rs`: the file
+- [x] `parse_keywords.rs` → rename to `parse_equipment.rs`: the file
       parses equipment and creature buffs, not keywords. The name
       collides with the real keyword parser.
 
@@ -341,64 +341,64 @@ together. Keep field grouping shallow — one level, no behavior.
 
 ### 6.1 Rust doc comments
 
-- [ ] Convert the plain `//` header above each `mod` declaration in
+- [x] Convert the plain `//` header above each `mod` declaration in
       `mod.rs` (28 mods) to per-mod `///` doc comments.
-- [ ] Add `//!` headers to the 24 files that have plain `//` headers
+- [x] Add `//!` headers to the 24 files that have plain `//` headers
       (add the `!`; the text is already good).
-- [ ] Document the four undocumented functions:
+- [x] Document the four undocumented functions:
       `report_view.rs` `print_hypgeo`, `mod.rs` `store_has_combos`,
       `report.rs` `round2`, `combos.rs` `zone_times`.
-- [ ] Document the child-mod declarations in `cast_phase.rs` and
+- [x] Document the child-mod declarations in `cast_phase.rs` and
       `game_run.rs`.
 
 ### 6.2 Document the state-representation contract
 
-- [ ] Add module docs to `game.rs` stating the contract: zones hold
+- [x] Add module docs to `game.rs` stating the contract: zones hold
       indexes into the immutable `SimDeck.cards` table; per-instance
       state lives only on the battlefield `Permanent` and resets on
       zone change (rule 122.2); a card re-entering a zone is the same
       index, with no incarnation counter.
-- [ ] Add one line to `docs/simulator.md` assumptions about the
+- [x] Add one line to `docs/simulator.md` assumptions about the
       index-aliasing approximation (a card milled, returned, and
       discarded again is one index).
 
 ### 6.3 `docs/simulator.md` corrections
 
-- [ ] Remove the false proliferate-on-combat-damage claim (around
+- [x] Remove the false proliferate-on-combat-damage claim (around
       lines 837-839, 848) and align with the runtime assumptions
       string (proliferate is not modeled).
-- [ ] Fix "phases 1-11" → 10 phases (around line 49); fix the
+- [x] Fix "phases 1-11" → 10 phases (around line 49); fix the
       `game_*.rs` parenthetical (around line 50) — cast lives in
       `cast_phase.rs`, extra turns in `game_run.rs`.
-- [ ] Fix the fetch-targets-enter-tapped claim (around line 405) —
+- [x] Fix the fetch-targets-enter-tapped claim (around line 405) —
       tapped entry is derived from Oracle text now.
-- [ ] Add `cast_phase/cast_sweep.rs` and `game_run/census.rs` to the
+- [x] Add `cast_phase/cast_sweep.rs` and `game_run/census.rs` to the
       module tree.
-- [ ] Fix the saga chapter timing description (phase 4 result) and
+- [x] Fix the saga chapter timing description (phase 4 result) and
       the Monarch draw step (phase 1.6 result).
-- [ ] Fix: `card_castability` rows are per copy, not per distinct
+- [x] Fix: `card_castability` rows are per copy, not per distinct
       card; the fixture-naming sentence (hyphens and underscores are
       both used — make the sentence match reality); draw-starvation
       is turn 5 for a 60-card deck; `explain` → `explain_with_threshold`.
-- [ ] Add a note that milestone output nests per card under the
+- [x] Add a note that milestone output nests per card under the
       velocity key, if the JSON does so.
 
 ### 6.4 Other docs
 
-- [ ] `docs/architecture.md`: replace the stale `parse` module name
+- [x] `docs/architecture.md`: replace the stale `parse` module name
       (around lines 390, 394, 409-410, 422-423); fix the "flat cuts"
       claim (board-scaled improvise/affinity); fix the stale
       "X-costs pay for one" and "flat body power (2)" claims where
       they disagree with code.
-- [ ] `.agents/skills/seizethemana/SKILL.md`: fix the extra-turn
+- [x] `.agents/skills/seizethemana/SKILL.md`: fix the extra-turn
       description (around line 475, pre-refactor behavior); add
       `milestones` and `colored_sources` to the JSON shape list
       (around lines 707-713).
-- [ ] Simplified Technical English pass on the worst sentences: the
+- [x] Simplified Technical English pass on the worst sentences: the
       60-word Karsten sentence in `docs/simulator.md`, the lethal
       table cell, the 120-word test list, the architecture bullet.
       Expand "MDFC" on first use.
-- [ ] Run `prettier --write` on every changed `.md` file, then
+- [x] Run `prettier --write` on every changed `.md` file, then
       `prettier --check` on the same files.
 
 ## Validation
