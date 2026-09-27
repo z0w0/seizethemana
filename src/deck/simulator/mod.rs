@@ -298,6 +298,37 @@ pub(crate) fn sim_report_for(
     report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base)
 }
 
+/// Fill the removal/wincon/draw/land census fields the aggregator leaves
+/// unset: they come from static card data, not game logs.
+fn apply_role_counts(stats: &mut aggregate::SimStats, sim_deck: &model::SimDeck) {
+    stats.removal_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Removal)
+        .count();
+    stats.removal_wipes = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
+        .count();
+    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
+    stats.wincon_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Wincon)
+        .count();
+    stats.draw_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Draw)
+        .count();
+    stats.land_count = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.role == model::Role::Land)
+        .count();
+}
+
 /// Entry point for `stm deck simulate <name>`.
 ///
 /// Exit 0 when no problems were found, exit 1 when the report has findings
@@ -364,32 +395,7 @@ pub fn simulate(
         logs.push(game::run_game(&sim_deck, &mut rng, turns));
     }
     let mut stats = aggregate::aggregate(&logs, &sim_deck, turns);
-    stats.removal_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Removal)
-        .count();
-    stats.removal_wipes = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
-        .count();
-    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
-    stats.wincon_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Wincon)
-        .count();
-    stats.draw_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Draw)
-        .count();
-    stats.land_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Land)
-        .count();
+    apply_role_counts(&mut stats, &sim_deck);
     let problems = findings::find_problems(&stats, &sim_deck);
     // Bracket for the mana-base band: explicit flag, else inferred from the
     // Game Changer census (the same signals `deck legal` checks). 60-card
