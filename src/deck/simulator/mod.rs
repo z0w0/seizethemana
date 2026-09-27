@@ -184,8 +184,9 @@ fn load_store_combos(
     Some(candidates)
 }
 
-/// True when the store carries combo data at all (public for the
-/// `deck combos` audit).
+/// True when the store carries combo data at all: any row in the
+/// `combos` table. Callers omit combo metrics with a note when false
+/// (also public for the `deck combos` audit).
 pub(crate) fn store_has_combos(conn: &rusqlite::Connection) -> bool {
     conn.query_row("SELECT COUNT(*) FROM combos", [], |r| r.get::<_, i64>(0))
         .map(|n| n > 0)

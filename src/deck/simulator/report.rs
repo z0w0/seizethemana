@@ -128,6 +128,7 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
     list
 }
 
+/// Round to two decimals, the report's standard precision.
 fn round2(v: f64) -> f64 {
     (v * 100.0).round() / 100.0
 }

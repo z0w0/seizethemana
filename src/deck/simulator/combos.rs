@@ -83,12 +83,15 @@ pub struct ComboAccess {
 }
 
 /// Zone telemetry the assembly predicate reads from a game log.
+/// First turn a card reached each zone in one game log. `None` means the
+/// card never got there; the combo measurer treats that as "never".
 struct ZoneTimes {
     hand: Option<u32>,
     battlefield: Option<u32>,
     graveyard: Option<u32>,
 }
 
+/// Read the per-card zone timeline for one deck index out of the log.
 fn zone_times(log: &GameLog, index: usize) -> ZoneTimes {
     ZoneTimes {
         hand: log.card_first_seen.get(&index).copied(),

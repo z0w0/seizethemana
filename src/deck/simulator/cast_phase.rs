@@ -1,4 +1,4 @@
-//!! The cast pass and land-drop helpers for the goldfish game loop, split
+//! The cast pass and land-drop helpers for the goldfish game loop, split
 //! from game_run.rs to keep files small. Pure apart from the game state
 //! mutations they drive.
 
@@ -15,6 +15,7 @@ use super::game_mana::{
 };
 use super::model::{AbilityTiming, CardIdx, Cost, Effect, Role, SimDeck};
 
+/// Spell selection and resolution: the sweep that spends the pool on casts.
 mod cast_sweep;
 
 /// The drain multiplier for this deck's format: three opponents in the

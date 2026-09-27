@@ -1,4 +1,4 @@
-//!! The per-game turn loop for the goldfish simulator, split from game.rs
+//! The per-game turn loop for the goldfish simulator, split from game.rs
 //! to keep files small. Pure apart from the passed RNG. `run_game` owns
 //! the game scope; each pipeline step is one helper in this file.
 
@@ -21,6 +21,7 @@ use super::model::{AbilityTiming, CardIdx, Effect, Role, Scale, SimDeck};
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
+/// Per-turn census and end-of-game log assembly.
 mod census;
 pub(super) use census::TurnCensus;
 

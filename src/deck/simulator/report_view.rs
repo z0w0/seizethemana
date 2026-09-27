@@ -145,9 +145,9 @@ pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limi
     }
 }
 
-// Exact-probability ceilings (`--hypgeo`): print the top gaps between the
-// Monte Carlo castability and the hypergeometric ceiling, so a mana-base
-// problem separates from a draw problem.
+/// Exact-probability ceilings (`--hypgeo`): print the top gaps between the
+/// Monte Carlo castability and the hypergeometric ceiling, so a mana-base
+/// problem separates from a draw problem.
 pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
     let s = out.styles();
     let Some(cards) = payload.get("cards").and_then(|c| c.as_array()) else {
