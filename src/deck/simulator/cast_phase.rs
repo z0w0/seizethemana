@@ -3,15 +3,19 @@
 // mutations they drive.
 
 use super::game::{
-    GameState, InPlay, Pool, card_of, fetches_land_text, fire_on_enter, new_perm_with,
+    GameState, Pool, card_of, fire_on_enter, fire_triggers, new_perm_with,
     register_loyalty_token_engines, take_uid,
 };
-use super::game_effects::{apply_effect, apply_effect_at};
+use super::game_effects::{
+    CardZone, apply_effect_at, draw_one, mill_library_card, move_to_graveyard,
+};
 use super::game_mana::{
     add_yield_turns_empty_board, cast_restriction, effective_min_cost, pay_cost,
     pay_restricted_cost, payable, pips_ok, usable_for_noncreature,
 };
-use super::model::{Cost, Effect, Restriction, Role, SimDeck, Trigger};
+use super::model::{AbilityTiming, CardIdx, Cost, Effect, Role, SimDeck};
+
+mod cast_sweep;
 
 /// The drain multiplier for this deck's format: three opponents in the
 /// commander family, one in constructed.
@@ -27,25 +31,27 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
     let mdfc_fallback = |st: &GameState| {
         st.hand
             .iter()
-            .position(|idx| deck.cards[*idx].is_mdfc_spell)
-            .filter(|_| !st.hand.iter().any(|i| deck.cards[*i].role == Role::Land))
+            .position(|idx| deck[*idx].is_mdfc_spell)
+            .filter(|_| !st.hand.iter().any(|i| deck[*i].role == Role::Land))
     };
     let land_pos = st
         .hand
         .iter()
-        .position(|idx| deck.cards[*idx].role == Role::Land && !deck.cards[*idx].enters_tapped)
-        .or_else(|| {
-            st.hand
-                .iter()
-                .position(|idx| deck.cards[*idx].role == Role::Land)
-        })
+        .position(|idx| deck[*idx].role == Role::Land && !deck[*idx].enters_tapped)
+        .or_else(|| st.hand.iter().position(|idx| deck[*idx].role == Role::Land))
         .or_else(|| mdfc_fallback(st));
     let Some(pos) = land_pos else {
         return false;
     };
     let idx = st.hand.remove(pos);
-    let card = &deck.cards[idx];
-    let tapped_in = card.enters_tapped;
+    let card = &deck[idx];
+    let life_cost = card.life_to_untap;
+    let can_pay_life = life_cost > 0 && st.life > life_cost as i32;
+    if can_pay_life {
+        st.life -= life_cost as i32;
+        st.life_paid += life_cost;
+    }
+    let tapped_in = card.enters_tapped || life_cost > 0 && !can_pay_life;
     st.battlefield_seen.entry(idx).or_insert(turn);
     let uid = take_uid(st);
     st.battlefield
@@ -53,21 +59,68 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
     // ETB triggers fire for the played land; capture its slot before a
     // fetch adds a second permanent behind it.
     let played_pos = st.battlefield.len() - 1;
-    if fetches_land_text(card) {
-        // Search up a land from the library (enters tapped).
-        if let Some(i) = st
-            .library
-            .iter()
-            .position(|c| deck.cards[*c].role == Role::Land && !fetches_land_text(&deck.cards[*c]))
-        {
+    if card.is_fetch_land {
+        fire_on_enter(deck, st, played_pos, turn, false);
+        fire_triggers(deck, st, AbilityTiming::OnLandfall, turn);
+        // Fetch lands pay one life and sacrifice themselves before searching.
+        // Their target restriction comes from the fetch name, not from the
+        // broad land role shared by every library entry.
+        let fetch_life_cost = card.fetch_life_cost;
+        if st.life <= fetch_life_cost as i32 {
+            return true;
+        }
+        st.life -= fetch_life_cost as i32;
+        st.life_paid += fetch_life_cost;
+        let fetch_name = card.name.as_str();
+        let target_types = if card.fetch_target_types.iter().any(|matches| *matches) {
+            card.fetch_target_types
+        } else {
+            let mut fallback = [false; 5];
+            for kind in super::game::fetch_target_pair(fetch_name) {
+                if let Some(index) = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
+                    .iter()
+                    .position(|candidate| candidate == kind)
+                {
+                    fallback[index] = true;
+                }
+            }
+            fallback
+        };
+        if let Some(i) = st.library.iter().position(|c| {
+            let candidate = &deck[*c];
+            candidate.role == Role::Land
+                && !candidate.is_fetch_land
+                && (!card.fetch_basic_only || candidate.is_basic_land)
+                && candidate
+                    .land_types
+                    .iter()
+                    .zip(target_types)
+                    .any(|(has_type, target)| *has_type && target)
+        }) {
             let fetched = st.library.remove(i);
             st.battlefield_seen.entry(fetched).or_insert(turn);
             let fuid = take_uid(st);
+            let fetched_card = &deck[fetched];
+            let fetched_life_cost = fetched_card.life_to_untap;
+            let fetched_can_pay_life = fetched_life_cost > 0 && st.life > fetched_life_cost as i32;
+            if fetched_can_pay_life {
+                st.life -= fetched_life_cost as i32;
+                st.life_paid += fetched_life_cost;
+            }
+            let fetched_tapped = card.fetch_enters_tapped
+                || fetched_card.enters_tapped
+                || fetched_life_cost > 0 && !fetched_can_pay_life;
             st.battlefield
-                .push(new_perm_with(fuid, deck, fetched, turn, true));
+                .push(new_perm_with(fuid, deck, fetched, turn, fetched_tapped));
+            fire_on_enter(deck, st, st.battlefield.len() - 1, turn, false);
+            fire_triggers(deck, st, AbilityTiming::OnLandfall, turn);
         }
+        st.battlefield.remove(played_pos);
+        move_to_graveyard(deck, st, idx, turn, CardZone::Battlefield);
+        return true;
     }
-    fire_on_enter(deck, st, played_pos, turn);
+    fire_on_enter(deck, st, played_pos, turn, false);
+    fire_triggers(deck, st, AbilityTiming::OnLandfall, turn);
     true
 }
 
@@ -84,30 +137,44 @@ pub(super) fn cast_phase(
     turn: usize,
     mana_spent: &mut [f64],
     engines: &mut Vec<(u32, u32)>,
-    pip_blocks: &mut Vec<(usize, usize)>,
+    pip_blocks: &mut Vec<(CardIdx, usize)>,
     blocked_colors: &mut [bool; 5],
 ) {
+    let preparing_graveyard_exchange = st.hand.iter().any(|index| deck[*index].has_cascade)
+        && st
+            .library
+            .iter()
+            .any(|index| deck[*index].graveyard_creature_exchange)
+        && st.hand.iter().any(|index| {
+            deck[*index].is_creature
+                && (deck[*index].cycling_cost.is_some() || deck[*index].cycling_life > 0)
+        });
+    if preparing_graveyard_exchange {
+        cycle_unusable_cards(deck, st, pool, turn as u32);
+    }
     // 5 CAST: cheapest castable spells (pip-aware). Spend-restricted
     // mana pays creature casts only.
-    let mut order: Vec<usize> = (0..st.hand.len())
-        .filter(|p| deck.cards[st.hand[*p]].role != Role::Land)
-        .map(|p| st.hand[p])
+    let mut order: Vec<CardIdx> = st
+        .hand
+        .iter()
+        .copied()
+        .filter(|idx| deck[*idx].role != Role::Land)
         .collect();
-    order.sort_by_key(|idx| deck.cards[*idx].min_cost.total());
+    order.sort_by_key(|idx| deck[*idx].min_cost.total());
     // Card identities of each cast: mid-cast hand changes (wheels,
     // loots) shift positions, so the cast resolves and removes by card
     // index, never by the stale position.
-    let mut cast_ids = Vec::new();
+    let mut cast_ids: Vec<CardIdx> = Vec::new();
     // (uid, card index) of each cast's battlefield permanent: the ETB
     // pass fires only for these (lands and effect-pushes are excluded).
-    let mut cast_ets: Vec<(u32, usize)> = Vec::new();
+    let mut cast_ets: Vec<(u32, CardIdx)> = Vec::new();
     let mut spent_total = 0u32;
     // Rituals add mana mid-pass (mana_on_cast, mana_per_cast), so a
     // card unaffordable on first sight can become payable later in the
     // same pass. The pass repeats until a full sweep casts nothing.
-    let mut queue: Vec<usize> = order;
+    let mut queue: Vec<CardIdx> = order;
     loop {
-        let progress = cast_pass(
+        let progress = cast_sweep::cast_pass(
             deck,
             st,
             pool,
@@ -120,17 +187,36 @@ pub(super) fn cast_phase(
             pip_blocks,
             blocked_colors,
         );
-        if !progress || queue.is_empty() {
+        if !progress {
+            break;
+        }
+        // Draws and loot may add new legal spells. Rebuild from the live
+        // hand after every productive sweep; already-cast identities are
+        // excluded, while skipped unaffordable cards remain candidates.
+        queue = st
+            .hand
+            .iter()
+            .copied()
+            .filter(|idx| deck[*idx].role != Role::Land && !cast_ids.contains(idx))
+            .collect();
+        queue.sort_by_key(|idx| deck[*idx].min_cost.total());
+        if queue.is_empty() {
             break;
         }
     }
     mana_spent[turn - 1] += spent_total as f64;
-    // Remove cast cards by identity: mid-cast hand changes (wheels,
-    // loots) shift positions, so raw indices would remove the wrong
-    // cards. Each id removes its first live occurrence.
+    // Nonpermanent spells go to the graveyard after resolution. Remove cast
+    // cards by identity because wheels and loots can change hand order.
     for idx in cast_ids.iter() {
         if let Some(pos) = st.hand.iter().position(|i| i == idx) {
             st.hand.remove(pos);
+        }
+        if deck[*idx].is_instant_or_sorcery {
+            if deck[*idx].exile_on_resolve {
+                st.exile.push(*idx);
+            } else {
+                move_to_graveyard(deck, st, *idx, turn as u32, CardZone::Stack);
+            }
         }
     }
     // ETB triggers for cards cast this turn (they entered the board);
@@ -140,16 +226,13 @@ pub(super) fn cast_phase(
     // never had a cast, so both are excluded; token pushes during a
     // fire cannot shift another entry's identity.
     let cast_uids: Vec<u32> = cast_ets.iter().map(|e| e.0).collect();
-    let newly_cast: Vec<(u32, usize)> = st
+    let newly_cast: Vec<(u32, CardIdx)> = st
         .battlefield
         .iter()
         .filter(|p| {
-            p.entered_turn == turn
-                && !p.is_commander
-                && p.card < usize::MAX - 1
-                && cast_uids.contains(&p.uid)
+            p.entered_turn == turn && p.card.deck_idx().is_some() && cast_uids.contains(&p.uid)
         })
-        .map(|p| (p.uid, p.card))
+        .map(|p| (p.uid, p.card.deck_idx().unwrap()))
         .collect();
     for (uid, card_idx) in &newly_cast {
         // Re-resolve the position at fire time: earlier fires can push
@@ -157,14 +240,233 @@ pub(super) fn cast_phase(
         let Some(pos) = st.battlefield.iter().position(|p| p.uid == *uid) else {
             continue;
         };
-        fire_on_enter(deck, st, pos, turn as u32);
+        fire_on_enter(deck, st, pos, turn as u32, false);
         // Upkeep engines on the cast card register now, by uid.
-        for ability in deck.cards[*card_idx].abilities() {
+        for ability in deck[*card_idx].abilities() {
             if let Some(draws) = engine_effect_or_draws(&ability.trigger, &ability.effect) {
                 engines.push((*uid, draws));
             }
         }
     }
+    cast_graveyard_spells(deck, st, pool, turn, mana_spent, engines);
+    if cycle_unusable_cards(deck, st, pool, turn as u32) {
+        cast_phase(
+            deck,
+            st,
+            pool,
+            turn,
+            mana_spent,
+            engines,
+            pip_blocks,
+            blocked_colors,
+        );
+    }
+}
+
+/// Cast legal graveyard instances through active flashback or escape permissions.
+fn cast_graveyard_spells(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut Pool,
+    turn: usize,
+    mana_spent: &mut [f64],
+    engines: &mut Vec<(u32, u32)>,
+) {
+    for _ in 0..super::model::MAX_LOOP_PASSES {
+        let escape_active = st
+            .battlefield
+            .iter()
+            .any(|permanent| card_of(deck, permanent).grants_escape);
+        let mut candidates: Vec<(CardIdx, bool)> = st
+            .graveyard
+            .iter()
+            .copied()
+            .filter_map(|index| {
+                let card = &deck[index];
+                let flashback =
+                    st.flashback_permissions.contains(&index) && card.is_instant_or_sorcery;
+                let escape = escape_active && card.role != Role::Land;
+                (flashback || escape).then_some((index, escape && !flashback))
+            })
+            .collect();
+        candidates.sort_by_key(|(index, _)| deck[*index].min_cost.total());
+        let mut cast_one = false;
+        for (index, escape) in candidates {
+            if !st.graveyard.contains(&index) {
+                continue;
+            }
+            let fodder: Vec<CardIdx> = st
+                .graveyard
+                .iter()
+                .copied()
+                .filter(|other| *other != index)
+                .take(3)
+                .collect();
+            if escape && fodder.len() < 3 {
+                continue;
+            }
+            let cost = effective_min_cost(deck, &deck[index], &st.battlefield);
+            // Additional life costs gate the same way hand casts gate
+            // (the cast would pay the life and could drive life
+            // negative).
+            if st.life <= deck[index].additional_cost_life as i32 {
+                continue;
+            }
+            if !payable(&cost, pool) || !pips_ok(&cost, pool) {
+                continue;
+            }
+            if escape {
+                for other in fodder {
+                    if let Some(position) = st.graveyard.iter().position(|held| *held == other) {
+                        st.exile.push(st.graveyard.remove(position));
+                    }
+                }
+            }
+            if let Some(position) = st.graveyard.iter().position(|held| *held == index) {
+                st.graveyard.remove(position);
+            }
+            st.flashback_permissions.remove(&index);
+            let mut replay_ids = Vec::new();
+            let mut replay_ets = Vec::new();
+            let mut spent = 0;
+            resolve_cast(
+                deck,
+                st,
+                pool,
+                turn,
+                index,
+                &cost,
+                &mut replay_ids,
+                &mut replay_ets,
+                &mut spent,
+                engines,
+                true,
+            );
+            st.replay_casts += 1;
+            super::game::milestone_for_turn(st, turn as u32).graveyard_casts += 1;
+            mana_spent[turn - 1] += spent as f64;
+            if deck[index].is_instant_or_sorcery {
+                st.exile.push(index);
+            }
+            for (uid, card_index) in replay_ets {
+                if let Some(position) = st.battlefield.iter().position(|perm| perm.uid == uid) {
+                    fire_on_enter(deck, st, position, turn as u32, false);
+                    for ability in deck[card_index].abilities() {
+                        if let Some(draws) =
+                            engine_effect_or_draws(&ability.trigger, &ability.effect)
+                        {
+                            engines.push((uid, draws));
+                        }
+                    }
+                }
+            }
+            cast_one = true;
+            break;
+        }
+        if !cast_one {
+            break;
+        }
+    }
+}
+
+/// Cycle uncast cards when their cycling cost is payable, then retry casts.
+fn cycle_unusable_cards(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) -> bool {
+    let mut cycled = false;
+    let candidates = st.hand.clone();
+    for index in candidates {
+        let card = &deck[index];
+        if card.cycling_cost.is_none() && card.cycling_life == 0 {
+            continue;
+        }
+        let cost = card.cycling_cost.as_ref().cloned().unwrap_or_default();
+        if !st.hand.contains(&index)
+            || st.life <= card.cycling_life as i32
+            || !payable(&cost, pool)
+            || !pips_ok(&cost, pool)
+        {
+            continue;
+        }
+        pay_cost(&cost, pool);
+        st.life -= card.cycling_life as i32;
+        st.life_paid += card.cycling_life;
+        let funded_draw = u32::from(card.cycling_life > 0 && card.landcycling_type.is_none());
+        st.life_funded_draws += funded_draw;
+        super::game::milestone_for_turn(st, turn).life_funded_draws += funded_draw;
+        st.hand.retain(|held| *held != index);
+        move_to_graveyard(deck, st, index, turn, CardZone::Hand);
+        if let Some(color) = card.landcycling_type {
+            let color_index = "WUBRG".find(color);
+            let target = color_index.and_then(|color_index| {
+                st.library.iter().rposition(|candidate| {
+                    deck[*candidate].role == Role::Land && deck[*candidate].land_types[color_index]
+                })
+            });
+            if let Some(pos) = target {
+                st.hand.push(st.library.remove(pos));
+            }
+        } else {
+            draw_one(deck, st, turn);
+        }
+        cycled = true;
+    }
+    cycled
+}
+
+/// Reveal cards for the supported life-payment spell until life reaches zero.
+fn resolve_reveal_rule(
+    deck: &SimDeck,
+    st: &mut GameState,
+    rule: super::model::RevealRule,
+    turn: u32,
+) {
+    while st.life > 0 {
+        let Some(index) = st.library.pop() else {
+            break;
+        };
+        match rule.destination {
+            super::model::RevealDestination::Hand => st.hand.push(index),
+        }
+        st.seen += 1;
+        st.awareness_cards += 1;
+        match rule.life_loss {
+            super::model::RevealLifeLoss::ManaValue => {
+                st.life -= deck[index].mana_value as i32;
+                st.life_funded_draws += 1;
+                super::game::milestone_for_turn(st, turn).life_funded_draws += 1;
+            }
+        }
+    }
+}
+
+/// Select cards from hand that satisfy a parsed alternate casting cost.
+/// A fixed-count cost needs every card; an optional exile (the life
+/// payoff) takes whatever matching cards the hand holds.
+fn select_alternative_cost_cards(deck: &SimDeck, st: &GameState, spell: CardIdx) -> Vec<CardIdx> {
+    let Some(cost) = deck[spell].alternative_cast_cost else {
+        return Vec::new();
+    };
+    let mut candidates: Vec<CardIdx> = st
+        .hand
+        .iter()
+        .copied()
+        .filter(|index| *index != spell)
+        .filter(|index| {
+            cost.filter.color.is_none_or(|color| {
+                "WUBRG"
+                    .find(color)
+                    .is_some_and(|position| deck[*index].colors[position])
+            })
+        })
+        .collect();
+    candidates.sort_by_key(|index| std::cmp::Reverse(deck[*index].mana_value));
+    if cost.payoff == super::model::AlternativeCostPayoff::GainLifeEqualToExiledManaValue {
+        return candidates;
+    }
+    if candidates.len() < cost.count as usize {
+        return Vec::new();
+    }
+    candidates.truncate(cost.count as usize);
+    candidates
 }
 
 /// Resolve one affordable cast: pay the cost, push the permanent, and
@@ -177,20 +479,31 @@ fn resolve_cast(
     st: &mut GameState,
     pool: &mut Pool,
     turn: usize,
-    idx: usize,
+    idx: CardIdx,
     eff: &Cost,
-    cast_ids: &mut Vec<usize>,
-    cast_ets: &mut Vec<(u32, usize)>,
+    cast_ids: &mut Vec<CardIdx>,
+    cast_ets: &mut Vec<(u32, CardIdx)>,
     spent_total: &mut u32,
     engines: &mut Vec<(u32, u32)>,
+    resolve_cascade: bool,
 ) {
-    let card = &deck.cards[idx];
-    if let Some(restriction) = cast_restriction(card) {
-        pay_restricted_cost(eff, pool, restriction);
+    let card = &deck[idx];
+    let alternative_cards = select_alternative_cost_cards(deck, st, idx);
+    if alternative_cards.is_empty() {
+        if let Some(restriction) = cast_restriction(card) {
+            pay_restricted_cost(eff, pool, restriction);
+        } else {
+            pay_cost(eff, pool);
+        }
+        *spent_total += eff.total();
     } else {
-        pay_cost(eff, pool);
+        #[cfg(test)]
+        st.alternate_casts.push(idx);
     }
-    *spent_total += eff.total();
+    cast_ids.push(idx);
+    if let Some(pos) = st.hand.iter().position(|held| *held == idx) {
+        st.hand.remove(pos);
+    }
     // Kicker: an optional extra cost paid from leftover mana. Best
     // case the goldfish kicks when the pool covers it (the colored
     // pips are paid from fixed and flexible sources like any cost).
@@ -206,30 +519,129 @@ fn resolve_cast(
     } else {
         false
     };
-    cast_ids.push(idx);
     // The permanent pushed below; battlefield scans skip it by uid
     // (its per-cast engine already fired for the casts so far).
     let cast_perm_uid = super::game::take_uid(st);
-    // Additional costs: the cast consumes bodies ("sacrifice a
-    // creature") and life ("pay N life"). Sacrificed bodies leave
-    // the battlefield and fire their death triggers next turn
-    // (the removal is immediate; the log fills now).
+    // Additional discard, sacrifice, and life costs passed the cast gate
+    // before mana was paid. The cast card already left the hand, so wheels
+    // cannot discard the resolving spell.
+    for _ in 0..card.additional_cost_discards {
+        if let Some(pos) = st.hand.iter().position(|i| *i != idx) {
+            let discarded = st.hand.remove(pos);
+            move_to_graveyard(deck, st, discarded, turn as u32, CardZone::Hand);
+        }
+    }
+    let mut alternative_life = 0;
+    for exiled in alternative_cards {
+        if let Some(position) = st.hand.iter().position(|held| *held == exiled) {
+            st.hand.remove(position);
+            st.exile.push(exiled);
+            alternative_life += deck[exiled].mana_value;
+        }
+    }
+    if alternative_life > 0
+        && card.alternative_cast_cost.is_some_and(|cost| {
+            cost.payoff == super::model::AlternativeCostPayoff::GainLifeEqualToExiledManaValue
+        })
+    {
+        st.life += alternative_life as i32;
+        st.life_gained += alternative_life;
+    }
+    let searched_sacrifice = if card.search_after_sacrifice {
+        st.battlefield
+            .iter()
+            .filter(|perm| perm.card.deck_idx().is_some() && card_of(deck, perm).is_creature)
+            .find_map(|perm| {
+                let mana_value = card_of(deck, perm).mana_value;
+                st.library
+                    .iter()
+                    .map(|index| &deck[*index])
+                    .any(|candidate| {
+                        candidate.is_creature && candidate.mana_value == mana_value + 1
+                    })
+                    .then_some((perm.uid, mana_value))
+            })
+    } else {
+        None
+    };
     for _ in 0..card.additional_cost_bodies {
-        let victim = st.battlefield.iter().position(|p| {
-            !p.is_commander && p.card < usize::MAX - 1 && card_of(deck, p).is_creature && !p.tapped
-        });
-        let Some(v) = victim else {
-            break;
+        if let Some((uid, _)) = searched_sacrifice {
+            super::game_effects::resolve_sacrifice_uid(deck, st, turn as u32, uid);
+        } else {
+            super::game_effects::resolve_sacrifice(deck, st, turn as u32, u32::MAX);
+        }
+    }
+    if let Some((_, sacrificed_mv)) = searched_sacrifice
+        && let Some(pos) = st.library.iter().rposition(|candidate| {
+            deck[*candidate].is_creature && deck[*candidate].mana_value == sacrificed_mv + 1
+        })
+    {
+        let target = st.library.remove(pos);
+        let target_card = &deck[target];
+        let uid = super::game::take_uid(st);
+        st.battlefield_seen.entry(target).or_insert(turn as u32);
+        let mut entry = new_perm_with(uid, deck, target, turn as u32, false);
+        entry.sick = !target_card.has_haste;
+        entry.counters = if target_card.enter_counters == super::parse_land::X_ENTRY_COUNTERS {
+            1
+        } else {
+            target_card.enter_counters + 1
         };
-        let victim_card = st.battlefield[v].card;
-        st.battlefield.remove(v);
-        st.graveyard_seen.entry(victim_card).or_insert(turn as u32);
-        st.graveyard.push(victim_card);
+        st.battlefield.push(entry);
+        cast_ets.push((uid, target));
     }
     if card.additional_cost_life > 0 {
         // Life the goldfish pays itself is not damage dealt; keep it
         // out of the lethal census.
         st.life_paid += card.additional_cost_life;
+        st.life -= card.additional_cost_life as i32;
+        st.life_funded_draws += card.draws_on_cast;
+        super::game::milestone_for_turn(st, turn as u32).life_funded_draws += card.draws_on_cast;
+    }
+    if card.grants_flashback {
+        st.flashback_permissions.extend(
+            st.graveyard
+                .iter()
+                .copied()
+                .filter(|index| deck[*index].is_instant_or_sorcery),
+        );
+    }
+    if card.graveyard_creature_exchange {
+        let mut returned = Vec::new();
+        let mut remaining = Vec::new();
+        for index in st.graveyard.drain(..) {
+            if deck[index].is_creature {
+                st.exile.push(index);
+                returned.push(index);
+            } else {
+                remaining.push(index);
+            }
+        }
+        st.graveyard = remaining;
+        // Death triggers on the surviving board can create new creature
+        // tokens each round, so the exchange can never drain the board
+        // by itself. The shared pass cap keeps the cast phase finite.
+        for _ in 0..super::model::MAX_LOOP_PASSES {
+            if !super::game_effects::has_sacrifice_body(deck, st) {
+                break;
+            }
+            super::game_effects::resolve_sacrifice_body(deck, st, turn as u32, u32::MAX);
+        }
+        for index in returned {
+            let returned_card = &deck[index];
+            st.battlefield_seen.entry(index).or_insert(turn as u32);
+            let uid = super::game::take_uid(st);
+            let mut entry = new_perm_with(uid, deck, index, turn as u32, false);
+            entry.sick = !returned_card.has_haste;
+            entry.counters = if returned_card.enter_counters == super::parse_land::X_ENTRY_COUNTERS
+            {
+                0
+            } else {
+                returned_card.enter_counters
+            };
+            st.battlefield.push(entry);
+            cast_ets.push((uid, index));
+        }
     }
     // Producers join the battlefield: rocks tap at once, creatures
     // from next turn (summoning sickness). Vehicles and spacecraft
@@ -247,72 +659,38 @@ fn resolve_cast(
     } else {
         card.enter_counters
     };
-    st.battlefield_seen.entry(idx).or_insert(turn as u32);
-    st.battlefield.push(InPlay {
-        uid: cast_perm_uid,
-        card: idx,
-        tapped: false,
-        sick: card.is_creature,
-        counters: entry_counters,
-        animated: false,
-        crewed: false,
-        entered_turn: turn,
-        saga_step: 0,
-        fired: false,
-        blink_pending: false,
-        loyalty: card.starting_loyalty.unwrap_or(0),
-        equipped: false,
-        equip_host: None,
-        is_commander: false,
-        commander_slot: 0,
-    });
+    if !card.is_instant_or_sorcery {
+        st.battlefield_seen.entry(idx).or_insert(turn as u32);
+        let mut entry = new_perm_with(cast_perm_uid, deck, idx, turn as u32, false);
+        entry.sick = card.is_creature && !card.has_haste;
+        entry.counters = entry_counters;
+        st.battlefield.push(entry);
+        let pw_pos = st.battlefield.len() - 1;
+        register_loyalty_token_engines(deck, st, pw_pos, engines);
+        cast_ets.push((cast_perm_uid, idx));
+    }
     // Planeswalker +1 token engines register at first cast: a
     // loyalty-gain activation that creates tokens is a repeatable
     // once-per-turn engine (Liliana-class token fuel).
-    let pw_pos = st.battlefield.len() - 1;
-    register_loyalty_token_engines(deck, st, pw_pos, engines);
-    cast_ets.push((cast_perm_uid, idx));
     // One-shot mana (rituals) joins this turn's pool only.
     if let Some(y) = &card.mana_on_cast {
         add_yield_turns_empty_board(y, pool, turn as u32);
     }
     // One-shot draws on cast (cantrips, Divination).
     for _ in 0..card.draws_on_cast {
-        if let Some(i) = st.library.pop() {
-            st.hand.push(i);
-            st.seen += 1;
-            st.awareness_cards += 1;
-        }
+        draw_one(deck, st, turn as u32);
     }
     // One-shot mill on cast (plain "mill N" spells).
     for _ in 0..card.mills_on_enter {
-        if let Some(i) = st.library.pop() {
-            st.graveyard_seen.entry(i).or_insert(turn as u32);
-            st.graveyard.push(i);
-            st.seen += 1;
-            st.awareness_cards += 1;
-            if card.mills_opponent {
-                st.milled_opp += 1;
-            } else {
-                st.milled_self += 1;
-            }
-        }
+        mill_library_card(deck, st, turn as u32, card.mills_opponent);
     }
     // Scry/surveil on cast: awareness only; surveil mills the
     // scry'd cards to the graveyard.
-    if card.scry_on_cast > 0 {
-        st.awareness_cards += card.scry_on_cast;
-        if card.surveils {
-            for _ in 0..card.scry_on_cast {
-                if let Some(i) = st.library.pop() {
-                    st.graveyard_seen.entry(i).or_insert(turn as u32);
-                    st.graveyard.push(i);
-                    st.milled_self += 1;
-                }
-            }
-        }
+    st.awareness_cards += card.scry_on_cast;
+    for _ in 0..card.surveils_on_cast {
+        mill_library_card(deck, st, turn as u32, false);
     }
-    // One-shot extra turns queue for replay after this turn.
+    // Schedule the next turn slot as an extra turn.
     if card.extra_turns_on_cast {
         st.extra_turns_queued += 1;
     }
@@ -324,6 +702,13 @@ fn resolve_cast(
     if card.drain_on_cast > 0 {
         let rider = card.drain_on_cast + u32::from(kicked) * card.drain_on_cast.max(1);
         st.drained += rider * drain_mult_in(deck);
+    }
+    if card.life_gain_on_cast > 0 {
+        st.life += card.life_gain_on_cast as i32;
+        st.life_gained += card.life_gain_on_cast;
+    }
+    if let Some(rule) = card.reveal_rule {
+        resolve_reveal_rule(deck, st, rule, turn as u32);
     }
     // One-shot token spells ("Create four 1/1 Soldier creature
     // tokens"): the cast resolves the creation.
@@ -341,7 +726,7 @@ fn resolve_cast(
     // The just-cast wheel is still in hand (removal is deferred), so
     // the skip variant keeps it out of the graveyard log.
     if card.wheel_on_cast {
-        apply_effect(deck, &Effect::WheelSkip(idx), st, turn as u32, false);
+        apply_effect_at(deck, &Effect::WheelSkip(idx), st, turn as u32, false, None);
     }
     // X-cost spells pay the leftover pool as X and scale the effect
     // (best case: X = everything floatable). The generic {X} already
@@ -368,27 +753,13 @@ fn resolve_cast(
             }
             super::model::XClass::Draw => {
                 for _ in 0..x {
-                    if let Some(i) = st.library.pop() {
-                        st.hand.push(i);
-                        st.seen += 1;
-                        st.awareness_cards += 1;
-                    }
+                    draw_one(deck, st, turn as u32);
                 }
             }
             super::model::XClass::Mill => {
                 let mill_opp = card.mills_opponent;
                 for _ in 0..x {
-                    if let Some(i) = st.library.pop() {
-                        st.graveyard_seen.entry(i).or_insert(turn as u32);
-                        st.graveyard.push(i);
-                        st.seen += 1;
-                        st.awareness_cards += 1;
-                        if mill_opp {
-                            st.milled_opp += 1;
-                        } else {
-                            st.milled_self += 1;
-                        }
-                    }
+                    mill_library_card(deck, st, turn as u32, mill_opp);
                 }
             }
             super::model::XClass::Tokens => {
@@ -409,6 +780,8 @@ fn resolve_cast(
                 // excludes non-cast entries).
                 for _ in 0..x.min(8) {
                     if let Some(i) = st.library.pop() {
+                        st.seen += 1;
+                        st.awareness_cards += 1;
                         st.battlefield_seen.entry(i).or_insert(turn as u32);
                         let uid = take_uid(st);
                         st.battlefield
@@ -452,21 +825,17 @@ fn resolve_cast(
         };
         let perm = perm.clone();
         for ability in card_of(deck, &perm).abilities() {
-            if ability.trigger != Trigger::OnCastSpell {
+            if ability.trigger != AbilityTiming::OnCastSpell {
                 continue;
             }
             match &ability.effect {
                 Effect::Draw(n) => {
                     for _ in 0..*n {
-                        if let Some(i) = st.library.pop() {
-                            st.hand.push(i);
-                            st.seen += 1;
-                            st.awareness_cards += 1;
-                        }
+                        draw_one(deck, st, turn as u32);
                     }
                 }
                 Effect::Loot(n) => {
-                    apply_effect(deck, &Effect::Loot(*n), st, turn as u32, false);
+                    apply_effect_at(deck, &Effect::Loot(*n), st, turn as u32, false, None);
                 }
                 Effect::Drain(n) => {
                     st.drained += n * drain_mult_in(deck);
@@ -486,204 +855,49 @@ fn resolve_cast(
     {
         perm.counters += card.counters_on_cast;
     }
-    // Cascade: one free cast of the cheapest cheaper castable card
-    // from the library. Single level, no cascade chaining. The free
+    // Cascade: reveal in library order and free-cast the first nonland
+    // card with lower printed mana value. No cascade chaining. The free
     // cast counts fully: ETB triggers fire, per-cast engines fire,
     // and the card leaves the library into the seen census.
-    if card.has_cascade
-        && let Some(cascade_pos) = st
-            .library
-            .iter()
-            .enumerate()
-            .filter(|(_, i)| {
-                let free = &deck.cards[**i];
-                free.role != Role::Land
-                    && free.min_cost.total() < card.min_cost.total()
-                    && !free.has_cascade
-            })
-            // The cheapest match wins; a tie keeps the deeper
-            // library position (last found).
-            .max_by_key(|(pos, i)| (std::cmp::Reverse(deck.cards[**i].min_cost.total()), *pos))
-            .map(|(pos, _)| pos)
-    {
-        let free_idx = st.library.remove(cascade_pos);
-        let free_card = &deck.cards[free_idx];
-        st.seen += 1;
-        st.awareness_cards += 1;
-        if free_card.is_creature {
-            st.battlefield_seen.entry(free_idx).or_insert(turn as u32);
-            let uid = take_uid(st);
-            st.battlefield.push(InPlay {
-                uid,
-                card: free_idx,
-                tapped: false,
-                sick: true,
-                counters: free_card.enter_counters,
-                animated: false,
-                crewed: false,
-                entered_turn: turn,
-                saga_step: 0,
-                fired: false,
-                blink_pending: false,
-                loyalty: free_card.starting_loyalty.unwrap_or(0),
-                equipped: false,
-                equip_host: None,
-                is_commander: false,
-                commander_slot: 0,
-            });
-        }
-        // Per-cast engines fire for the free cast (the cheapest path
-        // applies the same credit the real cast would).
-        if let Some(y) = &free_card.mana_per_cast {
-            for _ in 0..st.prowess_casts {
-                add_yield_turns_empty_board(y, pool, turn as u32);
+    if resolve_cascade && card.has_cascade {
+        let mut exposed = Vec::new();
+        let mut hit = None;
+        while let Some(index) = st.library.pop() {
+            st.seen += 1;
+            st.awareness_cards += 1;
+            let candidate = &deck[index];
+            if candidate.role != Role::Land && candidate.mana_value < card.mana_value {
+                hit = Some(index);
+                break;
             }
+            exposed.push(index);
         }
-        if let Some(y) = &free_card.mana_on_cast {
-            add_yield_turns_empty_board(y, pool, turn as u32);
+        // The exposed order came from the seeded library shuffle (the
+        // first miss was revealed first, closest to the hit). Reinsert
+        // in reverse so the first-revealed card ends up deepest and the
+        // reveal order survives at the library bottom.
+        for index in exposed.iter().rev() {
+            st.library.insert(0, *index);
         }
-        if free_card.drain_on_cast > 0 {
-            st.drained += free_card.drain_on_cast * drain_mult_in(deck);
-        }
-        for _ in 0..free_card.draws_on_cast {
-            if let Some(i) = st.library.pop() {
-                st.hand.push(i);
-                st.seen += 1;
-                st.awareness_cards += 1;
+        if let Some(free_idx) = hit {
+            if !deck[free_idx].is_instant_or_sorcery {
+                super::game::milestone_for_turn(st, turn as u32).free_cast_permanents_entered += 1;
             }
-        }
-        if free_card.tokens_on_cast > 0 {
-            apply_effect_at(
+            resolve_cast(
                 deck,
-                &Effect::Tokens(free_card.tokens_on_cast.min(8)),
                 st,
-                turn as u32,
+                pool,
+                turn,
+                free_idx,
+                &Cost::default(),
+                cast_ids,
+                cast_ets,
+                spent_total,
+                engines,
                 false,
-                Some(free_idx),
             );
         }
-        st.prowess_casts += 1;
     }
-}
-
-/// One affordability sweep over the remaining queue. Casts deduct from
-/// the pool and add mana (rituals), so a card skipped as unaffordable
-/// here can pay off in a later sweep; each cast removes its index from
-/// the queue. Returns true when at least one card was cast.
-#[allow(clippy::too_many_arguments)]
-fn cast_pass(
-    deck: &SimDeck,
-    st: &mut GameState,
-    pool: &mut Pool,
-    turn: usize,
-    queue: &mut Vec<usize>,
-    cast_ids: &mut Vec<usize>,
-    cast_ets: &mut Vec<(u32, usize)>,
-    spent_total: &mut u32,
-    engines: &mut Vec<(u32, u32)>,
-    pip_blocks: &mut Vec<(usize, usize)>,
-    blocked_colors: &mut [bool; 5],
-) -> bool {
-    let mut cast_any = false;
-    let mut idx = 0usize;
-    while idx < queue.len() {
-        let card_idx = queue[idx];
-        // Mid-cast hand changes (wheels, loots) shift or shrink the
-        // hand: skip when the cast's card already left the hand.
-        if !st.hand.contains(&card_idx) {
-            queue.remove(idx);
-            continue;
-        }
-        let card = &deck.cards[card_idx];
-        let eff = effective_min_cost(deck, card, &st.battlefield);
-        // Spend-restricted mana pays only its cast class: the general
-        // pool plus the matching bucket counts toward the cast; other
-        // restricted buckets do not. The bucket covers the card's pips
-        // like any other source (each restricted pip is one mana of the
-        // source's chosen color, so the bucket must cover every pip,
-        // once).
-        let restriction = cast_restriction(card);
-        let (cost_ok, pip_ok) = if let Some(restriction) = restriction {
-            // Mixed pips: the cast passes when the restricted bucket,
-            // on top of the general pool, can legally cover it. The
-            // bucket pays any pip (its mana is one color of the
-            // source's choice), so bucket + general pips must cover the
-            // pip total; the general pool alone covering pips_ok also
-            // passes.
-            let pip_total: u32 =
-                eff.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + eff.flex_pips;
-            (
-                pool.usable_for(restriction) >= eff.total(),
-                pips_ok(&eff, pool)
-                    || (bucket_of(pool, restriction) > 0
-                        && bucket_of(pool, restriction) + general_coverable(&eff, pool)
-                            >= pip_total),
-            )
-        } else {
-            (
-                usable_for_noncreature(pool) >= eff.total(),
-                pips_ok(&eff, pool),
-            )
-        };
-        if !cost_ok || !pip_ok {
-            // Colors a cast was blocked for: enough total, missing pips
-            // (read from the effective cost; improvise and affinity
-            // change the generic part only, so printed and effective
-            // pips match, but the total must use the same lens as the
-            // cast gate).
-            if payable(&eff, pool) && !pips_ok(&eff, pool) {
-                let flexible = pool.flexible;
-                for (ci, need) in card.cost.pips.iter().enumerate() {
-                    if *need > 0 && pool.fixed[ci] + flexible < u32::from(*need) {
-                        blocked_colors[ci] = true;
-                        pip_blocks.push((card_idx, ci));
-                    }
-                }
-            }
-            idx += 1;
-            continue;
-        }
-        cast_any = true;
-        resolve_cast(
-            deck,
-            st,
-            pool,
-            turn,
-            card_idx,
-            &eff,
-            cast_ids,
-            cast_ets,
-            spent_total,
-            engines,
-        );
-        queue.remove(idx);
-    }
-    cast_any
-}
-
-/// The restricted bucket for a cast class.
-fn bucket_of(pool: &Pool, restriction: Restriction) -> u32 {
-    match restriction {
-        Restriction::Creature => pool.creature_only,
-        Restriction::Legendary => pool.legendary_only,
-        Restriction::Artifact => pool.artifact_only,
-        Restriction::InstantSorcery => pool.instant_sorcery_only,
-    }
-}
-
-/// Monocolor pips the general pool (fixed + flexible) already covers,
-/// outside the restricted bucket. The mixed-pip gate adds this to the
-/// bucket: bucket mana pays any pip, so bucket + general-covered pips
-/// must reach the pip total.
-fn general_coverable(eff: &Cost, pool: &Pool) -> u32 {
-    let mut flexible = pool.flexible;
-    let mut covered = 0u32;
-    for (i, need) in eff.pips.iter().enumerate() {
-        let need = u32::from(*need);
-        covered += need.min(pool.fixed[i]);
-        flexible = flexible.saturating_sub(need.saturating_sub(pool.fixed[i]));
-    }
-    covered + flexible
 }
 
 /// Zero every restricted bucket (an X-cost or counters spell spends the
@@ -698,11 +912,11 @@ pub(super) fn wipe_restricted_buckets(pool: &mut Pool) {
 /// The upkeep-engine payload of an ability: the draw count for
 /// executor-run draw engines, zero for the executor-run shapes
 /// (mill, reanimation, drain, tokens), None when not an upkeep engine.
-fn engine_effect_or_draws(trigger: &Trigger, effect: &Effect) -> Option<u32> {
+fn engine_effect_or_draws(trigger: &AbilityTiming, effect: &Effect) -> Option<u32> {
     match (trigger, effect) {
-        (Trigger::OnUpkeep, Effect::Draw(n)) => Some(*n),
+        (AbilityTiming::OnUpkeep, Effect::Draw(n)) => Some(*n),
         (
-            Trigger::OnUpkeep,
+            AbilityTiming::OnUpkeep,
             Effect::Mill(_)
             | Effect::ReturnFromGraveyard { .. }
             | Effect::Drain(_)
@@ -710,4 +924,17 @@ fn engine_effect_or_draws(trigger: &Trigger, effect: &Effect) -> Option<u32> {
         ) => Some(0),
         _ => None,
     }
+}
+
+/// Probe entry for the graveyard-cast pass (test only).
+#[cfg(test)]
+pub(crate) fn cast_graveyard_spells_probe(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut Pool,
+    turn: usize,
+    mana_spent: &mut [f64],
+    engines: &mut Vec<(u32, u32)>,
+) {
+    cast_graveyard_spells(deck, st, pool, turn, mana_spent, engines);
 }

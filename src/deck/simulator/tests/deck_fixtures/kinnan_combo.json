@@ -380,7 +380,7 @@
    "cost": "{3}",
    "type_line": "Artifact",
    "keywords": "[]",
-   "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact."
+    "text": "This artifact doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact."
   },
   {
    "name": "Chrome Mox",

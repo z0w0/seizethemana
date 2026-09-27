@@ -41,9 +41,14 @@ fn json_report_adds_station_and_body_fields() {
     assert!(obj.contains_key("bodies_by_turn"));
     assert!(obj.contains_key("engines_online_by_turn"));
     assert!(obj.contains_key("assumptions"));
+    assert!(obj["milestones"].is_object());
+    assert!(obj["milestones"]["dredge_uses_avg_by_turn"].is_object());
+    assert!(obj["milestones"]["positive_mana_loop_pct_by_turn"].is_object());
     // Station metrics present for a spacecraft commander.
     assert!(obj["station"].is_object());
     assert!(obj["station"]["online_by_t6"].is_number());
+    assert!(obj["draw"]["avg_life_paid"].is_number());
+    assert!(obj["draw"]["avg_life_funded_draws"].is_number());
     // Stable legacy fields still present.
     for key in [
         "name",
@@ -118,7 +123,7 @@ fn json_report_interaction_color_and_wincons_are_populated() {
     for _ in 0..24 {
         cards.push(SimCard {
             name: "Plains".into(),
-            tap: Some(super::parse::parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(super::oracle_parse::parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -234,7 +239,7 @@ fn aggregate_attack_power_p90_and_p95_drops_compute() {
     for _ in 0..20 {
         cards.push(SimCard {
             name: "Mountain".into(),
-            tap: Some(super::parse::parse_tap_yield("{T}: Add {R}.").unwrap()),
+            tap: Some(super::oracle_parse::parse_oracle_tap_yield("{T}: Add {R}.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -271,4 +276,57 @@ fn aggregate_attack_power_p90_and_p95_drops_compute() {
         "attack power never computed"
     );
     assert!(stats.p95_drops_by_4 > 0, "p95 drops never computed");
+}
+
+/// Carry a reached positive-mana-loop milestone into report JSON.
+#[test]
+fn report_milestones_include_a_reached_positive_mana_loop() {
+    use super::game::run_game;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
+
+    let engine = SimCard {
+        name: "Loop Rock".into(),
+        has_mana_cost: true,
+        role: Role::Rock,
+        is_artifact: true,
+        station_tiers: vec![Tier {
+            at: 0,
+            animate: false,
+            abilities: vec![Ability {
+                trigger: AbilityTiming::Activated,
+                effect: Effect::Mana(TapYield {
+                    colorless: 1,
+                    ..TapYield::default()
+                }),
+                ..Ability::default()
+            }],
+        }],
+        ..SimCard::default()
+    };
+    let deck = SimDeck {
+        cards: vec![engine; 60],
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    let mut rng = ChaCha8Rng::seed_from_u64(12);
+    let logs = vec![run_game(&deck, &mut rng, 1)];
+    assert!(logs[0].milestones_by_turn[0].positive_mana_loop);
+    let stats = aggregate(&logs, &deck, 1);
+    let report = super::report::json_report(
+        &stats,
+        &deck,
+        "loop",
+        12,
+        &[],
+        Default::default(),
+        &Default::default(),
+    );
+
+    assert!(
+        report["milestones"]["positive_mana_loop_pct_by_turn"]["1"]
+            .as_f64()
+            .is_some_and(|percent| percent > 0.0)
+    );
 }

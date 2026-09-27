@@ -40,24 +40,35 @@ fn london_bottoms_toward_three_lands() {
     let mut rng = ChaCha8Rng::seed_from_u64(11);
     let mut exercised = 0;
     for _ in 0..600 {
-        let mut library: Vec<usize> = (0..deck.cards.len()).collect();
+        let mut library: Vec<crate::deck::simulator::model::CardIdx> = (0..deck.cards.len() as u32)
+            .map(crate::deck::simulator::model::CardIdx)
+            .collect();
         for i in (1..library.len()).rev() {
             let j = rng.random_range(0..=i);
             library.swap(i, j);
         }
-        let hand = take_n(&mut library, 7);
-        let pre = count_lands_in(&deck, &hand);
-        if (2..=5).contains(&pre) {
+        let _shipped_hand = take_n(&mut library, 7);
+        let redrawn_hand = take_n(&mut library.clone(), 7);
+        let redrawn_lands = count_lands_in(&deck, &redrawn_hand);
+        if (2..=5).contains(&redrawn_lands) {
             continue;
         }
-        let hand = london_mulligan(&deck, &mut library, &mut rng);
+        let hand = london_mulligan(&deck, &mut library);
         assert_eq!(hand.len(), 6, "redrawn hand nets 6 cards");
         let post = count_lands_in(&deck, &hand);
-        if pre >= 4 {
+        let bottomed_pos = bottom_position(&deck, &redrawn_hand, redrawn_lands);
+        let expected = redrawn_hand[bottomed_pos];
+        assert!(
+            library.contains(&expected),
+            "bottomed card returns to library"
+        );
+        if redrawn_lands >= 4 {
             assert!(
-                post < pre,
-                "flooded redraw must bottom a land: {pre}->{post}"
+                post < redrawn_lands,
+                "flooded redraw must bottom a land: {redrawn_lands}->{post}"
             );
+        } else {
+            assert_eq!(post, redrawn_lands, "starved redraw bottoms a spell");
         }
         exercised += 1;
     }
@@ -68,10 +79,15 @@ fn london_bottoms_toward_three_lands() {
 #[test]
 fn bottom_position_flooded_sheds_land_starved_sheds_spell() {
     let deck = london_deck(40, 20); // indexes 0..40 lands, 40..60 spells
-    let land_hand: Vec<usize> = (0..6).chain(vec![45]).collect(); // 6 lands + 1 spell
+    let to_idx = |v: Vec<usize>| {
+        v.into_iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(i as u32))
+            .collect::<Vec<_>>()
+    };
+    let land_hand = to_idx((0..6).chain(vec![45]).collect()); // 6 lands + 1 spell
     let pos = bottom_position(&deck, &land_hand, 6);
     assert!(pos < 6, "flooded hand must bottom a land, bottomed {pos}");
-    let spell_hand: Vec<usize> = (40..46).chain(vec![3]).collect(); // 6 spells + 1 land
+    let spell_hand = to_idx((40..46).chain(vec![3]).collect()); // 6 spells + 1 land
     let pos = bottom_position(&deck, &spell_hand, 1);
     assert_eq!(
         pos, 0,

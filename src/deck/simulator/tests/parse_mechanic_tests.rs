@@ -4,7 +4,7 @@
 // X-scaling draws).
 
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 
 /// A minimal card row for tests.
@@ -13,7 +13,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
+        cmc: parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -53,7 +53,7 @@ fn whenever_etb_parses() {
     ));
     let etb = sim
         .abilities()
-        .find(|a| a.trigger == Trigger::OnEnter)
+        .find(|a| a.trigger == AbilityTiming::OnEnter)
         .expect("whenever-ETB parses");
     assert!(matches!(etb.effect, Effect::Draw(1)));
 }
@@ -68,9 +68,25 @@ fn etb_scry_is_awareness_not_draw() {
     ));
     let etb = sim
         .abilities()
-        .find(|a| a.trigger == Trigger::OnEnter)
+        .find(|a| a.trigger == AbilityTiming::OnEnter)
         .expect("scry ETB parsed");
     assert!(matches!(etb.effect, Effect::Scry(2)));
+}
+
+/// Preserve surveil as a distinct runtime effect rather than scry.
+#[test]
+fn etb_surveil_keeps_a_distinct_runtime_effect() {
+    let sim = parse_sim_card(&card(
+        "Graveyard Lookout",
+        "{1}{U}",
+        "Creature — Bird",
+        "When this creature enters, surveil 2.",
+    ));
+    let trigger = sim
+        .abilities()
+        .find(|ability| ability.trigger == AbilityTiming::OnEnter)
+        .expect("surveil trigger");
+    assert!(matches!(trigger.effect, Effect::Surveil(2)));
 }
 
 #[test]
@@ -83,7 +99,7 @@ fn landfall_engine_parses_draw_and_tokens() {
     ));
     assert!(
         draw.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Draw(_))),
+            .any(|a| a.trigger == AbilityTiming::OnLandfall && matches!(a.effect, Effect::Draw(_))),
         "landfall draw parses"
     );
     let tokens = parse_sim_card(&card(
@@ -93,9 +109,9 @@ fn landfall_engine_parses_draw_and_tokens() {
         "Landfall — Whenever a land you control enters, create a 2/2 green Beast creature token.",
     ));
     assert!(
-        tokens
-            .abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Tokens(_))),
+        tokens.abilities().any(
+            |a| a.trigger == AbilityTiming::OnLandfall && matches!(a.effect, Effect::Tokens(_))
+        ),
         "landfall tokens parse"
     );
     let mana = parse_sim_card(&card(
@@ -106,8 +122,9 @@ fn landfall_engine_parses_draw_and_tokens() {
     ));
     assert!(
         mana.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::ExtraLand)),
-        "landfall mana reads as ramp"
+            .any(|a| a.trigger == AbilityTiming::OnLandfall
+                && matches!(a.effect, Effect::Mana(ref yield_) if yield_.any_pips == 1)),
+        "landfall mana keeps its parsed yield"
     );
 }
 
@@ -117,7 +134,7 @@ fn haste_skips_sickness_in_game() {
         "Swift Body",
         "{R}",
         "Creature — Human",
-        "Haste",
+        r#"["Haste"]"#,
         "Haste",
     ));
     assert!(hasted.has_haste);
@@ -135,7 +152,9 @@ fn token_counts_parse() {
     ));
     let t = two
         .abilities()
-        .find(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Tokens(n) if n == 2))
+        .find(|a| {
+            a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Tokens(n) if n == 2)
+        })
         .expect("two-token ETB");
     assert!(matches!(t.effect, Effect::Tokens(2)));
     let scaled = parse_sim_card(&card(
@@ -216,7 +235,7 @@ fn kicker_parses() {
         "Sorcery",
         "Kicker {2}\nKicked Bolt deals 3 damage to target player.",
     ));
-    assert_eq!(kicked.kicker, Some(parse_cost("{2}")));
+    assert_eq!(kicked.kicker, Some(parse_oracle_cost("{2}")));
     let plain = parse_sim_card(&card("Bolt", "{1}{R}", "Sorcery", "Bolt deals 3."));
     assert_eq!(plain.kicker, None);
 }
@@ -243,11 +262,7 @@ fn saga_chapters_parse_into_abilities() {
         "Read ahead (Choose a chapter and start with that many lore counters.)\nI — Draw a card.\nII — Draw two cards.\nIII — Mill three cards.",
     ));
     assert!(saga.is_saga);
-    let chapter_effects: Vec<&Effect> = saga
-        .abilities()
-        .filter(|a| a.trigger == Trigger::Activated)
-        .map(|a| &a.effect)
-        .collect();
+    let chapter_effects: &[Effect] = &saga.saga.chapters;
     assert_eq!(chapter_effects.len(), 3, "three chapters parse");
     assert!(matches!(chapter_effects[0], Effect::Draw(1)));
     assert!(matches!(chapter_effects[1], Effect::Draw(2)));
@@ -266,7 +281,7 @@ fn loyalty_minus_and_plus_costs_parse() {
     let sim = parse_sim_card(&row);
     let abilities: Vec<_> = sim
         .abilities()
-        .filter(|a| a.trigger == Trigger::Activated)
+        .filter(|a| a.trigger == AbilityTiming::Activated)
         .collect();
     assert!(
         abilities.iter().any(|a| a.loyalty_gain == 1),
@@ -348,7 +363,7 @@ fn etb_draw_is_trigger_not_cast_rider() {
     assert_eq!(sim.draws_on_cast, 0, "ETB draw must not double count");
     assert!(
         sim.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Draw(1)))
+            .any(|a| a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Draw(1)))
     );
 }
 
@@ -357,7 +372,7 @@ fn spell_draw_is_cast_rider() {
     let sim = parse_sim_card(&card("Two Cards", "{2}{U}", "Sorcery", "Draw two cards."));
     assert_eq!(sim.draws_on_cast, 2);
     assert!(
-        !sim.abilities().any(|a| a.trigger == Trigger::OnEnter),
+        !sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter),
         "no ETB trigger on a plain draw spell"
     );
 }
@@ -450,7 +465,7 @@ fn once_each_turn_trigger_grammar() {
     let sim = parse_sim_card(&row);
     let ab = sim
         .abilities()
-        .find(|a| a.trigger == Trigger::OnCastSpell)
+        .find(|a| a.trigger == AbilityTiming::OnCastSpell)
         .expect("cast trigger parses");
     assert!(
         ab.once_per_turn,
@@ -548,7 +563,7 @@ fn ability_word_prefix_stripped() {
     ));
     assert!(
         sim.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Draw(1))),
+            .any(|a| a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Draw(1))),
         "ability word must not block the trigger family"
     );
 }
@@ -617,7 +632,7 @@ fn transform_card_keeps_on_cast_credits() {
         "Creature — Human // Creature — Insect",
         "When you cast this spell, draw a card.\nAt the beginning of your upkeep, look at the top card of your library. You may reveal an instant or sorcery card. If you do, transform this creature.\n//\nFlying",
     );
-    row.keywords = "Transform".into();
+    row.keywords = r#"["Transform"]"#.into();
     let sim = parse_sim_card(&row);
     assert!(
         sim.draws_on_cast > 0,
@@ -638,7 +653,101 @@ fn land_tapped_clause_is_not_landfall_engine() {
     ));
     assert!(
         !sim.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::ExtraLand)),
+            .any(|a| a.trigger == AbilityTiming::OnLandfall),
         "land-clause text must not parse as a landfall engine"
+    );
+}
+
+#[test]
+fn static_keyword_grants_drive_evasion_and_self_haste() {
+    // Matching grant: an evasion-keyword grant puts the granter in the
+    // evasive-body census.
+    let grant = parse_sim_card(&card(
+        "Evasion Granter",
+        "{3}{U}",
+        "Enchantment",
+        "Creatures you control have flying.",
+    ));
+    assert!(grant.evasion, "flying grant joins the evasion census");
+    // Nonmatching grant: a non-evasion keyword stays out.
+    let vigilance = parse_sim_card(&card(
+        "Vigilance Granter",
+        "{3}{W}",
+        "Enchantment",
+        "Creatures you control have vigilance.",
+    ));
+    assert!(!vigilance.evasion, "vigilance grant is not evasion");
+    // Matching self grant: a grant that targets the source sets haste.
+    let self_haste = parse_sim_card(&card(
+        "Hasty Body",
+        "{2}{R}",
+        "Creature — Human",
+        "This creature has haste.",
+    ));
+    assert!(self_haste.has_haste, "self haste grant sets haste");
+    // Nonmatching: a grant to other creatures never hastes the granter.
+    let grant_haste = parse_sim_card(&card(
+        "Haste Granter",
+        "{2}{R}",
+        "Creature — Goblin",
+        "Creatures you control have haste.",
+    ));
+    assert!(
+        !grant_haste.has_haste,
+        "a grant to other creatures does not haste the granter"
+    );
+}
+
+#[test]
+fn comma_keyword_lines_join_the_ast_keyword_list() {
+    let listed = parse_sim_card(&card(
+        "Flier",
+        "{2}{U}",
+        "Creature — Bird",
+        "Flying, lifelink",
+    ));
+    assert!(listed.evasion, "comma keyword line parses into the AST");
+    let face2 = parse_sim_card(&card(
+        "Double Flier",
+        "{1}{U}",
+        "Creature — Bird // Instant",
+        "Flying\n// Reach, trample",
+    ));
+    assert!(face2.evasion, "face-two keyword list parses");
+    // Nonmatching: an ability reference to flying is not a keyword grant.
+    let mention = parse_sim_card(&card(
+        "Gainer",
+        "{2}{U}",
+        "Creature — Bird",
+        "Exile three cards from your graveyard: This creature gains flying \
+         until end of turn.",
+    ));
+    assert!(!mention.evasion, "gains-flying text is not evasion");
+}
+
+#[test]
+fn self_cost_reduction_lowers_min_cost() {
+    let reduced = parse_sim_card(&card(
+        "Discounted Spell",
+        "{5}",
+        "Sorcery",
+        "This spell costs {2} less to cast.",
+    ));
+    assert_eq!(
+        reduced.min_cost.generic, 3,
+        "the AST reduction lowers the card's own floor"
+    );
+    let full = parse_sim_card(&card("Full Price Spell", "{5}", "Sorcery", ""));
+    assert_eq!(full.min_cost.generic, 5, "no reduction line, no discount");
+    // A grant reduction discounts other spells and stays inert.
+    let granter = parse_sim_card(&card(
+        "Discount Granter",
+        "{5}",
+        "Creature — Goblin",
+        "Artifact spells you cast cost {1} less to cast.",
+    ));
+    assert_eq!(
+        granter.min_cost.generic, 5,
+        "grant reductions do not cheapen the granter"
     );
 }

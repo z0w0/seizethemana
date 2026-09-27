@@ -2,7 +2,7 @@
 
 /// A minimal card row for tests.
 use super::deck::build_sim_deck;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -156,6 +156,38 @@ fn extra_turn_spell_counts() {
         log.extra_turns.iter().any(|e| *e > 0),
         "extra turn spell queues"
     );
+}
+
+#[test]
+fn chained_extra_turns_use_later_turn_slots_within_the_turn_cap() {
+    let rows = vec![
+        card(
+            "Time Walk",
+            "{0}",
+            "Sorcery",
+            "Take an extra turn after this one.",
+        ),
+        card("Island", "", "Basic Land — Island", "{T}: Add {U}."),
+    ];
+    let cards = cards_map(rows);
+    let mut deck = deck_text("DECK", &[("Time Walk", 20)]);
+    deck.section_entries_mut("DECK")
+        .push(crate::deck::grammar::DeckEntry {
+            quantity: 40,
+            name: "Island".into(),
+            set_code: None,
+            collector_number: None,
+            foil: false,
+        });
+    let sim_deck = build_sim_deck(&deck, &cards, None);
+    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(711);
+
+    let log = super::game::run_game(&sim_deck, &mut rng, 3);
+
+    assert_eq!(log.extra_turns.len(), 3);
+    assert_eq!(log.extra_turns[0], 0);
+    assert_eq!(log.extra_turns[1], 1);
+    assert_eq!(log.extra_turns[2], 1);
 }
 
 #[test]
@@ -446,7 +478,11 @@ fn commander_engine_fires_on_extra_turns() {
     // the extra turn). Every turn-index growth is bounded by the draw
     // step plus one engine draw plus one possible extra-turn replay.
     for t in 0..3 {
-        let prev = if t == 0 { 11 } else { log.cards_seen[t - 1] };
+        let prev = if t == 0 {
+            if log.mulliganed { 6 } else { 7 }
+        } else {
+            log.cards_seen[t - 1]
+        };
         let growth = log.cards_seen[t] - prev;
         assert!(
             growth <= 3,

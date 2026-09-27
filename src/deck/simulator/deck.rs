@@ -1,8 +1,8 @@
 // Deck construction for the simulator: joins parsed deck text to card
 // rows and converts each entry into a `SimCard` via `parse`.
 
-use super::model::{Ability, Effect, Format, Role, SimCard, SimDeck, Tier, Trigger};
-use super::parse::parse_sim_card;
+use super::model::{Ability, AbilityTiming, Effect, Format, Role, SimCard, SimDeck, Tier};
+use super::oracle_parse::parse_sim_card;
 use crate::db::CardRow;
 use crate::deck::grammar::is_bench_section;
 use std::collections::HashMap;
@@ -31,14 +31,18 @@ fn make_sim_card(
 /// models.
 fn commander_engine_tier(cmd: &CardRow) -> Option<Tier> {
     let lower = cmd.oracle_text.to_ascii_lowercase();
-    let engine = (lower.starts_with("at the beginning of your upkeep")
-        || lower.starts_with("at the beginning of your end step"))
-        && (lower.contains("draw") || lower.contains("investigate"));
-    engine.then_some(Tier {
+    let trigger = if lower.starts_with("at the beginning of your upkeep") {
+        Some(AbilityTiming::OnUpkeep)
+    } else if lower.starts_with("at the beginning of your end step") {
+        Some(AbilityTiming::OnEndStep)
+    } else {
+        None
+    }?;
+    (lower.contains("draw") || lower.contains("investigate")).then_some(Tier {
         at: 0,
         animate: false,
         abilities: vec![Ability {
-            trigger: Trigger::OnUpkeep,
+            trigger,
             effect: Effect::Draw(1),
             ..Ability::default()
         }],
@@ -84,7 +88,8 @@ pub fn build_sim_deck(
             // parse produced no OnUpkeep draw already (otherwise both
             // fire and upkeep draws double).
             && sim.abilities().all(|a| {
-                !(a.trigger == Trigger::OnUpkeep && matches!(a.effect, Effect::Draw(_)))
+                !matches!(a.trigger, AbilityTiming::OnUpkeep | AbilityTiming::OnEndStep)
+                    || !matches!(a.effect, Effect::Draw(_))
             })
             && let Some(tier) = commander_engine_tier(card)
         {

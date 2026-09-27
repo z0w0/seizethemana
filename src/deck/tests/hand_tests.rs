@@ -102,9 +102,13 @@ fn advice_matches_policy() {
 #[test]
 fn early_plays_count_cheap_spells_only() {
     let deck = commander_deck(20, 20);
-    let cheap: Vec<usize> = (40..45).collect(); // Cheap 0..5
+    let to_idx = |v: std::ops::Range<usize>| {
+        v.map(|i| crate::deck::simulator::model::CardIdx(i as u32))
+            .collect::<Vec<_>>()
+    };
+    let cheap = to_idx(40..45); // Cheap 0..5
     assert_eq!(early_play_count(&deck, &cheap), 5);
-    let expensive: Vec<usize> = (60..63).collect(); // Expensive 0..3
+    let expensive = to_idx(60..63); // Expensive 0..3
     assert_eq!(early_play_count(&deck, &expensive), 0);
 }
 

@@ -2,7 +2,7 @@
 // per-deck commander profile (synthetic upkeep tiers) and the sentinel
 // uids that key each cast commander's own engine.
 
-use super::model::{Effect, SimDeck, Trigger};
+use super::model::{AbilityTiming, Effect, SimDeck};
 
 /// Per-deck commander engine profile: the synthetic upkeep tiers.
 pub(super) struct CommanderProfile {
@@ -38,7 +38,7 @@ pub(super) fn commander_upkeep_effects(deck: &SimDeck, slot: usize) -> Vec<Effec
         .get(slot)
         .map(|cmd| {
             cmd.abilities()
-                .filter(|a| a.trigger == Trigger::OnUpkeep)
+                .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
                 .map(|a| a.effect.clone())
                 .collect()
         })
@@ -61,7 +61,7 @@ impl CommanderProfile {
                         .iter()
                         .filter(|t| t.at == 0)
                         .flat_map(|t| t.abilities.iter())
-                        .filter(|a| a.trigger == Trigger::OnUpkeep)
+                        .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
                         .filter_map(|a| match a.effect {
                             Effect::Draw(n) => Some(n),
                             _ => None,
@@ -82,7 +82,7 @@ impl CommanderProfile {
                     .filter(|t| t.at == 0)
                     .flat_map(|t| t.abilities.iter())
                     .any(|a| {
-                        a.trigger == Trigger::OnUpkeep
+                        a.trigger == AbilityTiming::OnUpkeep
                             && matches!(
                                 a.effect,
                                 Effect::Mill(_)

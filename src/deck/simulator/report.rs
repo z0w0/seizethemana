@@ -64,6 +64,8 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "Each draw engine draws its stated amount once per turn from the turn after it enters, no matter what is on the battlefield.".to_string(),
         "A draw engine that scales with the board ('draw a card for each enchantment you control') draws the number of matching permanents, at most 8. Shapes it cannot count draw 1.".to_string(),
         "A card that enters and draws ('When this creature enters, draw a card') draws only once per entry. It is a trigger, not an extra cast effect.".to_string(),
+        "Landfall draw, token, drain, and search effects resolve when a land enters. Mana-producing landfall triggers are parsed but do not add mana to the pool.".to_string(),
+        "Unknown activation conditions and opponent-scoped triggers stay inert. Metalcraft remains modeled for supported mana sources.".to_string(),
         "X-cost spells spend all leftover mana as X. Drain, draw, mill, tokens, reveal-permanents, and counter-power effects scale with that X.".to_string(),
         "X spells the model cannot execute pay X = 1 and do nothing extra.".to_string(),
         "A split card such as 'Fire // Ice' is cast as its cheaper face. The other face counts for deck categories but its cast effects never happen.".to_string(),
@@ -81,16 +83,21 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "A sacrifice outlet consumes a real untapped creature. With no creature available it does nothing.".to_string(),
         "A blink effect ('exile, then return') re-fires the card's enter triggers exactly once, the next turn.".to_string(),
         "Planeswalkers use one loyalty ability per turn: plus abilities gain loyalty, minus abilities spend it. Ultimates only report the turn they become affordable; they do not resolve.".to_string(),
-        "Sagas resolve one chapter per turn and leave the battlefield after the last chapter.".to_string(),
+        "Sagas resolve chapter I on entry, then one chapter per upkeep; unsupported chapter text does nothing. The saga leaves after its last chapter.".to_string(),
         "Mana engines that produce per spell cast ('add one mana for each spell you've cast this turn') pay out once per spell cast each turn while untapped.".to_string(),
-        "A zero-cost mana engine that produces more than it costs is capped after 24 activations per turn and flagged in the report (suspected infinite engine). Engines limited to once per turn are not flagged.".to_string(),
+        format!(
+            "A capped {}-activation sequence is flagged as suspected infinite mana only when it adds mana. Free draws and other actions without positive mana do not count.",
+            super::model::MAX_LOOP_PASSES
+        ),
         "Equipment boosts only the creature it equips, after the equip cost is paid. Auras and other continuous buffs are not modeled.".to_string(),
         "A one-shot board buff ('creatures you control get +X/+X where X is the number of creatures you control') boosts that combat phase only, on the turn it enters, capped at 20 creatures.".to_string(),
-        "Extra turns replay a land drop, a draw, and upkeep engines. They are not full turns: no casts, no combat.".to_string(),
-        "Not modeled: energy, metalcraft, converge, proliferate, and replay mechanics such as flashback and rebound. Cards with only these effects play as vanilla.".to_string(),
-        "A cascade cast also casts the cheapest cheaper nonland card in the library, once, with no cascade chaining. Only creature hits join the battlefield.".to_string(),
+        "An extra turn uses the next configured turn slot and runs the full turn pipeline, including untap, upkeep, draw, land, cast, activations, and combat. Chained turns are bounded by the configured turn count; per-turn metrics mark extra-turn slots.".to_string(),
+        "Opponent-dependent mana, such as Fellwar Stone, is generic-only from turn 2. Kinnan adds one pip of the type its nonland source produced; the opponent-dependent approximation adds colorless.".to_string(),
+        "Metalcraft gates mana abilities on three controlled artifacts. Energy, converge, proliferate, rebound, and unsupported graveyard-cast rules are not modeled. Supported flashback and escape casts are counted as replay actions.".to_string(),
+        "Cascade reveals cards from the library top and free-casts the first nonland card with lower printed mana value. It uses the normal spell-resolution path and does not chain. Uncast revealed cards go to the library bottom in reveal order.".to_string(),
+        "Supported cycling pays its mana or life cost, discards the card, then draws. Landcycling searches for the named basic land type. The graveyard-creature exchange applies only to the player's graveyard and battlefield.".to_string(),
         "A land/spell MDFC (e.g. Valakut Awakening) is played as its land face when no other land drop is available, and cast as its spell face otherwise. Non-mythic MDFCs count 0.4 land, mythic 0.75.".to_string(),
-        "Cards whose text the parser cannot read play as plain cards with no abilities. Their mana cost still gates the cast.".to_string(),
+        "Unsupported Oracle clauses stay inert. Other parsed costs, keywords, and abilities on the same card still apply.".to_string(),
         "Seeded baselines change between versions. Regenerate any saved baseline report after upgrading.".to_string(),
     ];
     if deck.commanders.is_empty() {
@@ -309,6 +316,8 @@ pub fn json_report(
         "draw": {
             "pct_seen_by_turn": pct_turn_map(&stats.draw_sources[..turns]),
             "pct_starved_0_by_t6": pct2(stats.starved_pct),
+            "avg_life_paid": round2(stats.life_paid_avg),
+            "avg_life_funded_draws": round2(stats.life_funded_draws_avg),
         },
         "role_access": {
             "removal_pct_seen_by_5": pct2(stats.removal_access_5),
@@ -367,6 +376,15 @@ pub fn json_report(
         }).collect::<Vec<_>>(),
         "graveyard": {
             "avg_size_by_turn": turn_map(&stats.graveyard_by_turn[..turns.min(stats.graveyard_by_turn.len())]),
+            "replay_casts_avg": round2(stats.replay_casts_avg),
+        },
+        "milestones": {
+            "free_cast_permanents_entered_avg_by_turn": turn_map(&stats.free_cast_permanents_by_turn[..turns]),
+            "dredge_uses_avg_by_turn": turn_map(&stats.dredge_uses_by_turn[..turns]),
+            "graveyard_casts_avg_by_turn": turn_map(&stats.graveyard_casts_by_turn[..turns]),
+            "life_funded_draws_avg_by_turn": turn_map(&stats.life_funded_draws_by_turn[..turns]),
+            "positive_mana_loop_pct_by_turn": pct_turn_map(&stats.positive_mana_loop_by_turn[..turns]),
+            "note": "Action counts are events in that turn. Positive mana loop is the share of games that reached one during that turn.",
         },
         "color_sources": color_source_census(deck),
         "card_castability": stats.card_castability.iter().map(|c| {
@@ -611,7 +629,7 @@ pub fn print_report(
         println!(
             "  {}  {}  {:.1}% of games",
             s.bar(stats.extra_turns_pct, 10),
-            s.dim("extra turns taken"),
+            s.dim("games taking an extra turn"),
             stats.extra_turns_pct * 100.0
         );
     }

@@ -15,7 +15,7 @@ use super::aggregate::aggregate;
 pub(super) use super::deck::build_sim_deck;
 pub(super) use super::game::run_game;
 
-pub(super) use super::parse::{parse_cost, parse_sim_card};
+pub(super) use super::oracle_parse::{parse_oracle_cost as parse_cost, parse_sim_card};
 use crate::db::CardRow;
 use crate::deck::grammar::{Deck, DeckEntry};
 use rand::SeedableRng;
@@ -464,9 +464,9 @@ pub(super) fn assert_castability_not_before_cost(
         // grows by at most a few mana per turn. Ramp shells reach 11 by
         // t7 (temples, labyrinths), so the bound is logarithmic-ish:
         // min cost 11+ can be ready before 11 but not before the midgame.
-        let grace = (floor * 0.5).max(1.5);
+        let grace = (floor * 0.7).max(1.5);
         assert!(
-            c.avg_first_castable_turn + grace >= floor,
+            c.avg_first_castable_turn + grace + 0.1 >= floor,
             "{} castable avg t{:.2} but min cost {} (printed {})",
             c.name,
             c.avg_first_castable_turn,

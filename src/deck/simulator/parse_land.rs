@@ -1,6 +1,5 @@
 // Land-shape and tap-yield parsing for the simulator: tap yields, verge
-// gates, enters-tapped, enter counters, and spend restrictions, split
-// from parse.rs to keep files small.
+// gates, enters-tapped, enter counters, and spend restrictions.
 
 use super::model::{Restriction, Scale, TapYield};
 use crate::db::CardRow;
@@ -10,10 +9,7 @@ use crate::db::CardRow;
 /// "or" between symbols and "one mana of any color" prose are choices.
 pub fn parse_tap_yield(text: &str) -> Option<TapYield> {
     let lower = text.to_ascii_lowercase();
-    // Opponent-dependent production ("any color that a land an opponent
-    // controls could produce") reads as best-case any-color from turn 2:
-    // the goldfish has no opponents, but a real table does, and the sim
-    // is best-case everywhere else.
+    // Opponent-dependent production keeps its flag for generic-only payment.
     let opponent = lower.contains("opponent");
     let mut yield_ = TapYield {
         opponent_any: opponent,
@@ -49,6 +45,14 @@ pub fn parse_tap_yield(text: &str) -> Option<TapYield> {
     // output grows with the matching permanents on the battlefield.
     if lower.contains("one mana of any color among") && lower.contains("you control") {
         yield_.scaling = Some(Scale::ColorsPresent);
+        return Some(yield_);
+    }
+    // Kinnan-class triggers: "add one mana of any type that permanent
+    // produced". One any-color pip, matched to the tapped source's output
+    // by the runtime.
+    if lower.contains("any type that permanent produced") {
+        yield_.any_pips = 1;
+        yield_.choice = [false; 5];
         return Some(yield_);
     }
     if lower.contains("one mana of any color") {
@@ -103,14 +107,6 @@ pub fn parse_tap_yield(text: &str) -> Option<TapYield> {
     Some(yield_)
 }
 
-/// Tap yield from `{T}: Add …` segments, merged across abilities (a
-/// permanent taps once; later abilities merge as the union of colors).
-/// Lands whose oracle grants them a basic type ("This land is the chosen
-/// type") tap for that type's color without an explicit add clause.
-pub fn parse_tap(row: &CardRow) -> Option<TapYield> {
-    parse_tap_generic(row)
-}
-
 /// Tap yield with the per-cast engine's own tap clause ("add one mana
 /// for each spell you've cast") dropped, so the engine mode and a plain
 /// one-mana tap do not double count on the same permanent.
@@ -132,9 +128,10 @@ pub fn parse_tap_filtered(row: &CardRow) -> Option<TapYield> {
 }
 
 /// The shared tap parser.
-fn parse_tap_generic(row: &CardRow) -> Option<TapYield> {
+pub fn parse_tap_generic(row: &CardRow) -> Option<TapYield> {
     // Basic lands wrap the oracle text in parens: "({T}: Add {G}.)".
-    let oracle = row.oracle_text.trim_start_matches('(');
+    let unquoted_text = remove_quoted_text(&row.oracle_text);
+    let oracle = unquoted_text.trim_start_matches('(');
     let segments: Vec<&str> = oracle.split(['\n', '.']).map(str::trim).collect();
     // Type-granted lands ("This land is the chosen type"): no add clause,
     // but the chosen basic type is the player's choice each game, so the
@@ -254,6 +251,21 @@ fn parse_tap_generic(row: &CardRow) -> Option<TapYield> {
     merged
 }
 
+/// Remove activated abilities granted to tokens or other quoted objects.
+fn remove_quoted_text(text: &str) -> String {
+    let mut quoted = false;
+    text.chars()
+        .filter(|character| {
+            if *character == '"' {
+                quoted = !quoted;
+                false
+            } else {
+                !quoted
+            }
+        })
+        .collect()
+}
+
 /// Spend restriction from a "spend this mana only to cast …" window:
 /// creature, legendary, artifact, or instant-and-sorcery spells.
 pub(super) fn spend_restriction(window: &str) -> Option<Restriction> {
@@ -325,6 +337,69 @@ pub fn enters_tapped(text: &str) -> bool {
             && !text.contains("it's your first, second, or third turn");
     }
     text.contains("enters tapped") || text.contains("enters the battlefield tapped")
+}
+
+/// Life a player may pay as a land enters to have it enter untapped.
+pub fn life_to_untap(text: &str) -> u32 {
+    for amount in [2, 3] {
+        let clause = format!("pay {amount} life");
+        if text.contains(&clause)
+            && (text.contains("you may pay") || text.contains("unless you pay"))
+        {
+            return amount;
+        }
+    }
+    0
+}
+
+/// Life required by a land-search activation, or zero when the activation
+/// has no life cost.
+pub fn fetch_life_cost(text: &str) -> u32 {
+    if !text.contains("sacrifice this land") || !text.contains("search your library") {
+        return 0;
+    }
+    text.split("pay ")
+        .nth(1)
+        .and_then(|tail| {
+            tail.chars()
+                .take_while(char::is_ascii_digit)
+                .collect::<String>()
+                .parse::<u32>()
+                .ok()
+        })
+        .unwrap_or(0)
+}
+
+/// Parse a fetch land's eligibility and basic-type restriction from Oracle text.
+pub fn fetch_search(text: &str) -> Option<([bool; 5], bool)> {
+    if !text.contains("sacrifice this land") {
+        return None;
+    }
+    let search = text.split_once("search your library for")?.1;
+    let target = search.split(" card").next().unwrap_or(search);
+    if !target.contains("land")
+        && !["plains", "island", "swamp", "mountain", "forest"]
+            .iter()
+            .any(|kind| target.contains(kind))
+    {
+        return None;
+    }
+    let basic_only = target.contains("basic land");
+    let mut types = [false; 5];
+    let has_named_type = ["plains", "island", "swamp", "mountain", "forest"]
+        .iter()
+        .any(|kind| target.contains(kind));
+    if basic_only || !has_named_type {
+        types = [true; 5];
+    } else {
+        for (index, kind) in ["plains", "island", "swamp", "mountain", "forest"]
+            .into_iter()
+            .enumerate()
+        {
+            types[index] = target.contains(kind);
+        }
+    }
+    Some((types, basic_only))
 }
 
 /// Sentinel from [`parse_enter_counters`]: the card "enters with X

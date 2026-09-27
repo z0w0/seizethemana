@@ -42,10 +42,8 @@ fn empty_deck() -> SimDeck {
     }
 }
 
-/// Turn- and board-aware variant. `opponent` any-color sources (Fellwar
-/// Stone) read as best-case from turn 2 (an opponent has lands by then)
-/// and nothing on turn 1; the sim is best-case everywhere else. Scaling
-/// yields resolve against the battlefield.
+/// Turn- and board-aware variant. Opponent-dependent mana is generic-only
+/// from turn two, a conservative approximation without an opponent board.
 pub(super) fn add_yield_turns(
     deck: &SimDeck,
     y: &TapYield,
@@ -53,11 +51,13 @@ pub(super) fn add_yield_turns(
     turn: u32,
     board: &[InPlay],
 ) {
-    let any_pips = if y.opponent_any {
-        if turn < 2 { 0 } else { y.any_pips }
-    } else {
-        y.any_pips
-    };
+    if y.opponent_any {
+        if turn >= 2 {
+            pool.colorless += y.any_pips;
+        }
+        return;
+    }
+    let any_pips = y.any_pips;
     let scale_pips = match y.scaling {
         Some(Scale::ColorsPresent) => colors_present(deck, board),
         Some(Scale::PerChargeCounter) => 0, // resolved at activation
@@ -225,6 +225,9 @@ pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut Pool) {
     let from_flex = remaining.min(flexible);
     consume_flexible(pool, from_flex);
     remaining -= from_flex;
+    let from_colorless = pool.colorless.min(remaining);
+    pool.colorless -= from_colorless;
+    remaining -= from_colorless;
     for i in 0..5 {
         if remaining == 0 {
             break;
@@ -233,7 +236,6 @@ pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut Pool) {
         pool.fixed[i] -= spare;
         remaining -= spare;
     }
-    pool.colorless = pool.colorless.saturating_sub(remaining);
 }
 
 /// Consume `n` mana from flexible sources.
@@ -258,7 +260,7 @@ pub(super) fn effective_min_cost(
     // battlefield count (creatures and enchantments do not).
     let artifacts = battlefield
         .iter()
-        .filter(|p| !p.is_commander && card_of(deck, p).role != Role::Land)
+        .filter(|p| p.card.deck_idx().is_some() && card_of(deck, p).role != Role::Land)
         .filter(|p| card_of(deck, p).is_artifact)
         .count();
     let headroom = card.cost.generic.saturating_sub(card.min_cost.generic);

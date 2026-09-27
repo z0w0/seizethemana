@@ -7,7 +7,7 @@ use super::aggregate::aggregate;
 use super::game::run_game;
 use super::game_tests::stub_deck;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -18,7 +18,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
+        cmc: parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),

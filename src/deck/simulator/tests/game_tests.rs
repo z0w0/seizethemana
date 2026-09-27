@@ -4,7 +4,7 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -13,7 +13,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -41,7 +41,7 @@ pub(super) fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -146,7 +146,7 @@ fn five_color_commander_needs_all_pips() {
     for _ in 0..40 {
         cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -195,7 +195,7 @@ fn five_color_commander_needs_all_pips() {
     for _ in 0..40 {
         deck.cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -211,7 +211,7 @@ fn five_color_commander_needs_all_pips() {
                 generic: 2,
                 ..Cost::default()
             },
-            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Rock,
             ..super::model::SimCard::default()
         });
@@ -231,14 +231,10 @@ fn five_color_commander_needs_all_pips() {
 }
 
 #[test]
-fn commander_cast_ignores_restricted_bucket_mana() {
-    // A creature-only mana source's bucket never pays a commander cast:
-    // `pay_cost` cannot spend it, so the readiness check must not count
-    // it either. A {5} commander with only a creature-only rock on the
-    // board must stay uncast (the board lands alone never reach 5).
+fn creature_commander_can_use_creature_only_mana() {
     let mut cards = Vec::new();
-    // Every source is creature-restricted: the general pool never holds
-    // mana the commander could pay with.
+    // Every source is creature-restricted; the commander matches the
+    // restriction and may spend that mana.
     for _ in 0..40 {
         cards.push(parse_sim_card(&card(
             "Creature Gate",
@@ -256,6 +252,7 @@ fn commander_cast_ignores_restricted_bucket_mana() {
                 ..super::model::Cost::default()
             },
             role: Role::Wincon,
+            is_creature: true,
             ..super::model::SimCard::default()
         }],
         format: Format::Commander,
@@ -265,8 +262,8 @@ fn commander_cast_ignores_restricted_bucket_mana() {
     let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 8)).collect();
     let stats = aggregate(&logs, &deck, 8);
     assert!(
-        stats.commander_castable_by[7] < 0.05,
-        "5-generic commander cast with restricted-bucket mana: {:.3} by t7",
+        stats.commander_castable_by[7] > 0.5,
+        "creature commander missed creature-restricted mana: {:.3} by t7",
         stats.commander_castable_by[7]
     );
 }
@@ -281,7 +278,7 @@ fn vehicle_crews_and_station_tiers_unlock() {
     for _ in 0..30 {
         cards.push(super::model::SimCard {
             name: "Island".into(),
-            tap: Some(parse_tap_yield("{T}: Add {U}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {U}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -344,7 +341,7 @@ fn station_tokens_feed_the_commander() {
     for _ in 0..30 {
         cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -361,7 +358,7 @@ fn station_tokens_feed_the_commander() {
                 generic: 2,
                 ..Cost::default()
             },
-            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Rock,
             ..super::model::SimCard::default()
         });
@@ -382,7 +379,7 @@ fn station_tokens_feed_the_commander() {
                     at: 0,
                     animate: false,
                     abilities: vec![super::model::Ability {
-                        trigger: Trigger::OnEnter,
+                        trigger: AbilityTiming::OnEnter,
                         effect: super::model::Effect::Tokens(2),
                         ..super::model::Ability::default()
                     }],

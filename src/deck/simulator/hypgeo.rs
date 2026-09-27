@@ -46,7 +46,7 @@ pub(super) fn hyper_at_least(deck: u64, copies: u64, seen: u64, need: u64) -> f6
 
 /// The number of cards seen by the end of turn `t` on the play (opener +
 /// one draw per turn).
-pub fn cards_seen_by(turn: u32) -> u64 {
+fn cards_seen_by(turn: u32) -> u64 {
     // Opener plus one draw per turn. A command-zone card sits outside the
     // library, but the ratios barely move and the ceiling stays
     // conservative either way.

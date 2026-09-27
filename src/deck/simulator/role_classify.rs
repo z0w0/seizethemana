@@ -1,10 +1,8 @@
-// Functional role classification for the simulator: a parsed card's
-// deckbuilding job (Land, Rock, Removal, Draw, Lock, ...), read from the
-// card row and the oracle text. Split from parse.rs to keep files small.
+// Classify a card's deckbuilding role from its card row and Oracle text.
 
 use super::super::stats::{is_dork, is_rock};
 use super::model::TapYield;
-use super::parse::damage_removal_shape;
+use super::oracle_parse::parse_oracle_damage_removal_shape;
 use crate::db::CardRow;
 
 /// Functional role classification.
@@ -44,7 +42,7 @@ pub fn classify(
         || text.contains("creatures with power") && text.contains("can't attack")
         || text.contains("can't attack or block")
         || text.contains("regenerate target")
-        || damage_removal_shape(&row.oracle_text);
+        || parse_oracle_damage_removal_shape(&row.oracle_text);
     if removal {
         return Role::Removal;
     }

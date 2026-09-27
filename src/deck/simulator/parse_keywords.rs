@@ -1,6 +1,4 @@
-// Keyword-shaped helpers for the simulator's oracle text: static buffs,
-// equipment stats, and the "+N" amount grammar. Split from parse.rs to
-// keep files small.
+// Parse static buffs, equipment stats, and numeric keyword parameters.
 
 use super::model::Equipment;
 
@@ -12,35 +10,37 @@ pub(super) fn parse_creature_buff(text: &str) -> Option<(i32, i32)> {
         .or_else(|| text.find("creatures you control have +"))?;
     let tail = &text[rel..];
     let plus_pos = tail.find('+')?;
-    let (p, rest) = parse_plus_n(&tail[plus_pos..])?;
-    let t = rest
-        .find("+/")
-        .and_then(|i| parse_plus_n(&rest[i + 1..]).map(|(t, _)| t))
-        .unwrap_or(0);
-    Some((p, t))
+    parse_power_toughness(&tail[plus_pos..])
 }
 
-/// Parse a leading "+N" from a string, returning (n, remainder).
-fn parse_plus_n(s: &str) -> Option<(i32, &str)> {
-    let rest = &s[1..];
-    let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-    let n: i32 = digits.parse().ok()?;
-    let used = 1 + digits.len();
-    Some((n, &s[used..]))
+/// Parse signed power and toughness adjustments from `+N/-N` text.
+fn parse_power_toughness(text: &str) -> Option<(i32, i32)> {
+    let (power, remainder) = parse_signed_amount(text)?;
+    let toughness_text = remainder.strip_prefix('/')?;
+    let (toughness, _) = parse_signed_amount(toughness_text)?;
+    Some((power, toughness))
 }
 
-/// Equipment stats: (equip cost, equipped-creature buff, death draws).
+/// Parse a signed integer and return the unconsumed text.
+fn parse_signed_amount(text: &str) -> Option<(i32, &str)> {
+    let (sign, digits) = match text.chars().next()? {
+        '+' => (1, &text[1..]),
+        '-' | '−' => (-1, &text[1..]),
+        _ => return None,
+    };
+    let digits: String = digits.chars().take_while(char::is_ascii_digit).collect();
+    let value = digits.parse::<i32>().ok()? * sign;
+    Some((value, &text[1 + digits.len()..]))
+}
+
+/// Equipment stats: equip cost and equipped-creature buff.
 pub(super) fn parse_equipment(text: &str) -> Option<Equipment> {
     // Buff: "Equipped creature gets +1/-1" / "gets +1/+2".
     let buff = {
         let marker = "equipped creature gets ";
         let i = text.find(marker)?;
         let tail = &text[i + marker.len()..];
-        let (p, rest) = parse_plus_n(tail)?;
-        let t = rest
-            .find("+/")
-            .and_then(|i2| parse_plus_n(&rest[i2 + 1..]).map(|(t, _)| t));
-        (p, t.unwrap_or(0))
+        parse_power_toughness(tail)?
     };
     // Equip cost: "Equip {1}" / "Equip {2}".
     let cost = text
@@ -56,15 +56,5 @@ pub(super) fn parse_equipment(text: &str) -> Option<Equipment> {
         })
         .filter(|c| *c > 0)
         .unwrap_or(0);
-    // Death draws: "Whenever equipped creature dies, draw N".
-    let death_draws = if text.contains("equipped creature dies") && text.contains("draw") {
-        super::model::draw_amount(text).max(1)
-    } else {
-        0
-    };
-    Some(Equipment {
-        cost,
-        buff,
-        death_draws,
-    })
+    Some(Equipment { cost, buff })
 }

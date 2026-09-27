@@ -3,7 +3,7 @@
 /// A minimal card row for tests.
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -12,7 +12,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -49,11 +49,8 @@ fn etb_draw_trigger_parses() {
         "When Atraxa enters, reveal the top ten cards of your library. For each card type, you may put a card of that type from among the revealed cards into your hand.",
     );
     let sim = parse_sim_card(&row);
-    assert!(
-        sim.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter
-                && matches!(a.effect, super::model::Effect::Tutor))
-    );
+    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter
+        && matches!(a.effect, super::model::Effect::Search(_))));
 }
 
 #[test]
@@ -66,10 +63,8 @@ fn etb_tokens_parse_for_named_enters() {
         "When Breya enters, create two 1/1 blue Thopter artifact creature tokens with flying.",
     );
     let sim = parse_sim_card(&row);
-    assert!(
-        sim.abilities().any(|a| a.trigger == Trigger::OnEnter
-            && matches!(a.effect, super::model::Effect::Tokens(_)))
-    );
+    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter
+        && matches!(a.effect, super::model::Effect::Tokens(_))));
 }
 
 #[test]
@@ -81,7 +76,10 @@ fn upkeep_draw_engine_parses() {
         "At the beginning of your upkeep, you draw a card and you lose 1 life.",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(|a| a.trigger == Trigger::OnUpkeep));
+    assert!(
+        sim.abilities()
+            .any(|a| a.trigger == AbilityTiming::OnUpkeep)
+    );
 }
 
 #[test]
@@ -93,9 +91,8 @@ fn attack_draw_trigger_parses() {
         "Flying\nWhenever this Vehicle attacks or blocks, you may draw a card. If you do, discard a card.\nCrew 1",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(
-        |a| a.trigger == Trigger::OnAttack && matches!(a.effect, super::model::Effect::Draw(1))
-    ));
+    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnAttack
+        && matches!(a.effect, super::model::Effect::Draw(1))));
 }
 
 #[test]
@@ -108,37 +105,38 @@ fn on_cast_spell_engine_parses() {
     );
     let sim = parse_sim_card(&row);
     assert!(
-        sim.abilities().any(|a| a.trigger == Trigger::OnCastSpell
-            && matches!(a.effect, super::model::Effect::Draw(1)))
+        sim.abilities()
+            .any(|a| a.trigger == AbilityTiming::OnCastSpell
+                && matches!(a.effect, super::model::Effect::Draw(1)))
     );
 }
 
 #[test]
 fn activation_draw_parses_cost_and_tap() {
-    let ab = parse_ability("{1}, {T}: Draw two cards.");
+    let ab = parse_oracle_ability("{1}, {T}: Draw two cards.");
     assert!(ab.is_some());
     let ab = ab.unwrap();
     assert_eq!(ab.cost.total(), 1);
     assert!(ab.taps);
     assert!(matches!(ab.effect, super::model::Effect::Draw(2)));
     // Draw + discard in one activation is a loot.
-    let loot = parse_ability("{1}, {T}: Draw two cards, then discard a card.").unwrap();
+    let loot = parse_oracle_ability("{1}, {T}: Draw two cards, then discard a card.").unwrap();
     assert!(matches!(loot.effect, super::model::Effect::Loot(2)));
 }
 
 #[test]
 fn planeswalker_loyalty_activation_costs_no_mana() {
-    let ab = parse_ability(
+    let ab = parse_oracle_ability(
         "−3: Search your library for an artifact card with mana value 1 or less, reveal it, put it into your hand, then shuffle.",
     );
-    assert!(
-        ab.is_some_and(|a| a.cost.total() == 0 && matches!(a.effect, super::model::Effect::Tutor))
-    );
+    assert!(ab.is_some_and(
+        |a| a.cost.total() == 0 && matches!(a.effect, super::model::Effect::Search(_))
+    ));
 }
 
 #[test]
 fn activation_mana_effect_parses() {
-    let ab = parse_ability("{0}: Add X mana in any combination of {U} and/or {R}.");
+    let ab = parse_oracle_ability("{0}: Add X mana in any combination of {U} and/or {R}.");
     // Vivi's scaling ability approximates to a mana activation.
     assert!(ab.is_some_and(|a| matches!(a.effect, super::model::Effect::Mana(_))));
 }
@@ -300,7 +298,7 @@ fn mill_shapes_parse() {
     ));
     assert!(
         etb.abilities()
-            .any(|a| a.trigger == Trigger::OnEnter && matches!(a.effect, Effect::Mill(3)))
+            .any(|a| a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Mill(3)))
     );
     let upkeep = parse_sim_card(&card(
         "Slow Mill",
@@ -311,13 +309,13 @@ fn mill_shapes_parse() {
     assert!(
         upkeep
             .abilities()
-            .any(|a| a.trigger == Trigger::OnUpkeep && matches!(a.effect, Effect::Mill(2)))
+            .any(|a| a.trigger == AbilityTiming::OnUpkeep && matches!(a.effect, Effect::Mill(2)))
     );
 }
 
 #[test]
 fn graveyard_return_shapes_parse() {
-    let hand_return = parse_ability("{T}: Return a card from your graveyard to your hand.");
+    let hand_return = parse_oracle_ability("{T}: Return a card from your graveyard to your hand.");
     assert!(matches!(
         hand_return.unwrap().effect,
         Effect::ReturnFromGraveyard {
@@ -366,7 +364,7 @@ fn wheel_and_loot_shapes_parse() {
 
 #[test]
 fn sacrifice_outlet_parses() {
-    let outlet = parse_ability("{1}, Sacrifice a creature: Draw a card.");
+    let outlet = parse_oracle_ability("{1}, Sacrifice a creature: Draw a card.");
     let ab = outlet.expect("outlet parses");
     assert_eq!(ab.sacrifice_bodies, 1);
     assert!(matches!(ab.effect, Effect::Draw(1)));
@@ -383,8 +381,40 @@ fn death_trigger_parses() {
     assert!(
         payoff
             .abilities()
-            .any(|a| a.trigger == Trigger::OnDeath && matches!(a.effect, Effect::Draw(1)))
+            .any(|a| a.trigger == AbilityTiming::OnDeath && matches!(a.effect, Effect::Draw(1)))
     );
+}
+
+/// Parse damage to a player on land entry as drain rather than removal.
+#[test]
+fn land_entry_player_damage_is_a_triggered_drain() {
+    let desert = parse_sim_card(&card(
+        "Desert",
+        "",
+        "Land — Desert",
+        "This land enters tapped.\nWhen this land enters, it deals 1 damage to target opponent.\n{T}: Add {R} or {G}.",
+    ));
+    assert!(desert.abilities().any(|ability| {
+        ability.trigger == AbilityTiming::OnEnter && matches!(ability.effect, Effect::Drain(1))
+    }));
+}
+
+/// Do not parse a token's quoted mana ability as an ability on its spell.
+#[test]
+fn quoted_token_ability_stays_off_the_creating_spell() {
+    let glimpse = parse_sim_card(&card(
+        "Temporary tokens",
+        "{2}{R}",
+        "Sorcery",
+        "Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have \"Sacrifice this token: Add {C}.\"",
+    ));
+    assert!(
+        glimpse
+            .abilities()
+            .all(|ability| !matches!(ability.effect, Effect::Mana(_)))
+    );
+    assert_eq!(glimpse.tokens_on_cast, 0);
+    assert!(glimpse.tap.is_none());
 }
 
 #[test]
@@ -555,7 +585,7 @@ fn lock_and_booster_roles_classify() {
         "Sword",
         "{3}",
         "Artifact — Equipment",
-        "Equip {2}",
+        r#"["Equip"]"#,
         "Equipped creature gets +2/+2.",
     ));
     assert_eq!(equipment.role, Role::Booster);
@@ -653,11 +683,9 @@ fn steelswarm_operator_artifact_restriction_parses() {
 }
 
 #[test]
-fn opponent_any_yields_nothing_turn_1_any_from_turn_2() {
-    // Fellwar Stone: turn 1 produces nothing (no opponent lands yet),
-    // turn 2+ produces one flexible pip (best-case reading). Structural
-    // check: the parsed yield carries the opponent gate; the turn gate
-    // lives in add_yield_turns.
+fn opponent_any_source_requires_an_opponent_board() {
+    // The parsed yield carries its opponent dependency. The goldfish has
+    // no opponent board, so game execution must leave the source unused.
     let fellwar = parse_sim_card(&card(
         "Fellwar Stone",
         "Artifact",
@@ -785,11 +813,11 @@ fn helix_pinnacle_threshold_is_100_not_10() {
 #[test]
 fn twobrid_costs_two_generic() {
     // {2/W} costs 2 mana either way; the sim models the generic payment.
-    let cost = parse_cost("{2/W}");
+    let cost = parse_oracle_cost("{2/W}");
     assert_eq!(cost.generic, 2);
     assert_eq!(cost.total(), 2);
     // Spectral Procession: three symbols, six mana total.
-    let procession = parse_cost("{2/W}{2/W}{2/W}");
+    let procession = parse_oracle_cost("{2/W}{2/W}{2/W}");
     assert_eq!(procession.generic, 6);
     assert_eq!(procession.total(), 6);
     // No pips leak from the colored half.

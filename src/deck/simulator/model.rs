@@ -11,6 +11,12 @@ pub const COLORS: [char; 5] = ['W', 'U', 'B', 'R', 'G'];
 /// Default number of simulated games: ±0.5pp on percentages at 10k runs.
 pub const DEFAULT_RUNS: u32 = 10_000;
 
+/// Shared bound on repeatable game-loop passes that could otherwise run
+/// forever (cast sweeps, graveyard casts, sacrifice exchanges, activation
+/// loops). One number keeps every runaway-protection loop consistent and
+/// the census flags (`infinite_mana_suspected`) comparable.
+pub const MAX_LOOP_PASSES: u32 = 24;
+
 /// Functional roles the simulator classifies each card into. One role per
 /// card (first match wins) so role counts never double-count copies.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -73,8 +79,7 @@ pub struct TapYield {
     pub any_pips: u32,
     /// True when the "any color" clause depends on an opponent's board
     /// ("any color a land an opponent controls could produce" — Fellwar
-    /// Stone). Goldfish: yields like `any_pips` from turn 2, nothing on
-    /// turn 1.
+    /// Stone). Goldfish approximation: generic-only mana from turn two.
     pub opponent_any: bool,
     /// Conditional scaling: the tap's output grows with board state.
     pub scaling: Option<Scale>,
@@ -131,7 +136,7 @@ impl TapYield {
 
 /// What starts an ability.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum Trigger {
+pub enum AbilityTiming {
     /// Activated: the player pays `cost` to fire it (incl. `{T}` costs).
     Activated,
     /// Fired when the card enters the battlefield.
@@ -139,6 +144,10 @@ pub enum Trigger {
     OnEnter,
     /// Fired once per turn while the card is on the battlefield.
     OnUpkeep,
+    /// Fired at the beginning of the player's first main phase.
+    PrecombatMainPhase,
+    /// Fired at the beginning of the player's end step.
+    OnEndStep,
     /// Fired when the card attacks.
     OnAttack,
     /// Fired when the card deals combat damage to a player (best case:
@@ -148,6 +157,8 @@ pub enum Trigger {
     OnCastSpell,
     /// Fired when the permanent dies or is sacrificed.
     OnDeath,
+    /// Fired when a land enters under the player's control.
+    OnLandfall,
 }
 
 /// What an ability does when it resolves.
@@ -158,11 +169,17 @@ pub enum Effect {
     None,
     /// Draw N cards.
     Draw(u32),
-    /// Search for a card and put it into the hand (tutors).
-    Tutor,
+    /// Draw a card and put a -1/-1 counter on a chosen creature.
+    DrawAndMinusCounter,
+    /// Gain N life.
+    GainLife(u32),
+    /// Search the library for a card that matches the parsed constraints.
+    Search(SearchSpec),
     /// Produce mana (activated mana abilities, planets at threshold).
     Mana(TapYield),
-    /// Produce `counters × N` mana at upkeep, then clear the host's
+    /// Untap this permanent and repeat its tap-for-mana ability.
+    UntapSelf,
+    /// Produce `counters × N` mana at the first main phase, then clear the host's
     /// charge counters (banked-mana engines: Coalition Relic).
     ManaPerCounter(TapYield),
     /// Create token creatures (ETB tokens, crewed payoffs). The count is
@@ -195,18 +212,21 @@ pub enum Effect {
     /// Discard the hand into the graveyard, then draw that many (a
     /// wheel). Cards seen jump by the hand size; the graveyard log fills.
     Wheel,
-    /// A wheel resolving mid-cast: skip one hand index (the cast spell
+    /// A wheel resolving mid-cast: skip one hand card (the cast spell
     /// itself, whose removal is deferred) so it is not double-zoned.
-    WheelSkip(usize),
+    /// Cast-phase detail: the shared effect set never produces it.
+    WheelSkip(CardIdx),
     /// Draw N, then discard N (loot). Net velocity +N; the graveyard
     /// log fills with the discards.
     Loot(u32),
     /// Look at the top N cards (scry, surveil). Zero draw credit: the
-    /// cards feed `library_awareness_by_turn` instead. Surveil also
-    /// puts them in the graveyard (best case for graveyard decks).
+    /// cards feed `library_awareness_by_turn` instead.
     Scry(u32),
-    /// Take an extra turn after this one (Time Sieve class). Queued
-    /// and replayed by the turn loop; never chained mid-turn.
+    /// Surveil N cards. Each is seen and moved from the library to the
+    /// graveyard, so library-mill triggers resolve.
+    Surveil(u32),
+    /// Take an extra turn after this one. The next configured turn slot
+    /// runs the full turn pipeline and is marked as an extra turn.
     ExtraTurn,
     /// Upkeep threshold engine: when the host holds `counters` charge
     /// counters it wins (Darksteel Reactor, Helix Pinnacle class).
@@ -224,11 +244,134 @@ pub enum Effect {
     Drain(u32),
 }
 
+/// Oracle-triggered effect when this card moves from library to graveyard.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LibraryGraveyardTrigger {
+    /// Put this card onto the battlefield.
+    ReturnToBattlefield,
+    /// Drain opponents and gain the same amount of life.
+    DrainAndGain(u32),
+}
+
+/// Alternate casting cost parsed from the Oracle cost sentence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AlternativeCastCost {
+    /// Card category required from the hand.
+    pub filter: CardFilter,
+    /// Number of cards exiled to pay the cost.
+    pub count: u32,
+    /// Effect based on the exiled cards after the cast resolves.
+    pub payoff: AlternativeCostPayoff,
+}
+
+/// Oracle-derived filter for cards used to pay an alternate cost.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CardFilter {
+    /// Required color, when named by the cost.
+    pub color: Option<char>,
+}
+
+/// Resolution effects paid by an alternate cost.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AlternativeCostPayoff {
+    /// No additional effect.
+    None,
+    /// Gain life equal to the total mana value of exiled cards.
+    GainLifeEqualToExiledManaValue,
+}
+
+/// A reveal instruction and its destination parsed from Oracle text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RevealRule {
+    /// Where each revealed card moves.
+    pub destination: RevealDestination,
+    /// Life loss for each card, when stated by the effect.
+    pub life_loss: RevealLifeLoss,
+}
+
+/// Destination supported by the reveal-and-life-loss rule.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RevealDestination {
+    /// Put each revealed card into its owner's hand.
+    Hand,
+}
+
+/// Oracle-derived life-loss amount for a revealed card.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RevealLifeLoss {
+    /// Lose life equal to the revealed card's mana value.
+    ManaValue,
+}
+
+/// Constraints for the small set of library searches the simulator supports.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SearchSpec {
+    /// Required card type, when the Oracle text names one.
+    pub card_type: Option<SearchCardType>,
+    /// Required color, when the Oracle text names one.
+    pub color: Option<char>,
+    /// True when the search requires a colorless card.
+    pub colorless: bool,
+    /// Exact mana value, when the Oracle text names one.
+    pub mana_value: Option<u32>,
+    /// Highest allowed mana value, when the Oracle text says "or less".
+    pub max_mana_value: Option<u32>,
+    /// Lowest allowed mana value, when the Oracle text says "or more".
+    pub min_mana_value: Option<u32>,
+    /// Zone where a found card goes.
+    pub destination: SearchDestination,
+    /// Whether the search may choose not to find a match.
+    pub optional: bool,
+    /// Limit a search to the first N library cards.
+    pub top_count: Option<usize>,
+    /// Reject Human cards when the Oracle search specifies non-Human.
+    pub non_human: bool,
+}
+
+/// Card types used by supported searches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchCardType {
+    /// Creature card.
+    Creature,
+    /// Land card.
+    Land,
+    /// Basic land card.
+    BasicLand,
+    /// Artifact card.
+    Artifact,
+    /// Enchantment card.
+    Enchantment,
+    /// Artifact or enchantment card.
+    ArtifactOrEnchantment,
+    /// Instant or sorcery card.
+    InstantSorcery,
+    /// Planeswalker card.
+    Planeswalker,
+    /// Any permanent card.
+    Permanent,
+}
+
+/// Destination for a supported library search.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SearchDestination {
+    /// Put the card into its owner's hand.
+    #[default]
+    Hand,
+    /// Put the card onto the battlefield.
+    Battlefield,
+    /// Put the card onto the battlefield tapped.
+    BattlefieldTapped,
+    /// Put the card on top of the library.
+    LibraryTop,
+    /// Exile the card.
+    Exile,
+}
+
 /// One executable ability: what fires it, what it costs, what it does.
 #[derive(Debug, Clone, Default)]
 pub struct Ability {
     /// What fires the ability: an activation, a trigger event, or a tap.
-    pub trigger: Trigger,
+    pub trigger: AbilityTiming,
     /// Mana to pay when activating (0 when free / triggered).
     pub cost: Cost,
     /// Effect when the ability resolves.
@@ -253,6 +396,8 @@ pub struct Ability {
     /// Loyalty gained by activation (planeswalker plus abilities). 0 =
     /// not a loyalty-gaining activation.
     pub loyalty_gain: u32,
+    /// Life paid as an activation cost.
+    pub life_cost: u32,
 }
 
 /// A station tier: abilities unlocked at a charge-counter threshold.
@@ -273,6 +418,18 @@ pub struct Tier {
     pub abilities: Vec<Ability>,
 }
 
+/// Saga chapter data: the ordered chapter effects of a Saga card.
+///
+/// Rule source: CR 714.2 — each chapter is a triggered ability, indexed by
+/// the Roman numeral in the Oracle text. `chapters[i]` is chapter i+1's
+/// effect; `Effect::None` marks a chapter whose wording is unsupported.
+#[derive(Debug, Clone, Default)]
+pub struct SagaData {
+    /// Chapter effects in play order (chapter I first). The length is
+    /// the chapter count.
+    pub chapters: Vec<Effect>,
+}
+
 /// The card-level capabilities the simulator executes.
 #[derive(Debug, Clone, Default)]
 pub struct SimCard {
@@ -280,8 +437,15 @@ pub struct SimCard {
     pub name: String,
     /// Mana cost to cast (lands cost 0 and enter by the land rule).
     pub cost: Cost,
+    /// Printed mana value, retained when an alternate cost is used.
+    pub mana_value: u32,
+    /// True when the type line contains Basic.
+    pub is_basic_land: bool,
     /// Cheapest castable mana value after reductions (warp, affinity-lite).
     pub min_cost: Cost,
+    /// True when the card has a printed mana cost. A missing cost is not
+    /// equivalent to a printed `{0}` cost.
+    pub has_mana_cost: bool,
     /// Mana this card produces on tap; None when it cannot tap for mana.
     pub tap: Option<TapYield>,
     /// Station tiers, in threshold order (empty when not a station card).
@@ -290,6 +454,13 @@ pub struct SimCard {
     pub crew: Option<u32>,
     /// Creature-ness for body counting and dork timing.
     pub is_creature: bool,
+    /// True when the creature type line includes Human.
+    pub is_human: bool,
+    /// True for instant and sorcery spells, which go to the graveyard after
+    /// resolving instead of remaining on the battlefield.
+    pub is_instant_or_sorcery: bool,
+    /// True when this spell exiles itself after resolving.
+    pub exile_on_resolve: bool,
     /// True when the type line carries Legendary. Gates the
     /// legendary-only spend restriction (Plaza of Heroes).
     pub is_legendary: bool,
@@ -303,12 +474,26 @@ pub struct SimCard {
     pub role: Role,
     /// Enters the battlefield tapped (Restless Reef, planets, most duals).
     pub enters_tapped: bool,
+    /// Life paid to have the land enter untapped (shock-land style).
+    pub life_to_untap: u32,
+    /// Life paid to activate a fetch land, when its Oracle text requires it.
+    pub fetch_life_cost: u32,
+    /// True when Oracle text sacrifices this land to search for a land card.
+    pub is_fetch_land: bool,
+    /// Basic-land types named by the fetch restriction, WUBRG order.
+    pub fetch_target_types: [bool; 5],
+    /// True when Oracle text restricts the search to basic lands.
+    pub fetch_basic_only: bool,
+    /// True when the search effect itself puts its target onto the battlefield tapped.
+    pub fetch_enters_tapped: bool,
     /// Basic types this land checks for (verge gates: "control a Swamp").
     pub gate_types: Vec<&'static str>,
     /// True when the card may begin the game on the battlefield (Leyline).
     pub opens_in_play: bool,
     /// True when the card is a saga (staged per-turn effects).
     pub is_saga: bool,
+    /// Saga chapter effects in play order (empty when not a saga).
+    pub saga: SagaData,
     /// One-shot charge-counter injection on cast (Drill Too Deep).
     pub counters_on_cast: u32,
     /// One-shot mana on cast (rituals), never joining the tap pool.
@@ -319,16 +504,21 @@ pub struct SimCard {
     pub mana_per_cast: Option<TapYield>,
     /// One-shot draw on cast (cantrips, Divination).
     pub draws_on_cast: u32,
+    /// Life gained when this spell resolves.
+    pub life_gain_on_cast: u32,
+    /// Oracle-derived alternate cost, when the spell has one.
+    pub alternative_cast_cost: Option<AlternativeCastCost>,
+    /// Oracle-derived reveal effect, when the spell reveals cards for life.
+    pub reveal_rule: Option<RevealRule>,
     /// One-shot mill on cast or on entering ("mill N").
     pub mills_on_enter: u32,
     /// One-shot token creation on cast ("Create N 1/1 Soldier tokens").
     /// The count feeds the token-body path (Treasure cards bank).
     pub tokens_on_cast: u32,
-    /// One-shot scry/surveil on cast. Awareness credit, not draw.
+    /// One-shot scry count on cast. Awareness credit, not draw.
     pub scry_on_cast: u32,
-    /// True when the one-shot look effect is surveil (the scry'd cards
-    /// go to the graveyard — best case for graveyard decks).
-    pub surveils: bool,
+    /// One-shot surveil count on cast. The cards move to the graveyard.
+    pub surveils_on_cast: u32,
     /// Mill effects target opponents ("target player mills N") instead
     /// of the deck's own library (deck-out pressure direction).
     pub mills_opponent: bool,
@@ -339,9 +529,37 @@ pub struct SimCard {
     /// Bodies the cast consumes ("as an additional cost to cast this
     /// spell, sacrifice a creature"). The cast consumes a body.
     pub additional_cost_bodies: u32,
+    /// Cards discarded from hand as an additional cast cost.
+    pub additional_cost_discards: u32,
     /// Life the cast costs on top of mana ("as an additional cost …
     /// pay N life"). Best case: the agent pays it.
     pub additional_cost_life: u32,
+    /// Cast searches that use the sacrificed creature's mana value.
+    pub search_after_sacrifice: bool,
+    /// Cast effects that exchange graveyard creatures and battlefield creatures.
+    pub graveyard_creature_exchange: bool,
+    /// This spell grants flashback to instant and sorcery instances in
+    /// the graveyard when it resolves.
+    pub grants_flashback: bool,
+    /// Nonland cards in the graveyard may be cast with escape while this
+    /// permanent remains on the battlefield.
+    pub grants_escape: bool,
+    /// The source sacrifices itself when its parsed mana ability resolves.
+    pub sacrifices_for_mana: bool,
+    /// True when Oracle text grants undying.
+    pub has_undying: bool,
+    /// Cycling activation cost.
+    pub cycling_cost: Option<Cost>,
+    /// Life paid for cycling (Street Wraith-style cycling).
+    pub cycling_life: u32,
+    /// Land type searched by landcycling.
+    pub landcycling_type: Option<char>,
+    /// Number of cards milled when this card replaces a draw from the graveyard.
+    pub dredge: Option<u32>,
+    /// Effect that triggers when this card moves from library to graveyard.
+    pub library_graveyard_trigger: Option<LibraryGraveyardTrigger>,
+    /// Basic land subtypes printed on the card, WUBRG order.
+    pub land_types: [bool; 5],
     /// One-shot wheel on cast ("each player discards their hand, then
     /// draws seven"): the cast resolves a full wheel.
     pub wheel_on_cast: bool,
@@ -350,13 +568,14 @@ pub struct SimCard {
     /// not an X spell. `Effect::Drain(0)` carries the class; the game
     /// loop substitutes the paid X.
     pub x_class: Option<XClass>,
-    /// True when the card has Cascade (or battle-cascade wording):
-    /// casting it also casts the cheapest cheaper castable card from the
-    /// library for free, once, with no cascade chaining.
+    /// True when the card has cascade: reveal from the library top until
+    /// the first eligible lower printed mana value card and cast it free.
     pub has_cascade: bool,
     /// Printed power (creatures); crew and station use it instead of the
     /// flat body power. Tokens and unknowns stay flat.
     pub printed_power: Option<u32>,
+    /// Printed toughness used for supported -1/-1 counter effects.
+    pub printed_toughness: Option<u32>,
     /// Starting loyalty for planeswalkers; activations spend it.
     pub starting_loyalty: Option<u32>,
     /// Cost cuts scale with the artifact count on the board (improvise,
@@ -375,6 +594,11 @@ pub struct SimCard {
     /// "lands you control have…" — Chromatic Lantern). Each matching
     /// permanent adds one flexible pip per turn, capped at 2.
     pub grant: Option<Grant>,
+    /// Oracle text grants one extra mana when a nonland permanent is
+    /// tapped for mana (Kinnan-style replacement-independent trigger).
+    pub bonus_mana_on_nonland_tap: bool,
+    /// Mana ability requires three artifacts under the metalcraft rule.
+    pub requires_metalcraft: bool,
     /// Static creature buff while on the battlefield ("creatures you
     /// control get +2/+2"): (power, toughness). Power joins the attack
     /// sum.
@@ -455,16 +679,13 @@ pub enum DrawMatch {
     Creatures,
 }
 
-/// One Equipment: the suit-up cost, the buff, and the Skullclamp-style
-/// death-draw rider.
+/// One Equipment: the suit-up cost and the equipped-creature buff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Equipment {
     /// Equip cost (mana).
     pub cost: u32,
     /// Equipped-creature buff (power, toughness).
     pub buff: (i32, i32),
-    /// Cards drawn when the equipped creature dies.
-    pub death_draws: u32,
 }
 
 /// One static mana grant: the permanent class it empowers.
@@ -500,24 +721,13 @@ impl SimCard {
         self.station_tiers.iter().flat_map(|t| t.abilities.iter())
     }
 
-    /// Chapter count of a saga (the tier-0 Activated abilities). Sagas
+    /// Chapter count of a saga: the parsed chapter list length. Sagas
     /// without parsed chapters read as three chapters (the common shape).
-    /// Non-chapter triggers sharing tier 0 stay out of the count.
     pub fn chapter_count(&self) -> usize {
         if !self.is_saga {
             return 0;
         }
-        let parsed = self
-            .station_tiers
-            .first()
-            .map(|t| {
-                t.abilities
-                    .iter()
-                    .filter(|a| a.trigger == Trigger::Activated)
-                    .count()
-            })
-            .unwrap_or(0);
-        parsed.max(3)
+        self.saga.chapters.len().max(3)
     }
 
     /// The station tier this card animates at, when any (spacecraft only).
@@ -570,6 +780,27 @@ pub struct SimDeck {
     pub format: Format,
     /// Per-format behavior: mulligan policy and turn defaults.
     pub rules: super::format::FormatRules,
+}
+
+/// An index into `SimDeck.cards`. A newtype so zone vectors and zone
+/// maps cannot mix with lengths or turn numbers; commanders and tokens
+/// are not deck cards and never carry one ([`super::game::CardRef`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CardIdx(pub u32);
+
+impl CardIdx {
+    /// The index as a `usize` position (zone vector and report use).
+    pub fn index(self) -> usize {
+        self.0 as usize
+    }
+}
+
+impl std::ops::Index<CardIdx> for SimDeck {
+    type Output = SimCard;
+
+    fn index(&self, idx: CardIdx) -> &SimCard {
+        &self.cards[idx.0 as usize]
+    }
 }
 
 /// Cards drawn when a draw spell resolves: numerals and number words win

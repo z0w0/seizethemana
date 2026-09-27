@@ -5,7 +5,7 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -16,7 +16,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
+        cmc: parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -46,7 +46,7 @@ fn row_deck(lands: usize, spells: &[CardRow], format: Format) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -115,7 +115,7 @@ fn cast_draw_discard_trigger_parses_once() {
     let sim = parse_sim_card(&card_row);
     let cast_abilities: Vec<_> = sim
         .abilities()
-        .filter(|a| a.trigger == Trigger::OnCastSpell)
+        .filter(|a| a.trigger == AbilityTiming::OnCastSpell)
         .collect();
     assert_eq!(
         cast_abilities.len(),
@@ -191,11 +191,7 @@ fn saga_combined_numerals_parse_chapter_effect() {
         "I, II, III — Create a 3/3 Orc creature token.",
     );
     let sim = parse_sim_card(&row);
-    let chapters: Vec<Effect> = sim
-        .abilities()
-        .filter(|a| a.trigger == Trigger::Activated)
-        .map(|a| a.effect.clone())
-        .collect();
+    let chapters: &[Effect] = &sim.saga.chapters;
     assert_eq!(chapters.len(), 3, "combined numerals fill all chapters");
     assert!(
         chapters.iter().all(|e| matches!(e, Effect::Tokens(_))),
@@ -215,12 +211,10 @@ fn saga_iv_chapter_fires_and_saga_leaves_board() {
     );
     let sim = parse_sim_card(&row);
     assert_eq!(sim.chapter_count(), 4, "chapter IV parses");
-    let chapters: Vec<Effect> = sim
-        .abilities()
-        .filter(|a| a.trigger == Trigger::Activated)
-        .map(|a| a.effect.clone())
-        .collect();
-    assert!(matches!(chapters[3], Effect::Tokens(2)), "IV is tokens");
+    assert!(
+        matches!(sim.saga.chapters[3], Effect::Tokens(2)),
+        "IV is tokens"
+    );
     let deck = row_deck(30, &[row], Format::Constructed);
     let stats = run_avg(&deck, 9, 300, 42);
     assert!(
@@ -242,17 +236,13 @@ fn saga_with_extra_trigger_counts_chapters_only() {
         "When this Saga enters, draw a card.\nI — Create a Treasure token.\nII — Create a Treasure token.\nIII — Draw two cards.",
     );
     let sim = parse_sim_card(&row);
-    assert_eq!(sim.chapter_count(), 3, "only the Activated abilities count");
+    assert_eq!(sim.chapter_count(), 3, "only the chapters count");
     // The ETB draw still parses as a trigger.
     assert!(
-        sim.abilities().any(|a| a.trigger == Trigger::OnEnter),
+        sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter),
         "the enter trigger stays a trigger"
     );
-    let chapters: Vec<Effect> = sim
-        .abilities()
-        .filter(|a| a.trigger == Trigger::Activated)
-        .map(|a| a.effect.clone())
-        .collect();
+    let chapters: &[Effect] = &sim.saga.chapters;
     assert_eq!(chapters.len(), 3, "three real chapters");
 }
 
@@ -368,15 +358,20 @@ fn commander_drain_is_x3_and_constructed_x1() {
 #[test]
 fn additional_cost_sacrifice_consumes_body() {
     // "As an additional cost to cast this spell, sacrifice a creature."
-    // The cast consumes an untapped body.
+    // The cast consumes a body before its draw effect resolves.
     let ritual = card(
         "Cruel Ritual",
         "{2}{B}",
         "Sorcery",
         "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
     );
-    let with_cost = row_deck(26, &[ritual], Format::Constructed);
-    let control = row_deck(26, &[], Format::Constructed);
+    let bear = card("Body", "{0}", "Creature — Bear", "");
+    let mut with_cost = row_deck(26, &[ritual], Format::Constructed);
+    let mut control = row_deck(26, &[], Format::Constructed);
+    for _ in 0..8 {
+        with_cost.cards.push(parse_sim_card(&bear));
+        control.cards.push(parse_sim_card(&bear));
+    }
     let a = run_avg(&with_cost, 8, 300, 42);
     let b = run_avg(&control, 8, 300, 42);
     // The sacrifice pays into the graveyard; the deck's own body count
@@ -457,7 +452,8 @@ fn self_cast_draw_is_one_shot_not_engine() {
     let sim = parse_sim_card(&row);
     assert_eq!(sim.draws_on_cast, 1, "the self-cast rider resolves once");
     assert!(
-        sim.abilities().all(|a| a.trigger != Trigger::OnCastSpell),
+        sim.abilities()
+            .all(|a| a.trigger != AbilityTiming::OnCastSpell),
         "the self-cast rider must not register as a permanent engine"
     );
     // Four copies in a 40-card deck: velocity must stay near the vanilla
@@ -509,9 +505,7 @@ fn self_cast_draw_is_one_shot_not_engine() {
 }
 
 #[test]
-fn wheel_cast_skips_itself_in_graveyard_log() {
-    // A wheel resolving on cast must not double-zone the cast spell: the
-    // wheel's index lands on the battlefield only, never the graveyard.
+fn wheel_spell_resolves_to_graveyard_not_battlefield() {
     let spell = card(
         "Wheel",
         "{2}",
@@ -522,15 +516,10 @@ fn wheel_cast_skips_itself_in_graveyard_log() {
     let mut rng = ChaCha8Rng::seed_from_u64(42);
     for _ in 0..40 {
         let log = run_game(&deck, &mut rng, 8);
-        if let (Some(grave_turn), Some(bf_turn)) = (
-            log.card_first_graveyard.get(&0),
-            log.card_first_battlefield.get(&0),
-        ) {
-            assert!(
-                grave_turn >= bf_turn,
-                "wheel card zoned to the graveyard (t{grave_turn}) before the battlefield (t{bf_turn})"
-            );
-        }
+        assert!(
+            !log.card_first_battlefield.contains_key(&30),
+            "a sorcery wheel cannot remain on the battlefield"
+        );
     }
 }
 
@@ -805,9 +794,9 @@ fn mdfc_plays_as_land_when_no_land_in_hand() {
         cards: vec![
             SimCard {
                 name: "Jwari".into(),
-                cost: parse_cost("{U}"),
-                min_cost: parse_cost("{U}"),
-                tap: Some(parse_tap_yield("{T}: Add {U}.").unwrap()),
+                cost: parse_oracle_cost("{U}"),
+                min_cost: parse_oracle_cost("{U}"),
+                tap: Some(parse_oracle_tap_yield("{T}: Add {U}.").unwrap()),
                 role: Role::Other,
                 is_mdfc_spell: true,
                 ..SimCard::default()
@@ -844,7 +833,7 @@ fn mdfc_parses_x_class_from_spell_face() {
     assert_ne!(sim.role, Role::Land);
 }
 
-// Cascade: single-level free cast of the cheapest cheaper card.
+// Cascade: single-level free cast of the first eligible top card.
 
 #[test]
 fn cascade_free_cast_yields_velocity_and_a_body() {
@@ -885,7 +874,7 @@ fn cascade_free_cast_yields_velocity_and_a_body() {
     let stats_without = aggregate(&logs_without, &deck_without, 6);
     assert!(
         stats_with.cards_seen[3] > stats_without.cards_seen[3],
-        "cascade yields +1 seen ({:.2} vs {:.2})",
+        "cascade increases cards seen ({:.2} vs {:.2})",
         stats_with.cards_seen[3],
         stats_without.cards_seen[3]
     );
@@ -930,9 +919,9 @@ fn cascade_does_not_chain_or_recurse() {
 }
 
 #[test]
-fn cascade_casts_the_cheapest_match() {
-    // Library holds cheaper cards of 1 and 2 MV; the free cast must be
-    // the 1-MV bear (its name shows in the battlefield census).
+fn cascade_candidate_reaches_battlefield() {
+    // Both library cards qualify; one must enter from the actual shuffled
+    // top-to-bottom reveal order.
     let agent = card(
         "Test Shardless",
         "{3}{R}",
@@ -942,29 +931,21 @@ fn cascade_casts_the_cheapest_match() {
     let mid = card("Test Mid", "{2}{R}", "Creature — Bear", "");
     let cheap = card("Test Cheapest", "{1}{R}", "Creature — Bear", "");
     let deck = row_deck(12, &[agent, mid, cheap], Format::Constructed);
-    let cheap_idx = deck.cards.len() - 1; // spells push in order
+    let mid_idx = deck.cards.len() - 2;
+    let cheap_idx = deck.cards.len() - 1;
     let mut rng = ChaCha8Rng::seed_from_u64(5);
-    let mut resolved_mid = 0;
     let mut resolved_cheap = 0;
     for _ in 0..120 {
         let log = run_game(&deck, &mut rng, 5);
-        for (&idx, &turn) in &log.card_first_seen {
-            if idx == cheap_idx && turn >= 1 {
-                resolved_cheap += 1;
-            } else if deck.cards[idx].name == "Test Mid" && turn >= 1 {
-                resolved_mid += 1;
-            }
+        if log.card_first_battlefield.contains_key(&cheap_idx)
+            || log.card_first_battlefield.contains_key(&mid_idx)
+        {
+            resolved_cheap += 1;
         }
     }
     assert!(
         resolved_cheap > 0,
-        "the cheapest library card never resolved"
-    );
-    // Cascade must never pick the MV-2 bear over the 1-MV bear: the
-    // cheap bear's battlefield entries lead.
-    assert!(
-        resolved_cheap >= resolved_mid,
-        "cascade picked the MV-2 card over the cheapest: cheap {resolved_cheap} vs mid {resolved_mid}"
+        "no eligible cascade card reached the battlefield"
     );
 }
 

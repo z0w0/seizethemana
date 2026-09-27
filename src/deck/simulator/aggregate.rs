@@ -92,6 +92,12 @@ pub struct SimStats {
     pub pip_blocks: Vec<PipBlock>,
     /// Average graveyard size at the end of each turn.
     pub graveyard_by_turn: Vec<f64>,
+    /// Average number of successful flashback and escape casts per game.
+    pub replay_casts_avg: f64,
+    /// Average life paid for costs and activations per game.
+    pub life_paid_avg: f64,
+    /// Average cards drawn by life-funded actions per game.
+    pub life_funded_draws_avg: f64,
     /// Per-card castability rows.
     pub card_castability: Vec<CardCast>,
     /// Deck-shape counts for findings context.
@@ -151,6 +157,16 @@ pub struct SimStats {
     pub interaction_ready_by_turn: Vec<f64>,
     /// Average spare mana while interaction was ready.
     pub interaction_mana_held: f64,
+    /// Average cascade free-cast permanents that entered, by turn.
+    pub free_cast_permanents_by_turn: Vec<f64>,
+    /// Average dredge draw replacements, by turn.
+    pub dredge_uses_by_turn: Vec<f64>,
+    /// Average successful flashback and escape casts, by turn.
+    pub graveyard_casts_by_turn: Vec<f64>,
+    /// Average life-funded draws, by turn.
+    pub life_funded_draws_by_turn: Vec<f64>,
+    /// Share of games that reached a positive-mana loop on each turn.
+    pub positive_mana_loop_by_turn: Vec<f64>,
     /// Instant-speed interaction copies in the deck (readiness
     /// denominator).
     pub interaction_instant_count: usize,
@@ -182,6 +198,11 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     stats.drain_total_by_turn = vec![0.0; turns];
     stats.lethal_damage_by_turn = vec![0.0; turns];
     stats.interaction_ready_by_turn = vec![0.0; turns];
+    stats.free_cast_permanents_by_turn = vec![0.0; turns];
+    stats.dredge_uses_by_turn = vec![0.0; turns];
+    stats.graveyard_casts_by_turn = vec![0.0; turns];
+    stats.life_funded_draws_by_turn = vec![0.0; turns];
+    stats.positive_mana_loop_by_turn = vec![0.0; turns];
     stats.interaction_instant_count = deck
         .cards
         .iter()
@@ -198,8 +219,36 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     role_access_stats(logs, &mut stats, turns, n);
     color_screw_stats(logs, deck, &mut stats, n);
     graveyard_stats(logs, &mut stats, turns, n);
+    milestone_stats(logs, &mut stats, turns, n);
+    stats.replay_casts_avg = logs
+        .iter()
+        .map(|log| f64::from(log.replay_casts))
+        .sum::<f64>()
+        / n;
+    stats.life_paid_avg = logs.iter().map(|log| f64::from(log.life_paid)).sum::<f64>() / n;
+    stats.life_funded_draws_avg = logs
+        .iter()
+        .map(|log| f64::from(log.life_funded_draws))
+        .sum::<f64>()
+        / n;
     castability_stats(logs, deck, &mut stats, turns, n);
     stats
+}
+
+/// Aggregate the supported line-execution milestones by the turn they occur.
+fn milestone_stats(logs: &[GameLog], stats: &mut SimStats, turns: usize, n: f64) {
+    for log in logs {
+        for (turn, milestone) in log.milestones_by_turn.iter().take(turns).enumerate() {
+            stats.free_cast_permanents_by_turn[turn] +=
+                f64::from(milestone.free_cast_permanents_entered) / n;
+            stats.dredge_uses_by_turn[turn] += f64::from(milestone.dredge_uses) / n;
+            stats.graveyard_casts_by_turn[turn] += f64::from(milestone.graveyard_casts) / n;
+            stats.life_funded_draws_by_turn[turn] += f64::from(milestone.life_funded_draws) / n;
+            if milestone.positive_mana_loop {
+                stats.positive_mana_loop_by_turn[turn] += 1.0 / n;
+            }
+        }
+    }
 }
 
 /// Opening-hand land distribution and mulligan rate.

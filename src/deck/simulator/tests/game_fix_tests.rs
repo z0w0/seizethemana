@@ -866,12 +866,12 @@ fn graveyard_exchange_sacrifice_loop_terminates_with_death_tokens() {
     );
     assert!(
         st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx::new(3)),
+            .contains(&crate::deck::simulator::model::CardIdx(3)),
         "the payoffs were sacrificed"
     );
     assert!(
         st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx::new(1)),
+            .contains(&crate::deck::simulator::model::CardIdx(1)),
         "the exchange card resolved"
     );
 }
@@ -919,7 +919,7 @@ fn opponent_mill_leaves_player_zones_untouched() {
     );
     assert!(
         !st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
         "the player's graveyard gains nothing from an opponent mill"
     );
 }
@@ -942,7 +942,7 @@ fn graveyard_cast_gates_on_additional_life_cost() {
     let mut st = super::turn_loop_tests::state(vec![], vec![1]);
     st.graveyard.push(crate::deck::simulator::model::CardIdx(0));
     st.flashback_permissions
-        .insert(crate::deck::simulator::model::CardIdx::new(0));
+        .insert(crate::deck::simulator::model::CardIdx(0));
     st.life = 4;
     let mut pool = super::game::Pool {
         flexible: 4,
@@ -961,7 +961,7 @@ fn graveyard_cast_gates_on_additional_life_cost() {
     // stays in the graveyard and no life is paid.
     assert!(
         st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
         "the costly spell stays in the graveyard: {:?}",
         st.graveyard
     );
@@ -974,7 +974,7 @@ fn graveyard_cast_gates_on_additional_life_cost() {
         .push(crate::deck::simulator::model::CardIdx(0));
     st_ok
         .flashback_permissions
-        .insert(crate::deck::simulator::model::CardIdx::new(0));
+        .insert(crate::deck::simulator::model::CardIdx(0));
     st_ok.life = 5;
     let mut pool_ok = super::game::Pool {
         flexible: 4,
@@ -991,7 +991,7 @@ fn graveyard_cast_gates_on_additional_life_cost() {
     assert!(
         !st_ok
             .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx::new(0)),
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
         "life above the cost lets the spell cast: {:?}",
         st_ok.graveyard
     );

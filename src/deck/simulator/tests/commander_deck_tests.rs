@@ -4,6 +4,8 @@
 
 use super::deck_test_support::*;
 use super::model::Format;
+use rand::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 #[test]
 fn sweep_commander_invariants() {
@@ -54,6 +56,44 @@ fn sweep_commander_partners_carry_two() {
 }
 
 #[test]
+fn kinnan_basalt_positive_loop_depends_on_both_cards() {
+    let cards = fixture_map("kinnan combo");
+    let deck = fixture_deck("kinnan combo");
+    let full = build_sim_deck(&deck, &cards, None);
+    assert!(
+        full.cards.iter().any(|card| card.name == "Basalt Monolith"),
+        "Kinnan fixture must include Basalt Monolith"
+    );
+    assert!(
+        full.commanders
+            .iter()
+            .any(|card| card.bonus_mana_on_nonland_tap),
+        "Kinnan's commander text must parse its mana trigger"
+    );
+    let mut without_deck = deck.clone();
+    without_deck
+        .section_entries_mut("DECK")
+        .retain(|entry| entry.name != "Basalt Monolith");
+    let without = build_sim_deck(&without_deck, &cards, None);
+    let mut full_rng = ChaCha8Rng::seed_from_u64(706);
+    let mut without_rng = ChaCha8Rng::seed_from_u64(706);
+    let full_logs = (0..500)
+        .map(|_| run_game(&full, &mut full_rng, 10))
+        .collect::<Vec<_>>();
+    let without_logs = (0..500)
+        .map(|_| run_game(&without, &mut without_rng, 10))
+        .collect::<Vec<_>>();
+    let full_stats = super::aggregate::aggregate(&full_logs, &full, 10);
+    let without_stats = super::aggregate::aggregate(&without_logs, &without, 10);
+    assert!(
+        full_stats.infinite_mana_pct > without_stats.infinite_mana_pct,
+        "Kinnan + Basalt loop rate {:.3} must exceed no-Basalt {:.3}",
+        full_stats.infinite_mana_pct,
+        without_stats.infinite_mana_pct
+    );
+}
+
+#[test]
 fn sweep_commander_zero_cost_leader_casts_turn_one() {
     // Rograkh ({0}) is castable in essentially every game by turn 1.
     for name in ["rogsi turbo", "rogsilas turbo naus"] {
@@ -91,14 +131,14 @@ fn sweep_commander_casual_legends_are_late() {
 
 #[test]
 fn sweep_commander_velocity_grows() {
-    // Commander games see far more cards than the constructed opener:
-    // draw engines plus 10 turns push velocity well past the opener.
+    // Commander games see far more cards than the constructed opener.
+    // Searches now move only eligible cards and do not mimic cantrips.
     for name in ["blue farm", "kinnan combo", "chulane bant value"] {
         let cards = fixture_map(name);
         let deck = fixture_deck(name);
         let stats = sim(&deck, &cards, 200, 10);
         assert!(
-            stats.cards_seen[9] > 20.0,
+            stats.cards_seen[9] > 17.0,
             "{name} velocity stalls at {:.1}",
             stats.cards_seen[9]
         );
@@ -351,13 +391,13 @@ fn nekusar_wheel_punish_draws_wheels() {
 
 #[test]
 fn brago_blink_value_flickers_often() {
-    // Brago blink: ETB re-fires mean the graveyard and battlefield
-    // telemetry both churn; velocity stays high from blink draws.
+    // Brago blink re-fires ETBs, including filtered land searches. These
+    // searches no longer act as random-card draws in the velocity metric.
     let cards = fixture_map("brago blink value");
     let deck = fixture_deck("brago blink value");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.cards_seen[9] > 28.0,
+        stats.cards_seen[9] > 20.0,
         "brago velocity by t10: {:.1}",
         stats.cards_seen[9]
     );
@@ -448,13 +488,13 @@ fn atraxa_superfriends_ultimates_reach_online() {
 
 #[test]
 fn tayam_luminous_engine_grinds_graveyard() {
-    // Tayam recursion: the graveyard census churns (milled and
-    // sacrificed pieces pile up for the luminous engine).
+    // Tayam recursion still fills the graveyard after supported searches
+    // place only eligible cards into their actual destinations.
     let cards = fixture_map("tayam luminous engine");
     let deck = fixture_deck("tayam luminous engine");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.graveyard_by_turn[9] > 4.0,
+        stats.graveyard_by_turn[9] > 2.0,
         "tayam graveyard by t10: {:.1}",
         stats.graveyard_by_turn[9]
     );

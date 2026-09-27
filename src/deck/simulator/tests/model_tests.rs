@@ -4,7 +4,7 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -13,7 +13,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -44,7 +44,7 @@ fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &
 fn test_perm(card_idx: usize) -> super::game::InPlay {
     super::game::InPlay {
         uid: 0,
-        card: card_idx,
+        card: super::game::CardRef::Deck(super::model::CardIdx(card_idx as u32)),
         tapped: false,
         sick: false,
         counters: 0,
@@ -53,8 +53,6 @@ fn test_perm(card_idx: usize) -> super::game::InPlay {
         entered_turn: 1,
         saga_step: 0,
         fired: false,
-        is_commander: false,
-        commander_slot: 0,
         blink_pending: false,
         loyalty: 0,
         equipped: false,
@@ -64,29 +62,29 @@ fn test_perm(card_idx: usize) -> super::game::InPlay {
 
 #[test]
 fn cost_parses_generic_pips_hybrid_and_faces() {
-    let c = parse_cost("{2}{W}{W}");
+    let c = parse_oracle_cost("{2}{W}{W}");
     assert_eq!(c.generic, 2);
     assert_eq!(c.pips[0], 2);
     assert_eq!(c.total(), 4);
 
-    let hybrid = parse_cost("{W/U}");
+    let hybrid = parse_oracle_cost("{W/U}");
     assert_eq!(hybrid.flex_pips, 1);
     assert!(hybrid.pips.iter().all(|p| *p == 0));
 
     // Phyrexian {B/P}: payable with black — a single-color pip.
-    let phyrexian = parse_cost("{1}{B/P}");
+    let phyrexian = parse_oracle_cost("{1}{B/P}");
     assert_eq!(phyrexian.generic, 1);
     assert_eq!(phyrexian.pips[2], 1);
 
-    let faces = parse_cost("{2}{B} // {B}");
+    let faces = parse_oracle_cost("{2}{B} // {B}");
     assert_eq!(faces.generic, 2);
     assert_eq!(faces.pips[2], 2);
 
-    let x = parse_cost("{X}{U}");
+    let x = parse_oracle_cost("{X}{U}");
     assert_eq!(x.generic, 1);
     assert_eq!(x.pips[1], 1);
 
-    assert_eq!(parse_cost("{10}").generic, 10);
+    assert_eq!(parse_oracle_cost("{10}").generic, 10);
 }
 
 #[test]
@@ -141,7 +139,7 @@ fn split_card_faces_take_cheapest_face() {
 #[test]
 fn tap_yield_or_is_choice() {
     // Shock dual: one tap, pick one of two colors.
-    let y = parse_tap_yield("{T}: Add {G} or {U}.").unwrap();
+    let y = parse_oracle_tap_yield("{T}: Add {G} or {U}.").unwrap();
     assert_eq!(y.total(), 1);
     assert!(y.choice[4] && y.choice[1]);
     assert!(y.fixed.iter().all(|p| *p == 0));
@@ -150,7 +148,7 @@ fn tap_yield_or_is_choice() {
 #[test]
 fn tap_yield_fixed_set_is_simultaneous() {
     // Jegantha: one tap produces all five at once.
-    let y = parse_tap_yield("{T}: Add {W}{U}{B}{R}{G}.");
+    let y = parse_oracle_tap_yield("{T}: Add {W}{U}{B}{R}{G}.");
     assert!(y.is_some());
     let y = y.unwrap();
     assert_eq!(y.total(), 5);
@@ -162,37 +160,37 @@ fn tap_yield_fixed_set_is_simultaneous() {
 
 #[test]
 fn tap_yield_any_color_prose() {
-    let y = parse_tap_yield("{T}: Add one mana of any color.");
+    let y = parse_oracle_tap_yield("{T}: Add one mana of any color.");
     assert!(y.is_some_and(|y| y.any_pips == 1 && y.total() == 1));
 }
 
 #[test]
 fn tap_yield_colorless() {
-    let y = parse_tap_yield("{T}: Add {C}.");
+    let y = parse_oracle_tap_yield("{T}: Add {C}.");
     assert!(y.is_some_and(|y| y.colorless == 1 && y.total() == 1));
 }
 
 #[test]
 fn tap_yield_double_colorless() {
     // Sol Ring produces {C}{C} on one tap.
-    let y = parse_tap_yield("{T}: Add {C}{C}.");
+    let y = parse_oracle_tap_yield("{T}: Add {C}{C}.");
     assert!(y.is_some_and(|y| y.colorless == 2 && y.total() == 2));
 }
 
 #[test]
 fn tap_yield_none_for_non_mana() {
-    assert!(parse_tap_yield("Destroy target creature.").is_none());
+    assert!(parse_oracle_tap_yield("Destroy target creature.").is_none());
 }
 
 #[test]
 fn tap_yield_opponent_dependent_flags_any() {
-    // Goldfish: opponent-scaled production reads as any-color from turn 2
+    // Opponent-dependent production stays unavailable in a goldfish game.
     // (add_yield_turns gates the turn), not nothing.
     let orchard = "{T}: Add one mana of any color that a land an opponent controls could produce.";
-    let y = parse_tap_yield(orchard).expect("opponent yield parses");
+    let y = parse_oracle_tap_yield(orchard).expect("opponent yield parses");
     assert!(y.opponent_any);
     assert_eq!(y.any_pips, 1);
-    assert!(parse_tap_yield("{T}: Add {G}.").is_some());
+    assert!(parse_oracle_tap_yield("{T}: Add {G}.").is_some());
 }
 
 #[test]
@@ -292,7 +290,7 @@ fn commander_relic_banks_and_releases() {
         sim.station_tiers
             .iter()
             .flat_map(|t| t.abilities.iter())
-            .any(|a| a.trigger == Trigger::OnUpkeep
+            .any(|a| a.trigger == AbilityTiming::PrecombatMainPhase
                 && matches!(a.effect, super::model::Effect::ManaPerCounter(_)))
     );
     let mut cards = Vec::new();
@@ -330,7 +328,7 @@ fn commander_relic_banks_and_releases() {
 fn station_single_tier_with_pt_animates() {
     // Galvanizing Sawship: single 3+ tier, becomes a creature.
     let text = "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste";
-    let (tiers, is_station) = parse_station_tiers(text, "Artifact — Spacecraft");
+    let (tiers, is_station) = parse_oracle_station_tiers(text, "Artifact — Spacecraft");
     assert!(is_station);
     assert_eq!(tiers.len(), 1);
     assert_eq!(tiers[0].at, 3);
@@ -341,7 +339,7 @@ fn station_single_tier_with_pt_animates() {
 fn station_two_tiers_only_last_animates() {
     // Dawnsire: 10+ trigger, 20+ P/T.
     let text = "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying";
-    let (tiers, _) = parse_station_tiers(text, "Legendary Artifact — Spacecraft");
+    let (tiers, _) = parse_oracle_station_tiers(text, "Legendary Artifact — Spacecraft");
     assert_eq!(tiers.len(), 2);
     assert_eq!(tiers[0].at, 10);
     assert!(!tiers[0].animate);
@@ -353,7 +351,7 @@ fn station_two_tiers_only_last_animates() {
 fn station_planet_never_animates() {
     // Uthros, Titanic Godcore: 12+ mana ability, no P/T box.
     let text = "This land enters tapped.\n{T}: Add {U}.\nStation (Tap another creature you control: Put charge counters equal to its power on this Planet. Station only as a sorcery.)\n12+ | {U}, {T}: Add {U} for each artifact you control.";
-    let (tiers, is_station) = parse_station_tiers(text, "Land — Planet");
+    let (tiers, is_station) = parse_oracle_station_tiers(text, "Land — Planet");
     assert!(is_station);
     assert!(tiers.iter().all(|t| !t.animate));
     // The 12+ tier has the mana ability.
@@ -368,7 +366,7 @@ fn station_planet_never_animates() {
 #[test]
 fn station_no_tiers_when_no_markers() {
     let (tiers, is_station) =
-        parse_station_tiers("Some other text entirely.", "Artifact — Spacecraft");
+        parse_oracle_station_tiers("Some other text entirely.", "Artifact — Spacecraft");
     assert!(is_station);
     assert!(tiers.is_empty());
 }

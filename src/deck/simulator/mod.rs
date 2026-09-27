@@ -2,7 +2,8 @@
 //
 // Submodules:
 // - `model`: card data model (costs, tap yields, station tiers, abilities)
-// - `parse`: oracle-text → model (the sim's whole intelligence)
+// - `oracle_ast`, `oracle_parser`, `oracle_lower`: Oracle syntax and lowering
+// - `oracle_parse`: card-row and runtime-model construction
 // - `deck`: deck construction (deck text → `SimDeck`)
 // - `game`: shared per-game types (`GameLog`, battlefield permanents,
 //   the mana pool)
@@ -12,7 +13,7 @@
 // - `game_effects`: effect execution + tap budget
 // - `game_mana`: pool building and cost payment
 // - `game_combat`: the combat phase
-// - `triggers`, `trigger_activated`, `trigger_landfall`: trigger helpers
+// - Oracle trigger grammar lives in `oracle_parser`; typed events live in `model`
 // - `combos`: combo assembly measurement
 // - `findings`: problem findings + mana-base verdict
 // - `findings_detail`: finding detail helpers
@@ -21,10 +22,9 @@
 // - `hypgeo`: hypergeometric cast ceilings
 // - `format`: format rules (mulligan policy, turn count)
 //
-// Cards are modeled as data, not as rules: a card gets a tap yield (one
-// tap = the listed mana), optional station tiers, an optional crew cost,
-// and a list of abilities. Everything the model cannot execute is ignored
-// at parse time; the documented limits ship in the output `assumptions`.
+// Cards are modeled as data, not as rules: the Oracle parser builds typed
+// syntax nodes, and lowering maps supported nodes to game actions. Unsupported
+// syntax stays inert and the documented limits ship in `assumptions`.
 // This is a consistency diagnostic, not a win-rate predictor.
 
 pub(crate) mod aggregate;
@@ -32,32 +32,41 @@ mod cast_phase;
 mod combos;
 pub(crate) mod deal;
 pub(crate) mod deck;
-pub(crate) mod findings;
-pub(crate) mod findings_detail;
+mod findings;
+mod findings_detail;
 pub(crate) mod format;
 pub(crate) mod game;
 mod game_combat;
 mod game_commander;
 mod game_effects;
-mod game_extra_turns;
 mod game_mana;
 mod game_run;
-pub(crate) mod hypgeo;
+mod hypgeo;
 pub(crate) mod model;
-pub(crate) mod parse;
+mod oracle_ast;
+mod oracle_lower;
+pub(crate) mod oracle_parse;
+mod oracle_parser;
 mod parse_cost;
+mod parse_cycle;
 mod parse_keywords;
 mod parse_land;
 mod role_classify;
 
 #[cfg(test)]
+#[path = "tests/cast_zone_tests.rs"]
+mod cast_zone_tests;
+#[cfg(test)]
+#[path = "tests/library_effect_tests.rs"]
+mod library_effect_tests;
+#[cfg(test)]
 #[path = "tests/parse_cost_tests.rs"]
 mod parse_cost_tests;
 mod report;
 pub(crate) mod report_view;
-mod trigger_activated;
-mod trigger_landfall;
-mod triggers;
+#[cfg(test)]
+#[path = "tests/turn_loop_tests.rs"]
+mod turn_loop_tests;
 
 #[cfg(test)]
 #[path = "tests/aggregate_tests.rs"]
@@ -75,11 +84,17 @@ mod commander_deck_tests;
 #[path = "tests/cross_deck_tests.rs"]
 mod cross_deck_tests;
 #[cfg(test)]
+#[path = "tests/deck_fixture_baseline_tests.rs"]
+mod deck_fixture_baseline_tests;
+#[cfg(test)]
 #[path = "tests/deck_test_support.rs"]
 mod deck_test_support;
 #[cfg(test)]
 #[path = "tests/deck_tests.rs"]
 mod deck_tests;
+#[cfg(test)]
+#[path = "tests/defining_line_trace_tests.rs"]
+mod defining_line_trace_tests;
 #[cfg(test)]
 #[path = "tests/format_tests.rs"]
 mod format_tests;
@@ -116,6 +131,13 @@ mod modern_deck_tests;
 #[cfg(test)]
 #[path = "tests/mulligan_tests.rs"]
 mod mulligan_tests;
+#[cfg(test)]
+#[path = "tests/oracle_ast_tests.rs"]
+mod oracle_ast_tests;
+/// Exact-state tests for Oracle-driven simulator effects and triggers.
+#[cfg(test)]
+#[path = "tests/oracle_runtime_tests.rs"]
+mod oracle_runtime_tests;
 #[cfg(test)]
 #[path = "tests/parse_mechanic_tests.rs"]
 mod parse_mechanic_tests;
@@ -159,8 +181,10 @@ fn load_store_combos(
 
 /// True when the store carries combo data at all (public for the
 /// `deck combos` audit).
-pub fn store_has_combos_pub(conn: &rusqlite::Connection) -> bool {
-    store_has_combos(conn)
+pub(crate) fn store_has_combos(conn: &rusqlite::Connection) -> bool {
+    conn.query_row("SELECT COUNT(*) FROM combos", [], |r| r.get::<_, i64>(0))
+        .map(|n| n > 0)
+        .unwrap_or(false)
 }
 
 /// Infer the commander bracket from the deck's Game Changer census: the
@@ -191,12 +215,6 @@ pub(crate) fn infer_bracket(
         1..=3 => 3,
         _ => 4,
     }
-}
-
-fn store_has_combos(conn: &rusqlite::Connection) -> bool {
-    conn.query_row("SELECT COUNT(*) FROM combos", [], |r| r.get::<_, i64>(0))
-        .map(|n| n > 0)
-        .unwrap_or(false)
 }
 
 use anyhow::Context;

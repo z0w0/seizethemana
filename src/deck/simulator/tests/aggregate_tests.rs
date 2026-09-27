@@ -5,7 +5,7 @@ use super::aggregate::aggregate;
 use super::findings::find_problems;
 use super::game::run_game;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -14,7 +14,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -42,7 +42,7 @@ fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -118,7 +118,7 @@ fn reactive_spells_classify_as_removal() {
         "Creatures with power 4 or greater can't attack or block.",
     ] {
         let row = card("Test Card", "{1}{G}", "Instant", text);
-        let sim = super::parse::parse_sim_card(&row);
+        let sim = super::oracle_parse::parse_sim_card(&row);
         assert_eq!(sim.role, Role::Removal, "text: {text}");
     }
 }
@@ -133,7 +133,7 @@ fn protection_spells_are_not_removal() {
         "Permanents you control gain hexproof and indestructible until end of turn.",
     ] {
         let row = card("Test Card", "{1}{G}", "Instant", text);
-        let sim = super::parse::parse_sim_card(&row);
+        let sim = super::oracle_parse::parse_sim_card(&row);
         assert_ne!(sim.role, Role::Removal, "text: {text}");
         assert!(!sim.is_interaction, "text: {text}");
     }
@@ -144,7 +144,7 @@ fn removal_exempt_from_dead_cards() {
     // A reactive spell with a high floor must not surface in dead_cards;
     // its castability row still exists.
     let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
-    let fog = super::parse::parse_sim_card(&card(
+    let fog = super::oracle_parse::parse_sim_card(&card(
         "Spore Fog",
         "{1}{G}",
         "Instant",
@@ -177,7 +177,7 @@ fn pip_blocks_name_worst_card_color_pairs() {
     // A two-color deck with single-color lands blocks pips; the offenders
     // surface with per-card shares, top 5.
     let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
-    let hybrid = super::parse::parse_sim_card(&card(
+    let hybrid = super::oracle_parse::parse_sim_card(&card(
         "Pip Test",
         "{1}{U}{G}",
         "Creature — Frog Wizard",

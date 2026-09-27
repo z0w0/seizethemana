@@ -3,22 +3,21 @@
 //
 // Turn pipeline (best-case agent):
 //   1 UNTAP     everything untaps; creature sickness clears
-//   2 UPKEEP    upkeep engines and saga chapters fire (per-turn draws)
+//   2 UPKEEP    upkeep engines fire (per-turn draws)
 //   3 DRAW      draw 1
 //   4 LAND      play a land (verge gates, fetch searches, ETB triggers)
-//   5 CAST      cheapest castable spells (pip-aware); ETB triggers fire
+//   5 CAST      saga chapters advance; cheapest castable spells
+//               (pip-aware); ETB triggers fire
 //   6 ACTIVATE  spend leftover mana on draw engines; each costs a tap
 //   7 TAP BUDGET remaining untapped creatures: mana only while casting
 //               still needs it, else station, else crew
 //   8 THRESHOLD station tiers unlock (permanent); crew reverts at end
 //   9 COMBAT    bodies attack; attack triggers fire
-//  10 END       hand-limit discard
-//  11 EXTRA TURNS  queued extra turns replay a land drop, a draw, and
-//               upkeep engines once (not full turns)
+//  10 END       Monarch draw; hand-limit discard
 
-use super::game_effects::apply_effect;
-use super::model::{Ability, Effect, Restriction, Role, SimDeck, TapYield, Trigger};
-use std::collections::HashMap;
+use super::game_effects::apply_effect_at;
+use super::model::{Ability, AbilityTiming, CardIdx, Effect, Restriction, Role, SimDeck, TapYield};
+use std::collections::{HashMap, HashSet};
 
 /// One permanent on the battlefield.
 #[derive(Debug, Clone)]
@@ -27,8 +26,9 @@ pub struct InPlay {
     /// Engine and ETB bookkeeping key on this so removals shifting
     /// battlefield positions never alias another card.
     pub uid: u32,
-    /// Index into `SimDeck.cards` (`usize::MAX` for the cast commander).
-    pub card: usize,
+    /// Which card this permanent is: a deck card, the cast commander,
+    /// or a token body.
+    pub card: CardRef,
     /// Tapped this turn (one tap per turn per permanent).
     pub tapped: bool,
     /// Summoning-sick creature (cannot tap, crew, or attack this turn).
@@ -57,10 +57,33 @@ pub struct InPlay {
     /// only). The buff joins that host's attack alone; a uid survives
     /// battlefield shifts that would stale an index.
     pub equip_host: Option<u32>,
-    /// True when this is the cast commander on the battlefield.
-    pub is_commander: bool,
-    /// Commander slot (index into `SimDeck.commanders`); 0 otherwise.
-    pub commander_slot: usize,
+}
+
+/// Which card a battlefield permanent is. Deck cards carry an index
+/// into `SimDeck.cards`; the commander names its command-zone slot;
+/// tokens have no card at all. The variant replaces the old sentinel
+/// values (`usize::MAX` commander, `usize::MAX - 1` token).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CardRef {
+    /// A card in the main deck.
+    Deck(CardIdx),
+    /// A cast commander, `slot` indexing `SimDeck.commanders`.
+    Commander {
+        /// Index into `SimDeck.commanders`.
+        slot: usize,
+    },
+    /// A created token (2/2 body, no abilities).
+    Token,
+}
+
+impl CardRef {
+    /// The deck index, when the permanent is a deck card.
+    pub fn deck_idx(self) -> Option<CardIdx> {
+        match self {
+            Self::Deck(idx) => Some(idx),
+            Self::Commander { .. } | Self::Token => None,
+        }
+    }
 }
 
 /// One played game's record.
@@ -122,9 +145,18 @@ pub struct GameLog {
     /// First turn each card index reached the graveyard (mill, discard,
     /// sacrifice) — combo assembly for graveyard pieces.
     pub card_first_graveyard: HashMap<usize, u32>,
+    /// Card indexes cast with a modeled alternate cost.
+    #[cfg(test)]
+    pub alternate_casts: Vec<usize>,
     /// Total attacking power on the board at the combat phase of each
     /// turn (buffs, equipment, double strike included).
     pub attack_power: Vec<u32>,
+    /// Number of graveyard casts that paid a supported flashback or escape cost.
+    pub replay_casts: u32,
+    /// Life spent on costs and activations during this game.
+    pub life_paid: u32,
+    /// Cards drawn by paying life or losing life to a draw effect.
+    pub life_funded_draws: u32,
     /// Attacking bodies each turn (denominator for the evasion census).
     pub attackers: Vec<u32>,
     /// Attacking bodies with evasion (trample/flying/menace) each turn.
@@ -145,6 +177,8 @@ pub struct GameLog {
     pub player_damage: Vec<u32>,
     /// Extra turns taken by end of each turn.
     pub extra_turns: Vec<u32>,
+    /// Counts and events for the key simulator milestones on each turn.
+    pub milestones_by_turn: Vec<TurnMilestone>,
     /// First turn a win-threshold engine could fire (enough counters);
     /// None when the deck has no such engine or never reached it.
     pub win_threshold_turn: Option<u32>,
@@ -160,6 +194,21 @@ pub struct GameLog {
     pub infinite_mana_suspected: bool,
 }
 
+/// Per-turn events that show whether the deck's engine actions resolved.
+#[derive(Debug, Clone, Default)]
+pub struct TurnMilestone {
+    /// Permanent cards that entered from a cascade free cast.
+    pub free_cast_permanents_entered: u32,
+    /// Draws replaced by dredge.
+    pub dredge_uses: u32,
+    /// Successful flashback and escape casts.
+    pub graveyard_casts: u32,
+    /// Cards drawn through life-funded actions.
+    pub life_funded_draws: u32,
+    /// Whether a bounded positive-mana activation loop was reached.
+    pub positive_mana_loop: bool,
+}
+
 /// One chosen activation in the spend-leftover-mana pass.
 pub(super) struct Activation {
     /// Battlefield position of the source.
@@ -172,12 +221,18 @@ pub(super) struct Activation {
     pub(super) cost: u32,
     /// Cards drawn when it resolves.
     pub(super) draws: u32,
+    /// Filtered library search resolved by the activation.
+    pub(super) search: Option<super::model::SearchSpec>,
     /// Mana produced (mana activations feed the pool).
     pub(super) mana_yield: Option<TapYield>,
     /// Charge counters added to the host (counter engines).
     pub(super) counters: u32,
     /// Life drained when it resolves (drain activations).
     pub(super) drain: u32,
+    /// Creature sacrificed as part of the activation cost.
+    pub(super) sacrifice_uid: Option<u32>,
+    /// Creature chosen for a counter effect, when one is available.
+    pub(super) target_uid: Option<u32>,
 }
 
 /// One turn's spendable mana pool.
@@ -205,20 +260,26 @@ pub(super) struct Pool {
 /// zones, and the zone-census maps (first turn each card reached a zone).
 pub(super) struct GameState {
     pub(super) battlefield: Vec<InPlay>,
-    pub(super) library: Vec<usize>,
-    pub(super) hand: Vec<usize>,
+    pub(super) library: Vec<CardIdx>,
+    pub(super) hand: Vec<CardIdx>,
     pub(super) seen: u32,
-    pub(super) graveyard: Vec<usize>,
+    pub(super) graveyard: Vec<CardIdx>,
+    /// Cards removed from the game by costs or resolving effects.
+    pub(super) exile: Vec<CardIdx>,
     /// True once the player has become the Monarch. From the next turn
-    /// the Monarch draws one extra card at upkeep.
+    /// the Monarch draws one extra card at the beginning of their end
+    /// step (CR 725.2).
     pub(super) is_monarch: bool,
-    /// First turn each card index reached the battlefield. Filled by every
+    /// First turn each card reached the battlefield. Filled by every
     /// zone transition (cast, cheat-in, blink, reanimation); copied into
     /// the log at the end of the game.
-    pub(super) battlefield_seen: HashMap<usize, u32>,
-    /// First turn each card index reached the graveyard (mill, discard,
+    pub(super) battlefield_seen: HashMap<CardIdx, u32>,
+    /// First turn each card reached the graveyard (mill, discard,
     /// sacrifice); copied into the log at the end of the game.
-    pub(super) graveyard_seen: HashMap<usize, u32>,
+    pub(super) graveyard_seen: HashMap<CardIdx, u32>,
+    /// Cards cast with a modeled alternate cost.
+    #[cfg(test)]
+    pub(super) alternate_casts: Vec<CardIdx>,
     /// Banked Treasure tokens: each is one any-color pip, sacrificed to
     /// use (the token itself is not tracked on the battlefield).
     pub(super) treasure_bank: u32,
@@ -231,10 +292,22 @@ pub(super) struct GameState {
     /// (additional costs) is counted in `life_paid` and never feeds the
     /// lethal census.
     pub(super) drained: u32,
+    /// Life gained from resolved Oracle effects.
+    pub(super) life_gained: u32,
+    /// Graveyard instances granted flashback by the resolving spell.
+    pub(super) flashback_permissions: HashSet<CardIdx>,
+    /// Successful flashback and escape casts this game.
+    pub(super) replay_casts: u32,
+    /// Per-turn evidence for engine actions reported to the user.
+    pub(super) milestones_by_turn: HashMap<u32, TurnMilestone>,
+    /// Draws directly funded by life payments or life loss.
+    pub(super) life_funded_draws: u32,
     /// Life the goldfish pays itself (additional cast costs, "pay N
     /// life" activations). Kept separate from `drained` so the lethal
     /// census measures damage dealt, not resources spent.
     pub(super) life_paid: u32,
+    /// Current player life available to pay costs and resolve life effects.
+    pub(super) life: i32,
     /// Cards evaluated (drawn + milled + scried/surveiled), cumulative.
     pub(super) awareness_cards: u32,
     /// Extra turns queued by effects this game.
@@ -248,6 +321,11 @@ pub(super) struct GameState {
     pub(super) infinite_mana_suspected: bool,
     /// Monotone uid source for battlefield permanents.
     pub(super) next_uid: u32,
+}
+
+/// Return the milestone record for one turn, creating it when needed.
+pub(super) fn milestone_for_turn(st: &mut GameState, turn: u32) -> &mut TurnMilestone {
+    st.milestones_by_turn.entry(turn).or_default()
 }
 
 /// Reserve the next permanent uid.
@@ -284,11 +362,9 @@ impl Pool {
     }
 }
 
-/// The basic land types a fetch/search land targets, by its printed
-/// name. Prismatic Vista / Terramorphic Expanse / Evolving Wilds /
-/// Escape Tunnel search any basic, so they count for all five; the
-/// named fetches carry their real target pair.
-fn fetch_target_pair(name: &str) -> &'static [&'static str] {
+/// Fallback target types for fetch lands whose Oracle text omits its target
+/// pair. Oracle text remains the source of truth when it names the types.
+pub(super) fn fetch_target_pair(name: &str) -> &'static [&'static str] {
     match name {
         "Flooded Strand" => &["Plains", "Island"],
         "Polluted Delta" => &["Island", "Swamp"],
@@ -309,94 +385,25 @@ fn fetch_target_pair(name: &str) -> &'static [&'static str] {
     }
 }
 
-/// True when the land's name marks a card the sim recognizes as a fetch
-/// ("search … for a … land"): playing it searches up another land.
-pub(super) fn fetches_land_text(card: &super::model::SimCard) -> bool {
-    let name = card.name.to_ascii_lowercase();
-    [
-        "flooded strand",
-        "polluted delta",
-        "windswept heath",
-        "wooded foothills",
-        "fabled passage",
-        "scalding tarn",
-        "arid mesa",
-        "marsh flats",
-        "misty rainforest",
-        "bloodstained mire",
-        "verdant catacombs",
-        "prismatic vista",
-        "terramorphic expanse",
-        "evolving wilds",
-        "escape tunnel",
-    ]
-    .iter()
-    .any(|f| name.starts_with(f))
-}
-
-/// Basic land types a land name implies (verge gates). Match keys off
-/// known mana-base names because the sim has no type data. Fetches
-/// count only for their real target pair (Polluted Delta opens
-/// Island/Swamp verge gates, never a Mountain gate).
-pub(super) fn land_types(name: &str) -> &'static [&'static str] {
-    match name {
-        "Plains" => &["Plains"],
-        "Island" => &["Island"],
-        "Swamp" => &["Swamp"],
-        "Mountain" => &["Mountain"],
-        "Forest" => &["Forest"],
-        "Hallowed Fountain" => &["Plains", "Island"],
-        "Temple Garden" => &["Plains", "Forest"],
-        "Godless Shrine" => &["Plains", "Swamp"],
-        "Sacred Foundry" => &["Plains", "Mountain"],
-        "Breeding Pool" => &["Forest", "Island"],
-        "Watery Grave" => &["Island", "Swamp"],
-        "Steam Vents" => &["Island", "Mountain"],
-        "Overgrown Tomb" => &["Swamp", "Forest"],
-        "Stomping Ground" => &["Mountain", "Forest"],
-        "Blood Crypt" => &["Swamp", "Mountain"],
-        // Fetches and generic search lands satisfy their target set.
-        "Flooded Strand"
-        | "Polluted Delta"
-        | "Windswept Heath"
-        | "Wooded Foothills"
-        | "Scalding Tarn"
-        | "Arid Mesa"
-        | "Marsh Flats"
-        | "Misty Rainforest"
-        | "Bloodstained Mire"
-        | "Verdant Catacombs"
-        | "Fabled Passage"
-        | "Prismatic Vista"
-        | "Terramorphic Expanse"
-        | "Evolving Wilds"
-        | "Escape Tunnel" => fetch_target_pair(name),
-        _ => &[],
-    }
-}
-
 /// Naive body power for stationing and crewing (the sim does not track
 /// individual power; every body contributes this).
 pub(super) const BODY_POWER: u32 = 2;
 
-/// Static card data for a battlefield permanent. The cast commander
-/// (`usize::MAX`) resolves through `deck.commanders[commander_slot]`;
-/// token bodies (`usize::MAX - 1`) are 2/2 bodies with no abilities.
-/// A commander permanent with no matching commander entry (empty
-/// commanders list) resolves as a token body instead of panicking.
+/// Static card data for a battlefield permanent. Commanders resolve
+/// through `deck.commanders[slot]`; tokens are 2/2 bodies with no
+/// abilities. A commander permanent with no matching commander entry
+/// (empty commanders list) resolves as a token body instead of panicking.
 pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &InPlay) -> &'a super::model::SimCard {
-    if perm.is_commander {
-        match deck.commanders.get(perm.commander_slot) {
-            Some(cmd) => cmd,
-            None => token_body_card(),
-        }
-    } else if perm.card >= usize::MAX - 1 {
-        token_body_card()
-    } else {
-        match deck.cards.get(perm.card) {
-            Some(card) => card,
-            None => token_body_card(),
-        }
+    match perm.card {
+        CardRef::Commander { slot } => deck
+            .commanders
+            .get(slot)
+            .unwrap_or_else(|| token_body_card()),
+        CardRef::Deck(idx) => deck
+            .cards
+            .get(idx.index())
+            .unwrap_or_else(|| token_body_card()),
+        CardRef::Token => token_body_card(),
     }
 }
 
@@ -428,20 +435,16 @@ pub(super) fn register_loyalty_token_engines(
     }
 }
 
-/// Static data for a 2/2 token body (no abilities, no tap yield).
-pub(super) fn token_body() -> super::model::SimCard {
-    super::model::SimCard {
-        name: "Token".to_string(),
-        is_creature: true,
-        ..super::model::SimCard::default()
-    }
-}
-
-/// Lazily-built token body card (built once, read-only).
+/// Lazily-built static data for a 2/2 token body (no abilities, no tap
+/// yield). Built once, read-only.
 pub(super) fn token_body_card() -> &'static super::model::SimCard {
     use std::sync::OnceLock;
     static BODY: OnceLock<super::model::SimCard> = OnceLock::new();
-    BODY.get_or_init(token_body)
+    BODY.get_or_init(|| super::model::SimCard {
+        name: "Token".to_string(),
+        is_creature: true,
+        ..super::model::SimCard::default()
+    })
 }
 
 /// A new battlefield permanent with a pre-reserved uid (call sites that
@@ -449,41 +452,93 @@ pub(super) fn token_body_card() -> &'static super::model::SimCard {
 pub(super) fn new_perm_with(
     uid: u32,
     deck: &SimDeck,
-    card: usize,
+    card: CardIdx,
     turn: u32,
     tapped: bool,
 ) -> InPlay {
+    let sim = &deck[card];
     InPlay {
         uid,
-        card,
+        card: CardRef::Deck(card),
         tapped,
-        sick: deck.cards[card].is_creature && !deck.cards[card].has_haste,
-        counters: deck.cards[card].enter_counters,
+        sick: sim.is_creature && !sim.has_haste,
+        counters: if sim.enter_counters == super::parse_land::X_ENTRY_COUNTERS {
+            0
+        } else {
+            sim.enter_counters
+        },
         animated: false,
         crewed: false,
         entered_turn: turn as usize,
         saga_step: 0,
         fired: false,
         blink_pending: false,
-        loyalty: deck.cards[card].starting_loyalty.unwrap_or(0),
+        loyalty: sim.starting_loyalty.unwrap_or(0),
         equipped: false,
         equip_host: None,
-        is_commander: false,
-        commander_slot: 0,
     }
 }
 
-/// Fire OnEnter triggers for the permanent at `pos`. Token payoffs become
-/// small battlefield bodies. Upkeep engines register at the call site.
-/// `deferred` marks the turn-start blink re-fire: that firing never
-/// re-arms, so a blink re-fires exactly once (no chains).
-pub(super) fn fire_on_enter(deck: &SimDeck, st: &mut GameState, pos: usize, turn: u32) {
-    fire_on_enter_opts(deck, st, pos, turn, false)
+/// A fresh token permanent (2/2 body, sick the turn it enters).
+pub(super) fn new_token_perm(uid: u32, turn: u32) -> InPlay {
+    InPlay {
+        uid,
+        card: CardRef::Token,
+        tapped: false,
+        sick: true,
+        counters: 0,
+        animated: false,
+        crewed: false,
+        entered_turn: turn as usize,
+        saga_step: 0,
+        fired: false,
+        blink_pending: false,
+        loyalty: 0,
+        equipped: false,
+        equip_host: None,
+    }
 }
 
-/// Fire OnEnter triggers with control over blink re-arming; see
-/// `fire_on_enter`.
-pub(super) fn fire_on_enter_opts(
+/// A commander permanent joining the battlefield from the command zone.
+pub(super) fn new_commander_perm(uid: u32, slot: usize, loyalty: u32, turn: usize) -> InPlay {
+    InPlay {
+        uid,
+        card: CardRef::Commander { slot },
+        tapped: false,
+        sick: false,
+        counters: 0,
+        animated: false,
+        crewed: false,
+        entered_turn: turn,
+        saga_step: 0,
+        fired: false,
+        blink_pending: false,
+        loyalty,
+        equipped: false,
+        equip_host: None,
+    }
+}
+
+/// Resolve battlefield triggers for one player-controlled event.
+pub(super) fn fire_triggers(deck: &SimDeck, st: &mut GameState, trigger: AbilityTiming, turn: u32) {
+    let effects = st
+        .battlefield
+        .iter()
+        .flat_map(|permanent| {
+            let card = card_of(deck, permanent);
+            card.abilities()
+                .filter(|ability| ability.trigger == trigger)
+                .map(move |ability| (permanent.card, card.mills_opponent, ability.effect.clone()))
+        })
+        .collect::<Vec<_>>();
+    for (source, mills_opponent, effect) in effects {
+        apply_effect_at(deck, &effect, st, turn, mills_opponent, source.deck_idx());
+    }
+}
+
+/// Fire OnEnter triggers for the permanent at `pos`. A deferred firing is a
+/// blink re-fire and never re-arms, so each entry re-fires at most once.
+pub(super) fn fire_on_enter(
     deck: &SimDeck,
     st: &mut GameState,
     pos: usize,
@@ -493,19 +548,21 @@ pub(super) fn fire_on_enter_opts(
     let Some(perm) = st.battlefield.get(pos) else {
         return;
     };
-    let perm_card = perm.card;
     let perm_uid = perm.uid;
+    let perm_card = perm.card;
+    let is_saga = card_of(deck, perm).is_saga;
+    let first_chapter = card_of(deck, perm).saga.chapters.first().cloned();
     let has_real_etb = card_of(deck, perm)
         .abilities()
-        .any(|a| a.trigger == Trigger::OnEnter);
+        .any(|a| a.trigger == AbilityTiming::OnEnter);
     let mill_opp = card_of(deck, perm).mills_opponent;
     let etb_effects: Vec<Effect> = card_of(deck, perm)
         .abilities()
-        .filter(|a| a.trigger == Trigger::OnEnter)
+        .filter(|a| a.trigger == AbilityTiming::OnEnter)
         .map(|a| a.effect.clone())
         .collect();
     for effect in &etb_effects {
-        apply_effect(deck, effect, st, turn, mill_opp);
+        apply_effect_at(deck, effect, st, turn, mill_opp, None);
         // Blink-shaped ETBs ("exile … return it to the battlefield")
         // re-fire the host's OnEnter triggers once, next turn. The
         // deferred firing does not re-arm: one re-fire per entry. The
@@ -516,10 +573,24 @@ pub(super) fn fire_on_enter_opts(
         if !deferred
             && matches!(effect, Effect::Blink)
             && has_real_etb
-            && perm_card < usize::MAX - 1
+            && perm_card.deck_idx().is_some()
             && let Some(p) = st.battlefield.iter_mut().find(|p| p.uid == perm_uid)
         {
             p.blink_pending = true;
+        }
+    }
+    if !deferred && is_saga {
+        if let Some(saga) = st
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.uid == perm_uid)
+        {
+            saga.saga_step = 1;
+        }
+        if let Some(chapter) = first_chapter
+            && !matches!(chapter, Effect::None)
+        {
+            apply_effect_at(deck, &chapter, st, turn, mill_opp, None);
         }
     }
 }

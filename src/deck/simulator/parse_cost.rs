@@ -1,5 +1,4 @@
-// Mana-cost parsing for the simulator: Scryfall cost strings → Cost
-// values, split from parse.rs to keep files small.
+// Convert Scryfall mana-cost strings into simulator Cost values.
 
 use super::model::Cost;
 
@@ -84,5 +83,13 @@ pub fn parse_activation_cost(text: &str) -> Cost {
     {
         return Cost::default();
     }
-    parse_cost(&cleaned)
+    let symbols: String = cleaned
+        .split('{')
+        .skip(1)
+        .filter_map(|part| {
+            part.split_once('}')
+                .map(|(symbol, _)| format!("{{{symbol}}}"))
+        })
+        .collect();
+    parse_cost(&symbols)
 }

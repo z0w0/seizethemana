@@ -3,7 +3,7 @@
 /// A minimal card row for tests.
 use super::deck::build_sim_deck;
 use super::model::*;
-use super::parse::*;
+use super::oracle_parse::*;
 use crate::db::CardRow;
 use std::collections::HashMap;
 fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
@@ -11,7 +11,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::parse::parse_cost(mana_cost).total() as f64,
+        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -98,12 +98,12 @@ fn deck_build_splits_commander_and_sideboard() {
     assert_eq!(sim.cards.len(), 32);
     // An attack-gated draw gets no synthetic engine tier: it fires through
     // the combat path once the spacecraft animates.
-    assert!(
-        !sim.commanders[0]
-            .station_tiers
-            .iter()
-            .any(|t| t.at == 0 && t.abilities.iter().any(|a| a.trigger == Trigger::OnUpkeep))
-    );
+    assert!(!sim.commanders[0].station_tiers.iter().any(|t| {
+        t.at == 0
+            && t.abilities
+                .iter()
+                .any(|a| a.trigger == AbilityTiming::OnUpkeep)
+    }));
     // A real upkeep draw does get the synthetic engine.
     let upkeep_cmd = card(
         "Oracle",
@@ -126,12 +126,12 @@ fn deck_build_splits_commander_and_sideboard() {
             foil: false,
         });
     let sim2 = build_sim_deck(&deck2, &cards2, None);
-    assert!(
-        sim2.commanders[0]
-            .station_tiers
-            .iter()
-            .any(|t| t.at == 0 && t.abilities.iter().any(|a| a.trigger == Trigger::OnUpkeep))
-    );
+    assert!(sim2.commanders[0].station_tiers.iter().any(|t| {
+        t.at == 0
+            && t.abilities
+                .iter()
+                .any(|a| a.trigger == AbilityTiming::OnUpkeep)
+    }));
 }
 
 #[test]

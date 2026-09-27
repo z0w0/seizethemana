@@ -150,7 +150,7 @@ fn bracket_bands(bracket: u8, lands_matter: bool) -> ([usize; 2], [usize; 2]) {
 
 /// True when the card draws or cantrips (velocity, not raw card count).
 fn is_draw_or_cantrip(card: &super::model::SimCard) -> bool {
-    card.draws_on_cast > 0 || card.scry_on_cast > 0 || card.surveils
+    card.draws_on_cast > 0 || card.scry_on_cast > 0 || card.surveils_on_cast > 0
 }
 
 /// Land band for a 60-card deck from its average nonland mana value and
