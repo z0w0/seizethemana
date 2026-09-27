@@ -424,7 +424,7 @@ fn nonland_mana_trigger_adds_one_produced_mana() {
         row("Three mana rock", "{3}", "Artifact", "{T}: Add {C}{C}{C}."),
     ];
     let deck = deck(&rows);
-    assert!(deck.cards[0].bonus_mana_on_nonland_tap);
+    assert!(deck.cards[0].flags.bonus_mana_on_nonland_tap);
     let mut st = state(vec![], vec![]);
     st.battlefield.push(super::game::new_perm_with(
         0,
@@ -461,7 +461,7 @@ fn metalcraft_mana_source_needs_three_artifacts() {
         row("Land", "", "Basic Land — Island", "{T}: Add {U}."),
     ];
     let deck = deck(&rows);
-    assert!(deck.cards[0].requires_metalcraft);
+    assert!(deck.cards[0].flags.requires_metalcraft);
     for (artifact_count, include_land) in [(1, true), (2, false), (3, false)] {
         let mut st = state(vec![], vec![]);
         for card in 0..artifact_count {

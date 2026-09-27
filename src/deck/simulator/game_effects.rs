@@ -138,7 +138,7 @@ pub(crate) fn apply_effect_at(
     // blanket would convert unrelated token effects into pips.
     let treasure_source = source
         .and_then(|i| deck.cards.get(i.index()))
-        .map(|c| c.treasures_on_token)
+        .map(|c| c.flags.treasures_on_token)
         .unwrap_or(false);
     match effect {
         Effect::Draw(n) => {
@@ -463,7 +463,7 @@ pub(super) fn tap_budget(
         if battlefield[ei].tapped || battlefield[ei].equipped {
             continue;
         }
-        let eq = card_of(deck, &battlefield[ei]).equipment;
+        let eq = card_of(deck, &battlefield[ei]).flags.equipment;
         let Some(eq) = eq else {
             continue;
         };

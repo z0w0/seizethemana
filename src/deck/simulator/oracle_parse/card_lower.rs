@@ -312,21 +312,7 @@ fn lower_static_fields(
     shape: &CardShape,
 ) {
     let flags = parse_static_flags(row, text, type_line, shape.cast_face, oracle);
-    card.double_strike = flags.double_strike;
-    card.prowess = flags.prowess;
-    card.landfall = flags.landfall;
-    card.evasion = flags.evasion;
-    card.has_haste = flags.has_haste;
-    card.extra_land_drops = flags.extra_land_drops;
-    card.is_instant_speed = flags.is_instant_speed;
-    card.wipe = flags.wipe;
-    card.is_interaction = flags.is_interaction;
-    card.grant = flags.grant;
-    card.bonus_mana_on_nonland_tap = flags.bonus_mana_on_nonland_tap;
-    card.requires_metalcraft = flags.requires_metalcraft;
-    card.buff = flags.buff;
-    card.equipment = flags.equipment;
-    card.treasures_on_token = flags.treasures_on_token;
+    card.flags = flags;
 }
 
 /// Lower library, combat, and scaling fields that are not cast riders.

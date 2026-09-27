@@ -508,6 +508,61 @@ pub struct CastRiders {
     pub landcycling_type: Option<char>,
 }
 
+/// Static keyword and interaction flags that travel together in combat,
+/// mana, and readiness paths. One parse pass in `static_flags` fills the
+/// group; every field documents its rule source.
+#[derive(Debug, Clone, Default)]
+pub struct CombatFlags {
+    /// Attack power ×2 (double strike). Goldfish: no blockers, so the
+    /// first-strike layer is pure damage multiplication.
+    pub double_strike: bool,
+    /// +1 power per noncreature spell cast this turn (prowess),
+    /// credited in the combat phase of the same turn.
+    pub prowess: bool,
+    /// +1 power per land drop made after this permanent entered
+    /// (landfall +1/+1 counter patterns).
+    pub landfall: bool,
+    /// Evasion census flag (trample, flying, menace): counted in the
+    /// attack block, no math.
+    pub evasion: bool,
+    /// True when the creature ignores summoning sickness (haste):
+    /// attacks, taps, and crews the turn it enters.
+    pub has_haste: bool,
+    /// Extra land drop each turn ("you may play an additional land").
+    /// Feeds `land_drops[]` as one extra drop per turn while in play.
+    pub extra_land_drops: bool,
+    /// Castable at instant speed (Instant type or flash). Powers the
+    /// interaction-readiness metric.
+    pub is_instant_speed: bool,
+    /// Interaction role (removal or counterspells): feeds readiness.
+    pub is_interaction: bool,
+    /// True when the card destroys or sweeps every permanent of a class
+    /// ("destroy all creatures"): a board wipe. Wipes count as
+    /// interaction capacity but never fire in a goldfish.
+    pub wipe: bool,
+    /// Static mana grant while on the battlefield ("creatures you control
+    /// have {T}: add one mana of any color" — Enduring Vitality;
+    /// "lands you control have…" — Chromatic Lantern). Each matching
+    /// permanent adds one flexible pip per turn, capped at 2.
+    pub grant: Option<Grant>,
+    /// Oracle text grants one extra mana when a nonland permanent is
+    /// tapped for mana (Kinnan-style replacement-independent trigger).
+    pub bonus_mana_on_nonland_tap: bool,
+    /// Mana ability requires three artifacts under the metalcraft rule.
+    pub requires_metalcraft: bool,
+    /// Static creature buff while on the battlefield ("creatures you
+    /// control get +2/+2"): (power, toughness). Power joins the attack
+    /// sum.
+    pub buff: Option<(i32, i32)>,
+    /// Equipment stats: (equip cost, equipped-creature buff). None when
+    /// not Equipment.
+    pub equipment: Option<Equipment>,
+    /// Treasure tokens created per token effect (Stark Industries
+    /// Executive). Each treasure is one banked any-color pip, sacrificed
+    /// to use; the bank lives on the game state, not the card.
+    pub treasures_on_token: bool,
+}
+
 /// The card-level capabilities the simulator executes.
 #[derive(Debug, Clone, Default)]
 pub struct SimCard {
@@ -605,54 +660,9 @@ pub struct SimCard {
     /// Printed colors of the card (subset of WUBRG, by index). Powers
     /// "one mana per color among permanents you control" scaling.
     pub colors: [bool; 5],
-    /// Treasure tokens created per token effect (Stark Industries
-    /// Executive). Each treasure is one banked any-color pip, sacrificed
-    /// to use; the bank lives on the game state, not the card.
-    pub treasures_on_token: bool,
-    /// Static mana grant while on the battlefield ("creatures you control
-    /// have {T}: add one mana of any color" — Enduring Vitality;
-    /// "lands you control have…" — Chromatic Lantern). Each matching
-    /// permanent adds one flexible pip per turn, capped at 2.
-    pub grant: Option<Grant>,
-    /// Oracle text grants one extra mana when a nonland permanent is
-    /// tapped for mana (Kinnan-style replacement-independent trigger).
-    pub bonus_mana_on_nonland_tap: bool,
-    /// Mana ability requires three artifacts under the metalcraft rule.
-    pub requires_metalcraft: bool,
-    /// Static creature buff while on the battlefield ("creatures you
-    /// control get +2/+2"): (power, toughness). Power joins the attack
-    /// sum.
-    pub buff: Option<(i32, i32)>,
-    /// Equipment stats: (equip cost, equipped-creature buff, draws when
-    /// the equipped creature dies). None when not Equipment.
-    pub equipment: Option<Equipment>,
-    /// Attack power ×2 (double strike). Goldfish: no blockers, so the
-    /// first-strike layer is pure damage multiplication.
-    pub double_strike: bool,
-    /// +1 power per noncreature spell cast this turn (prowess),
-    /// credited in the combat phase of the same turn.
-    pub prowess: bool,
-    /// +1 power per land drop made after this permanent entered
-    /// (landfall +1/+1 counter patterns).
-    pub landfall: bool,
-    /// Evasion census flag (trample, flying, menace): counted in the
-    /// attack block, no math.
-    pub evasion: bool,
-    /// Castable at instant speed (Instant type or flash). Powers the
-    /// interaction-readiness metric.
-    pub is_instant_speed: bool,
-    /// Interaction role (removal or counterspells): feeds readiness.
-    pub is_interaction: bool,
-    /// True when the creature ignores summoning sickness (haste):
-    /// attacks, taps, and crews the turn it enters.
-    pub has_haste: bool,
-    /// Extra land drop each turn ("you may play an additional land").
-    /// Feeds `land_drops[]` as one extra drop per turn while in play.
-    pub extra_land_drops: bool,
-    /// True when the card destroys or sweeps every permanent of a class
-    /// ("destroy all creatures"): a board wipe. Wipes count as
-    /// interaction capacity but never fire in a goldfish.
-    pub wipe: bool,
+    /// Static keyword, interaction, and combat flags parsed from the
+    /// keyword array and Oracle text (combat, mana, and readiness paths).
+    pub flags: CombatFlags,
     /// True when the card is an enchantment (scaling draw engines count
     /// enchantments on the battlefield).
     pub is_enchantment: bool,

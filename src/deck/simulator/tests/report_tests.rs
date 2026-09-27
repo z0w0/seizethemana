@@ -140,8 +140,11 @@ fn json_report_interaction_color_and_wincons_are_populated() {
                 ..Cost::default()
             },
             role: Role::Removal,
-            is_interaction: true,
-            is_instant_speed: true,
+            flags: super::model::CombatFlags {
+                is_interaction: true,
+                is_instant_speed: true,
+                ..super::model::CombatFlags::default()
+            },
             riders: super::model::CastRiders {
                 drain_on_cast: 3,
                 ..super::model::CastRiders::default()
@@ -261,7 +264,10 @@ fn aggregate_attack_power_p90_and_p95_drops_compute() {
             role: Role::Wincon,
             is_creature: true,
             printed_power: Some(3),
-            has_haste: true,
+            flags: super::model::CombatFlags {
+                has_haste: true,
+                ..super::model::CombatFlags::default()
+            },
             ..SimCard::default()
         });
     }

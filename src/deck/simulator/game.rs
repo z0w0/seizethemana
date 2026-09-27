@@ -461,7 +461,7 @@ pub(super) fn new_perm_with(
         uid,
         card: CardRef::Deck(card),
         tapped,
-        sick: sim.is_creature && !sim.has_haste,
+        sick: sim.is_creature && !sim.flags.has_haste,
         counters: if sim.enter_counters == super::parse_land::X_ENTRY_COUNTERS {
             0
         } else {

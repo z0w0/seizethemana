@@ -155,7 +155,7 @@ fn target_fixtures_have_seeded_baselines_and_parsed_inventory() {
             .any(|card| card.name == "Kinnan, Bonder Prodigy")
     );
     let kinnan = &kinnan_deck.commanders[0];
-    assert!(kinnan.bonus_mana_on_nonland_tap);
+    assert!(kinnan.flags.bonus_mana_on_nonland_tap);
     assert!(kinnan.abilities().any(|ability| {
         matches!(ability.effect, Effect::Search(spec) if spec.top_count == Some(5) && spec.non_human)
     }));

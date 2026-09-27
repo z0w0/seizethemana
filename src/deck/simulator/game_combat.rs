@@ -37,7 +37,13 @@ pub(super) fn combat_phase(
         .battlefield
         .iter()
         .filter(|p| p.card.deck_idx().is_some())
-        .map(|p| card_of(deck, p).buff.map(|(p_, _)| p_.max(0)).unwrap_or(0))
+        .map(|p| {
+            card_of(deck, p)
+                .flags
+                .buff
+                .map(|(p_, _)| p_.max(0))
+                .unwrap_or(0)
+        })
         .sum();
     // Equipped gear buffs its own host only: (host uid, buff power).
     // Hosts are matched by uid so board shifts between turns cannot
@@ -48,7 +54,7 @@ pub(super) fn combat_phase(
         .filter(|p| p.equipped && p.card.deck_idx().is_some())
         .filter_map(|p| {
             let host = p.equip_host?;
-            Some((host, card_of(deck, p).equipment?))
+            Some((host, card_of(deck, p).flags.equipment?))
         })
         .map(|(host, e)| (host, e.buff.0.max(0)))
         .collect();
@@ -98,7 +104,7 @@ pub(super) fn combat_phase(
         let perm = st.battlefield[pi].clone();
         let card = card_of(deck, &perm);
         attackers += 1;
-        if card.evasion {
+        if card.flags.evasion {
             evasive += 1;
         }
         let mut power = card.printed_power.unwrap_or(BODY_POWER) as i32;
@@ -118,7 +124,7 @@ pub(super) fn combat_phase(
             .filter(|(host, _)| perm.uid != 0 && *host == perm.uid)
             .map(|(_, buff)| *buff)
             .sum::<i32>();
-        if card.landfall {
+        if card.flags.landfall {
             // +1 per land drop made after the permanent entered. Same-turn
             // entrants exclude this turn's own drops (their landfall
             // resolved at entry), matching every other turn's slice.
@@ -131,10 +137,10 @@ pub(super) fn combat_phase(
         if board_buff_x > 0 {
             power += board_buff_x;
         }
-        if card.prowess {
+        if card.flags.prowess {
             power += prowess_bumps as i32;
         }
-        if card.double_strike {
+        if card.flags.double_strike {
             power *= 2;
         }
         power_total += power.max(0) as u32;

@@ -270,7 +270,7 @@ pub(crate) fn sim_report_for(
     stats.removal_wipes = sim_deck
         .cards
         .iter()
-        .filter(|c| c.role == model::Role::Removal && c.wipe)
+        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats.wincon_count = sim_deck
@@ -372,7 +372,7 @@ pub fn simulate(
     stats.removal_wipes = sim_deck
         .cards
         .iter()
-        .filter(|c| c.role == model::Role::Removal && c.wipe)
+        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats.wincon_count = sim_deck

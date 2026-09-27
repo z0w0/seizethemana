@@ -588,7 +588,7 @@ fn resolve_cast(
         let uid = super::game::take_uid(st);
         st.battlefield_seen.entry(target).or_insert(turn as u32);
         let mut entry = new_perm_with(uid, deck, target, turn as u32, false);
-        entry.sick = !target_card.has_haste;
+        entry.sick = !target_card.flags.has_haste;
         entry.counters = if target_card.enter_counters == super::parse_land::X_ENTRY_COUNTERS {
             1
         } else {
@@ -640,7 +640,7 @@ fn resolve_cast(
             st.battlefield_seen.entry(index).or_insert(turn as u32);
             let uid = super::game::take_uid(st);
             let mut entry = new_perm_with(uid, deck, index, turn as u32, false);
-            entry.sick = !returned_card.has_haste;
+            entry.sick = !returned_card.flags.has_haste;
             entry.counters = if returned_card.enter_counters == super::parse_land::X_ENTRY_COUNTERS
             {
                 0
@@ -670,7 +670,7 @@ fn resolve_cast(
     if !card.is_instant_or_sorcery {
         st.battlefield_seen.entry(idx).or_insert(turn as u32);
         let mut entry = new_perm_with(cast_perm_uid, deck, idx, turn as u32, false);
-        entry.sick = card.is_creature && !card.has_haste;
+        entry.sick = card.is_creature && !card.flags.has_haste;
         entry.counters = entry_counters;
         st.battlefield.push(entry);
         let pw_pos = st.battlefield.len() - 1;

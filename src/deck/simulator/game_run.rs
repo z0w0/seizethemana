@@ -215,7 +215,7 @@ fn play_late_land(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, t
     let extra = st.battlefield.iter().any(|perm| {
         perm.card
             .deck_idx()
-            .is_some_and(|idx| deck[idx].extra_land_drops)
+            .is_some_and(|idx| deck[idx].flags.extra_land_drops)
     });
     let limit = 1 + usize::from(extra);
     while usize::from(census.land_drops[turn - 1]) < limit
@@ -247,7 +247,7 @@ pub(super) fn add_nonland_mana(
     let bonus_triggers = st
         .battlefield
         .iter()
-        .filter(|permanent| card_of(deck, permanent).bonus_mana_on_nonland_tap)
+        .filter(|permanent| card_of(deck, permanent).flags.bonus_mana_on_nonland_tap)
         .count() as u32;
     if bonus_triggers == 0 {
         return true;
@@ -521,7 +521,7 @@ fn play_land_drops(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, 
         let extra_lands = st.battlefield.iter().any(|p| {
             p.card
                 .deck_idx()
-                .is_some_and(|idx| deck[idx].extra_land_drops)
+                .is_some_and(|idx| deck[idx].flags.extra_land_drops)
         });
         if extra_lands && play_land(deck, st, turn as u32) {
             census.land_drops[turn - 1] += 1;
@@ -713,7 +713,7 @@ pub(super) fn tap_new_rocks(deck: &SimDeck, st: &mut GameState, pool: &mut Pool,
 
 /// Check player-controlled conditions that gate a card's mana ability.
 fn mana_condition_met(deck: &SimDeck, st: &GameState, card: &super::model::SimCard) -> bool {
-    !card.requires_metalcraft
+    !card.flags.requires_metalcraft
         || st
             .battlefield
             .iter()
@@ -817,7 +817,7 @@ fn add_static_grants(deck: &SimDeck, st: &GameState, pool: &mut Pool) {
     for grantor_idx in 0..st.battlefield.len() {
         let grant = {
             let perm = &st.battlefield[grantor_idx];
-            card_of(deck, perm).grant
+            card_of(deck, perm).flags.grant
         };
         let Some(grant) = grant else {
             continue;

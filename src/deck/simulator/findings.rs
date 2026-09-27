@@ -260,8 +260,8 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
     // Lands-matter: the commander or any card name carries a landfall /
     // lands-matter engine signal. The parse marks extra-land-drop boards
     // (`extra_land_drops`); their presence widens the band.
-    let lands_matter = deck.cards.iter().any(|c| c.extra_land_drops)
-        || deck.commanders.iter().any(|c| c.extra_land_drops);
+    let lands_matter = deck.cards.iter().any(|c| c.flags.extra_land_drops)
+        || deck.commanders.iter().any(|c| c.flags.extra_land_drops);
     let bracket = bracket.clamp(1, 5);
     let (land_band, ramp_band) = bracket_bands(bracket, lands_matter);
     // The lands-matter label rides on any verdict, so the widened band is
@@ -467,8 +467,8 @@ fn screw_flood_problems(
     // all). Lands-matter decks flood by design: their finding reads as
     // an observation, never a trim instruction.
     if turns >= 4 && stats.flood_pct > 0.0 {
-        let lands_matter = deck.cards.iter().any(|c| c.extra_land_drops)
-            || deck.commanders.iter().any(|c| c.extra_land_drops);
+        let lands_matter = deck.cards.iter().any(|c| c.flags.extra_land_drops)
+            || deck.commanders.iter().any(|c| c.flags.extra_land_drops);
         let detail = format!(
             "too many lands: {:.1}% of games saw 6 or more lands by turn 4 (about {:.1}% is normal at this deck's draw rate)",
             stats.flood_pct * 100.0,

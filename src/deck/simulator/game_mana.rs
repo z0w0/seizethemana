@@ -162,7 +162,7 @@ pub(super) fn usable_for_noncreature(pool: &Pool) -> u32 {
 pub(super) fn cast_restriction(card: &super::model::SimCard) -> Option<Restriction> {
     if card.is_artifact && card.role != Role::Land {
         Some(Restriction::Artifact)
-    } else if card.is_interaction {
+    } else if card.flags.is_interaction {
         Some(Restriction::InstantSorcery)
     } else if card.is_creature {
         Some(Restriction::Creature)

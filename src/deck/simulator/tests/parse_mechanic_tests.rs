@@ -137,9 +137,9 @@ fn haste_skips_sickness_in_game() {
         r#"["Haste"]"#,
         "Haste",
     ));
-    assert!(hasted.has_haste);
+    assert!(hasted.flags.has_haste);
     let plain = parse_sim_card(&card("Slow Body", "{R}", "Creature — Human", ""));
-    assert!(!plain.has_haste);
+    assert!(!plain.flags.has_haste);
 }
 
 #[test]
@@ -305,7 +305,7 @@ fn text_flying_joins_evasion_and_flashback_not_flash() {
         "Creature — Bird",
         "This creature has flying.",
     ));
-    assert!(flier.evasion, "text flying counts as evasion");
+    assert!(flier.flags.evasion, "text flying counts as evasion");
     let flashback = parse_sim_card(&card(
         "Past Spell",
         "{1}{R}",
@@ -313,7 +313,7 @@ fn text_flying_joins_evasion_and_flashback_not_flash() {
         "Deal 1 damage to any target.\nFlashback {3}{R}",
     ));
     assert!(
-        !flashback.is_instant_speed,
+        !flashback.flags.is_instant_speed,
         "flashback text does not read as flash"
     );
     let flash = parse_sim_card(&card(
@@ -322,7 +322,7 @@ fn text_flying_joins_evasion_and_flashback_not_flash() {
         "Instant",
         "Counter target spell.",
     ));
-    assert!(flash.is_instant_speed);
+    assert!(flash.flags.is_instant_speed);
 }
 
 #[test]
@@ -333,9 +333,9 @@ fn extra_land_drops_flag_parses() {
         "Legendary Creature — Merfolk",
         "You may play an additional land on each of your turns.",
     ));
-    assert!(aesi.extra_land_drops);
+    assert!(aesi.flags.extra_land_drops);
     let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
-    assert!(!plain.extra_land_drops);
+    assert!(!plain.flags.extra_land_drops);
 }
 
 #[test]
@@ -406,7 +406,7 @@ fn two_damage_removal_counts_as_interaction() {
         "Instant",
         "Small Burn deals 2 damage to target creature.",
     ));
-    assert!(sim.is_interaction);
+    assert!(sim.flags.is_interaction);
     assert_eq!(sim.role, Role::Removal);
 }
 
@@ -418,7 +418,10 @@ fn player_burn_stays_drain_not_interaction() {
         "Sorcery",
         "Face Burn deals 2 damage to target player or planeswalker.",
     ));
-    assert!(!sim.is_interaction, "player burn is not removal capacity");
+    assert!(
+        !sim.flags.is_interaction,
+        "player burn is not removal capacity"
+    );
 }
 
 #[test]
@@ -429,8 +432,8 @@ fn board_wipe_counts_as_interaction() {
         "Sorcery",
         "Destroy all creatures.",
     ));
-    assert!(sim.wipe);
-    assert!(sim.is_interaction);
+    assert!(sim.flags.wipe);
+    assert!(sim.flags.is_interaction);
     assert_eq!(sim.role, Role::Removal);
 }
 
@@ -442,8 +445,8 @@ fn targeted_removal_is_not_wipe() {
         "Instant",
         "Exile target creature.",
     ));
-    assert!(!sim.wipe);
-    assert!(sim.is_interaction);
+    assert!(!sim.flags.wipe);
+    assert!(sim.flags.is_interaction);
 }
 
 #[test]
@@ -454,7 +457,7 @@ fn bounce_removal_counts_as_interaction() {
         "Instant",
         "Return target creature to its owner's hand.",
     ));
-    assert!(sim.is_interaction);
+    assert!(sim.flags.is_interaction);
 }
 
 #[test]
@@ -493,7 +496,7 @@ fn treasure_banking_requires_own_creator() {
         "Creature — Zombie Pirate",
         "Whenever Pitiless Plunderer dies, create a Treasure token.",
     ));
-    assert!(exec.treasures_on_token);
+    assert!(exec.flags.treasures_on_token);
     deck.cards.push(exec);
     let unrelated = parse_sim_card(&card(
         "Goblin Token Maker",
@@ -501,7 +504,7 @@ fn treasure_banking_requires_own_creator() {
         "Creature — Goblin",
         "When this creature enters, create a 1/1 red Goblin creature token.",
     ));
-    assert!(!unrelated.treasures_on_token);
+    assert!(!unrelated.flags.treasures_on_token);
     deck.cards.push(unrelated);
 }
 
@@ -607,7 +610,7 @@ fn split_card_no_on_cast_credits() {
         "Fire deals 2 damage divided as you choose to one or two targets.\n//\nIce tap target permanent, then draw a card.",
     ));
     assert_eq!(sim.riders.draws_on_cast, 0, "split cards cast one face");
-    assert!(sim.is_interaction, "the damage face qualifies");
+    assert!(sim.flags.is_interaction, "the damage face qualifies");
     assert_eq!(sim.role, Role::Removal);
     assert!(!sim.draws_per_matching.is_some());
 }
@@ -675,7 +678,7 @@ fn static_keyword_grants_drive_evasion_and_self_haste() {
         "Enchantment",
         "Creatures you control have flying.",
     ));
-    assert!(grant.evasion, "flying grant joins the evasion census");
+    assert!(grant.flags.evasion, "flying grant joins the evasion census");
     // Nonmatching grant: a non-evasion keyword stays out.
     let vigilance = parse_sim_card(&card(
         "Vigilance Granter",
@@ -683,7 +686,7 @@ fn static_keyword_grants_drive_evasion_and_self_haste() {
         "Enchantment",
         "Creatures you control have vigilance.",
     ));
-    assert!(!vigilance.evasion, "vigilance grant is not evasion");
+    assert!(!vigilance.flags.evasion, "vigilance grant is not evasion");
     // Matching self grant: a grant that targets the source sets haste.
     let self_haste = parse_sim_card(&card(
         "Hasty Body",
@@ -691,7 +694,7 @@ fn static_keyword_grants_drive_evasion_and_self_haste() {
         "Creature — Human",
         "This creature has haste.",
     ));
-    assert!(self_haste.has_haste, "self haste grant sets haste");
+    assert!(self_haste.flags.has_haste, "self haste grant sets haste");
     // Nonmatching: a grant to other creatures never hastes the granter.
     let grant_haste = parse_sim_card(&card(
         "Haste Granter",
@@ -700,7 +703,7 @@ fn static_keyword_grants_drive_evasion_and_self_haste() {
         "Creatures you control have haste.",
     ));
     assert!(
-        !grant_haste.has_haste,
+        !grant_haste.flags.has_haste,
         "a grant to other creatures does not haste the granter"
     );
 }
@@ -713,14 +716,17 @@ fn comma_keyword_lines_join_the_ast_keyword_list() {
         "Creature — Bird",
         "Flying, lifelink",
     ));
-    assert!(listed.evasion, "comma keyword line parses into the AST");
+    assert!(
+        listed.flags.evasion,
+        "comma keyword line parses into the AST"
+    );
     let face2 = parse_sim_card(&card(
         "Double Flier",
         "{1}{U}",
         "Creature — Bird // Instant",
         "Flying\n// Reach, trample",
     ));
-    assert!(face2.evasion, "face-two keyword list parses");
+    assert!(face2.flags.evasion, "face-two keyword list parses");
     // Nonmatching: an ability reference to flying is not a keyword grant.
     let mention = parse_sim_card(&card(
         "Gainer",
@@ -729,7 +735,7 @@ fn comma_keyword_lines_join_the_ast_keyword_list() {
         "Exile three cards from your graveyard: This creature gains flying \
          until end of turn.",
     ));
-    assert!(!mention.evasion, "gains-flying text is not evasion");
+    assert!(!mention.flags.evasion, "gains-flying text is not evasion");
 }
 
 #[test]

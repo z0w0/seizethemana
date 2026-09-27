@@ -651,7 +651,7 @@ fn wipe_flag_counts_in_deck_shape() {
     stats.removal_wipes = deck
         .cards
         .iter()
-        .filter(|c| c.role == Role::Removal && c.wipe)
+        .filter(|c| c.role == Role::Removal && c.flags.wipe)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     assert_eq!(stats.removal_count, 1);

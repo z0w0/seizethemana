@@ -786,7 +786,7 @@ fn enduring_vitality_parses_creature_grant() {
     );
     row.colors = r#"["G","W"]"#.into();
     let vital = parse_sim_card(&row);
-    assert_eq!(vital.grant, Some(Grant::Creatures));
+    assert_eq!(vital.flags.grant, Some(Grant::Creatures));
 }
 
 #[test]
@@ -797,7 +797,7 @@ fn chromatic_lantern_parses_land_grant() {
         "Artifact",
         "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color.",
     ));
-    assert_eq!(lantern.grant, Some(Grant::Lands));
+    assert_eq!(lantern.flags.grant, Some(Grant::Lands));
 }
 
 #[test]
@@ -808,9 +808,9 @@ fn treasure_creator_flags() {
         "Artifact Creature",
         "{2}, {T}: Create a Treasure token.",
     ));
-    assert!(exec.treasures_on_token);
+    assert!(exec.flags.treasures_on_token);
     let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
-    assert!(!plain.treasures_on_token);
+    assert!(!plain.flags.treasures_on_token);
 }
 
 #[test]

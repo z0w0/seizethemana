@@ -1,29 +1,10 @@
 //! Parse static card flags used for roles, mana grants, and combat.
 
-use super::super::model::Grant;
+use super::super::model::{CombatFlags, Grant};
 use super::super::oracle_ast::{
     KeywordName, OracleAbility, OracleCard, StaticEffect, StaticTarget,
 };
 use crate::db::CardRow;
-
-/// Static card flags read from the keywords array and the oracle text.
-pub(super) struct StaticFlags {
-    pub(super) double_strike: bool,
-    pub(super) prowess: bool,
-    pub(super) landfall: bool,
-    pub(super) evasion: bool,
-    pub(super) has_haste: bool,
-    pub(super) extra_land_drops: bool,
-    pub(super) is_instant_speed: bool,
-    pub(super) wipe: bool,
-    pub(super) is_interaction: bool,
-    pub(super) grant: Option<Grant>,
-    pub(super) bonus_mana_on_nonland_tap: bool,
-    pub(super) requires_metalcraft: bool,
-    pub(super) buff: Option<(i32, i32)>,
-    pub(super) equipment: Option<super::super::model::Equipment>,
-    pub(super) treasures_on_token: bool,
-}
 
 /// Parse static keywords, interaction shapes, grants, and equipment data.
 pub(super) fn parse_static_flags(
@@ -32,7 +13,7 @@ pub(super) fn parse_static_flags(
     type_line: &str,
     cast_face: bool,
     oracle: &OracleCard,
-) -> StaticFlags {
+) -> CombatFlags {
     let double_strike =
         oracle.has_keyword(&KeywordName::DoubleStrike) || text.contains("double strike");
     let prowess = oracle.has_keyword(&KeywordName::Prowess) || text.contains("prowess");
@@ -116,7 +97,7 @@ pub(super) fn parse_static_flags(
     // Treasure creation: "create a Treasure token" / "create N Treasure
     // tokens". Each treasure is a banked flexible pip.
     let treasures_on_token = text.contains("treasure token");
-    StaticFlags {
+    CombatFlags {
         double_strike,
         prowess,
         landfall,

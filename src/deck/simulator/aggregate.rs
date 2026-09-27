@@ -206,7 +206,7 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     stats.interaction_instant_count = deck
         .cards
         .iter()
-        .filter(|c| c.is_interaction && c.is_instant_speed)
+        .filter(|c| c.flags.is_interaction && c.flags.is_instant_speed)
         .count();
 
     opener_stats(logs, &mut stats, n);

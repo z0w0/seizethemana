@@ -111,7 +111,7 @@ pub(super) fn record_interaction_readiness(
         .iter()
         .filter_map(|i| {
             let c = &deck[*i];
-            (c.is_interaction && c.is_instant_speed).then(|| c.min_cost.total())
+            (c.flags.is_interaction && c.flags.is_instant_speed).then(|| c.min_cost.total())
         })
         .min();
     if let Some(cheapest) = cheapest

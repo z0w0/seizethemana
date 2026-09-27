@@ -67,7 +67,7 @@ fn kinnan_basalt_positive_loop_depends_on_both_cards() {
     assert!(
         full.commanders
             .iter()
-            .any(|card| card.bonus_mana_on_nonland_tap),
+            .any(|card| card.flags.bonus_mana_on_nonland_tap),
         "Kinnan's commander text must parse its mana trigger"
     );
     let mut without_deck = deck.clone();

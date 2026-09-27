@@ -135,7 +135,7 @@ fn protection_spells_are_not_removal() {
         let row = card("Test Card", "{1}{G}", "Instant", text);
         let sim = super::oracle_parse::parse_sim_card(&row);
         assert_ne!(sim.role, Role::Removal, "text: {text}");
-        assert!(!sim.is_interaction, "text: {text}");
+        assert!(!sim.flags.is_interaction, "text: {text}");
     }
 }
 

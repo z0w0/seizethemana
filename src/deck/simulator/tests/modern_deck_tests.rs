@@ -469,7 +469,7 @@ fn affinity_mox_opal_increases_mana_when_metalcraft_is_active() {
         .iter()
         .find(|card| card.name == "Mox Opal")
         .expect("Affinity fixture contains Mox Opal");
-    assert!(opal.requires_metalcraft);
+    assert!(opal.flags.requires_metalcraft);
 
     let mut without_deck = deck.clone();
     without_deck
