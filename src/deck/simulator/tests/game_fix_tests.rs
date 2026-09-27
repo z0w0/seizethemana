@@ -131,7 +131,7 @@ fn crewed_vehicle_reverts_next_turn() {
         infinite_mana_suspected: false,
         next_uid: 0,
     };
-    st.battlefield.push(super::game::InPlay {
+    st.battlefield.push(super::game::Permanent {
         uid: 1,
         card: crate::deck::simulator::game::CardRef::Token,
         tapped: false,
@@ -251,7 +251,7 @@ fn equipment_buff_survives_board_shift() {
         "the buff keys to the host uid"
     );
     // A token enters before the next combat, shifting positions.
-    let token = super::game::InPlay {
+    let token = super::game::Permanent {
         uid: 9,
         card: crate::deck::simulator::game::CardRef::Token,
         tapped: false,

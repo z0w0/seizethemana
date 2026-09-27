@@ -452,7 +452,7 @@ fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
         flexible: 6,
         ..Pool::default()
     };
-    state.battlefield.push(super::game::InPlay {
+    state.battlefield.push(super::game::Permanent {
         uid: 10,
         card: crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
             10,

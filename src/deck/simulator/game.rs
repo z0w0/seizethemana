@@ -21,7 +21,7 @@ use std::collections::{HashMap, HashSet};
 
 /// One permanent on the battlefield.
 #[derive(Debug, Clone)]
-pub struct InPlay {
+pub struct Permanent {
     /// Stable identity for the permanent, unique within one game.
     /// Engine and ETB bookkeeping key on this so removals shifting
     /// battlefield positions never alias another card.
@@ -259,7 +259,7 @@ pub(super) struct Pool {
 /// Mutable per-game state the effect helpers share: one battlefield, the
 /// zones, and the zone-census maps (first turn each card reached a zone).
 pub(super) struct GameState {
-    pub(super) battlefield: Vec<InPlay>,
+    pub(super) battlefield: Vec<Permanent>,
     pub(super) library: Vec<CardIdx>,
     pub(super) hand: Vec<CardIdx>,
     pub(super) seen: u32,
@@ -393,7 +393,7 @@ pub(super) const BODY_POWER: u32 = 2;
 /// through `deck.commanders[slot]`; tokens are 2/2 bodies with no
 /// abilities. A commander permanent with no matching commander entry
 /// (empty commanders list) resolves as a token body instead of panicking.
-pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &InPlay) -> &'a super::model::SimCard {
+pub(super) fn card_of<'a>(deck: &'a SimDeck, perm: &Permanent) -> &'a super::model::SimCard {
     match perm.card {
         CardRef::Commander { slot } => deck
             .commanders
@@ -455,9 +455,9 @@ pub(super) fn new_perm_with(
     card: CardIdx,
     turn: u32,
     tapped: bool,
-) -> InPlay {
+) -> Permanent {
     let sim = &deck[card];
-    InPlay {
+    Permanent {
         uid,
         card: CardRef::Deck(card),
         tapped,
@@ -480,8 +480,8 @@ pub(super) fn new_perm_with(
 }
 
 /// A fresh token permanent (2/2 body, sick the turn it enters).
-pub(super) fn new_token_perm(uid: u32, turn: u32) -> InPlay {
-    InPlay {
+pub(super) fn new_token_perm(uid: u32, turn: u32) -> Permanent {
+    Permanent {
         uid,
         card: CardRef::Token,
         tapped: false,
@@ -500,8 +500,8 @@ pub(super) fn new_token_perm(uid: u32, turn: u32) -> InPlay {
 }
 
 /// A commander permanent joining the battlefield from the command zone.
-pub(super) fn new_commander_perm(uid: u32, slot: usize, loyalty: u32, turn: usize) -> InPlay {
-    InPlay {
+pub(super) fn new_commander_perm(uid: u32, slot: usize, loyalty: u32, turn: usize) -> Permanent {
+    Permanent {
         uid,
         card: CardRef::Commander { slot },
         tapped: false,

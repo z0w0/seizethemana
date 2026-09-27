@@ -5,7 +5,7 @@
 use super::cast_phase::{cast_phase, play_land};
 use super::deal::{Opener, deal_opener};
 use super::game::{
-    GameLog, GameState, InPlay, Pool, card_of, fire_on_enter, fire_triggers, new_perm_with,
+    GameLog, GameState, Permanent, Pool, card_of, fire_on_enter, fire_triggers, new_perm_with,
     register_loyalty_token_engines, take_uid,
 };
 use super::game_commander::{
@@ -230,7 +230,7 @@ fn play_late_land(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, t
 pub(super) fn add_nonland_mana(
     deck: &SimDeck,
     st: &GameState,
-    source: &InPlay,
+    source: &Permanent,
     yield_: &super::model::TapYield,
     pool: &mut Pool,
     turn: u32,
@@ -763,7 +763,7 @@ fn release_banked_mana(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn
 fn add_gated_yield(
     deck: &SimDeck,
     st: &GameState,
-    perm: &InPlay,
+    perm: &Permanent,
     y: &super::model::TapYield,
     pool: &mut Pool,
     turn: u32,

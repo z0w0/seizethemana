@@ -41,8 +41,8 @@ fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &
 }
 
 /// A deck text with one section.
-fn test_perm(card_idx: usize) -> super::game::InPlay {
-    super::game::InPlay {
+fn test_perm(card_idx: usize) -> super::game::Permanent {
+    super::game::Permanent {
         uid: 0,
         card: super::game::CardRef::Deck(super::model::CardIdx(card_idx as u32)),
         tapped: false,
@@ -228,7 +228,7 @@ fn improvise_discount_grows_with_artifacts() {
 
     let rock = card("Iron Lump", "{2}", "Artifact", "{T}: Add {C}.");
     let rock_sim = parse_sim_card(&rock);
-    let mut battlefield: Vec<super::game::InPlay> = Vec::new();
+    let mut battlefield: Vec<super::game::Permanent> = Vec::new();
     let deck = SimDeck {
         cards: vec![sim.clone(), rock_sim],
         commanders: vec![],
@@ -265,7 +265,7 @@ fn improvise_discount_grows_with_artifacts() {
         format: Format::Constructed,
         rules: super::format::rules_for("constructed"),
     };
-    let mut creature_board: Vec<super::game::InPlay> = Vec::new();
+    let mut creature_board: Vec<super::game::Permanent> = Vec::new();
     for _ in 0..8 {
         creature_board.push(test_perm(1));
     }

@@ -2,7 +2,7 @@
 // split from game.rs to keep files small.
 
 use super::game::{
-    Activation, BODY_POWER, CardRef, GameState, InPlay, Pool, card_of, new_perm_with,
+    Activation, BODY_POWER, CardRef, GameState, Permanent, Pool, card_of, new_perm_with,
     new_token_perm, take_uid,
 };
 use super::game_mana::{
@@ -353,7 +353,7 @@ fn place_search_result(
 /// combat).
 pub(super) fn tap_budget(
     deck: &SimDeck,
-    battlefield: &mut [InPlay],
+    battlefield: &mut [Permanent],
     pool: &mut Pool,
     hand: &[CardIdx],
 ) {
@@ -498,7 +498,7 @@ pub(super) fn tap_budget(
 
 /// Body power for a permanent: the printed power when the card row has
 /// one, else the flat token value. Crew and station math use it.
-pub(super) fn body_power(perm: &InPlay, deck: &SimDeck) -> u32 {
+pub(super) fn body_power(perm: &Permanent, deck: &SimDeck) -> u32 {
     match perm.card {
         CardRef::Deck(idx) => deck[idx].printed_power.unwrap_or(BODY_POWER),
         CardRef::Commander { .. } | CardRef::Token => BODY_POWER,
@@ -702,7 +702,7 @@ fn pick_best_activation(deck: &SimDeck, st: &GameState, pool: &Pool) -> Option<A
 
 /// True when an unlocked activation can fire right now: the `fired`
 /// gate, affordability, and the loyalty/counter gates.
-fn activation_usable(perm: &InPlay, ability: &Ability, pool: &Pool) -> bool {
+fn activation_usable(perm: &Permanent, ability: &Ability, pool: &Pool) -> bool {
     let usable = matches!(
         ability.effect,
         Effect::Draw(_)

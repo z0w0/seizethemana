@@ -1,12 +1,12 @@
 // Mana payment for the goldfish game loop: pool building, pip matching,
 // and cost payment split from game.rs to keep files small.
 
-use super::game::{InPlay, Pool, card_of};
+use super::game::{Permanent, Pool, card_of};
 use super::model::{Restriction, Role, Scale, SimDeck, TapYield};
 
 /// Distinct colors among permanents on the battlefield (printed card
 /// colors). Powers `ColorsPresent` scaling (Faeburrow Elder).
-fn colors_present(deck: &SimDeck, board: &[InPlay]) -> u32 {
+fn colors_present(deck: &SimDeck, board: &[Permanent]) -> u32 {
     let mut found = [false; 5];
     for p in board {
         for (i, has) in card_of(deck, p).colors.iter().enumerate() {
@@ -49,7 +49,7 @@ pub(super) fn add_yield_turns(
     y: &TapYield,
     pool: &mut Pool,
     turn: u32,
-    board: &[InPlay],
+    board: &[Permanent],
 ) {
     if y.opponent_any {
         if turn >= 2 {
@@ -251,7 +251,7 @@ pub(super) fn consume_flexible(pool: &mut Pool, n: u32) {
 pub(super) fn effective_min_cost(
     deck: &SimDeck,
     card: &super::model::SimCard,
-    battlefield: &[InPlay],
+    battlefield: &[Permanent],
 ) -> super::model::Cost {
     if !card.board_discount {
         return card.min_cost.clone();
