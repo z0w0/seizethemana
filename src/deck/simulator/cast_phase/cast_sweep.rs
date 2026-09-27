@@ -64,9 +64,9 @@ pub(super) fn cast_pass(
             .filter(|p| p.card.deck_idx().is_some() && card_of(deck, p).is_creature)
             .count();
         let available_discards = st.hand.iter().filter(|i| **i != card_idx).count();
-        if available_creatures < card.additional_cost_bodies as usize
-            || available_discards < card.additional_cost_discards as usize
-            || st.life <= card.additional_cost_life as i32
+        if available_creatures < card.riders.additional_cost_bodies as usize
+            || available_discards < card.riders.additional_cost_discards as usize
+            || st.life <= card.riders.additional_cost_life as i32
         {
             idx += 1;
             continue;

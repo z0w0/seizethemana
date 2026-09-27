@@ -430,7 +430,7 @@ fn vivi_tap_yields_spells_cast_not_one_plus() {
         "{T}: Add one mana of any color for each spell you've cast this turn.",
     );
     let sim = parse_sim_card(&vivi);
-    assert!(sim.mana_per_cast.is_some(), "the engine parses");
+    assert!(sim.riders.mana_per_cast.is_some(), "the engine parses");
     let tap_total = sim.tap.map_or(0, |t| t.total());
     assert_eq!(
         tap_total, 0,
@@ -450,7 +450,10 @@ fn self_cast_draw_is_one_shot_not_engine() {
         "When you cast this spell, draw a card.",
     );
     let sim = parse_sim_card(&row);
-    assert_eq!(sim.draws_on_cast, 1, "the self-cast rider resolves once");
+    assert_eq!(
+        sim.riders.draws_on_cast, 1,
+        "the self-cast rider resolves once"
+    );
     assert!(
         sim.abilities()
             .all(|a| a.trigger != AbilityTiming::OnCastSpell),

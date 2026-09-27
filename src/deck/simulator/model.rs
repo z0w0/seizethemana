@@ -435,6 +435,79 @@ pub struct SagaData {
     pub chapters: Vec<Effect>,
 }
 
+/// One-shot effects and extra costs that ride a spell's cast.
+///
+/// The cast phase reads these when the spell resolves. Split cards zero
+/// the riders (the cast pays the cheaper face), so every field stays
+/// zero/None for them.
+#[derive(Debug, Clone, Default)]
+pub struct CastRiders {
+    /// One-shot mana on cast (rituals), never joining the tap pool.
+    pub mana_on_cast: Option<TapYield>,
+    /// Repeatable mana on cast: "add {N} for each spell you've cast this
+    /// turn" (Vivi class). Joins the pool per spell cast, every turn the
+    /// host is on the battlefield.
+    pub mana_per_cast: Option<TapYield>,
+    /// One-shot draw on cast (cantrips, Divination).
+    pub draws_on_cast: u32,
+    /// Life gained when this spell resolves.
+    pub life_gain_on_cast: u32,
+    /// Oracle-derived alternate cost, when the spell has one.
+    pub alternative_cast_cost: Option<AlternativeCastCost>,
+    /// Oracle-derived reveal effect, when the spell reveals cards for life.
+    pub reveal_rule: Option<RevealRule>,
+    /// One-shot token creation on cast ("Create N 1/1 Soldier tokens").
+    /// The count feeds the token-body path (Treasure cards bank).
+    pub tokens_on_cast: u32,
+    /// One-shot scry count on cast. Awareness credit, not draw.
+    pub scry_on_cast: u32,
+    /// One-shot surveil count on cast. The cards move to the graveyard.
+    pub surveils_on_cast: u32,
+    /// One-shot extra turn on cast ("take an extra turn").
+    pub extra_turns_on_cast: bool,
+    /// One-shot life loss at a player on cast (burn, drain).
+    pub drain_on_cast: u32,
+    /// One-shot mill on cast or on entering ("mill N").
+    pub mills_on_enter: u32,
+    /// One-shot wheel on cast ("each player discards their hand, then
+    /// draws seven"): the cast resolves a full wheel.
+    pub wheel_on_cast: bool,
+    /// Bodies the cast consumes ("as an additional cost to cast this
+    /// spell, sacrifice a creature"). The cast consumes a body.
+    pub additional_cost_bodies: u32,
+    /// Cards discarded from hand as an additional cast cost.
+    pub additional_cost_discards: u32,
+    /// Life the cast costs on top of mana ("as an additional cost …
+    /// pay N life"). Best case: the agent pays it.
+    pub additional_cost_life: u32,
+    /// One-shot charge-counter injection on cast (Drill Too Deep).
+    pub counters_on_cast: u32,
+    /// X-cost effect class: the spell pays the leftover pool as X and
+    /// scales its effect (drain X, draw X, mill X, tokens X). None when
+    /// not an X spell. `Effect::Drain(0)` carries the class; the game
+    /// loop substitutes the paid X.
+    pub x_class: Option<XClass>,
+    /// Optional kicker cost (pips and generic); paid from spare mana when
+    /// affordable. The kicker rider bumps drain/damage amounts.
+    pub kicker: Option<Cost>,
+    /// Cast searches that use the sacrificed creature's mana value.
+    pub search_after_sacrifice: bool,
+    /// Cast effects that exchange graveyard creatures and battlefield creatures.
+    pub graveyard_creature_exchange: bool,
+    /// This spell grants flashback to instant and sorcery instances in
+    /// the graveyard when it resolves.
+    pub grants_flashback: bool,
+    /// Nonland cards in the graveyard may be cast with escape while this
+    /// permanent remains on the battlefield.
+    pub grants_escape: bool,
+    /// Cycling activation cost.
+    pub cycling_cost: Option<Cost>,
+    /// Life paid for cycling (Street Wraith-style cycling).
+    pub cycling_life: u32,
+    /// Land type searched by landcycling.
+    pub landcycling_type: Option<char>,
+}
+
 /// The card-level capabilities the simulator executes.
 #[derive(Debug, Clone, Default)]
 pub struct SimCard {
@@ -499,80 +572,22 @@ pub struct SimCard {
     pub is_saga: bool,
     /// Saga chapter effects in play order (empty when not a saga).
     pub saga: SagaData,
-    /// One-shot charge-counter injection on cast (Drill Too Deep).
-    pub counters_on_cast: u32,
-    /// One-shot mana on cast (rituals), never joining the tap pool.
-    pub mana_on_cast: Option<TapYield>,
-    /// Repeatable mana on cast: "add {N} for each spell you've cast this
-    /// turn" (Vivi class). Joins the pool per spell cast, every turn the
-    /// host is on the battlefield.
-    pub mana_per_cast: Option<TapYield>,
-    /// One-shot draw on cast (cantrips, Divination).
-    pub draws_on_cast: u32,
-    /// Life gained when this spell resolves.
-    pub life_gain_on_cast: u32,
-    /// Oracle-derived alternate cost, when the spell has one.
-    pub alternative_cast_cost: Option<AlternativeCastCost>,
-    /// Oracle-derived reveal effect, when the spell reveals cards for life.
-    pub reveal_rule: Option<RevealRule>,
-    /// One-shot mill on cast or on entering ("mill N").
-    pub mills_on_enter: u32,
-    /// One-shot token creation on cast ("Create N 1/1 Soldier tokens").
-    /// The count feeds the token-body path (Treasure cards bank).
-    pub tokens_on_cast: u32,
-    /// One-shot scry count on cast. Awareness credit, not draw.
-    pub scry_on_cast: u32,
-    /// One-shot surveil count on cast. The cards move to the graveyard.
-    pub surveils_on_cast: u32,
+    /// One-shot cast effects and extra cast costs, parsed from Oracle
+    /// data. The cast phase reads these when the spell resolves.
+    pub riders: CastRiders,
     /// Mill effects target opponents ("target player mills N") instead
     /// of the deck's own library (deck-out pressure direction).
     pub mills_opponent: bool,
-    /// One-shot extra turn on cast ("take an extra turn").
-    pub extra_turns_on_cast: bool,
-    /// One-shot life loss at a player on cast (burn, drain).
-    pub drain_on_cast: u32,
-    /// Bodies the cast consumes ("as an additional cost to cast this
-    /// spell, sacrifice a creature"). The cast consumes a body.
-    pub additional_cost_bodies: u32,
-    /// Cards discarded from hand as an additional cast cost.
-    pub additional_cost_discards: u32,
-    /// Life the cast costs on top of mana ("as an additional cost …
-    /// pay N life"). Best case: the agent pays it.
-    pub additional_cost_life: u32,
-    /// Cast searches that use the sacrificed creature's mana value.
-    pub search_after_sacrifice: bool,
-    /// Cast effects that exchange graveyard creatures and battlefield creatures.
-    pub graveyard_creature_exchange: bool,
-    /// This spell grants flashback to instant and sorcery instances in
-    /// the graveyard when it resolves.
-    pub grants_flashback: bool,
-    /// Nonland cards in the graveyard may be cast with escape while this
-    /// permanent remains on the battlefield.
-    pub grants_escape: bool,
     /// The source sacrifices itself when its parsed mana ability resolves.
     pub sacrifices_for_mana: bool,
     /// True when Oracle text grants undying.
     pub has_undying: bool,
-    /// Cycling activation cost.
-    pub cycling_cost: Option<Cost>,
-    /// Life paid for cycling (Street Wraith-style cycling).
-    pub cycling_life: u32,
-    /// Land type searched by landcycling.
-    pub landcycling_type: Option<char>,
     /// Number of cards milled when this card replaces a draw from the graveyard.
     pub dredge: Option<u32>,
     /// Effect that triggers when this card moves from library to graveyard.
     pub library_graveyard_trigger: Option<LibraryGraveyardTrigger>,
     /// Basic land subtypes printed on the card, WUBRG order.
     pub land_types: [bool; 5],
-    /// One-shot wheel on cast ("each player discards their hand, then
-    /// draws seven"): the cast resolves a full wheel.
-    pub wheel_on_cast: bool,
-    /// X-cost effect class: the spell pays the leftover pool as X and
-    /// scales its effect (drain X, draw X, mill X, tokens X). None when
-    /// not an X spell. `Effect::Drain(0)` carries the class; the game
-    /// loop substitutes the paid X.
-    pub x_class: Option<XClass>,
     /// True when the card has cascade: reveal from the library top until
     /// the first eligible lower printed mana value card and cast it free.
     pub has_cascade: bool,
@@ -634,9 +649,6 @@ pub struct SimCard {
     /// Extra land drop each turn ("you may play an additional land").
     /// Feeds `land_drops[]` as one extra drop per turn while in play.
     pub extra_land_drops: bool,
-    /// Optional kicker cost (pips and generic); paid from spare mana when
-    /// affordable. The kicker rider bumps drain/damage amounts.
-    pub kicker: Option<Cost>,
     /// True when the card destroys or sweeps every permanent of a class
     /// ("destroy all creatures"): a board wipe. Wipes count as
     /// interaction capacity but never fire in a goldfish.

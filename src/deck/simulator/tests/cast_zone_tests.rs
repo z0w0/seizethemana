@@ -169,7 +169,7 @@ fn missing_additional_cost_resources_do_not_spend_mana_or_cards() {
             .collect::<Vec<_>>()
     );
     assert_eq!(pool.flexible, 2);
-    assert_eq!(cards.cards[1].additional_cost_discards, 2);
+    assert_eq!(cards.cards[1].riders.additional_cost_discards, 2);
 }
 
 #[test]
@@ -447,7 +447,7 @@ fn flashback_grants_only_the_graveyard_instances_present_at_resolution() {
         row("Later spell", "{R}", "Instant", "Draw a card."),
         row("Drawn", "{0}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].grants_flashback);
+    assert!(cards.cards[0].riders.grants_flashback);
     let mut st = state(vec![0], vec![3]);
     st.graveyard.push(crate::deck::simulator::model::CardIdx(1));
     let mut pool = Pool {
@@ -497,7 +497,7 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
         row("Draw one", "{0}", "Sorcery", ""),
         row("Draw two", "{0}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].grants_escape);
+    assert!(cards.cards[0].riders.grants_escape);
     let mut st = state(vec![0], vec![]);
     st.graveyard.extend(
         [1, 3, 4, 5, 2, 6, 7, 8]
@@ -661,7 +661,7 @@ fn ad_nauseam_reveals_in_order_and_can_cause_a_lethal_reveal() {
         row("One", "{1}", "Sorcery", ""),
         row("Seven", "{7}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].reveal_rule.is_some());
+    assert!(cards.cards[0].riders.reveal_rule.is_some());
     let mut st = state(vec![0], vec![1, 2, 3]);
     st.life = 5;
     let mut pool = Pool {

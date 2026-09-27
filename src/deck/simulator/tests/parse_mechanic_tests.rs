@@ -190,28 +190,28 @@ fn x_cost_class_parses() {
         "Sorcery",
         "Target player loses X life for each artifact and creature you control...",
     ));
-    assert_eq!(drain.x_class, Some(XClass::Drain));
+    assert_eq!(drain.riders.x_class, Some(XClass::Drain));
     let draw = parse_sim_card(&card(
         "Blue Sun's Zenith",
         "{X}{U}{U}",
         "Instant",
         "Draw X cards.",
     ));
-    assert_eq!(draw.x_class, Some(XClass::Draw));
+    assert_eq!(draw.riders.x_class, Some(XClass::Draw));
     let tokens = parse_sim_card(&card(
         "March of Woe",
         "{X}{W}{W}",
         "Sorcery",
         "Create X 1/1 white Soldier creature tokens.",
     ));
-    assert_eq!(tokens.x_class, Some(XClass::Tokens));
+    assert_eq!(tokens.riders.x_class, Some(XClass::Tokens));
     let none = parse_sim_card(&card(
         "Bonfire Lite",
         "{X}{R}",
         "Sorcery",
         "Exile the top card.",
     ));
-    assert_eq!(none.x_class, None);
+    assert_eq!(none.riders.x_class, None);
 }
 
 #[test]
@@ -222,9 +222,9 @@ fn per_cast_mana_engine_parses() {
         "Legendary Creature — Wizard",
         "{T}: Add one mana of any color for each instant or sorcery spell you've cast this turn.",
     ));
-    assert!(vivi.mana_per_cast.is_some(), "per-cast mana parses");
+    assert!(vivi.riders.mana_per_cast.is_some(), "per-cast mana parses");
     let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
-    assert!(plain.mana_per_cast.is_none());
+    assert!(plain.riders.mana_per_cast.is_none());
 }
 
 #[test]
@@ -235,9 +235,9 @@ fn kicker_parses() {
         "Sorcery",
         "Kicker {2}\nKicked Bolt deals 3 damage to target player.",
     ));
-    assert_eq!(kicked.kicker, Some(parse_oracle_cost("{2}")));
+    assert_eq!(kicked.riders.kicker, Some(parse_oracle_cost("{2}")));
     let plain = parse_sim_card(&card("Bolt", "{1}{R}", "Sorcery", "Bolt deals 3."));
-    assert_eq!(plain.kicker, None);
+    assert_eq!(plain.riders.kicker, None);
 }
 
 #[test]
@@ -248,7 +248,7 @@ fn kicker_colored_pips_parse() {
         "Sorcery",
         "Kicker {1}{G}\nKicked Prism deals 4 damage to any target.",
     ));
-    let kicker = kicked.kicker.expect("colored kicker parses");
+    let kicker = kicked.riders.kicker.expect("colored kicker parses");
     assert_eq!(kicker.generic, 1);
     assert_eq!(kicker.pips, [0, 0, 0, 0, 1]);
 }
@@ -360,7 +360,10 @@ fn etb_draw_is_trigger_not_cast_rider() {
         "Creature — Bird",
         "Flying\nWhen this creature enters, draw a card.",
     ));
-    assert_eq!(sim.draws_on_cast, 0, "ETB draw must not double count");
+    assert_eq!(
+        sim.riders.draws_on_cast, 0,
+        "ETB draw must not double count"
+    );
     assert!(
         sim.abilities()
             .any(|a| a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Draw(1)))
@@ -370,7 +373,7 @@ fn etb_draw_is_trigger_not_cast_rider() {
 #[test]
 fn spell_draw_is_cast_rider() {
     let sim = parse_sim_card(&card("Two Cards", "{2}{U}", "Sorcery", "Draw two cards."));
-    assert_eq!(sim.draws_on_cast, 2);
+    assert_eq!(sim.riders.draws_on_cast, 2);
     assert!(
         !sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter),
         "no ETB trigger on a plain draw spell"
@@ -510,7 +513,11 @@ fn draws_x_grammar() {
         "Sorcery",
         "Target player draws X cards.",
     ));
-    assert_eq!(sim.x_class, Some(XClass::Draw), "draws x parses as Draw");
+    assert_eq!(
+        sim.riders.x_class,
+        Some(XClass::Draw),
+        "draws x parses as Draw"
+    );
 }
 
 #[test]
@@ -521,7 +528,7 @@ fn reveal_x_permanents_parses() {
         "Sorcery",
         "Reveal the top X cards of your library. You may put any number of permanent cards with mana value X or less from among them onto the battlefield, then put the rest into your graveyard.",
     ));
-    assert_eq!(sim.x_class, Some(XClass::RevealPermanents));
+    assert_eq!(sim.riders.x_class, Some(XClass::RevealPermanents));
 }
 
 #[test]
@@ -532,7 +539,7 @@ fn x_counters_parse() {
         "Artifact Creature — Construct",
         "Walking Ballista enters the battlefield with X +1/+1 counters on it.\nRemove a +1/+1 counter: This creature deals 1 damage to any target.",
     ));
-    assert_eq!(sim.x_class, Some(XClass::Counters));
+    assert_eq!(sim.riders.x_class, Some(XClass::Counters));
 }
 
 #[test]
@@ -599,7 +606,7 @@ fn split_card_no_on_cast_credits() {
         "Instant // Instant",
         "Fire deals 2 damage divided as you choose to one or two targets.\n//\nIce tap target permanent, then draw a card.",
     ));
-    assert_eq!(sim.draws_on_cast, 0, "split cards cast one face");
+    assert_eq!(sim.riders.draws_on_cast, 0, "split cards cast one face");
     assert!(sim.is_interaction, "the damage face qualifies");
     assert_eq!(sim.role, Role::Removal);
     assert!(!sim.draws_per_matching.is_some());
@@ -617,7 +624,7 @@ fn mdfc_spell_face_keeps_on_cast_credits() {
     ));
     assert!(sim.is_mdfc_spell, "Valakut Awakening is a land/spell MDFC");
     assert_eq!(
-        sim.draws_on_cast, 2,
+        sim.riders.draws_on_cast, 2,
         "the MDFC spell face keeps its on-cast draw"
     );
 }
@@ -635,7 +642,7 @@ fn transform_card_keeps_on_cast_credits() {
     row.keywords = r#"["Transform"]"#.into();
     let sim = parse_sim_card(&row);
     assert!(
-        sim.draws_on_cast > 0,
+        sim.riders.draws_on_cast > 0,
         "the transform card's front-face rider stays"
     );
 }

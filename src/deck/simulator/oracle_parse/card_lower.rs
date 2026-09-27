@@ -1,9 +1,9 @@
 //! Lower one card row and its parsed Oracle syntax into simulator data.
 
 use super::super::super::stats::is_land;
-use super::super::model::{Cost, SimCard, Tier};
+use super::super::model::{CastRiders, Cost, SimCard, Tier};
 use super::super::oracle_ast::{KeywordName, OracleAbility, OracleCard, StaticEffect};
-use super::cast_riders::{CastRiders, parse_cast_riders, parse_min_cost};
+use super::cast_riders::{parse_cast_riders, parse_min_cost};
 use super::static_flags::parse_static_flags;
 use crate::db::CardRow;
 
@@ -228,32 +228,7 @@ fn lower_cast_fields(
         tap
     };
     card.tap = tap;
-    card.counters_on_cast = riders.counters_on_cast;
-    card.mana_on_cast = riders.mana_on_cast;
-    card.mana_per_cast = riders.mana_per_cast;
-    card.draws_on_cast = riders.draws_on_cast;
-    card.life_gain_on_cast = riders.life_gain_on_cast;
-    card.alternative_cast_cost = riders.alternative_cast_cost;
-    card.reveal_rule = riders.reveal_rule;
-    card.mills_on_enter = riders.mills_on_enter;
-    card.tokens_on_cast = riders.tokens_on_cast;
-    card.scry_on_cast = riders.scry_on_cast;
-    card.surveils_on_cast = riders.surveils_on_cast;
-    card.extra_turns_on_cast = riders.extra_turns_on_cast;
-    card.drain_on_cast = riders.drain_on_cast;
-    card.additional_cost_bodies = riders.additional_cost_bodies;
-    card.additional_cost_discards = riders.additional_cost_discards;
-    card.additional_cost_life = riders.additional_cost_life;
-    card.search_after_sacrifice = riders.search_after_sacrifice;
-    card.graveyard_creature_exchange = riders.graveyard_creature_exchange;
-    card.grants_flashback = riders.grants_flashback;
-    card.grants_escape = riders.grants_escape;
-    card.cycling_cost = riders.cycling_cost;
-    card.cycling_life = riders.cycling_life;
-    card.landcycling_type = riders.landcycling_type;
-    card.wheel_on_cast = riders.wheel_on_cast;
-    card.x_class = riders.x_class;
-    card.kicker = riders.kicker;
+    card.riders = riders;
 }
 
 /// Apply a self cost reduction ("this spell costs {N} less to cast") to
@@ -308,7 +283,7 @@ fn lower_classification_fields(
         row,
         text,
         &card.tap,
-        &card.mana_on_cast,
+        &card.riders.mana_on_cast,
         if shape.is_mdfc_spell {
             false
         } else {

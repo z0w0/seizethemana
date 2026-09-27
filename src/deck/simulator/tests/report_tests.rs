@@ -142,7 +142,10 @@ fn json_report_interaction_color_and_wincons_are_populated() {
             role: Role::Removal,
             is_interaction: true,
             is_instant_speed: true,
-            drain_on_cast: 3,
+            riders: super::model::CastRiders {
+                drain_on_cast: 3,
+                ..super::model::CastRiders::default()
+            },
             ..SimCard::default()
         });
     }

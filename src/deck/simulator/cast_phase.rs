@@ -144,10 +144,11 @@ pub(super) fn cast_phase(
         && st
             .library
             .iter()
-            .any(|index| deck[*index].graveyard_creature_exchange)
+            .any(|index| deck[*index].riders.graveyard_creature_exchange)
         && st.hand.iter().any(|index| {
             deck[*index].is_creature
-                && (deck[*index].cycling_cost.is_some() || deck[*index].cycling_life > 0)
+                && (deck[*index].riders.cycling_cost.is_some()
+                    || deck[*index].riders.cycling_life > 0)
         });
     if preparing_graveyard_exchange {
         cycle_unusable_cards(deck, st, pool, turn as u32);
@@ -276,7 +277,7 @@ fn cast_graveyard_spells(
         let escape_active = st
             .battlefield
             .iter()
-            .any(|permanent| card_of(deck, permanent).grants_escape);
+            .any(|permanent| card_of(deck, permanent).riders.grants_escape);
         let mut candidates: Vec<(CardIdx, bool)> = st
             .graveyard
             .iter()
@@ -309,7 +310,7 @@ fn cast_graveyard_spells(
             // Additional life costs gate the same way hand casts gate
             // (the cast would pay the life and could drive life
             // negative).
-            if st.life <= deck[index].additional_cost_life as i32 {
+            if st.life <= deck[index].riders.additional_cost_life as i32 {
                 continue;
             }
             if !payable(&cost, pool) || !pips_ok(&cost, pool) {
@@ -375,26 +376,32 @@ fn cycle_unusable_cards(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, tur
     let candidates = st.hand.clone();
     for index in candidates {
         let card = &deck[index];
-        if card.cycling_cost.is_none() && card.cycling_life == 0 {
+        if card.riders.cycling_cost.is_none() && card.riders.cycling_life == 0 {
             continue;
         }
-        let cost = card.cycling_cost.as_ref().cloned().unwrap_or_default();
+        let cost = card
+            .riders
+            .cycling_cost
+            .as_ref()
+            .cloned()
+            .unwrap_or_default();
         if !st.hand.contains(&index)
-            || st.life <= card.cycling_life as i32
+            || st.life <= card.riders.cycling_life as i32
             || !payable(&cost, pool)
             || !pips_ok(&cost, pool)
         {
             continue;
         }
         pay_cost(&cost, pool);
-        st.life -= card.cycling_life as i32;
-        st.life_paid += card.cycling_life;
-        let funded_draw = u32::from(card.cycling_life > 0 && card.landcycling_type.is_none());
+        st.life -= card.riders.cycling_life as i32;
+        st.life_paid += card.riders.cycling_life;
+        let funded_draw =
+            u32::from(card.riders.cycling_life > 0 && card.riders.landcycling_type.is_none());
         st.life_funded_draws += funded_draw;
         super::game::milestone_for_turn(st, turn).life_funded_draws += funded_draw;
         st.hand.retain(|held| *held != index);
         move_to_graveyard(deck, st, index, turn, CardZone::Hand);
-        if let Some(color) = card.landcycling_type {
+        if let Some(color) = card.riders.landcycling_type {
             let color_index = "WUBRG".find(color);
             let target = color_index.and_then(|color_index| {
                 st.library.iter().rposition(|candidate| {
@@ -442,7 +449,7 @@ fn resolve_reveal_rule(
 /// A fixed-count cost needs every card; an optional exile (the life
 /// payoff) takes whatever matching cards the hand holds.
 fn select_alternative_cost_cards(deck: &SimDeck, st: &GameState, spell: CardIdx) -> Vec<CardIdx> {
-    let Some(cost) = deck[spell].alternative_cast_cost else {
+    let Some(cost) = deck[spell].riders.alternative_cast_cost else {
         return Vec::new();
     };
     let mut candidates: Vec<CardIdx> = st
@@ -509,7 +516,7 @@ fn resolve_cast(
     // pips are paid from fixed and flexible sources like any cost).
     // The rider bumps the drain/damage amount (the modeled kicker
     // payoff).
-    let kicked = if let Some(k) = card.kicker.clone()
+    let kicked = if let Some(k) = card.riders.kicker.clone()
         && usable_for_noncreature(pool) >= k.total()
         && pips_ok(&k, pool)
     {
@@ -525,7 +532,7 @@ fn resolve_cast(
     // Additional discard, sacrifice, and life costs passed the cast gate
     // before mana was paid. The cast card already left the hand, so wheels
     // cannot discard the resolving spell.
-    for _ in 0..card.additional_cost_discards {
+    for _ in 0..card.riders.additional_cost_discards {
         if let Some(pos) = st.hand.iter().position(|i| *i != idx) {
             let discarded = st.hand.remove(pos);
             move_to_graveyard(deck, st, discarded, turn as u32, CardZone::Hand);
@@ -540,14 +547,14 @@ fn resolve_cast(
         }
     }
     if alternative_life > 0
-        && card.alternative_cast_cost.is_some_and(|cost| {
+        && card.riders.alternative_cast_cost.is_some_and(|cost| {
             cost.payoff == super::model::AlternativeCostPayoff::GainLifeEqualToExiledManaValue
         })
     {
         st.life += alternative_life as i32;
         st.life_gained += alternative_life;
     }
-    let searched_sacrifice = if card.search_after_sacrifice {
+    let searched_sacrifice = if card.riders.search_after_sacrifice {
         st.battlefield
             .iter()
             .filter(|perm| perm.card.deck_idx().is_some() && card_of(deck, perm).is_creature)
@@ -564,7 +571,7 @@ fn resolve_cast(
     } else {
         None
     };
-    for _ in 0..card.additional_cost_bodies {
+    for _ in 0..card.riders.additional_cost_bodies {
         if let Some((uid, _)) = searched_sacrifice {
             super::game_effects::resolve_sacrifice_uid(deck, st, turn as u32, uid);
         } else {
@@ -590,15 +597,16 @@ fn resolve_cast(
         st.battlefield.push(entry);
         cast_ets.push((uid, target));
     }
-    if card.additional_cost_life > 0 {
+    if card.riders.additional_cost_life > 0 {
         // Life the goldfish pays itself is not damage dealt; keep it
         // out of the lethal census.
-        st.life_paid += card.additional_cost_life;
-        st.life -= card.additional_cost_life as i32;
-        st.life_funded_draws += card.draws_on_cast;
-        super::game::milestone_for_turn(st, turn as u32).life_funded_draws += card.draws_on_cast;
+        st.life_paid += card.riders.additional_cost_life;
+        st.life -= card.riders.additional_cost_life as i32;
+        st.life_funded_draws += card.riders.draws_on_cast;
+        super::game::milestone_for_turn(st, turn as u32).life_funded_draws +=
+            card.riders.draws_on_cast;
     }
-    if card.grants_flashback {
+    if card.riders.grants_flashback {
         st.flashback_permissions.extend(
             st.graveyard
                 .iter()
@@ -606,7 +614,7 @@ fn resolve_cast(
                 .filter(|index| deck[*index].is_instant_or_sorcery),
         );
     }
-    if card.graveyard_creature_exchange {
+    if card.riders.graveyard_creature_exchange {
         let mut returned = Vec::new();
         let mut remaining = Vec::new();
         for index in st.graveyard.drain(..) {
@@ -673,25 +681,25 @@ fn resolve_cast(
     // loyalty-gain activation that creates tokens is a repeatable
     // once-per-turn engine (Liliana-class token fuel).
     // One-shot mana (rituals) joins this turn's pool only.
-    if let Some(y) = &card.mana_on_cast {
+    if let Some(y) = &card.riders.mana_on_cast {
         add_yield_turns_empty_board(y, pool, turn as u32);
     }
     // One-shot draws on cast (cantrips, Divination).
-    for _ in 0..card.draws_on_cast {
+    for _ in 0..card.riders.draws_on_cast {
         draw_one(deck, st, turn as u32);
     }
     // One-shot mill on cast (plain "mill N" spells).
-    for _ in 0..card.mills_on_enter {
+    for _ in 0..card.riders.mills_on_enter {
         mill_library_card(deck, st, turn as u32, card.mills_opponent);
     }
     // Scry/surveil on cast: awareness only; surveil mills the
     // scry'd cards to the graveyard.
-    st.awareness_cards += card.scry_on_cast;
-    for _ in 0..card.surveils_on_cast {
+    st.awareness_cards += card.riders.scry_on_cast;
+    for _ in 0..card.riders.surveils_on_cast {
         mill_library_card(deck, st, turn as u32, false);
     }
     // Schedule the next turn slot as an extra turn.
-    if card.extra_turns_on_cast {
+    if card.riders.extra_turns_on_cast {
         st.extra_turns_queued += 1;
     }
     // One-shot drain spells (burn at a player, "each opponent
@@ -699,23 +707,24 @@ fn resolve_cast(
     // opponents in the commander family) or ×1 constructed;
     // creature-target burn never got here (Removal). A paid kicker
     // bumps the drain amount.
-    if card.drain_on_cast > 0 {
-        let rider = card.drain_on_cast + u32::from(kicked) * card.drain_on_cast.max(1);
+    if card.riders.drain_on_cast > 0 {
+        let rider =
+            card.riders.drain_on_cast + u32::from(kicked) * card.riders.drain_on_cast.max(1);
         st.drained += rider * drain_mult_in(deck);
     }
-    if card.life_gain_on_cast > 0 {
-        st.life += card.life_gain_on_cast as i32;
-        st.life_gained += card.life_gain_on_cast;
+    if card.riders.life_gain_on_cast > 0 {
+        st.life += card.riders.life_gain_on_cast as i32;
+        st.life_gained += card.riders.life_gain_on_cast;
     }
-    if let Some(rule) = card.reveal_rule {
+    if let Some(rule) = card.riders.reveal_rule {
         resolve_reveal_rule(deck, st, rule, turn as u32);
     }
     // One-shot token spells ("Create four 1/1 Soldier creature
     // tokens"): the cast resolves the creation.
-    if card.tokens_on_cast > 0 {
+    if card.riders.tokens_on_cast > 0 {
         apply_effect_at(
             deck,
-            &Effect::Tokens(card.tokens_on_cast.min(8)),
+            &Effect::Tokens(card.riders.tokens_on_cast.min(8)),
             st,
             turn as u32,
             false,
@@ -725,7 +734,7 @@ fn resolve_cast(
     // One-shot wheel spells ("each player discards, then draws").
     // The just-cast wheel is still in hand (removal is deferred), so
     // the skip variant keeps it out of the graveyard log.
-    if card.wheel_on_cast {
+    if card.riders.wheel_on_cast {
         apply_effect_at(deck, &Effect::WheelSkip(idx), st, turn as u32, false, None);
     }
     // X-cost spells pay the leftover pool as X and scale the effect
@@ -736,7 +745,7 @@ fn resolve_cast(
     // capped at 8 for token counts; the recorded spend still shows
     // the full floatable pool, so X-heavy decks read as near-zero
     // unused mana by design.
-    if let Some(class) = card.x_class
+    if let Some(class) = card.riders.x_class
         && class != super::model::XClass::Counters
     {
         let x = pool.total().max(1);
@@ -801,7 +810,7 @@ fn resolve_cast(
     // joins the pool now (Vivi-class mana engines, best case). The
     // just-cast host fires for spells before it; hosts already on
     // the battlefield fire for every spell cast this turn.
-    if let Some(y) = &card.mana_per_cast {
+    if let Some(y) = &card.riders.mana_per_cast {
         for _ in 0..st.prowess_casts {
             add_yield_turns_empty_board(y, pool, turn as u32);
         }
@@ -810,7 +819,7 @@ fn resolve_cast(
         if p.uid == cast_perm_uid {
             continue;
         }
-        if let Some(y) = &card_of(deck, p).mana_per_cast {
+        if let Some(y) = &card_of(deck, p).riders.mana_per_cast {
             add_yield_turns_empty_board(y, pool, turn as u32);
         }
     }
@@ -846,14 +855,14 @@ fn resolve_cast(
     }
     // Counter injection targets the highest-threshold unfilled
     // station permanent (Drill Too Deep).
-    if card.counters_on_cast > 0
+    if card.riders.counters_on_cast > 0
         && let Some(perm) = st
             .battlefield
             .iter_mut()
             .filter(|p| card_of(deck, p).is_station_card)
             .max_by_key(|p| card_of(deck, p).animate_at().unwrap_or(0))
     {
-        perm.counters += card.counters_on_cast;
+        perm.counters += card.riders.counters_on_cast;
     }
     // Cascade: reveal in library order and free-cast the first nonland
     // card with lower printed mana value. No cascade chaining. The free

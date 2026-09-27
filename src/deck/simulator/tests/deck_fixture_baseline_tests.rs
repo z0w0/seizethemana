@@ -43,11 +43,11 @@ fn target_fixtures_have_seeded_baselines_and_parsed_inventory() {
                 card.cost.total(),
                 card.min_cost.total(),
                 card.role,
-                card.draws_on_cast,
-                card.life_gain_on_cast,
-                card.tokens_on_cast,
-                card.drain_on_cast,
-                card.mills_on_enter,
+                card.riders.draws_on_cast,
+                card.riders.life_gain_on_cast,
+                card.riders.tokens_on_cast,
+                card.riders.drain_on_cast,
+                card.riders.mills_on_enter,
                 abilities,
             );
         }
@@ -75,16 +75,18 @@ fn target_fixtures_have_seeded_baselines_and_parsed_inventory() {
     assert!(!living_end_card.has_mana_cost);
     assert_eq!(living_end_card.role, Role::Other);
     assert!(living_end_card.is_instant_or_sorcery);
-    assert!(living_end_card.graveyard_creature_exchange);
+    assert!(living_end_card.riders.graveyard_creature_exchange);
 
     let neoform = fixture_map("neobrand");
     assert_eq!(
         parse_sim_card(neoform.get("Neoform").expect("Neoform is in its fixture"))
+            .riders
             .additional_cost_bodies,
         1
     );
     assert!(
         parse_sim_card(neoform.get("Neoform").expect("Neoform is in its fixture"))
+            .riders
             .search_after_sacrifice
     );
 
@@ -94,6 +96,7 @@ fn target_fixtures_have_seeded_baselines_and_parsed_inventory() {
             ruby.get("Past in Flames")
                 .expect("Ruby Storm has Past in Flames")
         )
+        .riders
         .grants_flashback
     );
 
@@ -104,10 +107,12 @@ fn target_fixtures_have_seeded_baselines_and_parsed_inventory() {
                 .get("Underworld Breach")
                 .expect("RogSi has Underworld Breach")
         )
+        .riders
         .grants_escape
     );
     assert!(
         parse_sim_card(rogsi.get("Ad Nauseam").expect("RogSi has Ad Nauseam"))
+            .riders
             .reveal_rule
             .is_some()
     );

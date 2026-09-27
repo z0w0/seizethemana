@@ -112,7 +112,7 @@ fn modern_cascade_and_neobrand_lines_depend_on_their_enablers() {
                 source
                     .cards
                     .iter()
-                    .any(|card| card.name == enabler && card.alternative_cast_cost.is_some())
+                    .any(|card| card.name == enabler && card.riders.alternative_cast_cost.is_some())
             );
         }
         if fixture_name == "neobrand" {
@@ -208,7 +208,7 @@ fn modern_cascade_and_neobrand_lines_depend_on_their_enablers() {
         .iter()
         .find(|card| card.name == "Crashing Footfalls")
         .expect("Rhinos fixture has its cascade payoff");
-    assert_eq!(footfalls.tokens_on_cast, 2);
+    assert_eq!(footfalls.riders.tokens_on_cast, 2);
     let without = with_cascade_disabled(&source);
     let mut full_rng = ChaCha8Rng::seed_from_u64(922);
     let mut without_rng = ChaCha8Rng::seed_from_u64(922);
@@ -237,7 +237,7 @@ fn without_line_enabler(deck: &SimDeck, name: &str) -> SimDeck {
     if name == "Allosaurus Rider" {
         for card in &mut comparison.cards {
             if card.name == name {
-                card.alternative_cast_cost = None;
+                card.riders.alternative_cast_cost = None;
             }
         }
     } else {

@@ -257,13 +257,18 @@ fn rider_alternate_cost_and_sacrifice_search_put_a_countered_target_into_play() 
         ),
         row("Drawn card", "{1}", "Sorcery", "[]", ""),
     ]);
-    assert!(cards.cards[0].alternative_cast_cost.is_some());
+    assert!(cards.cards[0].riders.alternative_cast_cost.is_some());
     assert_eq!(
-        cards.cards[0].alternative_cast_cost.as_ref().unwrap().count,
+        cards.cards[0]
+            .riders
+            .alternative_cast_cost
+            .as_ref()
+            .unwrap()
+            .count,
         2
     );
     assert_eq!(cards.cards[0].mana_value, 7);
-    assert!(cards.cards[1].search_after_sacrifice);
+    assert!(cards.cards[1].riders.search_after_sacrifice);
     let mut state = state(vec![0, 1, 2, 3], vec![5, 4]);
     let mut pool = Pool {
         fixed: [0, 1, 0, 0, 1],
@@ -440,13 +445,13 @@ fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
             "",
         ),
     ]);
-    assert!(cards.cards[1].graveyard_creature_exchange);
+    assert!(cards.cards[1].riders.graveyard_creature_exchange);
     assert!(!cards.cards[1].has_mana_cost);
     assert_eq!(cards.cards[0].mana_value, 3);
     assert_eq!(cards.cards[1].mana_value, 0);
     assert_eq!(cards.cards[2].role, super::model::Role::Land);
     assert_eq!(cards.cards[3].mana_value, 4);
-    assert_eq!(cards.cards[0].mills_on_enter, 0);
+    assert_eq!(cards.cards[0].riders.mills_on_enter, 0);
     let mut state = state(vec![0, 4, 5, 6], vec![1, 2, 3, 7, 8, 9]);
     let mut pool = Pool {
         flexible: 6,
@@ -575,8 +580,8 @@ fn cycling_discards_and_draws_while_landcycling_finds_the_named_land_type() {
         row("Forest", "", "Basic Land — Forest", "[]", ""),
         row("Island", "", "Basic Land — Island", "[]", ""),
     ]);
-    assert_eq!(cards.cards[0].cycling_life, 2);
-    assert_eq!(cards.cards[1].landcycling_type, Some('G'));
+    assert_eq!(cards.cards[0].riders.cycling_life, 2);
+    assert_eq!(cards.cards[1].riders.landcycling_type, Some('G'));
     let mut life_state = state(vec![0], vec![2]);
     cast(&cards, &mut life_state, &mut Pool::default());
     assert_eq!(
@@ -790,9 +795,9 @@ fn discard_cost_draws_resolve_individually_and_recheck_dredge() {
         row("Milled six", "{1}", "Sorcery", "[]", ""),
         row("Milled seven", "{1}", "Sorcery", "[]", ""),
     ]);
-    assert_eq!(cards.cards[0].additional_cost_discards, 2);
+    assert_eq!(cards.cards[0].riders.additional_cost_discards, 2);
     assert_eq!(
-        cards.cards[0].draws_on_cast, 3,
+        cards.cards[0].riders.draws_on_cast, 3,
         "parsed card: {:#?}",
         cards.cards[0]
     );

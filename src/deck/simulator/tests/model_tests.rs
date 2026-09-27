@@ -427,7 +427,7 @@ fn roles_classify_correctly() {
     let ritual = card("Dark Ritual", "{B}", "Instant", "Add {B}{B}{B}.");
     let sim = parse_sim_card(&ritual);
     assert_eq!(sim.role, Role::RampSpell);
-    assert!(sim.mana_on_cast.is_some());
+    assert!(sim.riders.mana_on_cast.is_some());
 
     let draw = card("Divination", "{2}{U}", "Sorcery", "Draw two cards.");
     assert_eq!(parse_sim_card(&draw).role, Role::Draw);

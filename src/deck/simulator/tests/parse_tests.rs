@@ -266,7 +266,7 @@ fn counter_injection_on_cast() {
         "Instant",
         "Choose one —\n• Put five charge counters on target Spacecraft or Planet you control.\n• Destroy target artifact.",
     );
-    assert_eq!(parse_sim_card(&row).counters_on_cast, 5);
+    assert_eq!(parse_sim_card(&row).riders.counters_on_cast, 5);
 }
 
 // Role classification
@@ -274,9 +274,9 @@ fn counter_injection_on_cast() {
 #[test]
 fn cantrip_draws_on_cast() {
     let row = card("Opt", "{U}", "Instant", "Scry 1.\nDraw a card.");
-    assert_eq!(parse_sim_card(&row).draws_on_cast, 1);
+    assert_eq!(parse_sim_card(&row).riders.draws_on_cast, 1);
     let div = card("Divination", "{2}{U}", "Sorcery", "Draw two cards.");
-    assert_eq!(parse_sim_card(&div).draws_on_cast, 2);
+    assert_eq!(parse_sim_card(&div).riders.draws_on_cast, 2);
 }
 
 #[test]
@@ -289,7 +289,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Instant // Instant",
         "Wax: Create a 3/3 Centaur creature token.\n//\nWane: Destroy target artifact.",
     ));
-    assert_eq!(split.draws_on_cast, 0);
+    assert_eq!(split.riders.draws_on_cast, 0);
     // An Adventure carries "//" in its oracle text but is one card cast
     // as one sequence: its on-cast rider (here, the adventure face's draw)
     // stays live.
@@ -299,7 +299,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Creature — Human Peasant // Adventure",
         "Draw a card.\n//\nChop Down — Destroy target artifact.",
     ));
-    assert_eq!(adventure.draws_on_cast, 1);
+    assert_eq!(adventure.riders.draws_on_cast, 1);
     // A land/spell MDFC cast face also keeps its on-cast effects.
     let mdfc = parse_sim_card(&card(
         "Emeria's Call",
@@ -307,7 +307,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Land // Sorcery",
         "Draw two cards.\n//\n(Play this face as a land.)",
     ));
-    assert_eq!(mdfc.draws_on_cast, 2);
+    assert_eq!(mdfc.riders.draws_on_cast, 2);
 }
 
 #[test]
@@ -369,7 +369,7 @@ fn wheel_and_loot_shapes_parse() {
         "Each player discards their hand, then draws seven cards.",
     ));
     assert!(
-        matches!(wheel.draws_on_cast, 0),
+        matches!(wheel.riders.draws_on_cast, 0),
         "wheel is an effect, not a plain draw"
     );
     let loot = parse_sim_card(&card(
@@ -435,7 +435,7 @@ fn quoted_token_ability_stays_off_the_creating_spell() {
             .abilities()
             .all(|ability| !matches!(ability.effect, Effect::Mana(_)))
     );
-    assert_eq!(glimpse.tokens_on_cast, 0);
+    assert_eq!(glimpse.riders.tokens_on_cast, 0);
     assert!(glimpse.tap.is_none());
 }
 

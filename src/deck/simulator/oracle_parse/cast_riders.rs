@@ -3,37 +3,6 @@
 use super::super::model::{Cost, TapYield};
 use crate::db::CardRow;
 
-/// One-shot effects on cast, parsed from oracle text. Split cards zero
-/// the riders (the cast pays the cheaper face).
-pub(super) struct CastRiders {
-    pub(super) mana_on_cast: Option<TapYield>,
-    pub(super) draws_on_cast: u32,
-    pub(super) life_gain_on_cast: u32,
-    pub(super) alternative_cast_cost: Option<super::super::model::AlternativeCastCost>,
-    pub(super) reveal_rule: Option<super::super::model::RevealRule>,
-    pub(super) tokens_on_cast: u32,
-    pub(super) scry_on_cast: u32,
-    pub(super) surveils_on_cast: u32,
-    pub(super) extra_turns_on_cast: bool,
-    pub(super) drain_on_cast: u32,
-    pub(super) mills_on_enter: u32,
-    pub(super) wheel_on_cast: bool,
-    pub(super) additional_cost_bodies: u32,
-    pub(super) additional_cost_discards: u32,
-    pub(super) additional_cost_life: u32,
-    pub(super) counters_on_cast: u32,
-    pub(super) x_class: Option<super::super::model::XClass>,
-    pub(super) mana_per_cast: Option<TapYield>,
-    pub(super) kicker: Option<Cost>,
-    pub(super) search_after_sacrifice: bool,
-    pub(super) graveyard_creature_exchange: bool,
-    pub(super) grants_flashback: bool,
-    pub(super) grants_escape: bool,
-    pub(super) cycling_cost: Option<Cost>,
-    pub(super) cycling_life: u32,
-    pub(super) landcycling_type: Option<char>,
-}
-
 /// Parse an exile-from-hand alternate casting cost and its optional payoff.
 fn alternative_cast_cost(text: &str) -> Option<super::super::model::AlternativeCastCost> {
     if !text.contains("rather than pay this spell's mana cost") || !text.contains("exile ") {
@@ -110,7 +79,7 @@ pub(super) fn parse_cast_riders(
     cast_face: bool,
     tap_is_none: bool,
     oracle: &super::super::oracle_ast::OracleCard,
-) -> CastRiders {
+) -> super::super::model::CastRiders {
     let effects = if cast_face {
         cast_effects(oracle)
     } else {
@@ -190,7 +159,7 @@ pub(super) fn parse_cast_riders(
     } else {
         None
     };
-    CastRiders {
+    super::super::model::CastRiders {
         mana_on_cast,
         draws_on_cast,
         life_gain_on_cast,
