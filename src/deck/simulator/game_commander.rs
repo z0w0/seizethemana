@@ -1,105 +1,76 @@
-//! Commander engine bookkeeping for the goldfish game loop: the
-//! per-deck commander profile (synthetic upkeep tiers) and the sentinel
-//! uids that key each cast commander's own engine.
+//! Commander source bookkeeping for the goldfish game loop.
 
-use super::model::{AbilityTiming, Effect, SimDeck};
+use super::model::{SimDeck, SimEffect, SimTrigger};
 
-/// Per-deck commander engine profile: the synthetic upkeep tiers.
+/// Per-deck upkeep trigger data used to register commander sources.
 pub(super) struct CommanderProfile {
-    /// Upkeep draw amount per commander slot.
-    pub(super) engine_draws: Vec<Option<u32>>,
-    /// True when the commander carries any other OnUpkeep engine.
-    pub(super) engine_other: Vec<bool>,
+    /// Draw amount per commander slot, when present.
+    pub(super) upkeep_draw_amounts: Vec<Option<u32>>,
+    /// True when the commander has another supported upkeep effect.
+    pub(super) has_other_upkeep_effect: Vec<bool>,
     /// The commander spacecraft's animation threshold.
     pub(super) station_at: Option<u32>,
 }
 
-/// Sentinel uid for a cast commander's upkeep engine. Real card uids
-/// count up from 0; sentinels count down from `u32::MAX`, so they never
-/// collide with battlefield uids. The low bits carry the commander slot,
-/// so each cast commander fires only its own abilities.
-pub(super) fn commander_sentinel_uid(slot: usize) -> u32 {
-    u32::MAX - (slot as u32).min(15)
-}
-
-/// True when the uid is a commander sentinel (not a battlefield uid).
-pub(super) fn is_commander_sentinel(uid: u32) -> bool {
-    uid > u32::MAX - 16
-}
-
-/// The commander slot encoded in a sentinel uid.
-pub(super) fn commander_sentinel_slot(uid: u32) -> usize {
-    (u32::MAX - uid) as usize
-}
-
-/// Upkeep abilities of one commander (by deck slot), in effect form.
-pub(super) fn commander_upkeep_effects(deck: &SimDeck, slot: usize) -> Vec<Effect> {
-    deck.commanders
-        .get(slot)
-        .map(|cmd| {
-            cmd.abilities()
-                .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
-                .map(|a| a.effect.clone())
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
 impl CommanderProfile {
-    /// The commander's synthetic engine tier (upkeep/end-step draws only)
-    /// comes from deck construction. Attack-gated draws live in real tiers
+    /// Commander upkeep trigger data comes from card construction.
+    /// Attack-gated draws live in parsed abilities
     /// and fire through the combat path once the spacecraft animates.
-    /// Per-commander: each partner registers its own upkeep engine, so a
+    /// Per-commander: each partner registers its own repeatable source, so a
     /// partner pair never shares (or doubles) a firing.
     pub(super) fn new(deck: &SimDeck) -> Self {
-        let engine_draws = deck
+        let upkeep_draw_amounts = deck
             .commanders
             .iter()
             .map(|cmd| {
                 Some(
-                    cmd.station_tiers
+                    cmd.striations
                         .iter()
                         .filter(|t| t.at == 0)
                         .flat_map(|t| t.abilities.iter())
-                        .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
-                        .filter_map(|a| match a.effect {
-                            Effect::Draw(n) => Some(n),
+                        .filter(|a| a.trigger == SimTrigger::Upkeep)
+                        .flat_map(|ability| ability.effect_sequence())
+                        .filter_map(|effect| match effect {
+                            SimEffect::Draw(n) => Some(*n),
                             _ => None,
                         })
                         .sum::<u32>(),
                 )
             })
             .collect();
-        // Commanders with any other OnUpkeep engine (drain, mill, tokens,
-        // recursion) register a zero-draw engine: the upkeep loop runs the
+        // Commanders with another upkeep effect register a source so the
+        // upkeep loop runs the
         // real parsed abilities for a pushed slot.
-        let engine_other = deck
+        let has_other_upkeep_effect = deck
             .commanders
             .iter()
             .map(|cmd| {
-                cmd.station_tiers
+                cmd.striations
                     .iter()
                     .filter(|t| t.at == 0)
                     .flat_map(|t| t.abilities.iter())
-                    .any(|a| {
-                        a.trigger == AbilityTiming::OnUpkeep
-                            && matches!(
-                                a.effect,
-                                Effect::Mill(_)
-                                    | Effect::ReturnFromGraveyard { .. }
-                                    | Effect::Drain(_)
-                                    | Effect::Tokens(_)
-                                    | Effect::Counters(_)
-                                    | Effect::Wheel
-                                    | Effect::Loot(_)
-                            )
+                    .any(|ability| {
+                        ability.trigger == SimTrigger::Upkeep
+                            && ability.effect_sequence().iter().any(|effect| {
+                                matches!(
+                                    effect,
+                                    SimEffect::Mill(_)
+                                        | SimEffect::ReturnFromGraveyard { .. }
+                                        | SimEffect::LoseLife { .. }
+                                        | SimEffect::Damage { .. }
+                                        | SimEffect::Tokens(_)
+                                        | SimEffect::Counters(_)
+                                        | SimEffect::DiscardHandThenDrawSeven
+                                        | SimEffect::DrawThenDiscard(_)
+                                )
+                            })
                     })
             })
             .collect();
         let station_at = deck.commanders.first().and_then(|cmd| cmd.animate_at());
         Self {
-            engine_draws,
-            engine_other,
+            upkeep_draw_amounts,
+            has_other_upkeep_effect,
             station_at,
         }
     }

@@ -34,6 +34,7 @@ fn commander_deck(cheap: usize, expensive: usize) -> SimDeck {
         });
     }
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![SimCard {
             name: "Commander".into(),
@@ -119,7 +120,7 @@ fn hand_row_shape() {
         cards: vec![HandCard {
             name: "Sol Ring".into(),
             mana_cost: "{1}".into(),
-            cmc: 1.0,
+            mana_value: 1.0,
             type_line: "Artifact".into(),
         }],
         lands: 2,

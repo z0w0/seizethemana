@@ -5,7 +5,7 @@
 use crate::output::Output;
 
 /// Human output for `--combo` pair access.
-pub fn print_combo_access(out: &Output, rows: &[super::findings::ComboAccess]) {
+pub fn print_combo_access(out: &Output, rows: &[super::report_schema::PairAccessReport]) {
     let s = out.styles();
     println!();
     println!("{}", s.header("Combo assembly (both pieces in hand)"));
@@ -14,19 +14,32 @@ pub fn print_combo_access(out: &Output, rows: &[super::findings::ComboAccess]) {
             "  {}  {}  {:.0}% of games",
             s.card_name(&row.pair),
             s.dim(&format!("by t{}", row.target_turn)),
-            row.pct_games * 100.0
+            row.percent_of_games.value()
         );
     }
 }
 
-/// JSON payload for store-backed combo assembly, capped per direction.
-pub fn combos_json(assembly: &super::combos::Assembly, limit: usize) -> serde_json::Value {
-    serde_json::json!({
-        "source": "commanderspellbook",
-        "variants_considered": assembly.variants_considered,
-        "complete": &assembly.complete[..assembly.complete.len().min(limit)],
-        "near_misses": &assembly.near_misses[..assembly.near_misses.len().min(limit)],
-    })
+/// Typed store-backed combo report, capped per direction.
+pub fn combos_report(
+    assembly: &super::combos::Assembly,
+    limit: usize,
+) -> super::report_schema::CombosReport {
+    super::report_schema::CombosReport {
+        source: "commanderspellbook".to_string(),
+        variants_considered: assembly.variants_considered,
+        complete: assembly
+            .complete
+            .iter()
+            .take(limit)
+            .map(super::report_schema::ComboAccessReport::from)
+            .collect(),
+        near_misses: assembly
+            .near_misses
+            .iter()
+            .take(limit)
+            .map(super::report_schema::ComboAccessReport::from)
+            .collect(),
+    }
 }
 
 /// Human output for store-backed combos: complete combos with assembly
@@ -49,35 +62,33 @@ fn is_win_path(produces: &[String]) -> bool {
         .any(|p| WIN_FEATURES.iter().any(|f| p.contains(f)))
 }
 
-/// Win-path rows: complete combos that produce a win feature.
-pub fn win_paths_json(assembly: &super::combos::Assembly, limit: usize) -> serde_json::Value {
-    let paths: Vec<&super::combos::ComboAccess> = assembly
+/// Win-path report: complete combos that produce a win feature.
+pub fn win_paths_report(
+    assembly: &super::combos::Assembly,
+    limit: usize,
+) -> super::report_schema::WinPathsReport {
+    let paths: Vec<super::report_schema::ComboAccessReport> = assembly
         .complete
         .iter()
         .filter(|r| is_win_path(&r.produces))
         .take(limit)
+        .map(super::report_schema::ComboAccessReport::from)
         .collect();
-    serde_json::json!({
-        "count": paths.len(),
-        "paths": paths,
-    })
+    super::report_schema::WinPathsReport {
+        count: paths.len(),
+        paths,
+    }
 }
 
 /// Human win-path block: compact, only when win paths exist.
-pub fn print_win_paths(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
+pub fn print_win_paths(out: &Output, report: &super::report_schema::WinPathsReport) {
     let s = out.styles();
-    let paths: Vec<&super::combos::ComboAccess> = assembly
-        .complete
-        .iter()
-        .filter(|r| is_win_path(&r.produces))
-        .take(limit)
-        .collect();
-    if paths.is_empty() {
+    if report.paths.is_empty() {
         return;
     }
     println!();
     println!("{}", s.header("Win paths"));
-    for row in paths {
+    for row in &report.paths {
         let feature = row
             .produces
             .iter()
@@ -88,14 +99,14 @@ pub fn print_win_paths(out: &Output, assembly: &super::combos::Assembly, limit: 
             "  {}  {}  {:.0}% of games",
             s.card_name(&row.combo),
             s.dim(&format!("{feature} by t{}", row.target_turn)),
-            row.pct_games * 100.0
+            row.percent_of_games.value()
         );
     }
 }
 
 /// Human view of the store-backed combo assembly: complete combos and
 /// one-card-away near misses, each capped at `limit` rows.
-pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limit: usize) {
+pub fn print_store_combos(out: &Output, report: &super::report_schema::CombosReport) {
     let s = out.styles();
     println!();
     println!(
@@ -103,10 +114,10 @@ pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limi
         s.header("Combo assembly (Spellbook)"),
         s.dim(&format!(
             "{} variants in the deck",
-            assembly.variants_considered
+            report.variants_considered
         ))
     );
-    for row in assembly.complete.iter().take(limit) {
+    for row in &report.complete {
         let tags = row
             .produces
             .first()
@@ -121,13 +132,12 @@ pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limi
             "  {}  {}  {:.0}% of games{}{}",
             s.card_name(&row.combo),
             s.dim(&format!("by t{}", row.target_turn)),
-            row.pct_games * 100.0,
+            row.percent_of_games.value(),
             s.dim(&tags),
             s.dim(&bracket)
         );
     }
-    let misses: Vec<&super::combos::ComboAccess> =
-        assembly.near_misses.iter().take(limit).collect();
+    let misses = &report.near_misses;
     if !misses.is_empty() {
         println!("{}", s.header("One card away"));
         for row in misses {
@@ -148,32 +158,19 @@ pub fn print_store_combos(out: &Output, assembly: &super::combos::Assembly, limi
 /// Exact-probability ceilings (`--hypgeo`): print the top gaps between the
 /// Monte Carlo castability and the hypergeometric ceiling, so a mana-base
 /// problem separates from a draw problem.
-pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
+pub fn print_hypgeo(out: &Output, payload: &super::hypgeo::HypgeoReport) {
     let s = out.styles();
-    let Some(cards) = payload.get("cards").and_then(|c| c.as_array()) else {
-        return;
-    };
     println!();
     println!(
         "{}",
         s.header("Cast-on-curve ceilings (exact hypergeometric)")
     );
-    for row in cards.iter().take(5) {
-        let name = row
-            .get("name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("?")
-            .to_string();
-        let target = row.get("target_turn").and_then(|v| v.as_u64()).unwrap_or(0);
-        let ceiling = row
-            .get("pct_castable_ceiling")
-            .and_then(|v| v.as_f64())
-            .unwrap_or(0.0);
+    for row in payload.cards.iter().take(5) {
         println!(
             "    {}  {}  ceiling {:.0}%",
-            s.card_name(&name),
-            s.dim(&format!("by t{target}")),
-            ceiling
+            s.card_name(&row.name),
+            s.dim(&format!("by t{}", row.target_turn)),
+            row.percent_castable_ceiling.value()
         );
     }
     println!(
@@ -182,32 +179,56 @@ pub fn print_hypgeo(out: &Output, payload: &serde_json::Value) {
     );
 }
 
-/// One metric delta: dot path, old value, new value.
+/// One metric delta: typed path, old value, new value.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Delta {
-    /// Dot path into the report (e.g. "commander.on_curve_pct").
+    /// Dot path into the report.
     pub path: String,
     /// Prior value.
-    pub old: serde_json::Value,
+    pub old: MetricValue,
     /// New value.
-    pub new: serde_json::Value,
+    pub new: MetricValue,
 }
 
-/// Problem kinds that appeared or disappeared between the two runs.
+/// A scalar value that can appear in a report delta.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
-pub struct ProblemDelta {
+#[serde(untagged)]
+pub enum MetricValue {
+    /// Numeric report value.
+    Number(f64),
+    /// Text report value.
+    Text(String),
+    /// Null report value.
+    Null,
+}
+
+impl std::fmt::Display for MetricValue {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Number(value) => write!(formatter, "{value}"),
+            Self::Text(value) => formatter.write_str(value),
+            Self::Null => formatter.write_str("null"),
+        }
+    }
+}
+
+/// Finding kinds that appeared or disappeared between the two runs.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct FindingDelta {
     /// "resolved" (in baseline, gone now) or "new" (absent before).
     pub change: &'static str,
-    /// The problem's kind + detail.
+    /// Stable finding identity, including color when applicable.
+    pub identity: String,
+    /// The finding's kind and explanation.
     pub kind: String,
-    pub detail: String,
+    pub explanation: String,
 }
 
 /// The full diff between two reports.
 #[derive(Debug, Default, PartialEq, serde::Serialize)]
 pub struct ReportDiff {
     pub metrics: Vec<Delta>,
-    pub problems: Vec<ProblemDelta>,
+    pub findings: Vec<FindingDelta>,
     /// Deck-shape count changes (name, old, new).
     pub shape: Vec<ShapeDelta>,
 }
@@ -215,7 +236,7 @@ pub struct ReportDiff {
 /// One deck-shape count change between the baseline and current reports.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct ShapeDelta {
-    /// Deck-shape key (e.g. "lands", "draw_sources").
+    /// Deck-shape key (e.g. "lands", "artifact_mana_sources").
     pub name: String,
     /// Prior value.
     pub old: String,
@@ -223,154 +244,343 @@ pub struct ShapeDelta {
     pub new: String,
 }
 
-/// Diff two report payloads: scalar metrics at known paths, problem lists,
+/// Diff two report payloads: scalar metrics at known paths, findings,
 /// and deck-shape counts. Identical inputs yield an empty diff.
-pub fn diff_reports(baseline: &serde_json::Value, current: &serde_json::Value) -> ReportDiff {
+pub fn diff_reports(
+    baseline: &super::report_schema::SimReport,
+    current: &super::report_schema::SimReport,
+) -> Result<ReportDiff, String> {
     let mut diff = ReportDiff::default();
+    let old_findings = finding_map(baseline)?;
+    let new_findings = finding_map(current)?;
 
-    // Scalar metrics: (dot path) pairs worth tracking.
-    for path in METRIC_PATHS {
-        if let (Some(old), Some(new)) = (lookup(baseline, path), lookup(current, path))
-            && old != new
-        {
-            diff.metrics.push(Delta {
-                path: (*path).to_string(),
-                old: old.clone(),
-                new: new.clone(),
-            });
-        }
-    }
+    add_optional_percent_metric(
+        &mut diff,
+        "commander.percent_castable_by_curve",
+        baseline
+            .commander
+            .as_ref()
+            .and_then(|c| c.percent_castable_by_curve),
+        current
+            .commander
+            .as_ref()
+            .and_then(|c| c.percent_castable_by_curve),
+    );
+    add_number_metric(
+        &mut diff,
+        "commander.avg_first_cast_turn",
+        baseline
+            .commander
+            .as_ref()
+            .map_or(0.0, |c| c.avg_first_cast_turn),
+        current
+            .commander
+            .as_ref()
+            .map_or(0.0, |c| c.avg_first_cast_turn),
+    );
+    add_percent_metric(
+        &mut diff,
+        "land_drops.percent_games_with_two_or_fewer_lands_by_turn_4",
+        baseline
+            .land_drops
+            .percent_games_with_two_or_fewer_lands_by_turn_4,
+        current
+            .land_drops
+            .percent_games_with_two_or_fewer_lands_by_turn_4,
+    );
+    add_percent_metric(
+        &mut diff,
+        "land_drops.percent_games_with_six_or_more_lands_by_turn_4",
+        baseline
+            .land_drops
+            .percent_games_with_six_or_more_lands_by_turn_4,
+        current
+            .land_drops
+            .percent_games_with_six_or_more_lands_by_turn_4,
+    );
+    add_percent_metric(
+        &mut diff,
+        "land_drops.expected_percent_with_six_or_more_lands_by_turn_4",
+        baseline
+            .land_drops
+            .expected_percent_with_six_or_more_lands_by_turn_4,
+        current
+            .land_drops
+            .expected_percent_with_six_or_more_lands_by_turn_4,
+    );
+    add_percent_metric(
+        &mut diff,
+        "mana.percent_games_with_three_or_more_unused_mana_by_turn_6",
+        baseline
+            .mana
+            .percent_games_with_three_or_more_unused_mana_by_turn_6,
+        current
+            .mana
+            .percent_games_with_three_or_more_unused_mana_by_turn_6,
+    );
+    add_percent_metric(
+        &mut diff,
+        "draw.percent_games_with_no_draw_source_by_turn_6",
+        baseline.draw.percent_games_with_no_draw_source_by_turn_6,
+        current.draw.percent_games_with_no_draw_source_by_turn_6,
+    );
+    add_percent_metric(
+        &mut diff,
+        "role_access.removal_spell_percent_seen_by_turn_5",
+        baseline.role_access.removal_spell_percent_seen_by_turn_5,
+        current.role_access.removal_spell_percent_seen_by_turn_5,
+    );
+    add_percent_metric(
+        &mut diff,
+        "role_access.draw_source_percent_seen_by_turn_6",
+        baseline.role_access.draw_source_percent_seen_by_turn_6,
+        current.role_access.draw_source_percent_seen_by_turn_6,
+    );
+    add_percent_metric(
+        &mut diff,
+        "role_access.creature_role_percent_seen_by_turn_3",
+        baseline.role_access.creature_role_percent_seen_by_turn_3,
+        current.role_access.creature_role_percent_seen_by_turn_3,
+    );
+    add_percent_metric(
+        &mut diff,
+        "role_access.win_condition_role_percent_seen_by_turn_8",
+        baseline
+            .role_access
+            .win_condition_role_percent_seen_by_turn_8,
+        current
+            .role_access
+            .win_condition_role_percent_seen_by_turn_8,
+    );
+    add_percent_metric(
+        &mut diff,
+        "color_mana_shortage.white",
+        baseline.color_mana_shortage.white,
+        current.color_mana_shortage.white,
+    );
+    add_percent_metric(
+        &mut diff,
+        "color_mana_shortage.blue",
+        baseline.color_mana_shortage.blue,
+        current.color_mana_shortage.blue,
+    );
+    add_percent_metric(
+        &mut diff,
+        "color_mana_shortage.black",
+        baseline.color_mana_shortage.black,
+        current.color_mana_shortage.black,
+    );
+    add_percent_metric(
+        &mut diff,
+        "color_mana_shortage.red",
+        baseline.color_mana_shortage.red,
+        current.color_mana_shortage.red,
+    );
+    add_percent_metric(
+        &mut diff,
+        "color_mana_shortage.green",
+        baseline.color_mana_shortage.green,
+        current.color_mana_shortage.green,
+    );
 
-    // Deck shape counts.
-    let old_shape = baseline.get("deck_shape");
-    let new_shape = current.get("deck_shape");
-    if let (Some(old), Some(new)) = (old_shape, new_shape)
-        && (old.is_object() && new.is_object())
-    {
-        for key in [
-            "total_cards",
-            "lands",
-            "rocks",
-            "dorks",
-            "ramp_spells",
-            "draw_sources",
-            "removal",
-            "wincons",
-        ] {
-            let old_v = old.get(key).cloned().unwrap_or_default();
-            let new_v = new.get(key).cloned().unwrap_or_default();
-            if old_v != new_v {
-                diff.shape.push(ShapeDelta {
-                    name: key.to_string(),
-                    old: value_display(&old_v),
-                    new: value_display(&new_v),
-                });
-            }
-        }
-    }
+    let old = &baseline.deck_shape;
+    let new = &current.deck_shape;
+    add_shape(&mut diff, "total_cards", old.total_cards, new.total_cards);
+    add_shape(&mut diff, "lands", old.lands, new.lands);
+    add_shape(
+        &mut diff,
+        "artifact_mana_sources",
+        old.artifact_mana_sources,
+        new.artifact_mana_sources,
+    );
+    add_shape(
+        &mut diff,
+        "creature_mana_sources",
+        old.creature_mana_sources,
+        new.creature_mana_sources,
+    );
+    add_shape(&mut diff, "ramp_spells", old.ramp_spells, new.ramp_spells);
+    add_shape(
+        &mut diff,
+        "draw_sources",
+        old.draw_sources,
+        new.draw_sources,
+    );
+    add_shape(
+        &mut diff,
+        "removal_spells",
+        old.removal_spells,
+        new.removal_spells,
+    );
+    add_shape(
+        &mut diff,
+        "targeted_removal_spells",
+        old.targeted_removal_spells,
+        new.targeted_removal_spells,
+    );
+    add_shape(
+        &mut diff,
+        "mass_removal_spells",
+        old.mass_removal_spells,
+        new.mass_removal_spells,
+    );
+    add_shape(
+        &mut diff,
+        "win_conditions",
+        old.win_conditions,
+        new.win_conditions,
+    );
 
-    // Problems: match by kind+color; report kind+detail changes and
-    // appear/disappear as problems entries.
-    let old_problems = baseline
-        .get("problems")
-        .and_then(|p| p.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let new_problems = current
-        .get("problems")
-        .and_then(|p| p.as_array())
-        .cloned()
-        .unwrap_or_default();
-    let key = |p: &serde_json::Value| {
-        format!(
-            "{}|{}",
-            p.get("kind").and_then(|k| k.as_str()).unwrap_or(""),
-            p.get("color").and_then(|c| c.as_str()).unwrap_or("")
-        )
-    };
-    for p in &new_problems {
-        if !old_problems.iter().any(|o| key(o) == key(p)) {
-            diff.problems.push(ProblemDelta {
+    for (identity, finding) in &new_findings {
+        match old_findings.get(identity) {
+            None => diff.findings.push(FindingDelta {
                 change: "new",
-                kind: string_field(p, "kind"),
-                detail: string_field(p, "detail"),
-            });
-        }
-    }
-    for p in &old_problems {
-        if !new_problems.iter().any(|n| key(n) == key(p)) {
-            diff.problems.push(ProblemDelta {
-                change: "resolved",
-                kind: string_field(p, "kind"),
-                detail: string_field(p, "detail"),
-            });
-        }
-    }
-    // Detail changes for still-present kinds (severity shifts).
-    for p in &new_problems {
-        if let Some(old) = old_problems.iter().find(|o| key(o) == key(p)) {
-            let old_detail = string_field(old, "detail");
-            let new_detail = string_field(p, "detail");
-            if old_detail != new_detail {
-                diff.metrics.push(Delta {
-                    path: format!("problems[{}].detail", string_field(p, "kind")),
-                    old: serde_json::json!(old_detail),
-                    new: serde_json::json!(new_detail),
-                });
+                identity: identity.to_string(),
+                kind: finding.kind.clone(),
+                explanation: finding.explanation.clone(),
+            }),
+            Some(old_finding) => {
+                add_text_metric(
+                    &mut diff,
+                    &format!("findings[{identity}].severity"),
+                    &old_finding.severity,
+                    &finding.severity,
+                );
+                add_optional_percent_metric(
+                    &mut diff,
+                    &format!("findings[{identity}].percent_of_games"),
+                    old_finding.percent_of_games,
+                    finding.percent_of_games,
+                );
+                add_text_metric(
+                    &mut diff,
+                    &format!("findings[{identity}].explanation"),
+                    &old_finding.explanation,
+                    &finding.explanation,
+                );
+                add_text_metric(
+                    &mut diff,
+                    &format!("findings[{identity}].suggestion"),
+                    &old_finding.suggestion,
+                    &finding.suggestion,
+                );
+                if old_finding.evidence != finding.evidence {
+                    add_text_metric(
+                        &mut diff,
+                        &format!("findings[{identity}].evidence"),
+                        &evidence_display(&old_finding.evidence),
+                        &evidence_display(&finding.evidence),
+                    );
+                }
             }
         }
     }
-    diff
-}
-
-/// Tracked scalar metric paths (dot-separated).
-const METRIC_PATHS: &[&str] = &[
-    "commander.on_curve_pct",
-    "commander.avg_first_cast_turn",
-    "land_drops.screw_pct_2_or_fewer_by_t4",
-    "land_drops.flood_pct_6plus_lands_seen_in_11",
-    "land_drops.flood_expectation",
-    "mana.pct_games_floated_3plus_t6",
-    "draw.pct_starved_0_by_t6",
-    "role_access.removal_pct_seen_by_5",
-    "role_access.draw_pct_seen_by_6",
-    "role_access.creature_pct_seen_by_3",
-    "role_access.wincon_pct_seen_by_8",
-    "color_screw.W",
-    "color_screw.U",
-    "color_screw.B",
-    "color_screw.R",
-    "color_screw.G",
-];
-
-/// Follow a dot path through JSON objects.
-fn lookup(value: &serde_json::Value, path: &str) -> Option<serde_json::Value> {
-    let mut current = value;
-    for part in path.split('.') {
-        current = current.get(part)?;
+    for (identity, finding) in &old_findings {
+        if !new_findings.contains_key(identity) {
+            diff.findings.push(FindingDelta {
+                change: "resolved",
+                identity: identity.to_string(),
+                kind: finding.kind.clone(),
+                explanation: finding.explanation.clone(),
+            });
+        }
     }
-    Some(current.clone())
+    Ok(diff)
 }
 
-/// String field of a problem object.
-fn string_field(value: &serde_json::Value, key: &str) -> String {
-    value
-        .get(key)
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string()
+fn add_percent_metric(
+    diff: &mut ReportDiff,
+    path: &str,
+    old: super::report_schema::Percent,
+    new: super::report_schema::Percent,
+) {
+    add_number_metric(diff, path, old.value(), new.value());
 }
 
-/// Display string for a JSON value in diff output.
-fn value_display(value: &serde_json::Value) -> String {
-    match value {
-        serde_json::Value::Number(n) => n.to_string(),
-        serde_json::Value::String(s) => s.clone(),
-        other => other.to_string(),
+fn add_optional_percent_metric(
+    diff: &mut ReportDiff,
+    path: &str,
+    old: Option<super::report_schema::Percent>,
+    new: Option<super::report_schema::Percent>,
+) {
+    let old_value = old.map_or(MetricValue::Null, |value| {
+        MetricValue::Number(value.value())
+    });
+    let new_value = new.map_or(MetricValue::Null, |value| {
+        MetricValue::Number(value.value())
+    });
+    if old_value != new_value {
+        diff.metrics.push(Delta {
+            path: path.to_string(),
+            old: old_value,
+            new: new_value,
+        });
     }
 }
 
-/// Render the diff for humans: shape changes, metric deltas, problems.
+fn add_number_metric(diff: &mut ReportDiff, path: &str, old: f64, new: f64) {
+    if old != new {
+        diff.metrics.push(Delta {
+            path: path.to_string(),
+            old: MetricValue::Number(old),
+            new: MetricValue::Number(new),
+        });
+    }
+}
+
+fn add_text_metric(diff: &mut ReportDiff, path: &str, old: &str, new: &str) {
+    if old != new {
+        diff.metrics.push(Delta {
+            path: path.to_string(),
+            old: MetricValue::Text(old.to_string()),
+            new: MetricValue::Text(new.to_string()),
+        });
+    }
+}
+
+fn evidence_display(evidence: &[super::report_schema::FindingEvidence]) -> String {
+    evidence
+        .iter()
+        .map(|row| {
+            let percent = row.percent_of_games.map_or_else(
+                || "not game-based".to_string(),
+                |value| format!("{}%", value.value()),
+            );
+            format!("{}: {} ({percent})", row.subject, row.explanation)
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+fn add_shape<T: ToString + PartialEq>(diff: &mut ReportDiff, name: &str, old: T, new: T) {
+    if old != new {
+        diff.shape.push(ShapeDelta {
+            name: name.to_string(),
+            old: old.to_string(),
+            new: new.to_string(),
+        });
+    }
+}
+
+fn finding_map(
+    report: &super::report_schema::SimReport,
+) -> Result<std::collections::BTreeMap<&str, &super::report_schema::Finding>, String> {
+    let mut findings = std::collections::BTreeMap::new();
+    for finding in &report.findings {
+        if findings
+            .insert(finding.identity.as_str(), finding)
+            .is_some()
+        {
+            return Err(format!(
+                "report has duplicate finding identity {:?}",
+                finding.identity
+            ));
+        }
+    }
+    Ok(findings)
+}
+
+/// Render the diff for humans: shape changes, metric deltas, findings.
 pub fn print_diff(out: &Output, diff: &ReportDiff) {
     let s = out.styles();
     if diff.is_empty() {
@@ -390,9 +600,9 @@ pub fn print_diff(out: &Output, diff: &ReportDiff) {
             println!("    {}: {} → {}", d.path, d.old, d.new);
         }
     }
-    if !diff.problems.is_empty() {
-        println!("{}", s.header("Problems"));
-        for p in &diff.problems {
+    if !diff.findings.is_empty() {
+        println!("{}", s.header("Findings"));
+        for p in &diff.findings {
             match p.change {
                 // Bare signs: "+" = new problem (red), "-" = resolved
                 // (green). error()/success() would print "error: +".
@@ -400,13 +610,13 @@ pub fn print_diff(out: &Output, diff: &ReportDiff) {
                     "    {} {}: {}",
                     s.glyph("+", crate::output::GlyphKind::Bad),
                     p.kind,
-                    p.detail
+                    p.explanation
                 ),
                 _ => println!(
                     "    {} {}: {}",
                     s.glyph("-", crate::output::GlyphKind::Good),
                     p.kind,
-                    p.detail
+                    p.explanation
                 ),
             }
         }
@@ -416,6 +626,29 @@ pub fn print_diff(out: &Output, diff: &ReportDiff) {
 impl ReportDiff {
     /// True when nothing changed between the two reports.
     pub fn is_empty(&self) -> bool {
-        self.shape.is_empty() && self.metrics.is_empty() && self.problems.is_empty()
+        self.shape.is_empty() && self.metrics.is_empty() && self.findings.is_empty()
+    }
+
+    /// True when the run introduced a finding absent from its baseline.
+    pub fn has_new_findings(&self) -> bool {
+        self.findings.iter().any(|finding| finding.change == "new")
+    }
+}
+
+/// Exit status for a normal report: any finding signals a problem.
+pub fn normal_exit_code(findings: &[super::findings::Finding]) -> i32 {
+    if findings.is_empty() {
+        crate::cli::codes::OK
+    } else {
+        crate::cli::codes::ERROR
+    }
+}
+
+/// Exit status for a baseline comparison: only new findings fail.
+pub fn baseline_exit_code(diff: &ReportDiff) -> i32 {
+    if diff.has_new_findings() {
+        crate::cli::codes::ERROR
+    } else {
+        crate::cli::codes::OK
     }
 }

@@ -305,10 +305,12 @@ fn missing_finish_price_falls_back_to_the_available_one() {
 #[test]
 fn slot_map_classifies_coverage() {
     let deck = super::super::Deck::parse("// DECK\n3 Bolt\n2 Shock\n").unwrap();
-    let assigned = [("Bolt".to_string(), 3i64)].into_iter().collect();
-    let available = [("Bolt".to_string(), 4i64), ("Shock".to_string(), 1i64)]
-        .into_iter()
-        .collect();
+    let assigned: std::collections::HashMap<String, i64> =
+        [("Bolt".to_string(), 3i64)].into_iter().collect();
+    let available: std::collections::HashMap<String, i64> =
+        [("Bolt".to_string(), 4i64), ("Shock".to_string(), 1i64)]
+            .into_iter()
+            .collect();
     let empty_elsewhere: std::collections::HashMap<String, (i64, Vec<String>)> = Default::default();
     let slots = ownership::slot_map(&deck, &available, &assigned, &empty_elsewhere, |_| false);
     let bolt = &slots["Bolt"];
@@ -321,7 +323,8 @@ fn slot_map_classifies_coverage() {
     assert_eq!(shock.missing, 1);
     // Binder-only coverage: 3 needed, 0 deck, 3 binder.
     let assigned2: std::collections::HashMap<String, i64> = Default::default();
-    let available2 = [("Bolt".to_string(), 3i64)].into_iter().collect();
+    let available2: std::collections::HashMap<String, i64> =
+        [("Bolt".to_string(), 3i64)].into_iter().collect();
     let slots = ownership::slot_map(
         &super::super::Deck::parse("// DECK\n3 Bolt\n").unwrap(),
         &available2,
@@ -338,9 +341,10 @@ fn slot_map_reports_held_elsewhere_reason() {
     let empty: std::collections::HashMap<String, i64> = Default::default();
     let empty_elsewhere: std::collections::HashMap<String, (i64, Vec<String>)> = Default::default();
     // No copies available to this deck, but one parked in another deck.
-    let elsewhere = [("Bolt".to_string(), (1i64, vec!["Froggy".to_string()]))]
-        .into_iter()
-        .collect();
+    let elsewhere: std::collections::HashMap<String, (i64, Vec<String>)> =
+        [("Bolt".to_string(), (1i64, vec!["Froggy".to_string()]))]
+            .into_iter()
+            .collect();
     let slots = ownership::slot_map(&deck, &empty, &empty, &elsewhere, |_| false);
     let bolt = &slots["Bolt"];
     assert_eq!(bolt.coverage, ownership::Coverage::Missing);
@@ -357,17 +361,19 @@ fn deck_line_ownership_shows_binder_and_elsewhere_copies() {
     // cap) and held_elsewhere as "(+N elsewhere)". A binder-only copy is
     // owned, not elsewhere; another deck's copy is elsewhere, not owned.
     let deck = super::super::Deck::parse("// DECK\n1 Bolt\n1 Shock\n1 Fear\n").unwrap();
-    let assigned = [("Bolt".to_string(), 2i64)].into_iter().collect();
-    let available = [
+    let assigned: std::collections::HashMap<String, i64> =
+        [("Bolt".to_string(), 2i64)].into_iter().collect();
+    let available: std::collections::HashMap<String, i64> = [
         ("Bolt".to_string(), 3i64),
         ("Shock".to_string(), 1i64),
         ("Fear".to_string(), 0i64),
     ]
     .into_iter()
     .collect();
-    let elsewhere = [("Fear".to_string(), (2i64, vec!["Froggy".to_string()]))]
-        .into_iter()
-        .collect();
+    let elsewhere: std::collections::HashMap<String, (i64, Vec<String>)> =
+        [("Fear".to_string(), (2i64, vec!["Froggy".to_string()]))]
+            .into_iter()
+            .collect();
     let slots = ownership::slot_map(&deck, &available, &assigned, &elsewhere, |_| false);
     let bolt = &slots["Bolt"];
     assert_eq!(bolt.in_deck + bolt.in_binder, 3, "raw total, over quantity");
@@ -426,19 +432,13 @@ mod universe_tests {
             crate::deck::store_show::universe_census(&conn, &deck, &cards_by_name, &mut out)
                 .unwrap();
         // Iron Test: all-UB → beyond. Both Prints: any in-universe print wins.
-        assert_eq!(census["universes_beyond"], 1, "commander qty only");
-        assert_eq!(census["multiverse"], 3, "2 Both Prints + 1 Bolt");
+        assert_eq!(census.universes_beyond, 1, "commander qty only");
+        assert_eq!(census.multiverse, 3, "2 Both Prints + 1 Bolt");
         assert_eq!(
-            census["franchises"]["Marvel"], 1,
+            census.franchises["Marvel"], 1,
             "Iron Test only; Both Prints is multiverse"
         );
-        let ub_cards: Vec<&str> = census["ub_cards"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|c| c.as_str())
-            .collect();
-        assert_eq!(ub_cards, vec!["Iron Test"]);
+        assert_eq!(census.ub_cards, vec!["Iron Test"]);
     }
 }
 

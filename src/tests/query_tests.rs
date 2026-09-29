@@ -176,20 +176,21 @@ fn query_json_is_the_full_card_shape_plus_score() {
         cheapest_foil: None,
         priciest_foil: None,
     };
-    let v = crate::card::card_json(
+    let v = serde_json::to_value(crate::card::card_json(
         &card,
         &empty_tags,
         &range,
         &Default::default(),
         &Default::default(),
         &Default::default(),
-    );
+    ))
+    .unwrap();
     // The full contract: every CardRow field an agent joins on.
     for key in [
         "name",
         "oracle_id",
         "mana_cost",
-        "cmc",
+        "mana_value",
         "type_line",
         "colors",
         "color_identity",
@@ -219,14 +220,15 @@ fn query_json_is_the_full_card_shape_plus_score() {
     assert_eq!(v["oracle_id"], "oid");
     assert_eq!(v["price"], 0.99);
     // An unpriced card renders null, not a missing field.
-    let v = crate::card::card_json(
+    let v = serde_json::to_value(crate::card::card_json(
         &card,
         &empty_tags,
         &Default::default(),
         &Default::default(),
         &Default::default(),
         &Default::default(),
-    );
+    ))
+    .unwrap();
     assert_eq!(v["price"], serde_json::Value::Null);
 }
 

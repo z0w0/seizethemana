@@ -3,7 +3,8 @@
 /// A minimal card row for tests.
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -12,7 +13,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -32,6 +33,19 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
     }
 }
 
+/// Lower one parsed activation for focused parser tests.
+fn parse_oracle_ability(source: &str) -> Option<SimAbility> {
+    let card = super::oracle_parser::parse_oracle_text(source, &[]);
+    card.abilities
+        .into_iter()
+        .find_map(|ability| match ability {
+            super::oracle_ast::OracleAbility::Activated(activation) => {
+                activation.to_runtime_all().into_iter().next()
+            }
+            _ => None,
+        })
+}
+
 /// A card row with keywords and power/toughness.
 fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &str) -> CardRow {
     let mut row = card(name, mana_cost, type_line, text);
@@ -49,8 +63,11 @@ fn etb_draw_trigger_parses() {
         "When Atraxa enters, reveal the top ten cards of your library. For each card type, you may put a card of that type from among the revealed cards into your hand.",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter
-        && matches!(a.effect, super::model::Effect::Search(_))));
+    assert!(
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Enters
+                && matches!(a.effect, super::model::SimEffect::Search(_)))
+    );
 }
 
 #[test]
@@ -63,8 +80,11 @@ fn etb_tokens_parse_for_named_enters() {
         "When Breya enters, create two 1/1 blue Thopter artifact creature tokens with flying.",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter
-        && matches!(a.effect, super::model::Effect::Tokens(_))));
+    assert!(
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Enters
+                && matches!(a.effect, super::model::SimEffect::Tokens(_)))
+    );
 }
 
 #[test]
@@ -77,31 +97,26 @@ fn upkeep_draw_engine_parses() {
     );
     let sim = parse_sim_card(&row);
     assert!(
-        sim.abilities()
-            .any(|a| a.trigger == AbilityTiming::OnUpkeep)
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Upkeep)
     );
 }
 
 #[test]
-fn intervening_condition_lowers_and_inerts() {
-    // The condition parses and lowers with the ability. The runtime has
-    // no evaluated shapes yet, so the ability still lowers and the
-    // condition travels as text (see docs/simulator.md assumptions).
+fn unsupported_intervening_condition_stays_inert() {
+    // Unsupported intervening conditions do not become unconditional
+    // runtime triggers.
     let gated = parse_sim_card(&card(
         "Gated Mill",
         "{1}{U}",
         "Creature — Frog Horror",
         "At the beginning of your upkeep, if you control another creature, mill two cards.",
     ));
-    let fired = gated
-        .abilities()
-        .find(|a| a.trigger == AbilityTiming::OnUpkeep)
-        .expect("conditioned trigger lowers");
-    assert_eq!(
-        fired.condition.as_deref(),
-        Some("you control another creature, mill two cards")
+    assert!(
+        gated
+            .unlocked_abilities(0)
+            .all(|ability| ability.trigger != SimTrigger::Upkeep)
     );
-    assert!(matches!(fired.effect, Effect::Mill(2)));
 }
 
 #[test]
@@ -113,8 +128,11 @@ fn attack_draw_trigger_parses() {
         "Flying\nWhenever this Vehicle attacks or blocks, you may draw a card. If you do, discard a card.\nCrew 1",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(|a| a.trigger == AbilityTiming::OnAttack
-        && matches!(a.effect, super::model::Effect::Draw(1))));
+    assert!(
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Attacks
+                && matches!(a.effect, super::model::SimEffect::Draw(1)))
+    );
 }
 
 #[test]
@@ -127,9 +145,9 @@ fn on_cast_spell_engine_parses() {
     );
     let sim = parse_sim_card(&row);
     assert!(
-        sim.abilities()
-            .any(|a| a.trigger == AbilityTiming::OnCastSpell
-                && matches!(a.effect, super::model::Effect::Draw(1)))
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::SpellCast
+                && matches!(a.effect, super::model::SimEffect::Draw(1)))
     );
 }
 
@@ -138,12 +156,16 @@ fn activation_draw_parses_cost_and_tap() {
     let ab = parse_oracle_ability("{1}, {T}: Draw two cards.");
     assert!(ab.is_some());
     let ab = ab.unwrap();
-    assert_eq!(ab.cost.total(), 1);
-    assert!(ab.taps);
-    assert!(matches!(ab.effect, super::model::Effect::Draw(2)));
+    let costs = ab.activation.as_ref().expect("activation cost bundle");
+    assert_eq!(costs.mana_cost().total(), 1);
+    assert!(costs.taps_source());
+    assert!(matches!(ab.effect, super::model::SimEffect::Draw(2)));
     // Draw + discard in one activation is a loot.
     let loot = parse_oracle_ability("{1}, {T}: Draw two cards, then discard a card.").unwrap();
-    assert!(matches!(loot.effect, super::model::Effect::Loot(2)));
+    assert!(matches!(
+        loot.effect,
+        super::model::SimEffect::DrawThenDiscard(2)
+    ));
 }
 
 #[test]
@@ -151,16 +173,19 @@ fn planeswalker_loyalty_activation_costs_no_mana() {
     let ab = parse_oracle_ability(
         "−3: Search your library for an artifact card with mana value 1 or less, reveal it, put it into your hand, then shuffle.",
     );
-    assert!(ab.is_some_and(
-        |a| a.cost.total() == 0 && matches!(a.effect, super::model::Effect::Search(_))
-    ));
+    assert!(ab.is_some_and(|a| {
+        a.activation
+            .as_ref()
+            .is_some_and(|costs| costs.mana_cost().total() == 0)
+            && matches!(a.effect, super::model::SimEffect::Search(_))
+    }));
 }
 
 #[test]
 fn activation_mana_effect_parses() {
     let ab = parse_oracle_ability("{0}: Add X mana in any combination of {U} and/or {R}.");
     // Vivi's scaling ability approximates to a mana activation.
-    assert!(ab.is_some_and(|a| matches!(a.effect, super::model::Effect::Mana(_))));
+    assert!(ab.is_some_and(|a| matches!(a.effect, super::model::SimEffect::Mana(_))));
 }
 
 // Enters-tapped, verge gates, Leyline, cost reductions
@@ -168,7 +193,7 @@ fn activation_mana_effect_parses() {
 #[test]
 fn shock_dual_stays_untapped() {
     let row = card(
-        "Breeding Pool",
+        "Breeding ManaPool",
         "",
         "Land — Forest Island",
         "({T}: Add {G} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped.",
@@ -197,7 +222,10 @@ fn verge_gate_parses_both_types() {
         "{T}: Add {B}.\n{T}: Add {R}. Activate only if you control a Swamp or a Mountain.",
     );
     let sim = parse_sim_card(&row);
-    assert_eq!(sim.gate_types, vec!["Swamp", "Mountain"]);
+    assert_eq!(
+        sim.gate_types,
+        vec![BasicLandType::Swamp, BasicLandType::Mountain]
+    );
 }
 
 #[test]
@@ -209,6 +237,8 @@ fn leyline_opens_in_play() {
         "If this card is in your opening hand, you may begin the game with it on the battlefield.\nEach nonland permanent you control is all colors.",
     );
     assert!(parse_sim_card(&row).opens_in_play);
+    let plain = card("Enchantment", "{1}{G}", "Enchantment", "");
+    assert!(!parse_sim_card(&plain).opens_in_play);
 }
 
 #[test]
@@ -256,7 +286,7 @@ fn enter_counters_parse_words_and_digits() {
         "This Vehicle enters with three charge counters on it.\n{2}, {T}, Remove a charge counter from this Vehicle: Draw a card.\nCrew 3",
     );
     let sim = parse_sim_card(&row);
-    assert_eq!(sim.enter_counters, 3);
+    assert_eq!(sim.enter_counters, super::model::EnterCounters::Charge(3));
 }
 
 #[test]
@@ -267,7 +297,7 @@ fn counter_injection_on_cast() {
         "Instant",
         "Choose one —\n• Put five charge counters on target Spacecraft or Planet you control.\n• Destroy target artifact.",
     );
-    assert_eq!(parse_sim_card(&row).riders.counters_on_cast, 5);
+    assert_eq!(parse_sim_card(&row).spell_data.counters_on_cast, 5);
 }
 
 // Role classification
@@ -275,9 +305,9 @@ fn counter_injection_on_cast() {
 #[test]
 fn cantrip_draws_on_cast() {
     let row = card("Opt", "{U}", "Instant", "Scry 1.\nDraw a card.");
-    assert_eq!(parse_sim_card(&row).riders.draws_on_cast, 1);
+    assert_eq!(parse_sim_card(&row).spell_data.draws_on_cast, 1);
     let div = card("Divination", "{2}{U}", "Sorcery", "Draw two cards.");
-    assert_eq!(parse_sim_card(&div).riders.draws_on_cast, 2);
+    assert_eq!(parse_sim_card(&div).spell_data.draws_on_cast, 2);
 }
 
 #[test]
@@ -290,7 +320,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Instant // Instant",
         "Wax: Create a 3/3 Centaur creature token.\n//\nWane: Destroy target artifact.",
     ));
-    assert_eq!(split.riders.draws_on_cast, 0);
+    assert_eq!(split.spell_data.draws_on_cast, 0);
     // An Adventure carries "//" in its oracle text but is one card cast
     // as one sequence: its on-cast rider (here, the adventure face's draw)
     // stays live.
@@ -300,7 +330,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Creature — Human Peasant // Adventure",
         "Draw a card.\n//\nChop Down — Destroy target artifact.",
     ));
-    assert_eq!(adventure.riders.draws_on_cast, 1);
+    assert_eq!(adventure.spell_data.draws_on_cast, 1);
     // A land/spell MDFC cast face also keeps its on-cast effects.
     let mdfc = parse_sim_card(&card(
         "Emeria's Call",
@@ -308,7 +338,7 @@ fn split_card_zeroes_on_cast_but_adventure_keeps_it() {
         "Land // Sorcery",
         "Draw two cards.\n//\n(Play this face as a land.)",
     ));
-    assert_eq!(mdfc.riders.draws_on_cast, 2);
+    assert_eq!(mdfc.spell_data.draws_on_cast, 2);
 }
 
 #[test]
@@ -320,8 +350,8 @@ fn mill_shapes_parse() {
         "When Mill Fiend enters, mill three cards.",
     ));
     assert!(
-        etb.abilities()
-            .any(|a| a.trigger == AbilityTiming::OnEnter && matches!(a.effect, Effect::Mill(3)))
+        etb.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Enters && matches!(a.effect, SimEffect::Mill(3)))
     );
     let upkeep = parse_sim_card(&card(
         "Slow Mill",
@@ -331,8 +361,8 @@ fn mill_shapes_parse() {
     ));
     assert!(
         upkeep
-            .abilities()
-            .any(|a| a.trigger == AbilityTiming::OnUpkeep && matches!(a.effect, Effect::Mill(2)))
+            .unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Upkeep && matches!(a.effect, SimEffect::Mill(2)))
     );
 }
 
@@ -341,20 +371,20 @@ fn graveyard_return_shapes_parse() {
     let hand_return = parse_oracle_ability("{T}: Return a card from your graveyard to your hand.");
     assert!(matches!(
         hand_return.unwrap().effect,
-        Effect::ReturnFromGraveyard {
+        SimEffect::ReturnFromGraveyard {
             to_hand: true,
             count: 1
         }
     ));
-    let board_return = parse_sim_card(&card(
+    let creature_return = parse_sim_card(&card(
         "Reanimator",
         "{2}{B}",
         "Creature — Zombie",
         "When Reanimator enters, return a creature card from your graveyard to the battlefield.",
     ));
-    assert!(board_return.abilities().any(|a| matches!(
+    assert!(creature_return.unlocked_abilities(0).any(|a| matches!(
         a.effect,
-        Effect::ReturnFromGraveyard {
+        SimEffect::ReturnFromGraveyard {
             to_hand: false,
             count: 1
         }
@@ -370,7 +400,7 @@ fn wheel_and_loot_shapes_parse() {
         "Each player discards their hand, then draws seven cards.",
     ));
     assert!(
-        matches!(wheel.riders.draws_on_cast, 0),
+        matches!(wheel.spell_data.draws_on_cast, 0),
         "wheel is an effect, not a plain draw"
     );
     let loot = parse_sim_card(&card(
@@ -380,8 +410,8 @@ fn wheel_and_loot_shapes_parse() {
         "{T}: Draw a card, then discard a card.",
     ));
     assert!(
-        loot.abilities()
-            .any(|a| matches!(a.effect, Effect::Loot(1)))
+        loot.unlocked_abilities(0)
+            .any(|a| matches!(a.effect, SimEffect::DrawThenDiscard(1)))
     );
 }
 
@@ -389,8 +419,8 @@ fn wheel_and_loot_shapes_parse() {
 fn sacrifice_outlet_parses() {
     let outlet = parse_oracle_ability("{1}, Sacrifice a creature: Draw a card.");
     let ab = outlet.expect("outlet parses");
-    assert_eq!(ab.sacrifice_bodies, 1);
-    assert!(matches!(ab.effect, Effect::Draw(1)));
+    assert_eq!(ab.activation.as_ref().unwrap().creature_sacrifices(), 1);
+    assert!(matches!(ab.effect, SimEffect::Draw(1)));
 }
 
 #[test]
@@ -403,22 +433,23 @@ fn death_trigger_parses() {
     ));
     assert!(
         payoff
-            .abilities()
-            .any(|a| a.trigger == AbilityTiming::OnDeath && matches!(a.effect, Effect::Draw(1)))
+            .unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Dies && matches!(a.effect, SimEffect::Draw(1)))
     );
 }
 
-/// Parse damage to a player on land entry as drain rather than removal.
+/// Parse direct player damage as damage rather than life loss.
 #[test]
-fn land_entry_player_damage_is_a_triggered_drain() {
+fn land_entry_player_damage_is_a_triggered_damage_effect() {
     let desert = parse_sim_card(&card(
         "Desert",
         "",
         "Land — Desert",
         "This land enters tapped.\nWhen this land enters, it deals 1 damage to target opponent.\n{T}: Add {R} or {G}.",
     ));
-    assert!(desert.abilities().any(|ability| {
-        ability.trigger == AbilityTiming::OnEnter && matches!(ability.effect, Effect::Drain(1))
+    assert!(desert.unlocked_abilities(0).any(|ability| {
+        ability.trigger == SimTrigger::Enters
+            && matches!(ability.effect, SimEffect::Damage { amount: 1, .. })
     }));
 }
 
@@ -433,10 +464,10 @@ fn quoted_token_ability_stays_off_the_creating_spell() {
     ));
     assert!(
         glimpse
-            .abilities()
-            .all(|ability| !matches!(ability.effect, Effect::Mana(_)))
+            .unlocked_abilities(0)
+            .all(|ability| !matches!(ability.effect, SimEffect::Mana(_)))
     );
-    assert_eq!(glimpse.riders.tokens_on_cast, 0);
+    assert_eq!(glimpse.spell_data.tokens_on_cast, 0);
     assert!(glimpse.tap.is_none());
 }
 
@@ -451,7 +482,7 @@ fn creature_only_restriction_parses() {
     let y = courtyard.tap.expect("courtyard taps");
     assert_eq!(
         y.restriction,
-        Some(Restriction::Creature),
+        Some(SpendRestriction::Creature),
         "restriction captured"
     );
     let tower = parse_sim_card(&card(
@@ -520,14 +551,14 @@ fn tier_tap_lines_do_not_double_count() {
     assert!(tap.fixed[1] == 1 || tap.choice[1], "base tap is U");
     // The 12+ tier still carries the mana ability.
     let tier = sim
-        .station_tiers
+        .striations
         .iter()
         .find(|t| t.at == 12)
         .expect("12+ tier exists");
     assert!(
         tier.abilities
             .iter()
-            .any(|a| matches!(a.effect, super::model::Effect::Mana(_)))
+            .any(|a| matches!(a.effect, super::model::SimEffect::Mana(_)))
     );
 }
 
@@ -561,6 +592,7 @@ fn plaza_pool_yields_one_mana_per_tap() {
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -647,8 +679,8 @@ fn any_combination_parses() {
     ));
     assert!(
         throne
-            .abilities()
-            .any(|a| matches!(a.effect, Effect::Mana(ref y) if y.any_pips == 3)),
+            .unlocked_abilities(0)
+            .any(|a| matches!(a.effect, SimEffect::Mana(ref y) if y.any_pips == 3)),
         "sacrifice activation parses with the full 3-pip amount"
     );
 }
@@ -690,7 +722,7 @@ fn plaza_of_heroes_legendary_restriction_parses() {
         "{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell.",
     ));
     let y = plaza.tap.expect("plaza taps");
-    assert_eq!(y.restriction, Some(Restriction::Legendary));
+    assert_eq!(y.restriction, Some(SpendRestriction::Legendary));
 }
 
 #[test]
@@ -702,7 +734,7 @@ fn steelswarm_operator_artifact_restriction_parses() {
         "Flying\n{T}: Add {U}. Spend this mana only to cast an artifact spell.",
     ));
     let y = op.tap.expect("operator taps");
-    assert_eq!(y.restriction, Some(Restriction::Artifact));
+    assert_eq!(y.restriction, Some(SpendRestriction::Artifact));
 }
 
 #[test]
@@ -755,7 +787,7 @@ fn spend_restriction_instant_sorcery_parses() {
         "{T}: Add {U}. Spend this mana only to cast an instant or sorcery spell.",
     ));
     let y = hydro.tap.expect("channeler taps");
-    assert_eq!(y.restriction, Some(Restriction::InstantSorcery));
+    assert_eq!(y.restriction, Some(SpendRestriction::InstantSorcery));
 }
 
 #[test]
@@ -768,13 +800,20 @@ fn pentad_prism_parses_banked_activation() {
     );
     let sim = parse_sim_card(&prism);
     // Sunburst best-case: two colors paid → 2 banked pips.
-    assert_eq!(sim.enter_counters, 2);
+    assert_eq!(sim.enter_counters, super::model::EnterCounters::Charge(2));
     let banked = sim
-        .abilities()
-        .find(|a| a.uses_counters)
+        .unlocked_abilities(0)
+        .find(|a| {
+            a.activation
+                .as_ref()
+                .is_some_and(|costs| costs.charge_counter_payment() > 0)
+        })
         .expect("banked activation parsed");
-    assert!(!banked.taps, "banked activations do not tap");
-    assert!(matches!(banked.effect, Effect::Mana(ref y) if y.any_pips == 1));
+    assert!(
+        !banked.activation.as_ref().unwrap().taps_source(),
+        "banked activations do not tap"
+    );
+    assert!(matches!(banked.effect, SimEffect::Mana(ref y) if y.any_pips == 1));
 }
 
 #[test]
@@ -809,9 +848,16 @@ fn treasure_creator_flags() {
         "Artifact Creature",
         "{2}, {T}: Create a Treasure token.",
     ));
-    assert!(exec.flags.treasures_on_token);
+    assert!(
+        exec.unlocked_abilities(0)
+            .any(|ability| matches!(ability.effect, super::model::SimEffect::Treasures(1)))
+    );
     let plain = parse_sim_card(&card("Bear", "{1}{G}", "Creature — Bear", "A bear."));
-    assert!(!plain.flags.treasures_on_token);
+    assert!(
+        !plain
+            .unlocked_abilities(0)
+            .any(|ability| matches!(ability.effect, super::model::SimEffect::Treasures(_)))
+    );
 }
 
 #[test]
@@ -824,9 +870,9 @@ fn helix_pinnacle_threshold_is_100_not_10() {
     );
     let sim = parse_sim_card(&pinnacle);
     let threshold = sim
-        .abilities()
+        .unlocked_abilities(0)
         .find_map(|a| match a.effect {
-            Effect::WinThreshold { counters } => Some(counters),
+            SimEffect::WinThreshold { counters } => Some(counters),
             _ => None,
         })
         .expect("threshold parsed");
@@ -836,14 +882,14 @@ fn helix_pinnacle_threshold_is_100_not_10() {
 #[test]
 fn twobrid_costs_two_generic() {
     // {2/W} costs 2 mana either way; the sim models the generic payment.
-    let cost = parse_oracle_cost("{2/W}");
+    let cost = parse_cost("{2/W}");
     assert_eq!(cost.generic, 2);
     assert_eq!(cost.total(), 2);
     // Spectral Procession: three symbols, six mana total.
-    let procession = parse_oracle_cost("{2/W}{2/W}{2/W}");
+    let procession = parse_cost("{2/W}{2/W}{2/W}");
     assert_eq!(procession.generic, 6);
     assert_eq!(procession.total(), 6);
     // No pips leak from the colored half.
     assert!(cost.pips.iter().all(|p| *p == 0));
-    assert_eq!(cost.flex_pips, 0);
+    assert_eq!(cost.hybrid_pips, 0);
 }

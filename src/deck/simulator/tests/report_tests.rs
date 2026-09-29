@@ -3,8 +3,9 @@
 use super::aggregate::aggregate;
 use super::model::*;
 #[test]
-fn json_report_adds_station_and_body_fields() {
+fn json_report_adds_station_and_creature_fields() {
     let deck = SimDeck {
+        companion: None,
         cards: vec![],
         commanders: vec![super::model::SimCard {
             name: "IGS".into(),
@@ -14,7 +15,7 @@ fn json_report_adds_station_and_body_fields() {
             },
             role: Role::Wincon,
             is_station_card: true,
-            station_tiers: vec![Tier {
+            striations: vec![SimStriation {
                 at: 12,
                 animate: true,
                 abilities: vec![],
@@ -26,7 +27,7 @@ fn json_report_adds_station_and_body_fields() {
     };
     let logs: Vec<super::game::GameLog> = Vec::new();
     let stats = aggregate(&logs, &deck, 10);
-    let report = super::report::json_report(
+    let mut typed = super::report::json_report(
         &stats,
         &deck,
         "test",
@@ -35,21 +36,66 @@ fn json_report_adds_station_and_body_fields() {
         Default::default(),
         &Default::default(),
     );
+    typed.combo_access = Some(vec![super::report_schema::PairAccessReport {
+        pair: "A + B".to_string(),
+        target_turn: 4,
+        percent_of_games: super::report_schema::Percent::from_share(0.77),
+    }]);
+    typed.colored_sources = Some(super::report_schema::ColoredSourcesReport {
+        format: "commander".to_string(),
+        lands: 36.0,
+        sources: Default::default(),
+        credits: super::report_schema::SourceCredits {
+            lands: Default::default(),
+            creature_mana_sources: Default::default(),
+            artifact_mana_sources: Default::default(),
+            cantrips: Default::default(),
+        },
+        requirements: vec![],
+        worst_deficits: vec![],
+        tapland_count: 0,
+        untapped_t1_sources: Default::default(),
+    });
+    typed.combos = Some(super::report_schema::CombosReport {
+        source: "commanderspellbook".to_string(),
+        variants_considered: 1,
+        complete: vec![],
+        near_misses: vec![],
+    });
+    typed.win_paths = Some(super::report_schema::WinPathsReport {
+        count: 0,
+        paths: vec![],
+    });
+    typed.hypgeo = Some(super::hypgeo::cast_ceilings(&deck, 10));
+    let report = serde_json::to_value(&typed).expect("serialize report");
+    let parsed: super::report_schema::SimReport =
+        serde_json::from_value(report.clone()).expect("deserialize complete report");
+    assert_eq!(parsed, typed);
     let obj = report.as_object().unwrap();
     // New additive fields exist.
     assert!(obj.contains_key("station"));
-    assert!(obj.contains_key("bodies_by_turn"));
-    assert!(obj.contains_key("engines_online_by_turn"));
+    assert!(obj.contains_key("creatures_by_turn"));
+    assert!(obj.contains_key("repeatable_sources_by_turn"));
     assert!(obj.contains_key("assumptions"));
     assert!(obj["milestones"].is_object());
     assert!(obj["milestones"]["dredge_uses_avg_by_turn"].is_object());
-    assert!(obj["milestones"]["positive_mana_loop_pct_by_turn"].is_object());
+    assert!(obj["milestones"]["percent_games_with_positive_mana_loop_by_turn"].is_object());
     // Station metrics present for a spacecraft commander.
     assert!(obj["station"].is_object());
     assert!(obj["station"]["online_by_t6"].is_number());
     assert!(obj["draw"]["avg_life_paid"].is_number());
     assert!(obj["draw"]["avg_life_funded_draws"].is_number());
-    // Stable legacy fields still present.
+    assert!(obj["land_drops"]["percent_games_with_six_or_more_lands_by_turn_4"].is_number());
+    assert!(obj["land_drops"]["expected_percent_with_six_or_more_lands_by_turn_4"].is_number());
+    assert!(obj["velocity"]["opponent_milled_by_turn"].is_object());
+    assert!(obj["color_mana_shortage"]["white"].is_number());
+    assert!(obj["color_mana_shortage"].get("W").is_none());
+    assert!(
+        obj["land_drops"]
+            .get("percent_games_with_six_or_more_lands_in_first_eleven_cards")
+            .is_none()
+    );
+    // Required normal-report fields are present.
     for key in [
         "name",
         "format",
@@ -64,9 +110,9 @@ fn json_report_adds_station_and_body_fields() {
         "draw",
         "role_access",
         "velocity",
-        "color_screw",
+        "color_mana_shortage",
         "card_castability",
-        "problems",
+        "findings",
         "summary",
     ] {
         assert!(obj.contains_key(key), "missing key {key}");
@@ -74,8 +120,81 @@ fn json_report_adds_station_and_body_fields() {
 }
 
 #[test]
+fn public_percentages_use_zero_to_one_hundred_scale() {
+    let percent = super::report_schema::Percent::from_share(0.77);
+    assert_eq!(
+        serde_json::to_value(percent).expect("serialize percent"),
+        77.0
+    );
+    assert!(serde_json::from_str::<super::report_schema::Percent>("0.77").is_ok());
+    assert!(serde_json::from_str::<super::report_schema::Percent>("101.0").is_err());
+}
+
+#[test]
+fn empty_simulation_deck_returns_an_error() {
+    let deck = crate::deck::grammar::Deck::default();
+    let cards = std::collections::HashMap::new();
+    let error = super::sim_report_for(&deck, &cards, "empty", 10, None, 42, None)
+        .expect_err("empty deck must not produce a partial report");
+    assert_eq!(error.to_string(), "deck has no cards");
+}
+
+#[test]
+fn findings_use_the_single_public_json_shape() {
+    let deck = SimDeck {
+        companion: None,
+        cards: vec![],
+        commanders: vec![],
+        format: Format::Commander,
+        rules: super::format::rules_for("commander"),
+    };
+    let stats = aggregate(&[], &deck, 5);
+    let finding = super::findings::Finding {
+        kind: "insufficient_land_drops",
+        severity: "medium",
+        game_share: Some(0.12345),
+        color: None,
+        explanation: "too few lands in opening games".to_string(),
+        suggestion: "add lands".to_string(),
+        evidence: vec![super::findings::FindingEvidence {
+            name: "lands".to_string(),
+            explanation: "30 in the deck".to_string(),
+            game_share: None,
+        }],
+    };
+    let report = serde_json::to_value(super::report::json_report(
+        &stats,
+        &deck,
+        "test",
+        42,
+        &[finding],
+        Default::default(),
+        &Default::default(),
+    ))
+    .expect("serialize report");
+    assert_eq!(
+        report["findings"][0],
+        serde_json::json!({
+            "kind": "insufficient_land_drops",
+            "identity": "insufficient_land_drops",
+            "severity": "medium",
+            "percent_of_games": 12.35,
+            "color": null,
+            "explanation": "too few lands in opening games",
+            "suggestion": "add lands",
+            "evidence": [{
+                "subject": "lands",
+                "explanation": "30 in the deck",
+                "percent_of_games": null
+            }]
+        })
+    );
+}
+
+#[test]
 fn assumptions_list_documents_limits() {
     let deck = SimDeck {
+        companion: None,
         cards: vec![],
         commanders: vec![super::model::SimCard {
             name: "IGS".into(),
@@ -123,7 +242,7 @@ fn json_report_interaction_color_and_wincons_are_populated() {
     for _ in 0..24 {
         cards.push(SimCard {
             name: "Plains".into(),
-            tap: Some(super::oracle_parse::parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(super::oracle_parser::land::parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -140,14 +259,14 @@ fn json_report_interaction_color_and_wincons_are_populated() {
                 ..Cost::default()
             },
             role: Role::Removal,
-            flags: super::model::CombatFlags {
+            flags: super::model::SimStaticFlags {
                 is_interaction: true,
                 is_instant_speed: true,
-                ..super::model::CombatFlags::default()
+                ..super::model::SimStaticFlags::default()
             },
-            riders: super::model::CastRiders {
-                drain_on_cast: 3,
-                ..super::model::CastRiders::default()
+            spell_data: super::model::SimSpellData {
+                life_loss_on_resolve: 3,
+                ..super::model::SimSpellData::default()
             },
             ..SimCard::default()
         });
@@ -170,6 +289,7 @@ fn json_report_interaction_color_and_wincons_are_populated() {
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![SimCard {
             name: "Boss".into(),
@@ -186,7 +306,7 @@ fn json_report_interaction_color_and_wincons_are_populated() {
     let mut rng = ChaCha8Rng::seed_from_u64(42);
     let logs: Vec<_> = (0..100).map(|_| run_game(&deck, &mut rng, 10)).collect();
     let stats = aggregate(&logs, &deck, 10);
-    let report = super::report::json_report(
+    let report = serde_json::to_value(super::report::json_report(
         &stats,
         &deck,
         "pin",
@@ -194,7 +314,8 @@ fn json_report_interaction_color_and_wincons_are_populated() {
         &[],
         Default::default(),
         &Default::default(),
-    );
+    ))
+    .expect("serialize report");
     let obj = report.as_object().unwrap();
     // Interaction readiness shows up with a countable instant pool.
     assert!(obj["interaction"].is_object());
@@ -205,12 +326,9 @@ fn json_report_interaction_color_and_wincons_are_populated() {
             >= 1,
         "interaction.instant_count missing or empty"
     );
-    // Wincons carries numeric rows.
-    assert!(obj["wincons"].is_object());
-    assert!(
-        obj["wincons"]["drain_p50_by_turn"].is_null()
-            || obj["wincons"]["drain_p50_by_turn"].is_number()
-    );
+    // Win-condition metrics carry numeric rows.
+    assert!(obj["win_conditions"].is_object());
+    assert!(obj["win_conditions"]["opponent_life_loss_by_turn"].is_object());
     // The commander block carries timing percentiles.
     assert!(obj["commander"]["p50_cast_turn"].is_number());
     assert!(obj["commander"]["p95_cast_turn"].is_number());
@@ -218,12 +336,14 @@ fn json_report_interaction_color_and_wincons_are_populated() {
     for key in [
         "total_cards",
         "lands",
-        "rocks",
-        "dorks",
+        "artifact_mana_sources",
+        "creature_mana_sources",
         "ramp_spells",
         "draw_sources",
-        "removal",
-        "wincons",
+        "removal_spells",
+        "targeted_removal_spells",
+        "mass_removal_spells",
+        "win_conditions",
         "locks",
         "boosters",
         "curve",
@@ -245,7 +365,7 @@ fn aggregate_attack_power_p90_and_p95_drops_compute() {
     for _ in 0..20 {
         cards.push(SimCard {
             name: "Mountain".into(),
-            tap: Some(super::oracle_parse::parse_oracle_tap_yield("{T}: Add {R}.").unwrap()),
+            tap: Some(super::oracle_parser::land::parse_tap_yield("{T}: Add {R}.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -264,14 +384,15 @@ fn aggregate_attack_power_p90_and_p95_drops_compute() {
             role: Role::Wincon,
             is_creature: true,
             printed_power: Some(3),
-            flags: super::model::CombatFlags {
+            flags: super::model::SimStaticFlags {
                 has_haste: true,
-                ..super::model::CombatFlags::default()
+                ..super::model::SimStaticFlags::default()
             },
             ..SimCard::default()
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -299,21 +420,24 @@ fn report_milestones_include_a_reached_positive_mana_loop() {
         has_mana_cost: true,
         role: Role::Rock,
         is_artifact: true,
-        station_tiers: vec![Tier {
+        striations: vec![SimStriation {
             at: 0,
             animate: false,
-            abilities: vec![Ability {
-                trigger: AbilityTiming::Activated,
-                effect: Effect::Mana(TapYield {
+            abilities: vec![SimAbility {
+                kind: super::model::SimAbilityKind::Activated,
+                trigger: SimTrigger::Never,
+                effect: SimEffect::Mana(ManaYield {
                     colorless: 1,
-                    ..TapYield::default()
+                    ..ManaYield::default()
                 }),
-                ..Ability::default()
+                activation: Some(super::model::SimActivation::default()),
+                ..SimAbility::default()
             }],
         }],
         ..SimCard::default()
     };
     let deck = SimDeck {
+        companion: None,
         cards: vec![engine; 60],
         commanders: vec![],
         format: Format::Constructed,
@@ -334,8 +458,10 @@ fn report_milestones_include_a_reached_positive_mana_loop() {
     );
 
     assert!(
-        report["milestones"]["positive_mana_loop_pct_by_turn"]["1"]
-            .as_f64()
-            .is_some_and(|percent| percent > 0.0)
+        report
+            .milestones
+            .percent_games_with_positive_mana_loop_by_turn
+            .get(&1)
+            .is_some_and(|percent| percent.value() > 0.0)
     );
 }

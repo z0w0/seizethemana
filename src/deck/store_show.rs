@@ -94,7 +94,10 @@ fn print_overview(
             // Degraded render: the deck still has structure worth showing
             // (sections, counts), so emit what the row data supports —
             // nothing here needs the oracle map.
-            let stats = super::stats::compute(deck, &Default::default());
+            let stats = super::stats::compute(
+                deck,
+                &std::collections::HashMap::<String, crate::db::CardRow>::default(),
+            );
             if stats.total > 0 {
                 println!();
                 print_stat_blocks(styles, &stats, super::legal::is_commander(deck, None));
@@ -405,12 +408,24 @@ fn set_name_for(conn: &Connection, set_code: &str) -> Option<String> {
 ///
 /// Built in one pass over the maindeck entries: per-name copies come from
 /// the same iteration (no per-card rescans), so the census is O(n).
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct UniverseCensus {
+    /// Copies from Magic multiverse sets.
+    pub multiverse: i64,
+    /// Copies from Universes Beyond sets.
+    pub universes_beyond: i64,
+    /// Copy counts by franchise.
+    pub franchises: std::collections::BTreeMap<String, i64>,
+    /// Names of Universes Beyond cards.
+    pub ub_cards: Vec<String>,
+}
+
 pub(crate) fn universe_census(
     conn: &Connection,
     deck: &super::Deck,
     cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
     out: &mut crate::output::Output,
-) -> Option<serde_json::Value> {
+) -> Option<UniverseCensus> {
     let mut multiverse = 0i64;
     let mut beyond = 0i64;
     let mut franchises: std::collections::BTreeMap<String, i64> = Default::default();
@@ -460,12 +475,81 @@ pub(crate) fn universe_census(
             _ => multiverse += qty,
         }
     }
-    Some(serde_json::json!({
-        "multiverse": multiverse,
-        "universes_beyond": beyond,
-        "franchises": franchises,
-        "ub_cards": ub_cards,
-    }))
+    Some(UniverseCensus {
+        multiverse,
+        universes_beyond: beyond,
+        franchises,
+        ub_cards,
+    })
+}
+
+/// One deck entry with ownership and price details.
+#[derive(Debug, Clone, serde::Serialize)]
+struct DeckEntryReport {
+    /// Copies in this deck.
+    quantity: i64,
+    /// Card name.
+    name: String,
+    /// Set code when the deck pins a printing.
+    set: Option<String>,
+    /// Full set name when known.
+    set_name: Option<String>,
+    /// Collector number when the deck pins a printing.
+    collector_number: Option<String>,
+    /// Whether this deck line is foil.
+    foil: bool,
+    /// Copies owned in the deck or binders.
+    owned: i64,
+    /// Copies assigned to this deck.
+    assigned_to_this_deck: i64,
+    /// Copies assigned to other decks.
+    owned_elsewhere: i64,
+    /// Source covering the requested copies.
+    covered_by: String,
+    /// Why the copies are missing, when not covered.
+    missing_reason: Option<String>,
+    /// Whether this card has unlimited basic-land supply.
+    basic_land: bool,
+    /// Per-copy price for the selected finish.
+    price: Option<f64>,
+}
+
+/// A named section in the saved deck.
+#[derive(Debug, Clone, serde::Serialize)]
+struct DeckSectionReport {
+    /// Section name.
+    section: String,
+    /// Cards in the section.
+    cards: Vec<DeckEntryReport>,
+}
+
+/// Complete typed JSON payload for `stm deck show`.
+#[derive(Debug, Clone, serde::Serialize)]
+struct DeckShowReport {
+    /// Deck name.
+    name: String,
+    /// Main deck count.
+    cards: i64,
+    /// Sideboard count.
+    sideboard_cards: i64,
+    /// Maybeboard count.
+    maybeboard_cards: i64,
+    /// Primer path.
+    primer: String,
+    /// Currency used for prices.
+    currency: &'static str,
+    /// Value of currently owned cards.
+    owned_value: f64,
+    /// Price of missing cards.
+    missing_cost: f64,
+    /// Deck sections and their cards.
+    sections: Vec<DeckSectionReport>,
+    /// Curve histogram and target.
+    curve: super::stats::CurveReport,
+    /// Mana-source counts.
+    ramp: super::stats::RampReport,
+    /// Universe census when set metadata exists.
+    universe_census: Option<UniverseCensus>,
 }
 
 /// Entry point for `stm deck show <name>` (also the `stm deck <name>` sugar).
@@ -532,7 +616,7 @@ struct ShowJsonView<'a> {
     cards_by_name: &'a std::collections::HashMap<String, crate::db::CardRow>,
     prices: &'a std::collections::HashMap<String, FinishPrices>,
     available: &'a std::collections::HashMap<String, i64>,
-    census: Option<serde_json::Value>,
+    census: Option<UniverseCensus>,
 }
 
 /// One deck line as a JSON object (the `sections[].cards` rows).
@@ -547,7 +631,7 @@ fn show_json(
     cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
     prices: &std::collections::HashMap<String, FinishPrices>,
     available: &std::collections::HashMap<String, i64>,
-    census: Option<serde_json::Value>,
+    census: Option<UniverseCensus>,
 ) -> anyhow::Result<()> {
     let view = ShowJsonView {
         deck,
@@ -580,11 +664,11 @@ fn show_json_body(conn: &Connection, view: &ShowJsonView<'_>) -> anyhow::Result<
     // reads ~2 set rows, not 100).
     let mut set_names: std::collections::HashMap<String, Option<String>> =
         std::collections::HashMap::new();
-    let sections: Vec<serde_json::Value> = deck
+    let sections: Vec<DeckSectionReport> = deck
         .sections
         .iter()
         .map(|(section, entries)| {
-            let lines: Vec<serde_json::Value> = entries
+            let lines: Vec<DeckEntryReport> = entries
                 .iter()
                 .map(|entry| {
                     show_json_entry(
@@ -598,34 +682,30 @@ fn show_json_body(conn: &Connection, view: &ShowJsonView<'_>) -> anyhow::Result<
                     )
                 })
                 .collect();
-            serde_json::json!({ "section": section, "cards": lines })
+            DeckSectionReport {
+                section: section.clone(),
+                cards: lines,
+            }
         })
         .collect();
     let (owned_value, missing_cost) = deck_value(deck, cards_by_name, prices, available);
     let stats = super::stats::compute(deck, cards_by_name);
     let is_commander = super::legal::is_commander(deck, None);
-    let mut v = serde_json::json!({
-        "name": name,
-        "cards": deck.maindeck_total(),
-        "sideboard_cards": deck.sideboard_total(),
-        "maybeboard_cards": deck.maybeboard_total(),
-        "primer": primer,
-        "currency": crate::output::CURRENCY,
-        "owned_value": crate::output::round2(owned_value),
-        "missing_cost": crate::output::round2(missing_cost),
-        "sections": sections,
-    });
-    if let Some(obj) = v.as_object_mut() {
-        obj.insert(
-            "curve".into(),
-            super::stats::curve_json(&stats, is_commander),
-        );
-        obj.insert("ramp".into(), super::stats::ramp_json(&stats));
-    }
-    if let (Some(obj), Some(census)) = (v.as_object_mut(), census.as_ref()) {
-        obj.insert("universe_census".into(), census.clone());
-    }
-    println!("{}", serde_json::to_string_pretty(&v)?);
+    let report = DeckShowReport {
+        name: name.to_string(),
+        cards: deck.maindeck_total(),
+        sideboard_cards: deck.sideboard_total(),
+        maybeboard_cards: deck.maybeboard_total(),
+        primer: primer.display().to_string(),
+        currency: crate::output::CURRENCY,
+        owned_value: crate::output::round2(owned_value),
+        missing_cost: crate::output::round2(missing_cost),
+        sections,
+        curve: super::stats::curve_json(&stats, is_commander),
+        ramp: super::stats::ramp_json(&stats),
+        universe_census: census.clone(),
+    };
+    println!("{}", serde_json::to_string_pretty(&report)?);
     Ok(())
 }
 
@@ -640,7 +720,7 @@ fn show_json_entry(
     cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
     prices: &std::collections::HashMap<String, FinishPrices>,
     set_names: &mut std::collections::HashMap<String, Option<String>>,
-) -> serde_json::Value {
+) -> DeckEntryReport {
     let (assigned_here, elsewhere_binder) = owned_map.get(&entry.name).copied().unwrap_or((0, 0));
     let basic = cards_by_name
         .get(&entry.name)
@@ -657,38 +737,39 @@ fn show_json_entry(
     let owned = slot
         .map(|s| s.in_deck + s.in_binder)
         .unwrap_or(assigned_here + elsewhere_binder);
-    let missing_reason: serde_json::Value = if coverage == "missing" {
+    let missing_reason = if coverage == "missing" {
         match slot.map(|s| s.held_elsewhere > 0) {
-            Some(true) => serde_json::json!("held_elsewhere"),
-            _ => serde_json::json!("not_owned"),
+            Some(true) => Some("held_elsewhere".to_string()),
+            _ => Some("not_owned".to_string()),
         }
     } else {
-        serde_json::Value::Null
+        None
     };
-    serde_json::json!({
-        "quantity": entry.quantity,
-        "name": entry.name,
-        "set": entry.set_code,
-        "set_name": match &entry.set_code {
-            None => serde_json::Value::Null,
-            Some(code) if code.is_empty() => serde_json::Value::Null,
-            Some(code) => set_names
+    let set_name = entry.set_code.as_ref().and_then(|code| {
+        if code.is_empty() {
+            None
+        } else {
+            set_names
                 .entry(code.clone())
                 .or_insert_with(|| set_name_for(conn, code))
                 .clone()
-                .map(serde_json::Value::from)
-                .unwrap_or(serde_json::Value::Null),
-        },
-        "collector_number": entry.collector_number,
-        "foil": entry.foil,
-        "owned": owned,
-        "assigned_to_this_deck": slot.map(|s| s.in_deck).unwrap_or(assigned_here),
-        "owned_elsewhere": slot.map(|s| s.held_elsewhere).unwrap_or(0),
-        "covered_by": coverage,
-        "missing_reason": missing_reason,
-        "basic_land": basic,
-        "price": entry_unit_price(entry, prices),
-    })
+        }
+    });
+    DeckEntryReport {
+        quantity: entry.quantity,
+        name: entry.name.clone(),
+        set: entry.set_code.clone(),
+        set_name,
+        collector_number: entry.collector_number.clone(),
+        foil: entry.foil,
+        owned,
+        assigned_to_this_deck: slot.map(|s| s.in_deck).unwrap_or(assigned_here),
+        owned_elsewhere: slot.map(|s| s.held_elsewhere).unwrap_or(0),
+        covered_by: coverage.to_string(),
+        missing_reason,
+        basic_land: basic,
+        price: entry_unit_price(entry, prices),
+    }
 }
 
 /// The human render: header, overview, to-buy block, census note, and the
@@ -704,7 +785,7 @@ fn show_human(
     cards_by_name: &std::collections::HashMap<String, crate::db::CardRow>,
     prices: &std::collections::HashMap<String, FinishPrices>,
     held_elsewhere: &std::collections::HashMap<String, (i64, Vec<String>)>,
-    census: Option<serde_json::Value>,
+    census: Option<UniverseCensus>,
 ) {
     let styles = out.styles();
     let sideboard = deck.sideboard_total();
@@ -880,24 +961,15 @@ fn to_buy_text(
 }
 
 /// The Universes Beyond note under the overview (only when UB cards exist).
-fn print_universe_note(styles: &crate::output::Styles, census: Option<&serde_json::Value>) {
+fn print_universe_note(styles: &crate::output::Styles, census: Option<&UniverseCensus>) {
     let Some(census) = census else {
         return;
     };
-    let beyond = census["universes_beyond"].as_i64().unwrap_or(0);
+    let beyond = census.universes_beyond;
     if beyond <= 0 {
         return;
     }
-    let names = census["ub_cards"]
-        .as_array()
-        .map(|cards| {
-            cards
-                .iter()
-                .filter_map(|c| c.as_str())
-                .collect::<Vec<_>>()
-                .join(", ")
-        })
-        .unwrap_or_default();
+    let names = census.ub_cards.join(", ");
     println!();
     println!(
         "{}",

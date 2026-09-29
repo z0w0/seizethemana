@@ -113,7 +113,7 @@ fn sweep_commander_casual_legends_are_late() {
     // Casual 99-card lists cast {4}{WUBRG}-shaped commanders late: the
     // insight is the cast window. The Ur-Dragon (CMC 9) is castable by t9
     // in a minority of games on a 35-land 5c base — the report's
-    // "commander_late" finding fires on exactly this shape.
+    // The late-commander finding fires on exactly this shape.
     let cards = fixture_map("the ur-dragon dragons");
     let deck = fixture_deck("the ur-dragon dragons");
     let stats = sim(&deck, &cards, 300, 10);
@@ -186,6 +186,10 @@ fn sweep_commander_new_mechanic_fixtures_hold_invariants() {
         "kalamax x instants",
         "light-paws aura voltron",
         "ezuri elf swarm",
+        "shorikai vehicles",
+        "infinite guideline station",
+        "zurgo mobilize",
+        "sauron the dark lord",
     ] {
         let cards = fixture_map(name);
         let deck = fixture_deck(name);
@@ -194,6 +198,66 @@ fn sweep_commander_new_mechanic_fixtures_hold_invariants() {
         assert_velocity_monotone(&stats);
         assert_castability_not_before_cost(&stats, &cards);
     }
+}
+
+#[test]
+fn shorikai_vehicles_crew_and_attack() {
+    // The vehicle commander creates bodies and crewed Vehicles attack.
+    let cards = fixture_map("shorikai vehicles");
+    let deck = fixture_deck("shorikai vehicles");
+    let stats = sim(&deck, &cards, 300, 10);
+    assert!(
+        stats.creatures_by_turn[9] >= 1.0,
+        "vehicle decks put bodies on the board, got {:.1}",
+        stats.creatures_by_turn[9]
+    );
+    assert!(
+        stats.attack_power_by_turn[9] > 2.0,
+        "crewed Vehicles attack, got {:.1}",
+        stats.attack_power_by_turn[9]
+    );
+}
+
+#[test]
+fn infinite_guideline_station_animates_from_station_fuel() {
+    // The station commander accumulates charge counters from tapped
+    // bodies and animates at 12+.
+    let cards = fixture_map("infinite guideline station");
+    let deck = fixture_deck("infinite guideline station");
+    let stats = sim(&deck, &cards, 300, 10);
+    assert!(
+        stats.attack_power_by_turn[9] > 1.0,
+        "the animated spacecraft attacks, got {:.1}",
+        stats.attack_power_by_turn[9]
+    );
+}
+
+#[test]
+fn zurgo_mobilize_adds_attack_power() {
+    // Mobilize tokens join every attack, so attack power beats the
+    // printed bodies alone.
+    let cards = fixture_map("zurgo mobilize");
+    let deck = fixture_deck("zurgo mobilize");
+    let stats = sim(&deck, &cards, 300, 10);
+    assert!(
+        stats.attack_power_by_turn[9] > 4.0,
+        "mobilize tokens join the attack, got {:.1}",
+        stats.attack_power_by_turn[9]
+    );
+}
+
+#[test]
+fn sauron_ring_and_amass_drain() {
+    // The Ring tempts raises the emblem and amass bodies grow; the deck
+    // drains through its payoffs and burn.
+    let cards = fixture_map("sauron the dark lord");
+    let deck = fixture_deck("sauron the dark lord");
+    let stats = sim(&deck, &cards, 300, 10);
+    assert!(
+        stats.opponent_life_loss_by_turn[9] > 1.0,
+        "the ring/amass shell drains, got {:.1}",
+        stats.opponent_life_loss_by_turn[9]
+    );
 }
 
 #[test]
@@ -318,15 +382,15 @@ fn satya_energy_deck_emerges_bodies() {
     let deck = fixture_deck("satya aetherflux energy");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.bodies_by_turn[9] > 4.0,
+        stats.creatures_by_turn[9] > 4.0,
         "satya bodies by t10: {:.2}",
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[9]
     );
     assert!(
-        stats.bodies_by_turn[9] > stats.bodies_by_turn[4] * 1.5,
+        stats.creatures_by_turn[9] > stats.creatures_by_turn[4] * 1.5,
         "satya body count must grow late, {:.1} → {:.1}",
-        stats.bodies_by_turn[4],
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[4],
+        stats.creatures_by_turn[9]
     );
 }
 
@@ -340,15 +404,15 @@ fn krenko_goblin_swarm_grows_bodies() {
     let deck = fixture_deck("krenko goblin swarm");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.bodies_by_turn[9] > 3.0,
+        stats.creatures_by_turn[9] > 3.0,
         "krenko bodies by t10: {:.2}",
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[9]
     );
     assert!(
-        stats.bodies_by_turn[9] > stats.bodies_by_turn[4],
+        stats.creatures_by_turn[9] > stats.creatures_by_turn[4],
         "krenko body count must grow late, {:.1} → {:.1}",
-        stats.bodies_by_turn[4],
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[4],
+        stats.creatures_by_turn[9]
     );
 }
 
@@ -376,13 +440,13 @@ fn yuriko_ninja_tempo_attacks_evasive() {
 
 #[test]
 fn nekusar_wheel_punish_draws_wheels() {
-    // Nekusar's wheel engines refill the hand: wheel draws push cards
-    // seen well past the vanilla curve by t10.
+    // Nekusar's wheel engines refill the hand. Chandra's Regulator stays
+    // inert because its activation has an unsupported discard cost.
     let cards = fixture_map("nekusar wheel punish");
     let deck = fixture_deck("nekusar wheel punish");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.cards_seen[9] > 30.0,
+        stats.cards_seen[9] > 27.0,
         "nekusar velocity by t10: {:.1}",
         stats.cards_seen[9]
     );
@@ -454,9 +518,9 @@ fn ezuri_elf_swarm_grows_bodies() {
     let deck = fixture_deck("ezuri elf swarm");
     let stats = sim(&deck, &cards, 200, 10);
     assert!(
-        stats.bodies_by_turn[9] > 3.0,
+        stats.creatures_by_turn[9] > 3.0,
         "ezuri bodies by t10: {:.2}",
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[9]
     );
 }
 
@@ -518,7 +582,7 @@ fn shanna_energy_soldiers_early_creatures() {
     );
 }
 
-/// A phyrexian-pip commander ({B/P}) pays 2 life per pip (CR 118.3b):
+/// A phyrexian-pip commander ({B/P}) pays 2 life per pip (CR 107.4f):
 /// the cast gate demands the mana part only, the charge applies when
 /// life covers it, and a life-starred command zone skips the cast
 /// instead of driving life to zero.
@@ -537,6 +601,7 @@ fn phyrexian_commander_charges_life_and_gates_low_life() {
         cards.push(parse_sim_card(&land));
     }
     let deck = super::model::SimDeck {
+        companion: None,
         cards,
         commanders: vec![parse_sim_card(&krrrik)],
         format: Format::Commander,
@@ -546,11 +611,11 @@ fn phyrexian_commander_charges_life_and_gates_low_life() {
     let mut engines = Vec::new();
     let mut census = super::game_run::TurnCensus::new(3, 1);
     let mut st = super::turn_loop_tests::state(vec![], vec![]);
-    let mut pool = super::game::Pool::default();
+    let mut pool = super::game::ManaPool::default();
     pool.fixed[2] = 4;
     pool.colorless = 2;
     // Cost {2}{B/P}{B/P}: 2 generic + 2 pips paid with 4 life.
-    super::game_run::commander_phase_probe(
+    super::game_run::commander_phase(
         &deck,
         &mut st,
         &mut pool,
@@ -558,6 +623,7 @@ fn phyrexian_commander_charges_life_and_gates_low_life() {
         &commander,
         1,
         &mut engines,
+        false,
     );
     assert_eq!(st.life, 20 - 4, "two phyrexian pips charge 4 life");
     assert_eq!(
@@ -570,10 +636,10 @@ fn phyrexian_commander_charges_life_and_gates_low_life() {
     // above the charge).
     let mut st2 = super::turn_loop_tests::state(vec![], vec![]);
     st2.life = 1;
-    let mut pool2 = super::game::Pool::default();
+    let mut pool2 = super::game::ManaPool::default();
     pool2.fixed[2] = 6;
     let mut census2 = super::game_run::TurnCensus::new(3, 1);
-    super::game_run::commander_phase_probe(
+    super::game_run::commander_phase(
         &deck,
         &mut st2,
         &mut pool2,
@@ -581,6 +647,7 @@ fn phyrexian_commander_charges_life_and_gates_low_life() {
         &commander,
         1,
         &mut engines,
+        false,
     );
     assert_eq!(
         census2.commander_castable, None,

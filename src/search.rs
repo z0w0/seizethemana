@@ -252,13 +252,13 @@ fn parse_colors(colors_json: &str) -> Vec<char> {
 /// `restricted`. `banned` and `not_legal` fail, as does an unknown format.
 pub fn legal_in(legalities_json: &str, format: &str) -> bool {
     let Ok(map) =
-        serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(legalities_json)
+        serde_json::from_str::<std::collections::BTreeMap<String, String>>(legalities_json)
     else {
         return false;
     };
     let key = format.to_ascii_lowercase();
     matches!(
-        map.get(&key).and_then(|v| v.as_str()),
+        map.get(&key).map(String::as_str),
         Some("legal") | Some("restricted")
     )
 }

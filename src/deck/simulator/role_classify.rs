@@ -1,16 +1,15 @@
 //! Classify a card's deckbuilding role from its card row and Oracle text.
 
 use super::super::stats::{is_dork, is_rock};
-use super::model::TapYield;
-use super::oracle_parse::parse_oracle_damage_removal_shape;
+use super::model::ManaYield;
 use crate::db::CardRow;
 
-/// Functional role classification.
+/// Classify diagnostic roles and interaction from raw card text, not supported game mechanics.
 pub fn classify(
     row: &CardRow,
     text: &str,
-    tap: &Option<TapYield>,
-    mana_on_cast: &Option<TapYield>,
+    tap: &Option<ManaYield>,
+    mana_on_cast: &Option<ManaYield>,
     land: bool,
     station: bool,
 ) -> super::model::Role {
@@ -42,7 +41,7 @@ pub fn classify(
         || text.contains("creatures with power") && text.contains("can't attack")
         || text.contains("can't attack or block")
         || text.contains("regenerate target")
-        || parse_oracle_damage_removal_shape(&row.oracle_text);
+        || damage_removal_shape(&row.oracle_text);
     if removal {
         return Role::Removal;
     }
@@ -105,4 +104,37 @@ pub fn classify(
         return Role::Wincon;
     }
     Role::Other
+}
+
+/// Identify targeted damage text used only for interaction diagnostics.
+pub(super) fn damage_removal_shape(oracle_text: &str) -> bool {
+    oracle_text.split(['.', '\n', ',']).any(|segment| {
+        let lower = segment.trim().to_ascii_lowercase();
+        if lower.starts_with("whenever") || lower.starts_with("when ") || lower.contains(": ") {
+            return false;
+        }
+        lower
+            .split_once(" deals ")
+            .and_then(|(_, tail)| {
+                let (amount, after) = tail.split_once(" damage ")?;
+                let n: u32 = amount
+                    .trim()
+                    .split(' ')
+                    .next()
+                    .and_then(|word| word.parse().ok())
+                    .unwrap_or(0);
+                if n < 2 {
+                    return Some(false);
+                }
+                let player_only = after.starts_with("to target player")
+                    || after.starts_with("to target opponent")
+                    || after.starts_with("to each opponent")
+                    || after.starts_with("to each player")
+                    || after.starts_with("to each creature")
+                    || after.starts_with("to each permanent");
+                let qualifies = after.contains("target") || after.starts_with("to any target");
+                Some(qualifies && !player_only)
+            })
+            .unwrap_or(false)
+    })
 }

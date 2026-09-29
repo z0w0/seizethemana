@@ -8,6 +8,38 @@ pub struct CardCombo {
     pub requires_commander: bool,
 }
 
+/// One typed card piece in a Spellbook combo report.
+#[derive(Debug, serde::Serialize)]
+struct ComboPieceReport {
+    /// Card name.
+    name: String,
+    /// Required zones.
+    zones: Vec<String>,
+    /// Whether the piece must be the commander.
+    must_be_commander: bool,
+}
+
+/// One typed Spellbook combo row.
+#[derive(Debug, serde::Serialize)]
+struct CardComboReport {
+    /// Spellbook variant identifier.
+    id: String,
+    /// Effects the combo produces.
+    produces: Vec<String>,
+    /// Mana value required by the combo.
+    mana_value_needed: i64,
+    /// Spellbook bracket tag.
+    bracket_tag: Option<String>,
+    /// Spellbook popularity.
+    popularity: Option<i64>,
+    /// Legality by format.
+    legalities: std::collections::BTreeMap<String, bool>,
+    /// Whether a piece must be the commander.
+    requires_commander: bool,
+    /// Combo pieces.
+    pieces: Vec<ComboPieceReport>,
+}
+
 /// Entry point for `stm card combos <name>`.
 ///
 /// Exits 3 when the card is unknown or takes part in no combo (after
@@ -48,7 +80,10 @@ pub fn run_combos(
     };
     if combos.is_empty() {
         if json {
-            println!("[]");
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Vec::<CardComboReport>::new())?
+            );
         } else {
             match format {
                 Some(format) => {
@@ -92,23 +127,30 @@ pub fn run_combos(
 
 /// JSON rows for `card combos`: one object per variant.
 fn print_combos_json(rows: &[CardCombo]) -> anyhow::Result<()> {
-    let items: Vec<serde_json::Value> = rows
+    let items: Vec<CardComboReport> = rows
         .iter()
-        .map(|combo| {
-            serde_json::json!({
-                "id": combo.variant.id,
-                "produces": combo.variant.produces,
-                "mana_value_needed": combo.variant.mana_value_needed,
-                "bracket_tag": combo.variant.bracket_tag,
-                "popularity": combo.variant.popularity,
-                "legalities": combo.variant.legalities,
-                "requires_commander": combo.requires_commander,
-                "pieces": combo.pieces.iter().map(|p| serde_json::json!({
-                    "name": p.name,
-                    "zones": p.zones,
-                    "must_be_commander": p.must_be_commander,
-                })).collect::<Vec<_>>(),
-            })
+        .map(|combo| CardComboReport {
+            id: combo.variant.id.clone(),
+            produces: combo.variant.produces.clone(),
+            mana_value_needed: combo.variant.mana_value_needed,
+            bracket_tag: combo.variant.bracket_tag.clone(),
+            popularity: combo.variant.popularity,
+            legalities: combo
+                .variant
+                .legalities
+                .iter()
+                .map(|(format, legal)| (format.clone(), *legal))
+                .collect(),
+            requires_commander: combo.requires_commander,
+            pieces: combo
+                .pieces
+                .iter()
+                .map(|piece| ComboPieceReport {
+                    name: piece.name.clone(),
+                    zones: piece.zones.clone(),
+                    must_be_commander: piece.must_be_commander,
+                })
+                .collect(),
         })
         .collect();
     println!("{}", serde_json::to_string_pretty(&items)?);

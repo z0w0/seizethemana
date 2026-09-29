@@ -26,18 +26,18 @@ one binary serves both a person in a terminal and an agent in a script.
 4. **Nothing silent, nothing destructive by default.** Overwrites need
    `--force`/`--replace`. Imports replace by default and say so; `--add`
    merges. Every change prints a one-line summary of what it did. `deck
-   update` validates `--add`/`--set` names against the oracle so a typo
+update` validates `--add`/`--set` names against the oracle so a typo
    fails fast (exit 3, "did you mean" hints) instead of silently writing a
    card that does not exist.
 
 ## Output style
 
-| Element | Treatment |
-| --- | --- |
-| Status line | `   Downloading bulk data` — bold green verb, padded to 12 chars, like `cargo`'s `   Compiling serde` |
-| Finished line | `   Finished setup in 170.27s` — same shape, plus a duration |
-| Progress | Spinner/bar on stderr, cleared when done; plain lines when stderr is piped |
-| Errors | `error: ...` in red on stderr (anyhow context chain), then `hint: ...` in dim |
+| Element       | Treatment                                                                                             |
+| ------------- | ----------------------------------------------------------------------------------------------------- |
+| Status line   | `   Downloading bulk data` — bold green verb, padded to 12 chars, like `cargo`'s `   Compiling serde` |
+| Finished line | `   Finished setup in 170.27s` — same shape, plus a duration                                          |
+| Progress      | Spinner/bar on stderr, cleared when done; plain lines when stderr is piped                            |
+| Errors        | `error: ...` in red on stderr (anyhow context chain), then `hint: ...` in dim                         |
 
 Card lists get domain styling: card names bold cyan, mana pips colored per
 W/U/B/R/G/C, set codes and counts dim, rarity colored (mythic magenta, rare
@@ -111,7 +111,7 @@ Conventions:
   `stm deck`) show the overview.
 - The same filter flags exist on both `query` and `collection query`
   (`--type --color --color-identity --cmc --power --toughness --rarity
-  --set --keyword --oracle-text --format`); numeric filters take comparison
+--set --keyword --oracle-text --format`); numeric filters take comparison
   operators (`<=`, `<`, `=`, `>`, `>=`).
 - `--limit` defaults to 20, capped at 100, except `deck suggest` (default
   10, capped at 50 — suggestion rows are long) and `deck cuts --count`
@@ -126,7 +126,7 @@ Conventions:
   name, Tagger tag labels, type line, and oracle text; BM25 ties break
   toward lower EDHREC rank.
 - `--json` works on every read command. `--data-dir/--no-color/
-  --offline/--verbose` are global.
+--offline/--verbose` are global.
 - When card data or prices are more than 24h old, the command refreshes
   before it runs (synchronous: a stale store makes the read block for a
   full sync); `--offline` skips that.
@@ -169,7 +169,7 @@ Conventions:
   sorted by popularity. `--format <fmt>` keeps combos legal in that format;
   commander-only combos (a piece must be the commander) are excluded
   automatically for 60-card formats. Human view: `A + B (commander) →
-  produces [bracket] pop N legal: …`. Exit 3 when the card appears in no
+produces [bracket] pop N legal: …`. Exit 3 when the card appears in no
   combo.
 - `stm deck update --dry-run` validates the ops exactly like a real
   update (oracle names, singleton guard) and applies them to a copy in
@@ -177,11 +177,11 @@ Conventions:
   (`-`/`+`/`~` rows), the cost impact (new to-buy slots at the cheapest
   printing, money freed by removals, net spend), and with `--sim` a
   same-seed before/after consistency delta (shape counts, metric lines,
-  problems `+` new / `-` resolved; exit 1 only on a new problem). Nothing
+  findings `+` new / `-` resolved; exit 1 only on a new finding). Nothing
   is written; the closing note says to re-run without `--dry-run` to
   apply. `--json` carries `{name, dry_run, changes, cost, sim}` where
   `cost` is `{to_buy: {items: [{name, quantity, price_usd,
-  owned}], total_usd}, freed_usd, net_usd}` and `sim` is the
+owned}], total_usd}, freed_usd, net_usd}` and `sim` is the
   `ReportDiff` (null without `--sim`). `--json` also works on real
   updates (the one-line summary as JSON).
 - `stm collection conflicts` compares every decklist's slot demand
@@ -196,41 +196,27 @@ Conventions:
   Each hand prints with a keep/mull sentence (land count vs the keep
   band, early plays); `--json` wraps `{seed, hands}`.
 - `stm deck simulate` runs Monte Carlo goldfish games (default 10,000 —
-  ±0.5pp on percentages) and prints an overview block of aggregates, the
-  worst-3 slow-to-cast cards, and `error:` problem lines with a category +
-  magnitude suggestion (`→ add 2-3 draw engines`). Exit 1 when problems
-  were found (the result, not a crash); `--seed` makes runs reproducible
-  so agents can diff a deck edit's effect. `--baseline prior.json` prints
-  deltas only — shape counts, metric lines, problems (`+` new / `-`
-  resolved) — and exits 1 only when a problem is new. With `--json` the
-  same baseline prints the delta object (`metrics`, `shape`, `problems`)
-  instead of the full report. Without a baseline, `--json` is the full
-  detail:
-  opening-hand distribution, land-drop curve + percentiles, commander
-  timing (with the full pip check for multicolor commanders), station
-  online metrics, bodies and engines per turn, unspent mana, velocity +
-  library awareness + mill census (self and opponent direction) +
-  library remaining, combat block (attack power per turn and p90,
-  attackers, evasion census), wincons block (drain per turn, extra-turn
-  share, win-threshold engines, planeswalker ultimate online), the
-  interaction block (readiness by turn, mana held, instant-speed copy
-  count; explicitly "capacity, not events"), role access, per-card
-  castability, a static `color_sources` census of land tap yields per
-  color, `combo_access` + store-backed `combos`, a `win_paths` section
-  (complete combos whose Spellbook `produces` labels contain a win
-  feature — "Win the game", "Infinite damage", "Infinite turns", …),
-  and the problems array, plus the `mana_base` block: the deck's
-  lands/rocks/dorks/ramp counts against the bracket target bands
-  (`--bracket 1-5`, default 3) with a verdict sentence ("trim 3 lands",
-  "add 2 ramp", "on target"). The flood metric counts lands *seen* at end of turn 4
-  (opener + draws + cantrips + self-mill) against the hypergeometric expectation at
-  that same draw volume, so a land-heavy deck reports real flood where a
-  drops-made detector reads zero, and a cantrip deck is not punished for
-  seeing more cards. Model limits ship in the JSON
-  `assumptions` array.
-  Human output adds lines for interaction readiness, attack power,
-  drain, extra turns, and threshold/ultimate online when non-zero, and
-  a "Win paths" block when a store-backed win path assembles.
+  about ±0.5 percentage points on percentages) and prints aggregates,
+  card castability, and typed findings. Exit 1 means findings were
+  reported; it is not a runtime failure. `--seed` makes the run
+  reproducible. `--baseline prior.json` prints a typed diff and exits 1
+  only when a new finding appears. With `--json`, baseline output has
+  `metrics`, `findings`, and `shape` arrays; each finding delta carries
+  `change`, `identity`, `kind`, and `explanation`. Without a baseline,
+  `--json` prints the typed `SimReport` object with named blocks such as
+  `opening_hand`, `land_drops`, `mana_base`, `win_conditions`,
+  `color_mana_shortage`, and `findings`. Optional blocks include
+  `combo_access`, `colored_sources`, `combos`, `win_paths`, and
+  `hypgeo`. Percent fields use the 0–100 scale and two decimal places.
+  Finding rows have a stable `identity`, a `kind`, severity,
+  `percent_of_games` when applicable, an explanation, a suggestion, and
+  typed evidence. Role and interaction data are diagnostic estimates;
+  interaction measures readiness, not an answer resolving. The
+  `assumptions` array states the model limits. The turn policy executes
+  actions in the precombat main phase; the postcombat main phase is an
+  explicit no-op. Saga lore counters are scheduled at the start of the
+  precombat main phase, but other lore placements and stack timing are
+  not modeled.
 - `stm deck combos <name>` joins the deck against the Spellbook store
   per section (COMMANDER / DECK / SIDEBOARD): complete combos,
   one-card-away near misses (with the missing piece), and — with
@@ -253,7 +239,7 @@ Conventions:
 - `stm deck diff <A> <B>` prints per-section change instructions
   (removed / added / quantity changed; basics and quantity shifts
   collapse to `Name: N → M` rows). `--as-update` emits `deck update
-  --from` spec lines instead (print suffixes stripped so the ops parse). `--markdown` renders the change-log
+--from` spec lines instead (print suffixes stripped so the ops parse). `--markdown` renders the change-log
   instruction table for `decks/<name>.changes.md` (basics read
   "Remove 4 Forests and 2 Islands"); `--exact` diffs by print identity
   instead of card name. Both operands are a deck name or a ManaBox txt
@@ -323,7 +309,7 @@ hint: run 'stm setup' first
   decoration.
 - The simulator stays solitaire (goldfish). It never models opponents,
   blockers, or interaction resolving — findings measure capacity, not
-   events.
+  events.
 - No jargon in user-facing sim strings. Findings say what they mean in
   plain English; the machine-readable `kind` values are the only place
   the shorthand lives.

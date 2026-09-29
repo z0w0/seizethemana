@@ -218,7 +218,11 @@ fn demote_off_color_commander_lands(ranked: &mut Vec<(CardRow, Vec<String>, f32)
 /// Empty-result handling for the role path: JSON stays `[]` with exit 3
 /// (a stderr note lists known roles so agents can retry), human output
 /// gets the widen-the-query hint. Returns the exit code.
-fn empty_suggestions(role: Option<Role>, out: &mut crate::output::Output, json: bool) -> i32 {
+fn empty_suggestions(
+    role: Option<Role>,
+    out: &mut crate::output::Output,
+    json: bool,
+) -> anyhow::Result<i32> {
     if json && role.is_some() {
         eprintln!(
             "note: role matched but no cards passed the filters; known roles: {}",
@@ -226,14 +230,14 @@ fn empty_suggestions(role: Option<Role>, out: &mut crate::output::Output, json: 
         );
     }
     if json {
-        println!("[]");
+        render::print_empty_json()?;
     } else {
         out.error("no suggestions matched");
         out.hint(
             "widen the query or drop --role; the filters may be too tight; lower --max-price hides unpriced cards",
         );
     }
-    crate::cli::codes::NO_RESULTS
+    Ok(crate::cli::codes::NO_RESULTS)
 }
 
 /// Run the suggest pipeline.
@@ -352,7 +356,7 @@ pub fn suggest(
     // The cap already ran inside `gather_hits` (cap before the limit
     // cut); `ranked` is final here.
     if ranked.is_empty() {
-        return Ok(empty_suggestions(role, out, json));
+        return empty_suggestions(role, out, json);
     }
     let ranked = group_owned_first(ranked, &owned);
     to_suggestions(ranked, &owned, conn, out, deck_name, json)
@@ -813,7 +817,7 @@ fn run_commander_search(
     )?;
     if owned_only && ranked.is_empty() {
         if json {
-            println!("[]");
+            render::print_empty_json()?;
         } else {
             out.error("no owned commander candidates matched");
             out.hint("drop --owned to search every legendary, or widen the query");
@@ -822,7 +826,7 @@ fn run_commander_search(
     }
     if ranked.is_empty() {
         if json {
-            println!("[]");
+            render::print_empty_json()?;
         } else {
             out.error("no commander candidates matched");
             out.hint(

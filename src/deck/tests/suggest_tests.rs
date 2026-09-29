@@ -631,12 +631,9 @@ fn deck_show_json_curve_block_reports_commander_target() {
     let is_commander = crate::deck::legal::is_commander(&deck, None);
     assert!(is_commander, "COMMANDER section marks the deck");
     let curve = crate::deck::stats::curve_json(&stats, is_commander);
-    assert_eq!(curve["target"], "target: comes together by t8-t10");
-    assert_eq!(curve["histogram"][0], 0, "lands never count in the curve");
-    assert_eq!(
-        curve["histogram"][3], 1,
-        "the 3-MV commander sits in slot 3"
-    );
+    assert_eq!(curve.target, "target: comes together by t8-t10");
+    assert_eq!(curve.histogram[0], 0, "lands never count in the curve");
+    assert_eq!(curve.histogram[3], 1, "the 3-MV commander sits in slot 3");
     // A 60-card deck through the same wiring reads the 60-card bands.
     crate::deck::create(
         &paths,
@@ -651,7 +648,7 @@ fn deck_show_json_curve_block_reports_commander_target() {
     let is_commander = crate::deck::legal::is_commander(&deck, None);
     assert!(!is_commander);
     let curve = crate::deck::stats::curve_json(&stats, is_commander);
-    assert_eq!(curve["target"], "target: does its thing by t4");
+    assert_eq!(curve.target, "target: does its thing by t4");
 }
 
 #[test]
@@ -1140,13 +1137,13 @@ fn empty_role_result_is_json_array_with_exit_3() {
     // A known role with zero hits: JSON prints `[]`, exit 3, and the
     // stderr note lists known roles (no "nearby" wording).
     let mut out = crate::output::Output::new(true, false, false);
-    let code = empty_suggestions(Some(Role::Draw), &mut out, true);
+    let code = empty_suggestions(Some(Role::Draw), &mut out, true).unwrap();
     assert_eq!(code, crate::cli::codes::NO_RESULTS);
-    let code = empty_suggestions(None, &mut out, true);
+    let code = empty_suggestions(None, &mut out, true).unwrap();
     assert_eq!(code, crate::cli::codes::NO_RESULTS);
     // Human mode: the error path still exits 3.
     let mut out = crate::output::Output::new(true, false, false);
-    let code = empty_suggestions(None, &mut out, false);
+    let code = empty_suggestions(None, &mut out, false).unwrap();
     assert_eq!(code, crate::cli::codes::NO_RESULTS);
 }
 

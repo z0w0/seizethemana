@@ -1,10 +1,10 @@
 //! Keep the standard co-located test import for shared simulator helpers.
-use super::game::{Activation, Pool, fire_on_enter, new_perm_with};
+use super::game::{Activation, ManaPool, fire_on_enter, fire_triggers, new_perm_with};
 use super::game_combat::combat_phase;
 use super::game_commander::CommanderProfile;
-use super::game_effects::resolve_activation_public;
+use super::game_effects::activation::resolve_activation;
 use super::game_run::{TurnCensus, build_pool, run_turn};
-use super::model::Effect;
+use super::model::SimEffect;
 use super::turn_loop_tests::{cast, deck, row, state};
 #[allow(unused_imports)]
 use super::*;
@@ -29,9 +29,9 @@ fn surveil_moves_the_exact_top_cards_and_resolves_library_triggers() {
         ),
     ]);
     let mut st = state(vec![0], vec![1, 2, 3]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     let spent = cast(&cards, &mut st, &mut pool);
@@ -79,9 +79,9 @@ fn compound_spell_executes_parsed_draw_and_life_effects() {
         row("Last card", "{9}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0], vec![1, 2, 3]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     cast(&cards, &mut st, &mut pool);
@@ -110,6 +110,161 @@ fn compound_spell_executes_parsed_draw_and_life_effects() {
     assert_eq!(st.seen, 2);
 }
 
+/// Resolve all effects from one entry trigger in Oracle order.
+#[test]
+fn compound_entry_trigger_resolves_all_effects_once() {
+    let cards = deck(&[
+        row(
+            "Mixed entry trigger",
+            "{U}",
+            "Enchantment",
+            "When this permanent enters, draw a card and gain two life.",
+        ),
+        row("Drawn card", "{9}", "Sorcery", ""),
+    ]);
+    let mut st = state(vec![0], vec![1]);
+    let mut pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+
+    cast(&cards, &mut st, &mut pool);
+
+    assert_eq!(st.hand, [crate::deck::simulator::model::CardIdx(1)]);
+    assert_eq!(st.life, 22);
+    assert_eq!(st.life_gained, 2);
+}
+
+/// Pay one cost and resolve every activation effect once.
+#[test]
+fn compound_activation_pays_once_and_resolves_all_effects() {
+    let cards = deck(&[
+        row(
+            "Mixed activation",
+            "{1}{U}",
+            "Creature — Wizard",
+            "{1}, {T}: Draw a card and gain one life.",
+        ),
+        row("Drawn card", "{9}", "Sorcery", ""),
+    ]);
+    let ability = cards.cards[0]
+        .unlocked_abilities(0)
+        .find(|ability| ability.kind.is_activated())
+        .expect("parsed activated ability")
+        .clone();
+    let mut st = state(vec![], vec![1]);
+    st.battlefield.push(new_perm_with(
+        12,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    ));
+    st.battlefield[0].summoning_sick = false;
+    let mut pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    let activation = Activation {
+        pos: 0,
+        uid: 12,
+        ability,
+        ability_cost: super::model::Cost {
+            generic: 1,
+            ..super::model::Cost::default()
+        },
+        draws: 1,
+        sacrifice_uid: None,
+        target_uid: None,
+    };
+
+    resolve_activation(&cards, &mut st, &mut pool, 1, &activation);
+
+    assert_eq!(pool.total(), 0);
+    assert_eq!(st.hand, [crate::deck::simulator::model::CardIdx(1)]);
+    assert_eq!(st.life_gained, 1);
+    assert!(st.battlefield[0].tapped);
+}
+
+/// Check every activation cost before paying any component.
+#[test]
+fn compound_activation_requires_and_pays_all_costs() {
+    let cards = deck(&[
+        row(
+            "Combined activation",
+            "{1}",
+            "Artifact",
+            "{1}, Pay 2 life, Remove a charge counter from this artifact, {T}: Draw a card and gain one life.",
+        ),
+        row("Drawn card", "{9}", "Sorcery", ""),
+    ]);
+    let mut st = state(vec![], vec![1]);
+    st.battlefield.push(new_perm_with(
+        12,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    ));
+    st.battlefield[0].counters.charge = 1;
+    let activation =
+        super::game_effects::activation::pick_best_activation(&cards, &st, &ManaPool::default(), 1);
+    assert!(activation.is_none(), "the mana cost is not payable");
+    assert_eq!(st.life, 20, "no partial cost is paid");
+    assert_eq!(st.battlefield[0].counters.charge, 1);
+    assert!(!st.battlefield[0].tapped);
+
+    let mut pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    let activation = super::game_effects::activation::pick_best_activation(&cards, &st, &pool, 1)
+        .expect("all activation costs are payable");
+    resolve_activation(&cards, &mut st, &mut pool, 1, &activation);
+
+    assert_eq!(pool.total(), 0);
+    assert_eq!(st.life, 19, "pay two life, then gain one life");
+    assert_eq!(st.life_paid, 2);
+    assert_eq!(st.battlefield[0].counters.charge, 0);
+    assert!(st.battlefield[0].tapped);
+    assert_eq!(st.hand, [crate::deck::simulator::model::CardIdx(1)]);
+}
+
+/// Keep player damage out of the direct life-loss measure.
+#[test]
+fn direct_damage_and_life_loss_use_separate_runtime_counters() {
+    let damage_cards = deck(&[
+        row(
+            "Bolt",
+            "{R}",
+            "Instant",
+            "Bolt deals 3 damage to target player.",
+        ),
+        row("Library card", "{9}", "Sorcery", ""),
+    ]);
+    let mut damage_state = state(vec![0], vec![1]);
+    let mut damage_pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    cast(&damage_cards, &mut damage_state, &mut damage_pool);
+    assert_eq!(damage_state.damage_dealt_this_turn, 3);
+    assert_eq!(damage_state.opponent_life_lost, 0);
+
+    let life_loss_cards = deck(&[
+        row("Drain", "{B}", "Instant", "Target player loses 3 life."),
+        row("Library card", "{9}", "Sorcery", ""),
+    ]);
+    let mut life_loss_state = state(vec![0], vec![1]);
+    let mut life_loss_pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    cast(&life_loss_cards, &mut life_loss_state, &mut life_loss_pool);
+    assert_eq!(life_loss_state.damage_dealt_this_turn, 0);
+    assert_eq!(life_loss_state.opponent_life_lost, 3);
+}
+
 /// Keep unsupported spell text inert after a legal cast.
 #[test]
 fn unsupported_spell_text_stays_inert_after_a_legal_cast() {
@@ -123,9 +278,9 @@ fn unsupported_spell_text_stays_inert_after_a_legal_cast() {
         row("Unchanged library card", "{9}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0], vec![1]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     cast(&cards, &mut st, &mut pool);
@@ -172,7 +327,7 @@ fn landfall_draws_only_when_a_land_enters() {
         false,
     ));
 
-    assert!(super::cast_phase::play_land(&cards, &mut st, 1));
+    assert!(super::cast_pass::play_land(&cards, &mut st, 1));
     assert_eq!(
         st.hand,
         [3].iter()
@@ -218,7 +373,7 @@ fn landfall_draws_only_when_a_land_enters() {
         1,
         false,
     ));
-    assert!(!super::cast_phase::play_land(&cards, &mut no_land, 1));
+    assert!(!super::cast_pass::play_land(&cards, &mut no_land, 1));
     assert!(no_land.hand.is_empty());
     assert_eq!(
         no_land.library,
@@ -265,16 +420,26 @@ fn attack_and_combat_damage_triggers_fire_only_for_an_attacker() {
     assert!(st.library.is_empty());
     assert_eq!(st.seen, 2);
 
+    let no_haste_cards = deck(&[
+        row(
+            "New attacker",
+            "{R}",
+            "Creature — Warrior",
+            "Whenever this creature attacks, draw a card.",
+        ),
+        row("First card", "{9}", "Sorcery", ""),
+        row("Second card", "{9}", "Sorcery", ""),
+    ]);
     let mut no_attack = state(vec![], vec![1, 2]);
     no_attack.battlefield.push(new_perm_with(
         11,
-        &cards,
+        &no_haste_cards,
         crate::deck::simulator::model::CardIdx(0),
         1,
         false,
     ));
-    no_attack.battlefield[0].sick = true;
-    let outcome = combat_phase(&cards, &mut no_attack, 1, &[1]);
+    no_attack.battlefield[0].summoning_sick = true;
+    let outcome = combat_phase(&no_haste_cards, &mut no_attack, 1, &[1]);
     assert_eq!(outcome.attackers, 0);
     assert!(no_attack.hand.is_empty());
     assert_eq!(
@@ -285,6 +450,46 @@ fn attack_and_combat_damage_triggers_fire_only_for_an_attacker() {
             .collect::<Vec<_>>()
     );
     assert_eq!(no_attack.seen, 0);
+}
+
+#[test]
+fn intervening_if_condition_gates_the_trigger_resolution() {
+    let cards = deck(&[
+        row(
+            "Raid draw",
+            "{1}{R}",
+            "Enchantment",
+            "At the beginning of your end step, if you attacked this turn, draw a card.",
+        ),
+        row("Drawn card", "{9}", "Sorcery", ""),
+    ]);
+    let mut not_attacked = state(vec![], vec![1]);
+    not_attacked.battlefield.push(new_perm_with(
+        1,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    ));
+    fire_triggers(
+        &cards,
+        &mut not_attacked,
+        super::model::SimTrigger::EndStep,
+        1,
+    );
+    assert!(not_attacked.hand.is_empty());
+
+    let mut attacked = state(vec![], vec![1]);
+    attacked.battlefield.push(new_perm_with(
+        2,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        1,
+        false,
+    ));
+    attacked.attacked_this_turn = true;
+    fire_triggers(&cards, &mut attacked, super::model::SimTrigger::EndStep, 1);
+    assert_eq!(attacked.hand, [crate::deck::simulator::model::CardIdx(1)]);
 }
 
 /// Fire first-main and end-step triggers at their correct turn boundaries.
@@ -395,8 +600,8 @@ fn kinnan_bonus_ignores_land_taps_and_nonmana_taps() {
         row("Drawn card", "{9}", "Sorcery", ""),
     ]);
     let draw = cards.cards[1]
-        .abilities()
-        .find(|ability| matches!(ability.effect, Effect::Draw(1)))
+        .unlocked_abilities(0)
+        .find(|ability| matches!(ability.effect, SimEffect::Draw(1)))
         .expect("looter activation")
         .clone();
     let mut draw_state = state(vec![], vec![2]);
@@ -414,22 +619,18 @@ fn kinnan_bonus_ignores_land_taps_and_nonmana_taps() {
         1,
         false,
     ));
-    draw_state.battlefield[1].sick = false;
-    let mut pool = Pool::default();
+    draw_state.battlefield[1].summoning_sick = false;
+    let mut pool = ManaPool::default();
     let activation = Activation {
         pos: 1,
         uid: 21,
         ability: draw,
-        cost: 0,
+        ability_cost: super::model::Cost::default(),
         draws: 1,
-        search: None,
-        mana_yield: None,
-        counters: 0,
-        drain: 0,
         sacrifice_uid: None,
         target_uid: None,
     };
-    resolve_activation_public(&cards, &mut draw_state, &mut pool, 1, 1, &activation);
+    resolve_activation(&cards, &mut draw_state, &mut pool, 1, &activation);
     assert_eq!(
         draw_state.hand,
         [2].iter()
@@ -463,8 +664,8 @@ fn proven_basalt_loop_funds_kinnans_colored_search_activation() {
     ];
     let deck = deck(&rows);
     let untap = deck.cards[1]
-        .abilities()
-        .find(|ability| matches!(ability.effect, Effect::UntapSelf))
+        .unlocked_abilities(0)
+        .find(|ability| matches!(ability.effect, SimEffect::UntapSelf))
         .expect("Basalt untap ability")
         .clone();
     let mut st = state(vec![], vec![4]);
@@ -489,16 +690,15 @@ fn proven_basalt_loop_funds_kinnans_colored_search_activation() {
             pos: 1,
             uid: 1,
             ability: untap.clone(),
-            cost: 3,
+            ability_cost: super::model::Cost {
+                generic: 3,
+                ..Default::default()
+            },
             draws: 0,
-            search: None,
-            mana_yield: None,
-            counters: 0,
-            drain: 0,
             sacrifice_uid: None,
             target_uid: None,
         };
-        resolve_activation_public(&deck, &mut st, &mut pool, 1, 1, &activation);
+        resolve_activation(&deck, &mut st, &mut pool, 1, &activation);
     }
     assert_eq!(
         pool.colorless - starting_colorless,
@@ -509,125 +709,28 @@ fn proven_basalt_loop_funds_kinnans_colored_search_activation() {
     assert_eq!(pool.fixed[4], 1, "the Forest supplies green");
 
     let search_ability = deck.cards[0]
-        .abilities()
-        .find(|ability| matches!(ability.effect, Effect::Search(_)))
+        .unlocked_abilities(0)
+        .find(|ability| matches!(ability.effect, SimEffect::Search(_)))
         .expect("Kinnan's search ability")
         .clone();
-    let spec = match &search_ability.effect {
-        Effect::Search(spec) => *spec,
-        _ => panic!("expected search effect"),
-    };
     let search = Activation {
         pos: 0,
         uid: 0,
-        ability: search_ability,
-        cost: 7,
+        ability: search_ability.clone(),
+        ability_cost: search_ability
+            .activation
+            .as_ref()
+            .expect("activation cost bundle")
+            .mana_cost(),
         draws: 0,
-        search: Some(spec),
-        mana_yield: None,
-        counters: 0,
-        drain: 0,
         sacrifice_uid: None,
         target_uid: None,
     };
-    resolve_activation_public(&deck, &mut st, &mut pool, 1, 1, &search);
+    resolve_activation(&deck, &mut st, &mut pool, 1, &search);
 
     assert!(st.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
     assert!(st.library.is_empty());
     assert_eq!(pool.colorless, 4);
     assert_eq!(pool.fixed, [0; 5]);
-}
-
-#[test]
-fn debug_selfmill2() {
-    let self_miller = super::turn_loop_tests::row(
-        "Self Miller",
-        "{2}",
-        "Creature — Zombie",
-        "At the beginning of your upkeep, mill three cards.",
-    );
-    let opp = super::turn_loop_tests::row(
-        "Opp Miller",
-        "{1}{B}{B}",
-        "Legendary Creature — Horror",
-        "At the beginning of your upkeep, each opponent mills two cards.",
-    );
-    let land = super::turn_loop_tests::row("Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)");
-    let cards = vec![
-        super::oracle_parse::parse_sim_card(&opp),
-        super::oracle_parse::parse_sim_card(&self_miller),
-        super::oracle_parse::parse_sim_card(&self_miller),
-        super::oracle_parse::parse_sim_card(&self_miller),
-    ];
-    let mut lib = vec![super::oracle_parse::parse_sim_card(&land); 8];
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    let deck = super::model::SimDeck {
-        cards: lib,
-        commanders: cards,
-        format: super::model::Format::Commander,
-        rules: super::format::rules_for("commander"),
-    };
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(5);
-    let log = super::game::run_game(&deck, &mut rng, 4);
-    eprintln!("self: {:?} opp: {:?}", log.self_milled, log.opp_milled);
-    eprintln!("bf: {:?}", log.card_first_battlefield);
-    eprintln!("seen: {:?}", log.card_first_seen);
-    eprintln!("engines: {:?}", log.engines_online);
-}
-
-#[test]
-fn debug_selfmill3() {
-    let self_miller = super::turn_loop_tests::row(
-        "Self Miller",
-        "{2}",
-        "Creature — Zombie",
-        "At the beginning of your upkeep, mill three cards.",
-    );
-    let opp = super::turn_loop_tests::row(
-        "Opp Miller",
-        "{1}{B}{B}",
-        "Legendary Creature — Horror",
-        "At the beginning of your upkeep, each opponent mills two cards.",
-    );
-    let land = super::turn_loop_tests::row("Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)");
-    let cards = vec![
-        super::oracle_parse::parse_sim_card(&opp),
-        super::oracle_parse::parse_sim_card(&self_miller),
-        super::oracle_parse::parse_sim_card(&self_miller),
-        super::oracle_parse::parse_sim_card(&self_miller),
-    ];
-    let mut lib = vec![super::oracle_parse::parse_sim_card(&land); 4];
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    lib.push(super::oracle_parse::parse_sim_card(&self_miller));
-    for (i, c) in lib.iter().enumerate() {
-        if c.name != "Swamp" {
-            eprintln!(
-                "lib[{i}]: upkeep_abilities={:?}",
-                c.abilities()
-                    .filter(|a| a.trigger == super::model::AbilityTiming::OnUpkeep)
-                    .collect::<Vec<_>>()
-            );
-        }
-    }
-    let deck = super::model::SimDeck {
-        cards: lib,
-        commanders: cards,
-        format: super::model::Format::Commander,
-        rules: super::format::rules_for("commander"),
-    };
-    let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(5);
-    let log = super::game::run_game(&deck, &mut rng, 4);
-    eprintln!(
-        "self: {:?} opp: {:?} bf: {:?} seen: {:?} eng: {:?} grave: {:?}",
-        log.self_milled,
-        log.opp_milled,
-        log.card_first_battlefield,
-        log.card_first_seen,
-        log.engines_online,
-        log.card_first_graveyard
-    );
 }

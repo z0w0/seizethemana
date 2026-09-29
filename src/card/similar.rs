@@ -323,7 +323,10 @@ pub(super) fn finish_similar(
 ) -> anyhow::Result<i32> {
     if hits.is_empty() {
         if json {
-            println!("[]");
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Vec::<SimilarCardReport>::new())?
+            );
         } else {
             out.error(&format!("no cards share tags with {seed_name}"));
             out.hint("the card may be untagged, or the filters emptied the result set");
@@ -337,7 +340,7 @@ pub(super) fn finish_similar(
         let ranges = crate::prints::price_ranges(conn, &names)?;
         let owned_all = crate::collection::owned_counts_all(conn)?;
         let available_all = crate::collection::available_counts_all(conn)?;
-        let items: Vec<serde_json::Value> = hits
+        let items: Vec<SimilarCardReport> = hits
             .iter()
             .map(|hit| {
                 let range = ranges.get(&hit.card.name).cloned().unwrap_or_default();
@@ -350,7 +353,7 @@ pub(super) fn finish_similar(
                             set_type: None,
                             block: None,
                         });
-                let mut v = card_json(
+                let card = card_json(
                     &hit.card,
                     &tag_index,
                     &range,
@@ -360,15 +363,14 @@ pub(super) fn finish_similar(
                 );
                 // Null score when the seed had no stored vector (tags-only
                 // ranking); agents can tell "no score" from "unranked".
-                v["score"] = match hit.score {
-                    Some(score) => {
-                        serde_json::json!((f64::from(score) * 10_000.0).round() / 10_000.0)
-                    }
-                    None => serde_json::Value::Null,
-                };
-                v["shared_count"] = serde_json::json!(hit.shared_count);
-                v["shared_tags"] = serde_json::json!(hit.shared_tags);
-                v
+                SimilarCardReport {
+                    card,
+                    score: hit
+                        .score
+                        .map(|score| (f64::from(score) * 10_000.0).round() / 10_000.0),
+                    shared_count: hit.shared_count,
+                    shared_tags: hit.shared_tags.clone(),
+                }
             })
             .collect();
         println!("{}", serde_json::to_string_pretty(&items)?);
@@ -376,6 +378,20 @@ pub(super) fn finish_similar(
         print_similar_text(out, seed_name, &hits, hybrid);
     }
     Ok(crate::cli::codes::OK)
+}
+
+/// Full card detail with similarity and shared-tag measures.
+#[derive(Debug, Clone, serde::Serialize)]
+struct SimilarCardReport {
+    /// Card detail shared with `stm card`.
+    #[serde(flatten)]
+    card: super::CardReport,
+    /// Similarity score, absent for tag-only ranking.
+    score: Option<f64>,
+    /// Number of shared tags.
+    shared_count: i64,
+    /// Shared tag labels.
+    shared_tags: Vec<String>,
 }
 
 /// Human table for `card similar`: rank, name, cost, type, score, shared

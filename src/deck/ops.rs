@@ -36,7 +36,7 @@ pub enum DeckOp {
 /// Parse one op spec: `[section:]qty Name [(SET) [cn]] [*F*]`.
 ///
 /// The section prefix is matched when the token before the first space
-/// contains a `:`; card names never contain colons in ManaBox exports.
+/// contains a `:`; card names never contain colons in `ManaBox` exports.
 /// `--set` allows qty 0 (delete the line); add/remove require qty > 0.
 /// `--move` specs end with `to:<section>` (default DECK).
 ///
@@ -105,6 +105,9 @@ fn parse_move_target(spec: &str) -> (&str, String) {
 }
 
 /// Apply parsed ops to a deck, returning a summary of what changed.
+///
+/// # Errors
+/// Returns an error if the requested operation cannot be applied.
 pub fn apply_ops(deck: &mut Deck, ops: &[DeckOp]) -> anyhow::Result<DeckOpSummary> {
     let mut summary = DeckOpSummary::default();
     for op in ops {

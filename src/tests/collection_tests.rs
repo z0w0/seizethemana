@@ -318,7 +318,7 @@ fn stats_json_shape() {
         purchase_total: 0.5,
         ..Default::default()
     };
-    let v = stats_json(&stats);
+    let v = serde_json::to_value(stats_json(&stats)).unwrap();
     assert_eq!(v["unique_cards"], 2);
     assert_eq!(v["total_cards"], 5);
     assert_eq!(v["total_value"], 1.23);

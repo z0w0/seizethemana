@@ -240,14 +240,14 @@ fn curve_json_histogram_matches_fixture() {
     let v = curve_json(&stats, false);
     // Histogram indexed MV 0..6+: MV1 in slot 1, MV2 in slot 2, MV6 and
     // the MV8 copy share slot 6.
-    assert_eq!(v["histogram"][0], 0, "no MV-0 cards in the fixture");
-    assert_eq!(v["histogram"][1], 3);
-    assert_eq!(v["histogram"][2], 9);
+    assert_eq!(v.histogram[0], 0, "no mana-value-0 cards in the fixture");
+    assert_eq!(v.histogram[1], 3);
+    assert_eq!(v.histogram[2], 9);
     assert_eq!(
-        v["histogram"][6], 3,
+        v.histogram[6], 3,
         "MV6 (2 copies) + MV8 (1) in the last slot"
     );
-    let avg = v["avg_mv"].as_f64().unwrap();
+    let avg = v.average_nonland_mana_value;
     assert!((avg - (3.0 * 1.0 + 9.0 * 2.0 + 2.0 * 6.0 + 8.0) / 15.0).abs() < 0.05);
 }
 

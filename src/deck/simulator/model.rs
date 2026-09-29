@@ -1,12 +1,36 @@
-//! Card data model for the goldfish simulator: costs, tap yields, station
-//! tiers, crew, riders, flags, and abilities. Pure data + small helpers;
-//! parsing lives in `oracle_parse`, execution in `game`.
+//! Card data model for the goldfish simulator: costs, mana yields,
+//! station striations, crew, spell data, flags, and abilities. Pure data
+//! + small helpers; parsing lives in `oracle_parser` and `oracle_lower`, execution in `game`.
 //!
 //! Everything the model cannot express is dropped at parse time; the
 //! documented limits ship in the output `assumptions` list (see `report`).
 
-/// Colors tracked for mana modeling, WUBRG order.
-pub const COLORS: [char; 5] = ['W', 'U', 'B', 'R', 'G'];
+/// Named colors and basic land types.
+mod colors;
+
+/// Runtime abilities and their costs, conditions, and event subjects.
+mod abilities;
+/// Alternate-cost, reveal, and search data structures.
+#[path = "model/cast_data.rs"]
+mod cast_data;
+/// Keyword abilities (CR 702) as fields; keyword actions (CR 701) lower
+/// through the effect list.
+#[path = "model/keyword_fields.rs"]
+mod keyword_fields;
+/// Runtime keywords, keyword sets, and the counter model.
+mod keywords;
+
+pub use abilities::{
+    SimAbility, SimAbilityCondition, SimAbilityKind, SimActivation, SimActivationCost,
+    SimActivationRestriction, SimEventSubject,
+};
+pub use cast_data::{
+    AlternativeCastCost, AlternativeCostPayoff, CardFilter, RevealDestination, RevealLifeLoss,
+    RevealRule, SearchCardType, SearchDestination, SearchSpec,
+};
+pub use colors::{BasicLandType, COLORS, ManaColor};
+pub use keyword_fields::KeywordAbilities;
+pub use keywords::{Counters, EnterCounters, KEYWORD_TABLE, Keyword, KeywordSet, PlayerCounters};
 
 /// Default number of simulated games: ±0.5pp on percentages at 10k runs.
 pub const DEFAULT_RUNS: u32 = 10_000;
@@ -46,16 +70,17 @@ pub enum Role {
 }
 
 /// Mana a card asks for when casting.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cost {
     /// Generic-mana value (the `{N}` parts; `{X}` counts as 1).
     pub generic: u32,
     /// Monocolor pips per WUBRG letter.
     pub pips: [u8; 5],
-    /// Hybrid/phyrexian pips, payable from any of their colors.
-    pub flex_pips: u32,
+    /// Hybrid mana pips (`{W/U}`, CR 107.4e): payable from any of their
+    /// component colors, so the pool treats them as flexible.
+    pub hybrid_pips: u32,
     /// Phyrexian pips per WUBRG letter (`{W/P}`): each payable by its
-    /// color or 2 life (CR 118.3b). The best-case agent pays life.
+    /// color or 2 life (CR 107.4f). The best-case agent pays life.
     pub phyrexian: [u8; 5],
 }
 
@@ -64,19 +89,19 @@ impl Cost {
     pub fn total(&self) -> u32 {
         self.generic
             + self.pips.iter().map(|p| u32::from(*p)).sum::<u32>()
-            + self.flex_pips
+            + self.hybrid_pips
             + self.phyrexian.iter().map(|p| u32::from(*p)).sum::<u32>()
     }
 }
 
-/// What one tap of a permanent yields.
+/// What one tap of a mana ability yields.
 ///
 /// Real cards fall into three shapes: an "or" choice (`Add {G} or {U}` or
 /// "one mana of any color"), a fixed simultaneous set (`Add {W}{U}{B}{R}{G}`
 /// on Jegantha), and colorless-only (`{C}`). Each is one tap = the listed
 /// mana, never several independent sources.
 #[derive(Debug, Clone, Default)]
-pub struct TapYield {
+pub struct ManaYield {
     /// Fixed simultaneous pips produced on every tap (Jegantha).
     pub fixed: [u8; 5],
     /// Colors this source can choose from when tapped (choice sources).
@@ -87,6 +112,8 @@ pub struct TapYield {
     /// ("any color a land an opponent controls could produce" — Fellwar
     /// Stone). Goldfish approximation: generic-only mana from turn two.
     pub opponent_any: bool,
+    /// True when these pips may pay colored costs but not generic mana.
+    pub cannot_pay_generic: bool,
     /// Conditional scaling: the tap's output grows with board state.
     pub scaling: Option<Scale>,
     /// Colorless-only production (`{C}`).
@@ -98,12 +125,12 @@ pub struct TapYield {
     /// Spend restriction: the mana may only pay for certain casts
     /// ("spend this mana only to cast creature spells" — Secluded
     /// Courtyard; "…a legendary spell" — Plaza of Heroes).
-    pub restriction: Option<Restriction>,
+    pub restriction: Option<SpendRestriction>,
 }
 
 /// Spend-restriction classes the pool can honor.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Restriction {
+pub enum SpendRestriction {
     /// Creature spells only (Secluded Courtyard).
     Creature,
     /// Artifact spells only (Steelswarm Operator).
@@ -125,7 +152,7 @@ pub enum Scale {
     PerChargeCounter,
 }
 
-impl TapYield {
+impl ManaYield {
     /// Total mana produced by one tap. Alternative-mode sources (several
     /// tap abilities on one permanent) yield one mana, never the sum.
     pub fn total(&self) -> u32 {
@@ -140,36 +167,71 @@ impl TapYield {
     }
 }
 
-/// What starts an ability.
+/// Event whose timing the goldfish models for a triggered ability
+/// (CR 603.2b).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum AbilityTiming {
-    /// Activated: the player pays `cost` to fire it (incl. `{T}` costs).
-    Activated,
-    /// Fired when the card enters the battlefield.
+pub enum SimTrigger {
+    /// No event trigger. Used by activated abilities.
     #[default]
-    OnEnter,
-    /// Fired once per turn while the card is on the battlefield.
-    OnUpkeep,
-    /// Fired at the beginning of the player's first main phase.
-    PrecombatMainPhase,
+    Never,
+    /// Fired when the card enters the battlefield.
+    Enters,
+    /// Fired at the beginning of the player's upkeep step.
+    Upkeep,
+    /// Fired at the beginning of the player's precombat main phase.
+    PrecombatMain,
     /// Fired at the beginning of the player's end step.
-    OnEndStep,
+    EndStep,
     /// Fired when the card attacks.
-    OnAttack,
+    Attacks,
+    /// Fired once when the player declares one or more attackers.
+    PlayerAttacks,
     /// Fired when the card deals combat damage to a player (best case:
     /// every attacker connects). Thrummingbird proliferate, draw, drain.
-    OnCombatDamage,
+    CombatDamage,
     /// Fired when another spell is cast (Y'shtola, Vivi, Jhoira).
-    OnCastSpell,
+    SpellCast,
     /// Fired when the permanent dies or is sacrificed.
-    OnDeath,
+    Dies,
     /// Fired when a land enters under the player's control.
-    OnLandfall,
+    LandEnters,
+    /// Fired when a nonland permanent is tapped to produce mana.
+    TappedForMana,
+    /// Fired when the Ring tempts the player (CR 701.54d).
+    RingTempts,
+}
+
+/// Who a life-loss effect reaches (CR 119.3: losing life adjusts the
+/// player's life total). The goldfish table has one
+/// opponent in constructed and three in the commander family.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LifeLossScope {
+    /// "Each opponent loses N life" / "deals N damage to each opponent":
+    /// every opponent loses N.
+    #[default]
+    EachOpponent,
+    /// "Target player loses N" / "deals N damage to target player":
+    /// exactly one player loses N.
+    TargetPlayer,
+    /// "Each player loses N": every opponent and the player lose N.
+    EachPlayer,
+}
+
+impl LifeLossScope {
+    /// Total life lost off the table when this scope resolves: the
+    /// per-player amount times the affected opponents. "Each player"
+    /// also costs the goldfish N, so the caller charges life separately.
+    pub fn table_multiplier(self, format: Format) -> u32 {
+        match self {
+            Self::EachOpponent | Self::EachPlayer => format.life_loss_mult(),
+            Self::TargetPlayer => 1,
+        }
+    }
 }
 
 /// What an ability does when it resolves.
 #[derive(Debug, Clone, Default)]
-pub enum Effect {
+pub enum SimEffect {
     /// No modeled effect (ability exists but does nothing in the sim).
     #[default]
     None,
@@ -182,25 +244,34 @@ pub enum Effect {
     /// Search the library for a card that matches the parsed constraints.
     Search(SearchSpec),
     /// Produce mana (activated mana abilities, planets at threshold).
-    Mana(TapYield),
+    Mana(ManaYield),
     /// Untap this permanent and repeat its tap-for-mana ability.
     UntapSelf,
     /// Produce `counters × N` mana at the first main phase, then clear the host's
     /// charge counters (banked-mana engines: Coalition Relic).
-    ManaPerCounter(TapYield),
+    ManaPerCounter(ManaYield),
     /// Create token creatures (ETB tokens, crewed payoffs). The count is
-    /// advisory: the sim tracks bodies, not individual tokens.
+    /// advisory: the sim tracks creatures, not individual tokens.
     Tokens(u32),
+    /// Bank Treasure tokens as mana instead of adding creature tokens.
+    Treasures(u32),
+    /// Create `per_opponent` tokens for each opponent ("for each
+    /// opponent, create a 1/1 … token"). The commander family multiplies
+    /// by three; constructed tables multiply by one.
+    TokensEachOpponent {
+        /// Tokens created per opponent.
+        per_opponent: u32,
+    },
     /// Put N charge counters on this permanent (counter injection).
     Counters(u32),
     /// Extra land drop this turn (explore-style effects, land-search
     /// ETBs, saga ramp chapters). Puts one card in the hand; never
-    /// re-fires and never sets the blink flag.
+    /// re-fires and never sets a return flag.
     ExtraLand,
-    /// A blink-shaped ETB ("exile … return it to the battlefield").
-    /// The permanent re-fires its own OnEnter triggers once, next turn
+    /// Exile and return the source permanent.
+    /// The permanent re-fires its own Enters triggers once, next turn
     /// (the re-arm lives in the ETB firing path, not in this effect).
-    Blink,
+    ExileThenReturnSource,
     /// "You become the Monarch": from the turn after acquisition the
     /// Monarch draws one extra card at upkeep (engine, not one apply).
     Monarch,
@@ -208,19 +279,19 @@ pub enum Effect {
     /// cards count as cards seen (velocity) and fill the graveyard log.
     Mill(u32),
     /// Return cards from the graveyard: to the hand (`to_hand`, draw
-    /// credit) or the battlefield (a body, once per card).
+    /// credit) or the battlefield (a creature, once per card).
     ReturnFromGraveyard {
         /// True: cards go to the hand (counts as cards seen).
         to_hand: bool,
         /// How many cards to return.
         count: u32,
     },
-    /// Discard the hand into the graveyard, then draw that many (a
-    /// wheel). Cards seen jump by the hand size; the graveyard log fills.
-    Wheel,
-    /// Draw N, then discard N (loot). Net velocity +N; the graveyard
+    /// Discard the hand into the graveyard, then draw seven cards.
+    /// Cards seen jump by the hand size; the graveyard log fills.
+    DiscardHandThenDrawSeven,
+    /// Draw N, then discard N. Net velocity +N; the graveyard
     /// log fills with the discards.
-    Loot(u32),
+    DrawThenDiscard(u32),
     /// Look at the top N cards (scry, surveil). Zero draw credit: the
     /// cards feed `library_awareness_by_turn` instead.
     Scry(u32),
@@ -239,11 +310,60 @@ pub enum Effect {
         /// Counters needed to win.
         counters: u32,
     },
-    /// Lose N life (drain, burn at a player). Opponent-scoped phrasing
+    /// Lose N life (life_loss, burn at a player). Opponent-scoped phrasing
     /// ("target player", "each opponent") maps here; creature-target
-    /// burn does not. Commander family resolves at ×3 (three
-    /// opponents); constructed resolves at ×1.
-    Drain(u32),
+    /// burn does not. The scope decides the table multiplier (CR 119.3):
+    /// "each opponent" hits every opponent; "target player" hits exactly
+    /// one; "each player" hits every opponent plus the player.
+    LoseLife {
+        /// Life the effect asks each affected player to lose.
+        amount: u32,
+        /// Who the effect reaches.
+        scope: LifeLossScope,
+    },
+    /// Deal damage to players. Damage remains distinct from life loss
+    /// for the damage census and later replacement-effect support.
+    Damage {
+        /// Damage dealt to each affected player.
+        amount: u32,
+        /// Players who receive the damage.
+        scope: LifeLossScope,
+    },
+    /// The player gets N energy counters (CR 122.1: player counters).
+    Energy(u32),
+    /// Proliferate (CR 701.34): add one more counter of each kind that
+    /// the chosen permanents and the player already have.
+    Proliferate,
+    /// Amass N (CR 701.47): create a 0/0 Army body if none exists, then
+    /// put N +1/+1 counters on the chosen Army. Army power comes from
+    /// its counters.
+    Amass(u32),
+    /// The Ring tempts the player (CR 701.54): the Ring emblem levels
+    /// unlock at 2, 3, and 4 tempts, and "Whenever the Ring tempts you"
+    /// triggers fire.
+    RingTempts,
+    /// Empower Jace N (CR 701.71): create a Jace planeswalker token if
+    /// none exists, then add N loyalty to it.
+    EmpowerJace(u32),
+    /// Mobilize N (CR 702.181): create N 1/1 Warrior tokens, tapped and
+    /// attacking, sacrificed at the beginning of the next end step.
+    Mobilize(u32),
+    /// Explore (CR 701.44): reveal the top card; a land goes to hand,
+    /// otherwise a +1/+1 counter joins the exploring permanent.
+    Explore,
+    /// Connive N (CR 701.50): draw N, discard N, then a +1/+1 counter
+    /// if a nonland card was discarded.
+    Connive(u32),
+    /// Afterlife N (CR 702.135): create N 1/1 white-black Spirit tokens
+    /// with flying when this permanent is put into a graveyard.
+    Afterlife(u32),
+    /// The One Ring class: "{T}, Put a burden counter on this
+    /// permanent: Draw a card for each burden counter on it." The
+    /// activation adds one burden counter, then draws for the new total.
+    AddBurdenCounter,
+    /// "At the beginning of your upkeep, you lose 1 life for each burden
+    /// counter on this permanent" (The One Ring class).
+    BurdenLifeLoss,
 }
 
 /// Oracle-triggered effect when this card moves from library to graveyard.
@@ -255,161 +375,7 @@ pub enum LibraryGraveyardTrigger {
     DrainAndGain(u32),
 }
 
-/// Alternate casting cost parsed from the Oracle cost sentence.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct AlternativeCastCost {
-    /// Card category required from the hand.
-    pub filter: CardFilter,
-    /// Number of cards exiled to pay the cost.
-    pub count: u32,
-    /// Effect based on the exiled cards after the cast resolves.
-    pub payoff: AlternativeCostPayoff,
-}
-
-/// Oracle-derived filter for cards used to pay an alternate cost.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct CardFilter {
-    /// Required color, when named by the cost.
-    pub color: Option<char>,
-}
-
-/// Resolution effects paid by an alternate cost.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AlternativeCostPayoff {
-    /// No additional effect.
-    None,
-    /// Gain life equal to the total mana value of exiled cards.
-    GainLifeEqualToExiledManaValue,
-}
-
-/// A reveal instruction and its destination parsed from Oracle text.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RevealRule {
-    /// Where each revealed card moves.
-    pub destination: RevealDestination,
-    /// Life loss for each card, when stated by the effect.
-    pub life_loss: RevealLifeLoss,
-}
-
-/// Destination supported by the reveal-and-life-loss rule.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RevealDestination {
-    /// Put each revealed card into its owner's hand.
-    Hand,
-}
-
-/// Oracle-derived life-loss amount for a revealed card.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RevealLifeLoss {
-    /// Lose life equal to the revealed card's mana value.
-    ManaValue,
-}
-
-/// Constraints for the small set of library searches the simulator supports.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct SearchSpec {
-    /// Required card type, when the Oracle text names one.
-    pub card_type: Option<SearchCardType>,
-    /// Required color, when the Oracle text names one.
-    pub color: Option<char>,
-    /// True when the search requires a colorless card.
-    pub colorless: bool,
-    /// Exact mana value, when the Oracle text names one.
-    pub mana_value: Option<u32>,
-    /// Highest allowed mana value, when the Oracle text says "or less".
-    pub max_mana_value: Option<u32>,
-    /// Lowest allowed mana value, when the Oracle text says "or more".
-    pub min_mana_value: Option<u32>,
-    /// Zone where a found card goes.
-    pub destination: SearchDestination,
-    /// Whether the search may choose not to find a match.
-    pub optional: bool,
-    /// Limit a search to the first N library cards.
-    pub top_count: Option<usize>,
-    /// Reject Human cards when the Oracle search specifies non-Human.
-    pub non_human: bool,
-}
-
-/// Card types used by supported searches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SearchCardType {
-    /// Creature card.
-    Creature,
-    /// Land card.
-    Land,
-    /// Basic land card.
-    BasicLand,
-    /// Artifact card.
-    Artifact,
-    /// Enchantment card.
-    Enchantment,
-    /// Artifact or enchantment card.
-    ArtifactOrEnchantment,
-    /// Instant or sorcery card.
-    InstantSorcery,
-    /// Planeswalker card.
-    Planeswalker,
-    /// Any permanent card.
-    Permanent,
-}
-
-/// Destination for a supported library search.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum SearchDestination {
-    /// Put the card into its owner's hand.
-    #[default]
-    Hand,
-    /// Put the card onto the battlefield.
-    Battlefield,
-    /// Put the card onto the battlefield tapped.
-    BattlefieldTapped,
-    /// Put the card on top of the library.
-    LibraryTop,
-    /// Exile the card.
-    Exile,
-}
-
-/// One executable ability: what fires it, what it costs, what it does.
-#[derive(Debug, Clone, Default)]
-pub struct Ability {
-    /// What fires the ability: an activation, a trigger event, or a tap.
-    pub trigger: AbilityTiming,
-    /// Mana to pay when activating (0 when free / triggered).
-    pub cost: Cost,
-    /// Effect when the ability resolves.
-    pub effect: Effect,
-    /// Consumes the source's tap (mana abilities and tap-activated draws).
-    pub taps: bool,
-    /// Consumes one charge counter per fire (Pentad Prism's "remove a
-    /// charge counter: add one mana of any color"). The source stays
-    /// untapped and fires once per turn while counters last.
-    pub uses_counters: bool,
-    /// Bodies sacrificed as part of the cost (aristocrats outlets). The
-    /// activation consumes an untapped body and fires its OnDeath
-    /// triggers.
-    pub sacrifice_bodies: u32,
-    /// True when the card's text limits the activation ("Activate only
-    /// once each turn"): free untapped activations fire once per turn
-    /// instead of looping (no infinite-mana census flag).
-    pub once_per_turn: bool,
-    /// Loyalty spent to activate (planeswalker minus abilities). 0 = not
-    /// a loyalty activation.
-    pub loyalty_cost: u32,
-    /// Loyalty gained by activation (planeswalker plus abilities). 0 =
-    /// not a loyalty-gaining activation.
-    pub loyalty_gain: u32,
-    /// Life paid as an activation cost.
-    pub life_cost: u32,
-    /// Intervening "if" clause of a triggered ability (CR 603.4), when
-    /// the Oracle sentence carries one. No condition shape is evaluated
-    /// yet: the goldfish board makes most trivially true, and every
-    /// lowered condition fires as if true. Evaluation is future work,
-    /// so the field is carried data.
-    #[allow(dead_code)]
-    pub condition: Option<String>,
-}
-
-/// A station tier: abilities unlocked at a charge-counter threshold.
+/// A station striation: abilities unlocked at a charge-counter threshold.
 ///
 /// Station card rules come from CR 702.184 and 721: a station card's text
 /// box has one or two striations,
@@ -417,42 +383,44 @@ pub struct Ability {
 /// permanent has N or more charge counters, it has [abilities]" and, when a
 /// P/T box is printed in the same striation, "…and is a creature with base
 /// P/T". Planets never animate (no P/T box); a spacecraft animates only at
-/// the tier whose striation carries the P/T box.
+/// the striation that carries the P/T box.
 #[derive(Debug, Clone, Default)]
-pub struct Tier {
+pub struct SimStriation {
     /// Charge-counter threshold (`12+` → 12).
     pub at: u32,
-    /// True when this tier's striation also animates the card as a creature.
+    /// True when this striation also animates the card as a creature.
     pub animate: bool,
-    /// Abilities unlocked at this tier (draw engines, mana taps).
-    pub abilities: Vec<Ability>,
+    /// Abilities unlocked at this striation (draw engines, mana taps).
+    pub abilities: Vec<SimAbility>,
 }
 
 /// Saga chapter data: the ordered chapter effects of a Saga card.
 ///
 /// Rule source: CR 714.2 — each chapter is a triggered ability, indexed by
 /// the Roman numeral in the Oracle text. `chapters[i]` is chapter i+1's
-/// effect; `Effect::None` marks a chapter whose wording is unsupported.
+/// effect list; an empty list marks a chapter whose wording is
+/// unsupported. A chapter may resolve several effects ("create a token.
+/// The Ring tempts you."), so each slot holds a list.
 #[derive(Debug, Clone, Default)]
-pub struct SagaData {
+pub struct SimSaga {
     /// Chapter effects in play order (chapter I first). The length is
     /// the chapter count.
-    pub chapters: Vec<Effect>,
+    pub chapters: Vec<Vec<SimEffect>>,
 }
 
 /// One-shot effects and extra costs that ride a spell's cast.
 ///
 /// The cast phase reads these when the spell resolves. Split cards zero
-/// the riders (the cast pays the cheaper face), so every field stays
+/// the spell data (the cast pays the cheaper face), so every field stays
 /// zero/None for them.
 #[derive(Debug, Clone, Default)]
-pub struct CastRiders {
+pub struct SimSpellData {
     /// One-shot mana on cast (rituals), never joining the tap pool.
-    pub mana_on_cast: Option<TapYield>,
+    pub mana_on_cast: Option<ManaYield>,
     /// Repeatable mana on cast: "add {N} for each spell you've cast this
     /// turn" (Vivi class). Joins the pool per spell cast, every turn the
     /// host is on the battlefield.
-    pub mana_per_cast: Option<TapYield>,
+    pub mana_per_cast: Option<ManaYield>,
     /// One-shot draw on cast (cantrips, Divination).
     pub draws_on_cast: u32,
     /// Life gained when this spell resolves.
@@ -462,24 +430,46 @@ pub struct CastRiders {
     /// Oracle-derived reveal effect, when the spell reveals cards for life.
     pub reveal_rule: Option<RevealRule>,
     /// One-shot token creation on cast ("Create N 1/1 Soldier tokens").
-    /// The count feeds the token-body path (Treasure cards bank).
     pub tokens_on_cast: u32,
+    /// One-shot Treasure token creation on cast. Treasures enter the mana bank.
+    pub treasures_on_cast: u32,
     /// One-shot scry count on cast. Awareness credit, not draw.
     pub scry_on_cast: u32,
     /// One-shot surveil count on cast. The cards move to the graveyard.
     pub surveils_on_cast: u32,
     /// One-shot extra turn on cast ("take an extra turn").
     pub extra_turns_on_cast: bool,
+    /// Additional land plays granted until end of the current turn.
+    pub extra_land_drops_on_cast: u32,
     /// One-shot life loss at a player on cast (burn, drain).
-    pub drain_on_cast: u32,
+    pub life_loss_on_resolve: u32,
+    /// Who [`Self::life_loss_on_resolve`] reaches (CR 119.3). Target-player
+    /// burn counts once; each-opponent burn counts per opponent.
+    pub life_loss_scope: LifeLossScope,
+    /// Direct player damage on cast, separate from life loss.
+    pub damage_on_resolve: u32,
+    /// Who direct player damage reaches.
+    pub damage_scope: LifeLossScope,
     /// One-shot mill on cast or on entering ("mill N").
     pub mills_on_enter: u32,
-    /// One-shot wheel on cast ("each player discards their hand, then
-    /// draws seven"): the cast resolves a full wheel.
-    pub wheel_on_cast: bool,
-    /// Bodies the cast consumes ("as an additional cost to cast this
-    /// spell, sacrifice a creature"). The cast consumes a body.
-    pub additional_cost_bodies: u32,
+    /// One-shot energy on cast ("you get {E}{E}").
+    pub energy_on_cast: u32,
+    /// One-shot amass on cast (CR 701.47): grow or create an Army.
+    pub amass_on_cast: u32,
+    /// One-shot empower Jace on cast (CR 701.71).
+    pub empower_jace_on_cast: u32,
+    /// True when the resolving spell causes the Ring to tempt the
+    /// player (CR 701.54).
+    pub tempts_ring_on_cast: bool,
+    /// One-shot explore count on cast (CR 701.44).
+    pub explores_on_cast: u32,
+    /// One-shot connive count on cast (CR 701.50).
+    pub connives_on_cast: u32,
+    /// One-shot discard-hand-then-draw-seven effect on cast.
+    pub discard_hand_then_draw_seven_on_cast: bool,
+    /// Creatures the cast consumes ("as an additional cost to cast this
+    /// spell, sacrifice a creature").
+    pub additional_cost_creatures: u32,
     /// Cards discarded from hand as an additional cast cost.
     pub additional_cost_discards: u32,
     /// Life the cast costs on top of mana ("as an additional cost …
@@ -489,8 +479,8 @@ pub struct CastRiders {
     pub counters_on_cast: u32,
     /// X-cost effect class: the spell pays the leftover pool as X and
     /// scales its effect (drain X, draw X, mill X, tokens X). None when
-    /// not an X spell. `Effect::Drain(0)` carries the class; the game
-    /// loop substitutes the paid X.
+    /// not an X spell. `SimEffect::LoseLife { amount: 0, .. }` carries
+    /// the class; the game loop substitutes the paid X.
     pub x_class: Option<XClass>,
     /// Optional kicker cost (pips and generic); paid from spare mana when
     /// affordable. The kicker rider bumps drain/damage amounts.
@@ -517,26 +507,17 @@ pub struct CastRiders {
     /// Life paid for cycling (Street Wraith-style cycling).
     pub cycling_life: u32,
     /// Land type searched by landcycling.
-    pub landcycling_type: Option<char>,
+    pub landcycling_type: Option<BasicLandType>,
 }
 
 /// Static keyword and interaction flags that travel together in combat,
 /// mana, and readiness paths. One parse pass in `static_flags` fills the
 /// group; every field documents its rule source.
 #[derive(Debug, Clone, Default)]
-pub struct CombatFlags {
-    /// Attack power ×2 (double strike). Goldfish: no blockers, so the
-    /// first-strike layer is pure damage multiplication.
-    pub double_strike: bool,
-    /// +1 power per noncreature spell cast this turn (prowess),
-    /// credited in the combat phase of the same turn.
-    pub prowess: bool,
+pub struct SimStaticFlags {
     /// +1 power per land drop made after this permanent entered
     /// (landfall +1/+1 counter patterns).
     pub landfall: bool,
-    /// Evasion census flag (trample, flying, menace): counted in the
-    /// attack block, no math.
-    pub evasion: bool,
     /// True when the creature ignores summoning sickness (haste):
     /// attacks, taps, and crews the turn it enters.
     pub has_haste: bool,
@@ -553,9 +534,9 @@ pub struct CombatFlags {
     /// Interaction role (removal or counterspells): feeds readiness.
     pub is_interaction: bool,
     /// True when the card destroys or sweeps every permanent of a class
-    /// ("destroy all creatures"): a board wipe. Wipes count as
+    /// ("destroy all creatures"): a board sweep. Sweeps count as
     /// interaction capacity but never fire in a goldfish.
-    pub wipe: bool,
+    pub sweeps: bool,
     /// Static mana grant while on the battlefield ("creatures you control
     /// have {T}: add one mana of any color" — Enduring Vitality;
     /// "lands you control have…" — Chromatic Lantern). Each matching
@@ -570,13 +551,44 @@ pub struct CombatFlags {
     /// control get +2/+2"): (power, toughness). Power joins the attack
     /// sum.
     pub buff: Option<(i32, i32)>,
+    /// Static "while saddled" buff (CR 702.171b), from "As long as this
+    /// permanent is saddled, it gets +X/+Y." Power joins the attack sum
+    /// only while the saddle cost is paid.
+    pub saddled_buff: Option<(i32, i32)>,
     /// Equipment stats: (equip cost, equipped-creature buff). None when
     /// not Equipment.
     pub equipment: Option<Equipment>,
-    /// Treasure tokens created per token effect (Stark Industries
-    /// Executive). Each treasure is one banked any-color pip, sacrificed
-    /// to use; the bank lives on the game state, not the card.
-    pub treasures_on_token: bool,
+    /// Static keyword grants this card hands to other permanents
+    /// ("creatures you control have flying"). Applied at runtime by
+    /// `game::effective_keywords`.
+    pub keyword_grants: Vec<KeywordGrant>,
+    /// "You have no maximum hand size" (CR 402.2): while this permanent
+    /// is on the battlefield the end-step discard is skipped.
+    pub no_max_hand_size: bool,
+}
+
+/// One static keyword grant: which permanents receive which keyword.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct KeywordGrant {
+    /// Permanent class that receives the keyword.
+    pub target: GrantTarget,
+    /// Keyword granted to the target class.
+    pub keyword: Keyword,
+}
+
+/// Permanent classes a static keyword grant can reach.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GrantTarget {
+    /// The granter itself ("this creature has flying").
+    Source,
+    /// Every creature the player controls.
+    CreaturesYouControl,
+    /// Every land the player controls.
+    LandsYouControl,
+    /// Every permanent the player controls.
+    PermanentsYouControl,
+    /// Every spell the player casts.
+    SpellsYouCast,
 }
 
 /// The card-level capabilities the simulator executes.
@@ -590,15 +602,20 @@ pub struct SimCard {
     pub mana_value: u32,
     /// True when the type line contains Basic.
     pub is_basic_land: bool,
+    /// True when the card's type line contains a land face.
+    pub is_land: bool,
+    /// True when the card's type line contains a planeswalker face.
+    pub is_planeswalker: bool,
     /// Cheapest castable mana value after reductions (warp, affinity-lite).
     pub min_cost: Cost,
     /// True when the card has a printed mana cost. A missing cost is not
     /// equivalent to a printed `{0}` cost.
     pub has_mana_cost: bool,
     /// Mana this card produces on tap; None when it cannot tap for mana.
-    pub tap: Option<TapYield>,
-    /// Station tiers, in threshold order (empty when not a station card).
-    pub station_tiers: Vec<Tier>,
+    pub tap: Option<ManaYield>,
+    /// Station striations, in threshold order (empty when not a station
+    /// card).
+    pub striations: Vec<SimStriation>,
     /// Crew cost for Vehicles (None when not a Vehicle).
     pub crew: Option<u32>,
     /// Creature-ness for body counting and dork timing.
@@ -608,6 +625,10 @@ pub struct SimCard {
     /// True for instant and sorcery spells, which go to the graveyard after
     /// resolving instead of remaining on the battlefield.
     pub is_instant_or_sorcery: bool,
+    /// True when the card's type line makes it a permanent (creature,
+    /// artifact, enchantment, land, planeswalker, or battle). Feeds
+    /// descend counts.
+    pub is_permanent: bool,
     /// True when this spell exiles itself after resolving.
     pub exile_on_resolve: bool,
     /// True when the type line carries Legendary. Gates the
@@ -617,8 +638,8 @@ pub struct SimCard {
     pub is_artifact: bool,
     /// True when the card is a Spacecraft or Planet (stationable type).
     pub is_station_card: bool,
-    /// Charge counters gained on entering (Reckoner Bankbuster).
-    pub enter_counters: u32,
+    /// Counters gained on entering (Reckoner Bankbuster).
+    pub enter_counters: EnterCounters,
     /// Functional role.
     pub role: Role,
     /// Enters the battlefield tapped (Restless Reef, planets, most duals).
@@ -630,32 +651,30 @@ pub struct SimCard {
     /// True when Oracle text sacrifices this land to search for a land card.
     pub is_fetch_land: bool,
     /// Basic-land types named by the fetch restriction, WUBRG order.
-    pub fetch_target_types: [bool; 5],
+    pub fetch_target_types: Vec<BasicLandType>,
     /// True when Oracle text restricts the search to basic lands.
     pub fetch_basic_only: bool,
     /// True when the search effect itself puts its target onto the battlefield tapped.
     pub fetch_enters_tapped: bool,
     /// Basic types this land checks for (verge gates: "control a Swamp").
-    pub gate_types: Vec<&'static str>,
+    pub gate_types: Vec<BasicLandType>,
     /// True when the card may begin the game on the battlefield (Leyline).
     pub opens_in_play: bool,
     /// True when the card is a saga (staged per-turn effects).
     pub is_saga: bool,
     /// Saga chapter effects in play order (empty when not a saga).
-    pub saga: SagaData,
+    pub saga: SimSaga,
     /// One-shot cast effects and extra cast costs, parsed from Oracle
     /// data. The cast phase reads these when the spell resolves.
-    pub riders: CastRiders,
+    pub spell_data: SimSpellData,
     /// Mill effects target opponents ("target player mills N") instead
     /// of the deck's own library (deck-out pressure direction).
     pub mills_opponent: bool,
-    /// The source sacrifices itself when its parsed mana ability resolves.
-    pub sacrifices_for_mana: bool,
-    /// True when Oracle text grants undying.
+    /// True when Oracle text grants undying (CR 702.93).
     pub has_undying: bool,
     /// Number of cards milled when this card replaces a draw from the graveyard.
     pub dredge: Option<u32>,
-    /// Effect that triggers when this card moves from library to graveyard.
+    /// SimEffect that triggers when this card moves from library to graveyard.
     pub library_graveyard_trigger: Option<LibraryGraveyardTrigger>,
     /// Basic land subtypes printed on the card, WUBRG order.
     pub land_types: [bool; 5],
@@ -672,20 +691,35 @@ pub struct SimCard {
     /// Cost cuts scale with the artifact count on the board (improvise,
     /// affinity): the discount grows as artifacts enter, instead of the
     /// parse-time flat −2.
-    pub board_discount: bool,
+    pub battlefield_discount: bool,
     /// Printed colors of the card (subset of WUBRG, by index). Powers
     /// "one mana per color among permanents you control" scaling.
     pub colors: [bool; 5],
     /// Static keyword, interaction, and combat flags parsed from the
     /// keyword array and Oracle text (combat, mana, and readiness paths).
-    pub flags: CombatFlags,
+    pub flags: SimStaticFlags,
+    /// Printed keywords as a runtime set (flying, deathtouch, …); static
+    /// grants and keyword counters merge into this at combat time.
+    pub printed_keywords: KeywordSet,
+    /// True when the card carries the Companion keyword (CR 702.139). A
+    /// bench card with this flag may start outside the game as the
+    /// deck's companion.
+    pub has_companion: bool,
+    /// Morph, megamorph, or disguise cost (CR 702.37/702.168). The card
+    /// may be cast face down as a 2/2 for {3}, then turned face up for
+    /// this cost.
+    pub morph_cost: Option<Cost>,
+    /// Read ahead (CR 702.155): as this Saga enters, its controller may
+    /// choose a starting chapter and enter with that many lore counters.
+    /// The goldfish takes the best chapter for its board.
+    pub read_ahead: bool,
     /// True when the card is an enchantment (scaling draw engines count
     /// enchantments on the battlefield).
     pub is_enchantment: bool,
     /// True when the card enters and buffs the whole board by X ("+X/+X,
     /// where X is the number of creatures you control"): a one-shot
     /// combat buff for the turn it enters.
-    pub buffs_board_on_enter: bool,
+    pub buffs_battlefield_on_entry: bool,
     /// True when the card's +1/+1 counters join its body power
     /// ("enters with X +1/+1 counters").
     pub counters_are_power: bool,
@@ -700,6 +734,9 @@ pub struct SimCard {
     /// True when the card's rarity is mythic (the rarity column). Feeds
     /// the shared MDFC land weight.
     pub mythic: bool,
+    /// Keyword abilities (CR 702) that are continuous or payment rules;
+    /// triggered ones (mobilize, afterlife) live in the ability list.
+    pub keyword_abilities: KeywordAbilities,
 }
 
 /// Karsten's MDFC land weight: a land/spell MDFC is one card, so its
@@ -729,6 +766,9 @@ pub struct Equipment {
     pub cost: u32,
     /// Equipped-creature buff (power, toughness).
     pub buff: (i32, i32),
+    /// True for Reconfigure (CR 702.151): the gear is a creature body
+    /// until it attaches, then it stops being a creature.
+    pub reconfigure: bool,
 }
 
 /// One static mana grant: the permanent class it empowers.
@@ -760,6 +800,8 @@ pub enum XClass {
     Mill,
     /// "Create X 1/1 tokens".
     Tokens,
+    /// "Create X Treasure tokens".
+    Treasures,
     /// "Reveal the top X cards, put any number of permanent cards onto
     /// the battlefield": best case X bodies join.
     RevealPermanents,
@@ -768,9 +810,17 @@ pub enum XClass {
 }
 
 impl SimCard {
-    /// Abilities from the base card (tier 0) plus unlocked tiers.
-    pub fn abilities(&self) -> impl Iterator<Item = &Ability> {
-        self.station_tiers.iter().flat_map(|t| t.abilities.iter())
+    /// Abilities a permanent with `charge` charge counters has right now:
+    /// striation 0 plus every striation whose threshold is reached
+    /// (CR 721.2a: "{N+}[abilities]" means "as long as this permanent has
+    /// N or more charge counters on it, it has [abilities]"). Trigger and
+    /// upkeep paths must use this instead of an unrestricted striation scan,
+    /// or locked striations fire early.
+    pub fn unlocked_abilities(&self, charge: u32) -> impl Iterator<Item = &SimAbility> {
+        self.striations
+            .iter()
+            .filter(move |tier| tier.at == 0 || charge >= tier.at)
+            .flat_map(|tier| tier.abilities.iter())
     }
 
     /// Chapter count of a saga: the parsed chapter list length. Sagas
@@ -782,9 +832,10 @@ impl SimCard {
         self.saga.chapters.len().max(3)
     }
 
-    /// The station tier this card animates at, when any (spacecraft only).
+    /// The station striation this card animates at, when any (spacecraft
+    /// only).
     pub fn animate_at(&self) -> Option<u32> {
-        self.station_tiers.iter().find(|t| t.animate).map(|t| t.at)
+        self.striations.iter().find(|t| t.animate).map(|t| t.at)
     }
 }
 
@@ -803,9 +854,9 @@ pub enum Format {
 }
 
 impl Format {
-    /// Opponents a player-targeted drain resolves against: three in the
-    /// commander family ("each opponent"), one in constructed.
-    pub fn drain_mult(self) -> u32 {
+    /// Opponents a player-targeted life loss resolves against: three in
+    /// the commander family ("each opponent"), one in constructed.
+    pub fn life_loss_mult(self) -> u32 {
         match self {
             Self::Commander => 3,
             Self::Constructed => 1,
@@ -824,14 +875,38 @@ impl Format {
 /// A deck ready to simulate: the library plus the command-zone commander.
 #[derive(Debug)]
 pub struct SimDeck {
-    /// Cards in the library (commander excluded for commander decks).
+    /// Card storage. The library plus the companion, which needs an
+    /// index so casts can resolve it (CR 702.139). The companion never
+    /// shuffles into the library; see [`Self::library_len`].
     pub cards: Vec<SimCard>,
     /// Commander card(s) starting in the command zone.
     pub commanders: Vec<SimCard>,
+    /// Companion (CR 702.139) starting outside the game, as an index
+    /// into `cards`. A deck may reveal at most one companion (CR
+    /// 103.2b), so the first bench card with the Companion keyword wins.
+    pub companion: Option<CardIdx>,
     /// Library shape (command-zone singleton vs constructed).
     pub format: Format,
     /// Per-format behavior: mulligan policy and turn defaults.
     pub rules: super::format::FormatRules,
+}
+
+impl SimDeck {
+    /// Cards that shuffle into the library. The companion starts outside
+    /// the game (CR 702.139a), so it is not one of them.
+    pub fn library_len(&self) -> usize {
+        self.cards.len() - usize::from(self.companion.is_some())
+    }
+
+    /// The library cards, excluding the companion. Library-shape metrics
+    /// (land counts, cast ceilings) read this, not `cards`.
+    pub fn library_cards(&self) -> impl Iterator<Item = &SimCard> {
+        self.cards
+            .iter()
+            .enumerate()
+            .filter(|(pos, _)| self.companion != Some(CardIdx(*pos as u32)))
+            .map(|(_, card)| card)
+    }
 }
 
 /// An index into `SimDeck.cards`. A newtype so zone vectors and zone
@@ -853,12 +928,4 @@ impl std::ops::Index<CardIdx> for SimDeck {
     fn index(&self, idx: CardIdx) -> &SimCard {
         &self.cards[idx.0 as usize]
     }
-}
-
-/// True when the text reads a mill clause against the opponent. Plain
-/// "mill" is self-mill; the opponent shapes name a target.
-pub fn mills_opponent(text: &str) -> bool {
-    text.contains("target player mills")
-        || (text.contains("target opponent") && text.contains("mill"))
-        || text.contains("each opponent mills")
 }

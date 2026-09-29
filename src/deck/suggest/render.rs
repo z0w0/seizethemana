@@ -5,6 +5,57 @@ use super::Suggestion;
 use crate::db::CardRow;
 use crate::deck::Deck;
 
+/// One typed row in a card-suggestion response.
+#[derive(Debug, Clone, serde::Serialize)]
+pub(super) struct SuggestionReport {
+    /// Card name.
+    name: String,
+    /// Oracle identifier.
+    oracle_id: String,
+    /// Printed mana cost.
+    mana_cost: String,
+    /// Mana value.
+    mana_value: f64,
+    /// Card type line.
+    type_line: String,
+    /// EDHREC rank.
+    edhrec_rank: Option<i64>,
+    /// Game Changer status.
+    game_changer: Option<bool>,
+    /// Copies owned.
+    owned: i64,
+    /// Cheapest price when known.
+    price: Option<f64>,
+    /// Suggestion score.
+    score: f64,
+    /// Matched card tags.
+    tags: Vec<String>,
+    /// Oracle rules text.
+    oracle_text: String,
+    /// Commander color identity.
+    color_identity: Option<Vec<String>>,
+}
+
+impl From<&Suggestion> for SuggestionReport {
+    fn from(suggestion: &Suggestion) -> Self {
+        Self {
+            name: suggestion.card.name.clone(),
+            oracle_id: suggestion.card.oracle_id.clone(),
+            mana_cost: suggestion.card.mana_cost.clone(),
+            mana_value: suggestion.card.cmc,
+            type_line: suggestion.card.type_line.clone(),
+            edhrec_rank: suggestion.card.edhrec_rank,
+            game_changer: suggestion.card.game_changer,
+            owned: suggestion.owned,
+            price: suggestion.price_usd,
+            score: (f64::from(suggestion.score) * 10_000.0).round() / 10_000.0,
+            tags: suggestion.tags.clone(),
+            oracle_text: suggestion.card.oracle_text.clone(),
+            color_identity: serde_json::from_str(&suggestion.card.color_identity).ok(),
+        }
+    }
+}
+
 pub(super) fn deck_theme_words(
     deck: &Deck,
     cards_by_name: &std::collections::HashMap<String, CardRow>,
@@ -61,31 +112,15 @@ pub(super) fn print_json(suggestions: &[Suggestion]) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Print the empty suggestion result using the same typed array schema.
+pub(super) fn print_empty_json() -> anyhow::Result<()> {
+    print_json(&[])
+}
+
 /// The pretty-printed JSON payload for the suggestion list (split from
 /// the printer so the shape is assertable).
 fn suggestions_json(suggestions: &[Suggestion]) -> anyhow::Result<String> {
-    let items: Vec<serde_json::Value> = suggestions
-        .iter()
-        .map(|s| {
-            let identity: serde_json::Value =
-                serde_json::from_str(&s.card.color_identity).unwrap_or_default();
-            serde_json::json!({
-                "name": s.card.name,
-                "oracle_id": s.card.oracle_id,
-                "mana_cost": s.card.mana_cost,
-                "cmc": s.card.cmc,
-                "type_line": s.card.type_line,
-                "edhrec_rank": s.card.edhrec_rank,
-                "game_changer": s.card.game_changer,
-                "owned": s.owned,
-                "price": s.price_usd,
-                "score": (f64::from(s.score) * 10_000.0).round() / 10_000.0,
-                "tags": s.tags,
-                "oracle_text": s.card.oracle_text,
-                "color_identity": identity,
-            })
-        })
-        .collect();
+    let items: Vec<SuggestionReport> = suggestions.iter().map(SuggestionReport::from).collect();
     Ok(serde_json::to_string_pretty(&items)?)
 }
 

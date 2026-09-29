@@ -1,14 +1,16 @@
-use super::cast_phase::cast_phase;
+use super::cast_pass::cast_pass;
 use super::deal::london_mulligan;
-use super::game::{Activation, GameState, Pool, fire_on_enter, new_perm_with, run_game};
+use super::game::{Activation, GameState, ManaPool, fire_on_enter, new_perm_with, run_game};
 use super::game_commander::CommanderProfile;
-use super::game_effects::{pick_best_activation_public, resolve_activation_public, spend_leftover};
+use super::game_effects::activation::{pick_best_activation, resolve_activation};
+use super::game_effects::spend_leftover;
 use super::game_run::{
     TurnCensus, build_pool, run_sagas, run_turn, tap_dorks_for_mana, tap_new_rocks,
 };
 use super::model::CardIdx;
-use super::model::{Ability, AbilityTiming, Effect, Format, SimDeck, Tier};
-use super::oracle_parse::{parse_oracle_cost, parse_sim_card};
+use super::model::{Format, SimAbility, SimDeck, SimEffect, SimStriation, SimTrigger};
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -20,7 +22,7 @@ pub(super) fn row(name: &str, cost: &str, type_line: &str, text: &str) -> CardRo
         name: name.into(),
         oracle_id: String::new(),
         mana_cost: cost.into(),
-        cmc: parse_oracle_cost(cost).total() as f64,
+        cmc: parse_cost(cost).total() as f64,
         type_line: type_line.into(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -43,6 +45,7 @@ pub(super) fn row(name: &str, cost: &str, type_line: &str, text: &str) -> CardRo
 /// Parse test rows into a constructed simulator deck.
 pub(super) fn deck(rows: &[CardRow]) -> SimDeck {
     SimDeck {
+        companion: None,
         cards: rows.iter().map(parse_sim_card).collect(),
         commanders: Vec::new(),
         format: Format::Constructed,
@@ -66,12 +69,11 @@ pub(super) fn state(hand: Vec<usize>, library: Vec<usize>) -> GameState {
         exile: Vec::new(),
         battlefield_seen: HashMap::new(),
         graveyard_seen: HashMap::new(),
-        #[cfg(test)]
-        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
-        drained: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
         life_gained: 0,
         flashback_permissions: std::collections::HashSet::new(),
         replay_casts: 0,
@@ -85,13 +87,24 @@ pub(super) fn state(hand: Vec<usize>, library: Vec<usize>) -> GameState {
         prowess_casts: 0,
         infinite_mana_suspected: false,
         next_uid: 0,
+        player_counters: Default::default(),
+        activated_this_turn: Default::default(),
+        activated_once: Default::default(),
+        triggered_this_turn: Default::default(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
     }
 }
 
 /// Run the turn-one cast phase and return its mana spend.
-pub(super) fn cast(deck: &SimDeck, st: &mut GameState, pool: &mut Pool) -> [f64; 1] {
+pub(super) fn cast(deck: &SimDeck, st: &mut GameState, pool: &mut ManaPool) -> [f64; 1] {
     let mut spent = [0.0];
-    cast_phase(
+    cast_pass(
         deck,
         st,
         pool,
@@ -111,9 +124,9 @@ fn cantrip_draws_and_casts_payable_spell_in_same_main_phase() {
         row("Follow-up", "{U}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0], vec![1]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 2,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     let spent = cast(&cards, &mut st, &mut pool);
@@ -137,9 +150,9 @@ fn ritual_funds_a_spell_that_was_initially_unaffordable() {
         row("Payoff", "{1}{R}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0, 1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 0, 0, 1, 0],
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     let spent = cast(&cards, &mut st, &mut pool);
@@ -163,10 +176,10 @@ fn color_and_restricted_mana_remain_available_for_the_right_second_cast() {
         row("Instant", "{R}", "Instant", ""),
     ]);
     let mut st = state(vec![0, 1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 0, 0, 1, 0],
         creature_only: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     let spent = cast(&cards, &mut st, &mut pool);
@@ -186,9 +199,9 @@ fn color_and_restricted_mana_remain_available_for_the_right_second_cast() {
     assert_eq!(pool.total(), 0);
 
     let mut restricted_only = state(vec![0, 1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         creature_only: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     let _ = cast(&cards, &mut restricted_only, &mut pool);
     assert_eq!(restricted_only.battlefield.len(), 1);
@@ -208,9 +221,9 @@ fn newly_cast_rock_taps_once_for_a_follow_up_cast() {
         row("Follow-up", "{1}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0, 1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         colorless: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     let mut spent = cast(&cards, &mut st, &mut pool);
     assert_eq!(
@@ -259,7 +272,7 @@ fn tapped_and_summoning_sick_sources_cannot_produce_mana() {
         1,
         false,
     ));
-    st.battlefield[1].sick = true;
+    st.battlefield[1].summoning_sick = true;
     st.battlefield.push(super::game::new_perm_with(
         3,
         &cards,
@@ -298,8 +311,8 @@ fn healthy_dork_taps_when_the_pool_cannot_pay_the_cheapest_spell() {
         0,
         false,
     ));
-    st.battlefield[0].sick = false;
-    let mut pool = Pool::default();
+    st.battlefield[0].summoning_sick = false;
+    let mut pool = ManaPool::default();
 
     tap_dorks_for_mana(&cards, &mut st, &mut pool, 1);
 
@@ -322,7 +335,7 @@ fn only_a_capped_positive_mana_loop_sets_the_infinite_flag() {
         0,
         false,
     ));
-    let mut pool = Pool::default();
+    let mut pool = ManaPool::default();
     spend_leftover(&cards, &mut mana_state, &mut pool, 1);
     assert!(mana_state.infinite_mana_suspected);
     assert_eq!(pool.colorless, 24);
@@ -336,16 +349,17 @@ fn only_a_capped_positive_mana_loop_sets_the_infinite_flag() {
         0,
         false,
     ));
-    spend_leftover(&cards, &mut draw_state, &mut Pool::default(), 1);
+    spend_leftover(&cards, &mut draw_state, &mut ManaPool::default(), 1);
     assert!(!draw_state.infinite_mana_suspected);
 
-    cards.cards[2].station_tiers.push(Tier {
-        abilities: vec![Ability {
-            trigger: AbilityTiming::Activated,
-            effect: Effect::None,
-            ..Ability::default()
+    cards.cards[2].striations.push(SimStriation {
+        abilities: vec![SimAbility {
+            kind: super::model::SimAbilityKind::Activated,
+            trigger: SimTrigger::Never,
+            effect: SimEffect::None,
+            ..SimAbility::default()
         }],
-        ..Tier::default()
+        ..SimStriation::default()
     });
     let mut no_progress_state = state(vec![], vec![]);
     no_progress_state
@@ -357,7 +371,7 @@ fn only_a_capped_positive_mana_loop_sets_the_infinite_flag() {
             0,
             false,
         ));
-    spend_leftover(&cards, &mut no_progress_state, &mut Pool::default(), 1);
+    spend_leftover(&cards, &mut no_progress_state, &mut ManaPool::default(), 1);
     assert!(!no_progress_state.infinite_mana_suspected);
 
     let one_shot_rocks = (0..24)
@@ -381,7 +395,7 @@ fn only_a_capped_positive_mana_loop_sets_the_infinite_flag() {
             false,
         ));
     }
-    let mut one_shot_pool = Pool::default();
+    let mut one_shot_pool = ManaPool::default();
     spend_leftover(&one_shot_deck, &mut one_shot_state, &mut one_shot_pool, 1);
     assert_eq!(one_shot_pool.colorless, 24);
     assert!(!one_shot_state.infinite_mana_suspected);
@@ -442,7 +456,7 @@ fn nonland_mana_trigger_adds_one_produced_mana() {
             "Mana trigger",
             "{G}{U}",
             "Creature — Human Druid",
-            "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced.",
+            "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced. Gain 1 life.",
         ),
         row("Three mana rock", "{3}", "Artifact", "{T}: Add {C}{C}{C}."),
     ];
@@ -565,6 +579,313 @@ fn opponent_dependent_mana_is_generic_only_from_turn_two() {
 }
 
 #[test]
+fn reusable_mana_mode_does_not_pay_a_separate_sacrifice_mode() {
+    let source = row(
+        "Two-mode mana artifact",
+        "{2}",
+        "Artifact",
+        "{T}: Add {C}{C}.\nSacrifice this artifact: Add {C}.",
+    );
+    let deck = deck(&[source]);
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+
+    let pool = build_pool(&deck, &mut st, 1);
+
+    assert_eq!(pool.colorless, 2);
+    assert!(st.graveyard.is_empty());
+    assert_eq!(st.battlefield.len(), 1);
+    assert!(st.battlefield[0].tapped);
+}
+
+#[test]
+fn mana_mode_must_pay_its_own_mana_cost_before_tapping() {
+    let source = row(
+        "Paid mana artifact",
+        "{2}",
+        "Artifact",
+        "{1}, {T}: Add {C}.",
+    );
+    let deck = deck(&[source]);
+    let mut unpaid = state(vec![], vec![]);
+    unpaid
+        .battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+    let empty_pool = build_pool(&deck, &mut unpaid, 1);
+    assert_eq!(empty_pool.total(), 0);
+    assert!(!unpaid.battlefield[0].tapped);
+
+    let mut paid = state(vec![], vec![]);
+    paid.battlefield
+        .push(new_perm_with(2, &deck, CardIdx(0), 1, false));
+    let mut pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    let source = paid.battlefield[0].clone();
+    super::game_run::mana::activate_mana_mode(&deck, &mut paid, &source, &mut pool, 1);
+    assert_eq!(pool.colorless, 1);
+    assert_eq!(pool.flexible, 0);
+    assert!(paid.battlefield[0].tapped);
+}
+
+#[test]
+fn fixed_mana_restricted_from_generic_costs_keeps_its_colors() {
+    let deck = deck(&[row(
+        "Five-color source",
+        "{5}",
+        "Legendary Creature — Elk",
+        "{T}: Add {W}{U}{B}{R}{G}. This mana can't be spent to pay generic mana costs.",
+    )]);
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 0, false));
+    st.battlefield[0].summoning_sick = false;
+    let source = st.battlefield[0].clone();
+    let mut pool = ManaPool::default();
+
+    assert!(super::game_run::mana::activate_mana_mode(
+        &deck, &mut st, &source, &mut pool, 1
+    ));
+
+    let colored = super::model::Cost {
+        pips: [1; 5],
+        ..super::model::Cost::default()
+    };
+    let generic = super::model::Cost {
+        generic: 1,
+        ..super::model::Cost::default()
+    };
+    assert_eq!(pool.fixed, [1; 5]);
+    assert_eq!(super::game_mana::usable_for_noncreature(&pool), 0);
+    assert!(super::game_mana::pips_ok(&colored, &pool));
+    assert!(!super::game_mana::pips_ok(&generic, &pool));
+    super::game_mana::pay_cost(&colored, &mut pool);
+    assert_eq!(pool.total(), 0);
+}
+
+#[test]
+fn mana_ability_resolves_its_other_nonlibrary_effects() {
+    let source = row(
+        "Life-gain mana artifact",
+        "{2}",
+        "Artifact",
+        "{T}: Add {G}. Gain 1 life.",
+    );
+    let deck = deck(&[source]);
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+
+    let pool = build_pool(&deck, &mut st, 1);
+
+    assert_eq!(pool.fixed[super::model::ManaColor::Green.index()], 1);
+    assert_eq!(st.life, 21);
+    assert_eq!(st.life_gained, 1);
+}
+
+#[test]
+fn triggered_mana_ability_resolves_after_a_nonland_mana_tap() {
+    let deck = deck(&[
+        row("Green rock", "{1}", "Artifact", "{T}: Add {G}."),
+        row(
+            "Mana trigger",
+            "{1}",
+            "Enchantment",
+            "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced. Gain 1 life.",
+        ),
+        row("Island", "", "Basic Land — Island", "{T}: Add {U}."),
+    ]);
+    assert!(deck.cards[1].unlocked_abilities(0).any(|ability| {
+        ability.kind == super::model::SimAbilityKind::ManaTriggered
+            && ability
+                .effect_sequence()
+                .iter()
+                .any(|effect| matches!(effect, SimEffect::GainLife(1)))
+    }));
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+    st.battlefield
+        .push(new_perm_with(2, &deck, CardIdx(1), 1, false));
+
+    let pool = build_pool(&deck, &mut st, 1);
+
+    assert_eq!(pool.fixed[super::model::ManaColor::Green.index()], 2);
+    assert_eq!(st.life, 21);
+    assert!(st.battlefield[0].tapped);
+
+    let mut land_tap = state(vec![], vec![]);
+    land_tap
+        .battlefield
+        .push(new_perm_with(3, &deck, CardIdx(2), 1, false));
+    land_tap
+        .battlefield
+        .push(new_perm_with(4, &deck, CardIdx(1), 1, false));
+    let pool = build_pool(&deck, &mut land_tap, 1);
+    assert_eq!(pool.fixed[super::model::ManaColor::Blue.index()], 1);
+    assert_eq!(land_tap.life, 20);
+}
+
+#[test]
+fn duplicate_land_permanents_satisfy_each_others_gate() {
+    let mut deck = deck(&[row("Island Gate", "", "Land — Island", "")]);
+    deck.cards[0].gate_types = vec![super::model::BasicLandType::Island];
+    deck.cards[0].tap = Some(super::model::ManaYield {
+        fixed: [0, 1, 1, 0, 0],
+        ..super::model::ManaYield::default()
+    });
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+    st.battlefield
+        .push(new_perm_with(2, &deck, CardIdx(0), 1, false));
+
+    let pool = build_pool(&deck, &mut st, 1);
+
+    assert_eq!(pool.fixed[super::model::ManaColor::Blue.index()], 2);
+    assert_eq!(pool.fixed[super::model::ManaColor::Black.index()], 2);
+}
+
+#[test]
+fn mana_mode_keeps_its_own_spend_restriction() {
+    let deck = deck(&[
+        row(
+            "Restricted mana artifact",
+            "{2}",
+            "Artifact",
+            "{T}: Add {G}{G}. Spend this mana only to cast creature spells.\nSacrifice this artifact: Add {C}.",
+        ),
+        row("Creature spell", "{1}{G}", "Creature — Bear", ""),
+    ]);
+    let mut st = state(vec![1], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+
+    let pool = build_pool(&deck, &mut st, 1);
+
+    assert_eq!(pool.creature_only, 2);
+    assert_eq!(super::game_mana::usable_for_noncreature(&pool), 0);
+    assert_eq!(
+        super::game_mana::usable_for_classes(&pool, &[super::model::SpendRestriction::Creature],),
+        2
+    );
+    assert!(st.graveyard.is_empty());
+    assert!(st.battlefield[0].tapped);
+}
+
+#[test]
+fn additional_land_granted_after_land_phase_is_available_later() {
+    let land = row("Island", "", "Basic Land — Island", "");
+    let deck = deck(&[land]);
+    let mut st = state(vec![0], vec![]);
+    let mut census = TurnCensus::new(1, 1);
+    census.land_drops[0] = 1;
+    super::game_effects::apply_effect_at(&deck, &SimEffect::ExtraLand, &mut st, 1, false, None);
+
+    super::game_run::play_late_land(&deck, &mut st, &mut census, 1);
+
+    assert_eq!(census.land_drops[0], 2);
+    assert!(st.hand.is_empty());
+
+    let mut no_grant = state(vec![0], vec![]);
+    let mut no_grant_census = TurnCensus::new(1, 1);
+    no_grant_census.land_drops[0] = 1;
+    super::game_run::play_late_land(&deck, &mut no_grant, &mut no_grant_census, 1);
+    assert_eq!(no_grant_census.land_drops[0], 1);
+    assert_eq!(no_grant.hand, [CardIdx(0)]);
+}
+
+#[test]
+fn cast_additional_land_spell_uses_remaining_turn_land_allowance() {
+    let deck = deck(&[
+        row("Island one", "", "Basic Land — Island", "{T}: Add {U}."),
+        row("Island two", "", "Basic Land — Island", "{T}: Add {U}."),
+        row(
+            "Explore",
+            "{U}",
+            "Sorcery",
+            "You may play an additional land this turn. Draw a card.",
+        ),
+        row("Drawn card", "{9}", "Sorcery", ""),
+    ]);
+    assert_eq!(deck.cards[2].spell_data.extra_land_drops_on_cast, 1);
+    let mut st = state(vec![2, 0, 1], vec![3]);
+    let mut census = TurnCensus::new(1, deck.cards.len());
+    let commander = CommanderProfile::new(&deck);
+    let mut repeatable_sources = Vec::new();
+
+    run_turn(
+        &deck,
+        &mut st,
+        &mut census,
+        &commander,
+        &mut repeatable_sources,
+        1,
+        false,
+    );
+
+    assert_eq!(census.land_drops[0], 2);
+    assert!(!st.hand.contains(&CardIdx(1)));
+}
+
+#[test]
+fn monarch_who_gains_the_title_on_turn_one_draws_at_that_end_step() {
+    let deck = deck(&[row("Card", "{9}", "Sorcery", "")]);
+    let mut st = state(vec![], vec![0]);
+    st.is_monarch = true;
+    let mut census = TurnCensus::new(1, 1);
+
+    super::game_run::ending_phase(&deck, &mut st, &mut census, 1, false);
+
+    assert_eq!(st.hand, [CardIdx(0)]);
+}
+
+#[test]
+fn newly_entered_creature_vehicle_can_use_its_crew_ability() {
+    let deck = deck(&[
+        row(
+            "Living vehicle",
+            "{3}",
+            "Artifact — Vehicle",
+            "Living metal\nCrew 2",
+        ),
+        row("Crew member", "{1}", "Creature — Pilot", ""),
+    ]);
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+    st.battlefield
+        .push(new_perm_with(2, &deck, CardIdx(1), 1, false));
+    assert!(st.battlefield[0].summoning_sick);
+    assert!(st.battlefield[1].summoning_sick);
+
+    super::game_effects::tap_budget(&deck, &mut st.battlefield, &mut ManaPool::default(), &[]);
+
+    assert!(st.battlefield[0].crewed);
+    assert!(st.battlefield[1].tapped);
+}
+
+#[test]
+fn haste_allows_a_new_creature_to_pay_its_tap_activation_cost() {
+    let deck = deck(&[row(
+        "Hasty dork",
+        "{G}",
+        "Creature — Elf",
+        "Haste\n{T}: Add {G}.",
+    )]);
+    let mut st = state(vec![], vec![]);
+    st.battlefield
+        .push(new_perm_with(1, &deck, CardIdx(0), 1, false));
+    st.battlefield[0].summoning_sick = true;
+
+    let selected = pick_best_activation(&deck, &st, &ManaPool::default(), 1);
+
+    assert!(selected.is_some());
+}
+
+#[test]
 fn basalt_monolith_loop_is_positive_only_with_mana_trigger() {
     let kinnan = row(
         "Mana trigger",
@@ -579,8 +900,8 @@ fn basalt_monolith_loop_is_positive_only_with_mana_trigger() {
         "Basalt Monolith doesn't untap during your untap step.\n{T}: Add {C}{C}{C}.\n{3}: Untap this artifact.",
     );
     let ability = parse_sim_card(&basalt)
-        .abilities()
-        .find(|ability| matches!(ability.effect, Effect::UntapSelf))
+        .unlocked_abilities(0)
+        .find(|ability| matches!(ability.effect, SimEffect::UntapSelf))
         .expect("the source-named untap activation parses")
         .clone();
     for (has_kinnan, expected_pool, positive) in [(false, 3, false), (true, 9, true)] {
@@ -608,16 +929,15 @@ fn basalt_monolith_loop_is_positive_only_with_mana_trigger() {
                 pos: basalt_index,
                 uid: basalt_index as u32,
                 ability: ability.clone(),
-                cost: 3,
+                ability_cost: super::model::Cost {
+                    generic: 3,
+                    ..Default::default()
+                },
                 draws: 0,
-                search: None,
-                mana_yield: None,
-                counters: 0,
-                drain: 0,
                 sacrifice_uid: None,
                 target_uid: None,
             };
-            resolve_activation_public(&deck, &mut st, &mut pool, 1, 1, &activation);
+            resolve_activation(&deck, &mut st, &mut pool, 1, &activation);
         }
         assert_eq!(pool.colorless, expected_pool);
         assert!(st.battlefield[basalt_index].tapped);
@@ -650,11 +970,11 @@ fn kinnan_search_uses_colored_pips_and_only_the_top_five() {
         .collect::<Vec<_>>();
     let deck = deck(&rows);
     let ability = deck.cards[0]
-        .abilities()
-        .find(|ability| matches!(ability.effect, Effect::Search(_)))
+        .unlocked_abilities(0)
+        .find(|ability| matches!(ability.effect, SimEffect::Search(_)))
         .expect("Kinnan's activation parses as a filtered search")
         .clone();
-    let Effect::Search(spec) = ability.effect else {
+    let SimEffect::Search(spec) = ability.effect else {
         unreachable!();
     };
     assert_eq!(spec.top_count, Some(5));
@@ -665,10 +985,10 @@ fn kinnan_search_uses_colored_pips_and_only_the_top_five() {
     );
 
     let mut st = state(vec![], vec![1, 2, 3, 4, 5]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 1, 0, 0, 1],
         colorless: 5,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     st.battlefield.push(super::game::new_perm_with(
         10,
@@ -677,7 +997,7 @@ fn kinnan_search_uses_colored_pips_and_only_the_top_five() {
         1,
         false,
     ));
-    assert!(pick_best_activation_public(&deck, &st, &pool).is_some());
+    assert!(pick_best_activation(&deck, &st, &pool, 1).is_some());
     spend_leftover(&deck, &mut st, &mut pool, 1);
     assert_eq!(
         st.battlefield
@@ -703,11 +1023,11 @@ fn kinnan_search_uses_colored_pips_and_only_the_top_five() {
         1,
         false,
     ));
-    let pool = Pool {
+    let pool = ManaPool {
         colorless: 7,
-        ..Pool::default()
+        ..ManaPool::default()
     };
-    assert!(pick_best_activation_public(&deck, &colorless_only, &pool).is_none());
+    assert!(pick_best_activation(&deck, &colorless_only, &pool, 1).is_none());
 }
 
 #[test]
@@ -734,10 +1054,10 @@ fn kinnan_search_does_not_enter_a_creature_missing_from_the_top_five() {
         1,
         false,
     ));
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 1, 0, 0, 1],
         colorless: 5,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     spend_leftover(&deck, &mut st, &mut pool, 1);

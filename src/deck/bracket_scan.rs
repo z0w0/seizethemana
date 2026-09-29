@@ -10,6 +10,7 @@ use std::collections::HashMap;
 
 /// Game Changer allowance per Commander bracket: none for 1–2, at most 3 for
 /// bracket 3, unlimited (None) for 4–5.
+#[must_use]
 pub fn game_changer_limit(bracket: u8) -> Option<u8> {
     match bracket {
         1 | 2 => Some(0),
@@ -24,7 +25,7 @@ pub fn game_changer_limit(bracket: u8) -> Option<u8> {
 struct SearchScan {
     hard: Vec<String>,
     soft: Vec<String>,
-    /// BTreeSet: deduped, sorted for the note line.
+    /// `BTreeSet`: deduped, sorted for the note line.
     ramp: std::collections::BTreeSet<String>,
 }
 
@@ -33,7 +34,10 @@ struct SearchScan {
 /// Hard tutor: a spell (instant/sorcery) whose search is the card's whole
 /// job. Soft: ETB/activated searchers and one-shots with utility twists.
 /// Land ramp searches for basic lands and never counts as a tutor.
-fn classify_searchers(maindeck: &[(String, i64)], cards: &HashMap<String, CardRow>) -> SearchScan {
+fn classify_searchers<S: std::hash::BuildHasher>(
+    maindeck: &[(String, i64)],
+    cards: &HashMap<String, CardRow, S>,
+) -> SearchScan {
     let scan = |needle: &str| -> Vec<String> {
         maindeck
             .iter()
@@ -152,9 +156,10 @@ fn searcher_verdicts(scan: &SearchScan, bracket: u8) -> Vec<String> {
 /// Returns verdict lines ("PASS"/"CHECK"/"ADVISE" prefixes) plus advisory
 /// notes naming the matched cards. Counts are official bracket guidance,
 /// not hard rules.
+#[must_use]
 pub fn scan_bracket_signals(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     bracket: u8,
 ) -> Vec<String> {
     let maindeck = maindeck_copies_by_name(deck);
@@ -227,15 +232,12 @@ pub fn scan_bracket_signals(
     // Two-card combo markers (proxy, not proof): "you win the game".
     let alt_wins = scan("you win the game");
     match (bracket, alt_wins.len()) {
-        (1 | 2, 0) => out.push("PASS alternate wins: no 'you win the game' text found".to_string()),
+        (1..=3, 0) => out.push("PASS alternate wins: no 'you win the game' text found".to_string()),
         (1 | 2, n) => out.push(format!(
             "CHECK alternate wins: {} card(s) can win the game outright (verify no early two-card combo): {}",
             n,
             alt_wins.join(", ")
         )),
-        (3, 0) => out.push(
-            "PASS alternate wins: no 'you win the game' text found".to_string(),
-        ),
         (3, n) if n > 0 => out.push(format!(
             "CHECK alternate wins: {} card(s) win the game outright (must only fire late): {}",
             n,
@@ -249,6 +251,7 @@ pub fn scan_bracket_signals(
 /// The non-deterministic checklist for a bracket, tailored to what that
 /// bracket asks players to avoid, with oracle-text scan verdicts where the
 /// CLI can decide. Brackets 4–5 carry no checklist.
+#[must_use]
 pub fn bracket_note(bracket: u8) -> Option<BracketNote> {
     let checks: &[&str] = match bracket {
         1 | 2 => &[

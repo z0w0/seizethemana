@@ -73,9 +73,12 @@ pub(super) fn london_mulligan(deck: &SimDeck, library: &mut Vec<CardIdx>) -> Vec
 /// hand` calls it directly, so seed N here deals the same opener as the
 /// sim's game #1.
 pub fn deal_opener(deck: &SimDeck, rng: &mut ChaCha8Rng) -> Opener {
-    let mut library: Vec<CardIdx> = (0..u32::try_from(deck.cards.len())
-        .expect("deck size fits u32"))
+    let card_count = u32::try_from(deck.cards.len()).expect("deck size fits u32");
+    // The companion starts outside the game (CR 702.139a), so it never
+    // enters the shuffle.
+    let mut library: Vec<CardIdx> = (0..card_count)
         .map(CardIdx)
+        .filter(|idx| deck.companion != Some(*idx))
         .collect();
     for i in (1..library.len()).rev() {
         let j = rng.random_range(0..=i);

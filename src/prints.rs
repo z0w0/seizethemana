@@ -391,12 +391,18 @@ pub fn prices_for_owned(
     if keys.is_empty() {
         return Ok(map);
     }
-    let keys_json = serde_json::to_string(
-        &keys
-            .iter()
-            .map(|(n, s, c, f)| serde_json::json!([n, s.to_ascii_lowercase(), c, f]))
-            .collect::<Vec<_>>(),
-    )?;
+    let normalized_keys: Vec<(&str, String, &str, &str)> = keys
+        .iter()
+        .map(|(name, set, collector_number, finish)| {
+            (
+                name.as_str(),
+                set.to_ascii_lowercase(),
+                collector_number.as_str(),
+                finish.as_str(),
+            )
+        })
+        .collect();
+    let keys_json = serde_json::to_string(&normalized_keys)?;
     // Duplicate (name, set, cn) rows exist in Scryfall data (variant
     // rows sharing a collector number). The GROUP BY picks an arbitrary
     // row; aggregate MIN over the price keys so the pick is stable.

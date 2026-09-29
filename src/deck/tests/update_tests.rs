@@ -28,6 +28,35 @@ fn silent_out() -> crate::output::Output {
 }
 
 #[test]
+fn dry_run_report_serializes_typed_optional_blocks() {
+    let report = DryRunReport {
+        name: "Froggy".to_string(),
+        dry_run: true,
+        changes: vec![],
+        cost: CostImpact {
+            to_buy: report::Buylist {
+                items: vec![],
+                total_usd: 0.0,
+            },
+            freed_usd: 0.0,
+            net_usd: 0.0,
+        },
+        sim: Some(crate::deck::simulator::report_view::ReportDiff::default()),
+        legal: Some(LegalVerdict {
+            legal: true,
+            violations: vec![],
+            advisories: vec![],
+        }),
+    };
+    let json = serde_json::to_value(report).expect("serialize typed dry-run report");
+    assert_eq!(json["dry_run"], true);
+    assert_eq!(json["changes"], serde_json::json!([]));
+    assert!(json["cost"].is_object());
+    assert!(json["sim"]["findings"].is_array());
+    assert!(json["legal"]["violations"].is_array());
+}
+
+#[test]
 fn validation_flags_unknown_names() {
     let (_tmp, conn) = seeded_conn();
     let mut out = silent_out();
@@ -549,6 +578,42 @@ fn update_dry_run_writes_nothing() {
     assert_eq!(code, crate::cli::codes::OK);
     let after_text = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
     assert_eq!(before_text, after_text, "dry-run must not write the deck");
+}
+
+#[test]
+fn update_dry_run_sim_json_runs_the_typed_report_diff() {
+    let (tmp, conn) = seeded_conn();
+    let paths = crate::paths::Paths::resolve(Some(tmp.path().join("data").as_path())).unwrap();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    std::fs::write(paths.deck_file("Froggy"), "// DECK\n1 Lightning Bolt\n").unwrap();
+    let before = std::fs::read_to_string(paths.deck_file("Froggy")).unwrap();
+    let mut out = silent_out();
+
+    let code = update(
+        &paths,
+        &conn,
+        &mut out,
+        "Froggy",
+        &["1 Lightning Bolt".to_string()],
+        &[],
+        &[],
+        &[],
+        None,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+    )
+    .unwrap();
+
+    assert_eq!(code, crate::cli::codes::OK);
+    assert_eq!(
+        std::fs::read_to_string(paths.deck_file("Froggy")).unwrap(),
+        before,
+        "dry-run JSON must not write the deck"
+    );
 }
 
 #[test]

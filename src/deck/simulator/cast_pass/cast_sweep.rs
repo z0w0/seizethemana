@@ -1,12 +1,12 @@
 //! Choose and resolve spells that the current mana pool can pay for.
 
-use super::super::game::{GameState, Pool, card_of};
+use super::super::game::{GameState, ManaPool, card_of};
 use super::super::game_mana::{
     bucket_of, cast_restrictions, effective_min_cost, payable, phyrexian_life_charge, pips_ok,
     usable_for_classes, usable_for_noncreature,
 };
 use super::super::model::{CardIdx, Cost, SimDeck};
-use super::{resolve_cast, select_alternative_cost_cards};
+use super::{resolve_cast, resolve_face_down, select_alternative_cost_cards};
 
 /// One affordability sweep over the remaining queue. Casts deduct from
 /// the pool and add mana (rituals), so a card skipped as unaffordable
@@ -16,13 +16,13 @@ use super::{resolve_cast, select_alternative_cost_cards};
 pub(super) fn cast_pass(
     deck: &SimDeck,
     st: &mut GameState,
-    pool: &mut Pool,
+    pool: &mut ManaPool,
     turn: usize,
     queue: &mut Vec<CardIdx>,
     cast_ids: &mut Vec<CardIdx>,
     cast_ets: &mut Vec<(u32, CardIdx)>,
     spent_total: &mut u32,
-    engines: &mut Vec<(u32, u32)>,
+    repeatable_sources: &mut Vec<(u32, u32)>,
     pip_blocks: &mut Vec<(CardIdx, usize)>,
     blocked_colors: &mut [bool; 5],
 ) -> bool {
@@ -53,7 +53,7 @@ pub(super) fn cast_pass(
                 cast_ids,
                 cast_ets,
                 spent_total,
-                engines,
+                repeatable_sources,
                 true,
             );
             queue.remove(idx);
@@ -65,15 +65,23 @@ pub(super) fn cast_pass(
             .filter(|p| p.card.deck_idx().is_some() && card_of(deck, p).is_creature)
             .count();
         let available_discards = st.hand.iter().filter(|i| **i != card_idx).count();
-        if available_creatures < card.riders.additional_cost_bodies as usize
-            || available_discards < card.riders.additional_cost_discards as usize
-            || st.life <= card.riders.additional_cost_life as i32
+        if available_creatures < card.spell_data.additional_cost_creatures as usize
+            || available_discards < card.spell_data.additional_cost_discards as usize
+            || st.life <= card.spell_data.additional_cost_life as i32
         {
             idx += 1;
             continue;
         }
         let eff = effective_min_cost(deck, card, &st.battlefield);
-        // Phyrexian pips pay with 2 life each (CR 118.3b); the cast
+        // Convoke (CR 702.51) and delve (CR 702.66) add payment options
+        // beyond the mana pool: convoke taps untapped bodies for {1}
+        // each (a matching-color body can pay a colored pip), delve
+        // exiles graveyard cards for {1} generic each. The cast gate
+        // counts the available payments; resolution consumes them.
+        let convoke = convoke_payment(deck, st, card, &eff);
+        let delve = delve_payment(st, card, &eff);
+        let extra_payment = convoke.total + delve;
+        // Phyrexian pips pay with 2 life each (CR 107.4f); the cast
         // would charge that life, so a life-starved cast stays put.
         if st.life <= phyrexian_life_charge(&eff) as i32 {
             idx += 1;
@@ -88,11 +96,12 @@ pub(super) fn cast_pass(
         // Phyrexian pips pay with life, so the pool owes only the mana
         // part of the cost.
         let mana_total = eff.total() - phyrexian_life_charge(&eff) / 2;
+        let mana_total = mana_total.saturating_sub(extra_payment);
         let classes = cast_restrictions(card);
         let (cost_ok, pip_ok) = if classes.is_empty() {
             (
-                usable_for_noncreature(pool) >= mana_total,
-                pips_ok(&eff, pool),
+                usable_for_noncreature(pool) + extra_payment >= mana_total,
+                pips_ok(&eff, pool) || convoke.can_cover_pips,
             )
         } else {
             // Mixed pips: the cast passes when the matching buckets,
@@ -102,15 +111,31 @@ pub(super) fn cast_pass(
             // pip total; the general pool alone covering pips_ok also
             // passes.
             let pip_total: u32 =
-                eff.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + eff.flex_pips;
+                eff.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + eff.hybrid_pips;
             let bucket = classes.iter().map(|c| bucket_of(pool, *c)).sum::<u32>();
             (
-                usable_for_classes(pool, &classes) >= mana_total,
+                usable_for_classes(pool, &classes) + extra_payment >= mana_total,
                 pips_ok(&eff, pool)
+                    || convoke.can_cover_pips
                     || (bucket > 0 && bucket + general_coverable(&eff, pool) >= pip_total),
             )
         };
         if !cost_ok || !pip_ok {
+            // Morph/disguise fallback (CR 702.37/702.168): when the
+            // face-up cost is unaffordable but {3} is, cast the card
+            // face down as a 2/2 body. It may be turned up later.
+            if card.morph_cost.is_some() {
+                let face_down = Cost {
+                    generic: 3,
+                    ..Cost::default()
+                };
+                if payable(&face_down, pool) && pips_ok(&face_down, pool) {
+                    cast_any = true;
+                    resolve_face_down(deck, st, pool, turn, card_idx, cast_ids, spent_total);
+                    queue.remove(idx);
+                    continue;
+                }
+            }
             // Colors a cast was blocked for: enough total, missing pips
             // (read from the effective cost; improvise and affinity
             // change the generic part only, so printed and effective
@@ -139,7 +164,7 @@ pub(super) fn cast_pass(
             cast_ids,
             cast_ets,
             spent_total,
-            engines,
+            repeatable_sources,
             true,
         );
         queue.remove(idx);
@@ -151,7 +176,7 @@ pub(super) fn cast_pass(
 /// outside the restricted bucket. The mixed-pip gate adds this to the
 /// bucket: bucket mana pays any pip, so bucket + general-covered pips
 /// must reach the pip total.
-fn general_coverable(eff: &Cost, pool: &Pool) -> u32 {
+fn general_coverable(eff: &Cost, pool: &ManaPool) -> u32 {
     let mut flexible = pool.flexible;
     let mut covered = 0u32;
     for (i, need) in eff.pips.iter().enumerate() {
@@ -160,4 +185,69 @@ fn general_coverable(eff: &Cost, pool: &Pool) -> u32 {
         flexible = flexible.saturating_sub(need.saturating_sub(pool.fixed[i]));
     }
     covered + flexible
+}
+
+/// Convoke payment (CR 702.51): every untapped creature can be tapped to
+/// pay {1} of the spell's cost, or one matching-colored pip. The helper
+/// reports how much generic the creatures can cover and whether they
+/// plus the pool can cover the colored pips.
+pub(super) struct ConvokePayment {
+    /// Generic mana the convokable creatures can pay ({1} each).
+    pub(super) total: u32,
+    /// True when the creatures, tapped for their colors, can cover every
+    /// monocolor pip of the cost.
+    pub(super) can_cover_pips: bool,
+}
+
+/// Count convoke-eligible creatures and their pip coverage.
+fn convoke_payment(
+    deck: &SimDeck,
+    st: &super::super::game::GameState,
+    card: &super::super::model::SimCard,
+    eff: &Cost,
+) -> ConvokePayment {
+    if !card.keyword_abilities.convoke {
+        return ConvokePayment {
+            total: 0,
+            can_cover_pips: false,
+        };
+    }
+    let creatures: Vec<&super::super::game::Permanent> = st
+        .battlefield
+        .iter()
+        .filter(|p| {
+            !p.tapped
+                && p.card.deck_idx().is_some()
+                && super::super::game::is_creature_permanent(deck, p)
+        })
+        .collect();
+    // One creature pays one mana of its printed colors; one with the
+    // needed color covers that color's pip one-for-one.
+    let mut remaining_pips = eff.pips;
+    for creature in &creatures {
+        if remaining_pips.iter().all(|p| *p == 0) {
+            break;
+        }
+        let colors = super::super::game::card_of(deck, creature).colors;
+        if let Some(i) = (0..5).find(|i| remaining_pips[*i] > 0 && colors[*i]) {
+            remaining_pips[i] -= 1;
+        }
+    }
+    ConvokePayment {
+        total: (creatures.len() as u32).min(eff.total()),
+        can_cover_pips: remaining_pips.iter().all(|p| *p == 0),
+    }
+}
+
+/// Delve payment (CR 702.66): every card in the graveyard can be exiled
+/// to pay {1} generic mana.
+fn delve_payment(
+    st: &super::super::game::GameState,
+    card: &super::super::model::SimCard,
+    eff: &Cost,
+) -> u32 {
+    if !card.keyword_abilities.delve {
+        return 0;
+    }
+    (st.graveyard.len() as u32).min(eff.generic)
 }

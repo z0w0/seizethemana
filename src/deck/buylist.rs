@@ -71,6 +71,42 @@ pub struct BuylistRow {
     pub price_usd: Option<f64>,
 }
 
+/// One card row in the typed buylist response.
+#[derive(Debug, Clone, serde::Serialize)]
+struct BuylistReportRow {
+    /// Card name.
+    name: String,
+    /// Set code.
+    set: String,
+    /// Full set name when known.
+    set_name: Option<String>,
+    /// Collector number.
+    collector_number: String,
+    /// Scryfall identifier.
+    scryfall_id: String,
+    /// Whether to buy foil copies.
+    foil: bool,
+    /// Copies to buy.
+    quantity: i64,
+    /// Deck sections that need the card.
+    sections: Vec<String>,
+    /// Unit price when known.
+    price: Option<f64>,
+}
+
+/// Complete typed response for `stm deck buylist`.
+#[derive(Debug, Clone, serde::Serialize)]
+struct BuylistReport {
+    /// Store format.
+    store: &'static str,
+    /// Currency used for prices.
+    currency: &'static str,
+    /// Cards to buy.
+    rows: Vec<BuylistReportRow>,
+    /// Total price.
+    total: f64,
+}
+
 /// Copies available to fill this deck's slots: assigned to the deck plus
 /// copies in binders. Other decks' copies do not count. Shared with
 /// `deck show` through `ownership::available_map`.
@@ -233,12 +269,12 @@ pub fn buylist(
             // `[]` with exit 3 signaling "nothing to buy".
             println!(
                 "{}",
-                serde_json::to_string_pretty(&serde_json::json!({
-                    "store": store.name(),
-                    "currency": crate::output::CURRENCY,
-                    "rows": [],
-                    "total": 0.0,
-                }))?
+                serde_json::to_string_pretty(&BuylistReport {
+                    store: store.name(),
+                    currency: crate::output::CURRENCY,
+                    rows: Vec::new(),
+                    total: 0.0,
+                })?
             );
         } else {
             out.error("no missing cards; the deck is fully covered");
@@ -257,29 +293,39 @@ pub fn buylist(
     }
     let total: f64 = rows
         .iter()
-        .map(|r| r.price_usd.unwrap_or(0.0) * r.quantity as f64)
+        .map(|r| {
+            let quantity = r
+                .quantity
+                .to_string()
+                .parse::<f64>()
+                .expect("integer quantities parse as f64");
+            r.price_usd.unwrap_or(0.0) * quantity
+        })
         .sum();
     // One prepared rarity statement reused for all rows (an N-prepare
     // query loop would be slower); the TCGplayer Mass Entry column
     // needs rarity per row on a 500-line export.
     let rarities = rarities_for(conn, &rows)?;
     if json {
-        let v = serde_json::json!({
-            "store": store.name(),
-            "currency": crate::output::CURRENCY,
-            "rows": rows.iter().map(|r| serde_json::json!({
-                "name": r.name,
-                "set": r.set_code,
-                "set_name": r.set_name,
-                "collector_number": r.collector_number,
-                "scryfall_id": r.scryfall_id,
-                "foil": r.foil,
-                "quantity": r.quantity,
-                "sections": r.sections,
-                "price": r.price_usd,
-            })).collect::<Vec<_>>(),
-            "total": round2(total),
-        });
+        let v = BuylistReport {
+            store: store.name(),
+            currency: crate::output::CURRENCY,
+            rows: rows
+                .iter()
+                .map(|row| BuylistReportRow {
+                    name: row.name.clone(),
+                    set: row.set_code.clone(),
+                    set_name: row.set_name.clone(),
+                    collector_number: row.collector_number.clone(),
+                    scryfall_id: row.scryfall_id.clone(),
+                    foil: row.foil,
+                    quantity: row.quantity,
+                    sections: row.sections.clone(),
+                    price: row.price_usd,
+                })
+                .collect(),
+            total: round2(total),
+        };
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else {
         // Plain text on stdout for `| pbcopy`; errors/progress on stderr.

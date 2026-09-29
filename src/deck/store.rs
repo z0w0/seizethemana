@@ -8,13 +8,16 @@ use rusqlite::Connection;
 
 use super::grammar::Deck;
 use anyhow::Context;
+use std::fmt::Write as _;
 
 /// Primer file path for a deck (`decks/<name>.primer.md`).
+#[must_use]
 pub fn primer_file(paths: &crate::paths::Paths, name: &str) -> std::path::PathBuf {
     paths.decks_dir().join(format!("{name}.primer.md"))
 }
 
 /// Validate a deck name: a single path component (no separators or dots).
+#[must_use]
 pub fn valid_deck_name(name: &str) -> bool {
     !name.is_empty()
         && name.chars().all(|c| {
@@ -77,6 +80,7 @@ pub struct DeckNotFound {
 }
 
 /// True when an error chain's root is a missing deck file.
+#[must_use]
 pub fn is_deck_not_found(err: &anyhow::Error) -> bool {
     err.chain()
         .any(|c| c.downcast_ref::<DeckNotFound>().is_some())
@@ -99,6 +103,9 @@ pub(crate) fn save_deck(
 }
 
 /// Entry point for `stm deck create <name>`.
+///
+/// # Errors
+/// Propagates file system errors.
 pub fn create(
     paths: &crate::paths::Paths,
     out: &mut crate::output::Output,
@@ -130,6 +137,9 @@ pub fn create(
 /// Duplicates the decklist and the primer under the new name so an
 /// improvement pass can work on a copy without touching the original.
 /// Ownership rows in the collection are never copied.
+///
+/// # Errors
+/// Propagates file system errors.
 pub fn copy(
     paths: &crate::paths::Paths,
     out: &mut crate::output::Output,
@@ -199,7 +209,29 @@ pub struct DeckSummary {
     pub has_primer: bool,
 }
 
+/// JSON row for one saved or collection-only deck.
+#[derive(Debug, serde::Serialize)]
+struct DeckListReport {
+    /// Deck name.
+    name: String,
+    /// Whether a decklist file exists.
+    has_decklist: bool,
+    /// Main deck card count.
+    cards: i64,
+    /// Sideboard count.
+    sideboard_cards: i64,
+    /// Maybeboard count.
+    maybeboard_cards: i64,
+    /// Owned card count.
+    owned: i64,
+    /// Whether a primer exists.
+    has_primer: bool,
+}
+
 /// Entry point for `stm deck list`.
+///
+/// # Errors
+/// Propagates file system and database errors.
 pub fn list(
     paths: &crate::paths::Paths,
     conn: &Connection,
@@ -214,7 +246,10 @@ pub fn list(
     }
     if decks.is_empty() && gaps.is_empty() {
         if json {
-            println!("[]");
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Vec::<DeckListReport>::new())?
+            );
             return Ok(crate::cli::codes::OK);
         }
         out.error("no decks found");
@@ -222,30 +257,28 @@ pub fn list(
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     if json {
-        let mut items: Vec<serde_json::Value> = decks
+        let mut items: Vec<DeckListReport> = decks
             .iter()
-            .map(|d| {
-                serde_json::json!({
-                    "name": d.name,
-                    "has_decklist": true,
-                    "cards": d.cards,
-                    "sideboard_cards": d.sideboard_cards,
-                    "maybeboard_cards": d.maybeboard_cards,
-                    "owned": d.owned,
-                    "has_primer": d.has_primer,
-                })
+            .map(|d| DeckListReport {
+                name: d.name.clone(),
+                has_decklist: true,
+                cards: d.cards,
+                sideboard_cards: d.sideboard_cards,
+                maybeboard_cards: d.maybeboard_cards,
+                owned: d.owned,
+                has_primer: d.has_primer,
             })
             .collect();
         for gap in &gaps {
-            items.push(serde_json::json!({
-                "name": gap,
-                "has_decklist": false,
-                "cards": 0,
-                "sideboard_cards": 0,
-                "maybeboard_cards": 0,
-                "owned": owned_count_for(conn, gap)?,
-                "has_primer": false,
-            }));
+            items.push(DeckListReport {
+                name: gap.clone(),
+                has_decklist: false,
+                cards: 0,
+                sideboard_cards: 0,
+                maybeboard_cards: 0,
+                owned: owned_count_for(conn, gap)?,
+                has_primer: false,
+            });
         }
         println!("{}", serde_json::to_string_pretty(&items)?);
         return Ok(crate::cli::codes::OK);
@@ -256,10 +289,10 @@ pub fn list(
         let primer = if d.has_primer { " primer" } else { "" };
         let mut count = format!("{} cards", d.cards);
         if d.sideboard_cards > 0 {
-            count.push_str(&format!(" + {} sideboard", d.sideboard_cards));
+            let _ = write!(count, " + {} sideboard", d.sideboard_cards);
         }
         if d.maybeboard_cards > 0 {
-            count.push_str(&format!(" + {} maybeboard", d.maybeboard_cards));
+            let _ = write!(count, " + {} maybeboard", d.maybeboard_cards);
         }
         // Completion coloring: green when fully owned, yellow when partial,
         // red when nothing is owned.
@@ -321,6 +354,9 @@ fn registered_deck_names(conn: &Connection) -> anyhow::Result<Vec<String>> {
 /// Removes the decklist (txt + primer). Ownership rows in the collection
 /// are never touched: the decklist and the ownership assignment are two
 /// different things.
+///
+/// # Errors
+/// Propagates file system and database errors.
 pub fn delete(
     paths: &crate::paths::Paths,
     conn: &Connection,
@@ -336,7 +372,7 @@ pub fn delete(
     }
     let text =
         std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let cards = Deck::parse(&text).map(|d| d.total()).unwrap_or(0);
+    let cards = Deck::parse(&text).map_or(0, |d| d.total());
     let primer = primer_file(paths, name);
     std::fs::remove_file(&path).with_context(|| format!("deleting {}", path.display()))?;
     if primer.exists() {
@@ -376,10 +412,9 @@ fn discover_decks(
         let name = deck_name_of(&path);
         let text = std::fs::read_to_string(&path)
             .with_context(|| format!("reading {}", path.display()))?;
-        let deck = match Deck::parse(&text) {
-            Ok(deck) => deck,
-            // A half-written deck must not break `deck list`.
-            Err(_) => continue,
+        // A half-written deck must not break `deck list`.
+        let Ok(deck) = Deck::parse(&text) else {
+            continue;
         };
         decks.push(DeckSummary {
             cards: deck.maindeck_total(),
@@ -417,6 +452,9 @@ fn owned_count_for(conn: &Connection, name: &str) -> anyhow::Result<i64> {
 ///
 /// Binder copies can fill deck slots (they are the user's cards); other
 /// decks' copies never count. Read-only.
+///
+/// # Errors
+/// Propagates SQLite errors.
 pub fn owned_copies(conn: &Connection, name: &str) -> anyhow::Result<(i64, i64)> {
     let in_deck = owned_count_for(conn, name)?;
     let in_binders: i64 = conn

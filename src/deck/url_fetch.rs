@@ -86,6 +86,8 @@ fn get_text(url: &str) -> anyhow::Result<String> {
 }
 
 /// GET a JSON payload from a site API.
+/// Fetch an external deck-service response whose shape varies by provider.
+/// Keep this JSON value at the import boundary and parse only supported fields.
 fn get_json(url: &str) -> anyhow::Result<serde_json::Value> {
     let text = get_text(url)?;
     serde_json::from_str(&text).with_context(|| "parsing the site's JSON response")

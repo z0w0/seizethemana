@@ -20,13 +20,14 @@ fn cmc_bucket(cmc: f64, is_land: bool) -> Option<String> {
     Some(if cmc >= 7.0 {
         "7+".to_string()
     } else {
-        (cmc as i64).to_string()
+        format!("{:.0}", cmc.trunc())
     })
 }
 
 /// True when the card is a land: any face's type line contains the word
 /// "Land" before the em-dash clause (covers "Basic Land — Plains" and
 /// split cards like "Land // Creature").
+#[must_use]
 pub fn is_land(card: &CardRow) -> bool {
     card.type_line
         .split(" // ")
@@ -36,6 +37,7 @@ pub fn is_land(card: &CardRow) -> bool {
 /// True when the card is a basic land: any face's type line contains
 /// "Basic Land". Basics are assumed available in unlimited supply, so deck
 /// tooling never counts them as missing from the collection.
+#[must_use]
 pub fn is_basic_land(card: &CardRow) -> bool {
     card.type_line.contains("Basic Land")
 }
@@ -43,6 +45,7 @@ pub fn is_basic_land(card: &CardRow) -> bool {
 /// True when the card is one of the five tracked basic lands
 /// (Plains, Island, Swamp, Mountain, Forest). Wastes is not tracked
 /// as an unlimited basic for collection stats.
+#[must_use]
 pub fn is_tracked_basic(card: &CardRow) -> bool {
     card.type_line.contains("Basic Land") && card.name != "Wastes"
 }
@@ -50,6 +53,7 @@ pub fn is_tracked_basic(card: &CardRow) -> bool {
 /// True when the oracle text lets the deck run more than 4 copies
 /// ("a deck can have any number of cards named …"). Covers Relentless Rats,
 /// Shadowborn Apostle, Seven Dwarves in a Dwarven Deck, and similar.
+#[must_use]
 pub fn is_unlimited_copies(card: &CardRow) -> bool {
     let text = card.oracle_text.to_ascii_lowercase();
     text.contains("any number of cards named")
@@ -95,6 +99,7 @@ pub fn lookup_names(
     conn: &rusqlite::Connection,
     deck: &Deck,
 ) -> anyhow::Result<HashMap<String, CardRow>> {
+    const CHUNK: usize = 400;
     let mut map = HashMap::new();
     // Chunked IN-lookups over the deck's own names instead of materializing
     // every card in the store; a 40-card deck reads 40 rows, not 33,000.
@@ -111,7 +116,6 @@ pub fn lookup_names(
     if names.is_empty() {
         return Ok(map);
     }
-    const CHUNK: usize = 400;
     let row_sql = "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
                 keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
                 legalities, set_code, collector_number, scryfall_id, released_at,
@@ -163,11 +167,15 @@ pub fn lookup_names(
 /// ramp, color, or type data. Bench sections (SIDEBOARD/MAYBEBOARD) never
 /// feed the curve, ramp, color, or type data: those describe the legal
 /// deck, and bench cards only count toward `total`.
-pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckStats {
+#[must_use]
+pub fn compute(
+    deck: &Deck,
+    cards_by_name: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
+) -> DeckStats {
     let mut stats = DeckStats::default();
-    let mut curve: std::collections::BTreeMap<String, i64> = Default::default();
-    let mut colors: std::collections::BTreeMap<String, i64> = Default::default();
-    let mut types: std::collections::BTreeMap<String, i64> = Default::default();
+    let mut curve: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::default();
+    let mut colors: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::default();
+    let mut types: std::collections::BTreeMap<String, i64> = std::collections::BTreeMap::default();
     let mut cmc_sum = 0.0f64;
     let mut cmc_cards = 0i64;
 
@@ -184,7 +192,8 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
             let land = is_land(card);
             if let Some(bucket) = cmc_bucket(card.cmc, land) {
                 *curve.entry(bucket).or_insert(0) += entry.quantity;
-                cmc_sum += card.cmc * entry.quantity as f64;
+                cmc_sum += card.cmc
+                    * f64::from(i32::try_from(entry.quantity).expect("deck quantities fit i32"));
                 cmc_cards += entry.quantity;
             }
             if land {
@@ -218,17 +227,20 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
     }
 
     stats.avg_cmc = if cmc_cards > 0 {
-        cmc_sum / cmc_cards as f64
+        cmc_sum / f64::from(i32::try_from(cmc_cards).expect("deck size fits i32"))
     } else {
         0.0
     };
     let normalize = |map: std::collections::BTreeMap<String, i64>| -> Vec<BucketLine> {
-        let max = map.values().copied().max().unwrap_or(1).max(1) as f64;
+        let max = f64::from(
+            i32::try_from(map.values().copied().max().unwrap_or(1).max(1))
+                .expect("deck counts fit i32"),
+        );
         map.into_iter()
             .map(|(label, count)| BucketLine {
                 label,
                 count,
-                ratio: count as f64 / max,
+                ratio: f64::from(i32::try_from(count).expect("deck counts fit i32")) / max,
             })
             .collect()
     };
@@ -245,6 +257,7 @@ pub fn compute(deck: &Deck, cards_by_name: &HashMap<String, CardRow>) -> DeckSta
 /// the average-MV bands, three-way in both formats. Commander
 /// decks anchor on the singleton turn scale; 60-card decks on the
 /// Karsten band class.
+#[must_use]
 pub fn curve_target(is_commander: bool, avg_cmc: f64) -> &'static str {
     if is_commander {
         if avg_cmc < 2.0 {
@@ -265,37 +278,62 @@ pub fn curve_target(is_commander: bool, avg_cmc: f64) -> &'static str {
 
 /// The curve histogram indexed MV 0..6+ (7 slots; 6 and 7+ collapse
 /// into the last slot). Shared by the human line and the JSON block.
+#[must_use]
 pub fn curve_histogram(stats: &DeckStats) -> Vec<u32> {
     let mut histogram = vec![0u32; 7];
     for bucket in &stats.curve {
         let label = bucket.label.trim_end_matches('+');
         let mv: usize = label.parse().unwrap_or(6);
         let idx = mv.clamp(0, 6);
-        histogram[idx] += bucket.count as u32;
+        histogram[idx] =
+            histogram[idx].saturating_add(u32::try_from(bucket.count).unwrap_or(u32::MAX));
     }
     histogram
 }
 
-/// The curve JSON block: average nonland MV and the histogram indexed
-/// MV 0..6+. The target sentence follows the deck's format.
-pub fn curve_json(stats: &DeckStats, is_commander: bool) -> serde_json::Value {
-    serde_json::json!({
-        "avg_mv": (stats.avg_cmc * 10.0).round() / 10.0,
-        "histogram": curve_histogram(stats),
-        "target": curve_target(is_commander, stats.avg_cmc),
-    })
+/// Curve summary and histogram indexed by mana value 0..6+.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct CurveReport {
+    /// Average nonland mana value.
+    pub average_nonland_mana_value: f64,
+    /// Counts in mana-value buckets 0..5 and 6+.
+    pub histogram: Vec<u32>,
+    /// Target curve summary for the deck's format.
+    pub target: &'static str,
 }
 
-/// The ramp JSON block: the deck's mana-source census (lands, rocks,
-/// dorks, other producers) as the machine-readable counterpart of the
-/// human overview's `Ramp` lines.
-pub fn ramp_json(stats: &DeckStats) -> serde_json::Value {
-    serde_json::json!({
-        "lands": stats.ramp.0,
-        "rocks": stats.ramp.1,
-        "dorks": stats.ramp.2,
-        "other": stats.ramp.3,
-    })
+/// Mana-source census for the deck overview.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct RampReport {
+    /// Lands.
+    pub lands: i64,
+    /// Artifact mana sources.
+    pub artifact_mana_sources: i64,
+    /// Creature mana sources.
+    pub creature_mana_sources: i64,
+    /// Other mana producers.
+    pub other_mana_sources: i64,
+}
+
+/// Build a typed curve report.
+#[must_use]
+pub fn curve_json(stats: &DeckStats, is_commander: bool) -> CurveReport {
+    CurveReport {
+        average_nonland_mana_value: (stats.avg_cmc * 10.0).round() / 10.0,
+        histogram: curve_histogram(stats),
+        target: curve_target(is_commander, stats.avg_cmc),
+    }
+}
+
+/// Build a typed mana-source report.
+#[must_use]
+pub fn ramp_json(stats: &DeckStats) -> RampReport {
+    RampReport {
+        lands: stats.ramp.0,
+        artifact_mana_sources: stats.ramp.1,
+        creature_mana_sources: stats.ramp.2,
+        other_mana_sources: stats.ramp.3,
+    }
 }
 
 /// Matches the `{T}: Add {…}` shape plus prose forms like "Add one mana of
@@ -307,11 +345,13 @@ fn produces_mana(oracle_text: &str) -> bool {
 }
 
 /// True when the card is an artifact mana rock.
+#[must_use]
 pub fn is_rock(card: &CardRow) -> bool {
     !is_land(card) && card.type_line.contains("Artifact") && produces_mana(&card.oracle_text)
 }
 
 /// True when the card is a creature mana dork.
+#[must_use]
 pub fn is_dork(card: &CardRow) -> bool {
     !is_land(card) && card.type_line.contains("Creature") && produces_mana(&card.oracle_text)
 }

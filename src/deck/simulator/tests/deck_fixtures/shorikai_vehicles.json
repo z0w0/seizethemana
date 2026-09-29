@@ -1,0 +1,561 @@
+{
+ "commanders": [
+  {
+   "name": "Shorikai, Genesis Engine",
+   "cost": "{2}{W}{U}",
+   "type_line": "Legendary Artifact \u2014 Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{1}, {T}: Draw two cards, then discard a card. Create a 1/1 colorless Pilot creature token with \"This token crews Vehicles as though its power were 2 greater.\"\nCrew 8 (Tap any number of creatures you control with total power 8 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  }
+ ],
+ "cards": [
+  {
+   "name": "Shorikai, Genesis Engine",
+   "cost": "{2}{W}{U}",
+   "type_line": "Legendary Artifact \u2014 Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{1}, {T}: Draw two cards, then discard a card. Create a 1/1 colorless Pilot creature token with \"This token crews Vehicles as though its power were 2 greater.\"\nCrew 8 (Tap any number of creatures you control with total power 8 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Talisman of Progress",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {W} or {U}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Thought Vessel",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "You have no maximum hand size.\n{T}: Add {C}."
+  },
+  {
+   "name": "Smuggler's Copter",
+   "cost": "{2}",
+   "type_line": "Artifact \u2014 Vehicle",
+   "keywords": "[\"Flying\", \"Crew\"]",
+   "text": "Flying\nWhenever this Vehicle attacks or blocks, you may draw a card. If you do, discard a card.\nCrew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Consulate Dreadnought",
+   "cost": "{1}",
+   "type_line": "Artifact \u2014 Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "Crew 6 (Tap any number of creatures you control with total power 6 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Peacewalker Colossus",
+   "cost": "{3}",
+   "type_line": "Artifact \u2014 Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{1}{W}: Another target Vehicle you control becomes an artifact creature until end of turn.\nCrew 4 (Tap any number of creatures you control with total power 4 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Cultivator's Caravan",
+   "cost": "{3}",
+   "type_line": "Artifact \u2014 Vehicle",
+   "keywords": "[\"Crew\"]",
+   "text": "{T}: Add one mana of any color.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Weatherlight",
+   "cost": "{4}",
+   "type_line": "Legendary Artifact \u2014 Vehicle",
+   "keywords": "[\"Flying\", \"Crew\"]",
+   "text": "Flying\nWhenever Weatherlight deals combat damage to a player, look at the top five cards of your library. You may reveal a historic card from among them and put it into your hand. Put the rest on the bottom of your library in a random order. (Artifacts, legendaries, and Sagas are historic.)\nCrew 3"
+  },
+  {
+   "name": "Skysovereign, Consul Flagship",
+   "cost": "{5}",
+   "type_line": "Legendary Artifact \u2014 Vehicle",
+   "keywords": "[\"Flying\", \"Crew\"]",
+   "text": "Flying\nWhenever Skysovereign enters or attacks, it deals 3 damage to target creature or planeswalker an opponent controls.\nCrew 3 (Tap any number of creatures you control with total power 3 or more: This Vehicle becomes an artifact creature until end of turn.)"
+  },
+  {
+   "name": "Kotori, Pilot Prodigy",
+   "cost": "{1}{W}{U}",
+   "type_line": "Legendary Creature \u2014 Moonfolk Pilot",
+   "keywords": "[]",
+   "text": "Vehicles you control have crew 2.\nAt the beginning of combat on your turn, target artifact creature you control gains lifelink and vigilance until end of turn."
+  },
+  {
+   "name": "Depala, Pilot Exemplar",
+   "cost": "{1}{R}{W}",
+   "type_line": "Legendary Creature \u2014 Dwarf Pilot",
+   "keywords": "[]",
+   "text": "Other Dwarves you control get +1/+1.\nEach Vehicle you control gets +1/+1 as long as it's a creature.\nWhenever Depala becomes tapped, you may pay {X}. If you do, reveal the top X cards of your library, put all Dwarf and Vehicle cards from among them into your hand, then put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Sram, Senior Edificer",
+   "cost": "{1}{W}",
+   "type_line": "Legendary Creature \u2014 Dwarf Advisor",
+   "keywords": "[]",
+   "text": "Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card."
+  },
+  {
+   "name": "Padeem, Consul of Innovation",
+   "cost": "{3}{U}",
+   "type_line": "Legendary Creature \u2014 Vedalken Artificer",
+   "keywords": "[]",
+   "text": "Artifacts you control have hexproof. (They can't be the targets of spells or abilities your opponents control.)\nAt the beginning of your upkeep, if you control the artifact with the greatest mana value or tied for the greatest mana value, draw a card."
+  },
+  {
+   "name": "Whir of Invention",
+   "cost": "{X}{U}{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[\"Improvise\"]",
+   "text": "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nSearch your library for an artifact card with mana value X or less, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Fabricate",
+   "cost": "{2}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Search your library for an artifact card, reveal it, put it into your hand, then shuffle."
+  },
+  {
+   "name": "Cyberdrive Awakener",
+   "cost": "{5}{U}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nOther artifact creatures you control have flying.\nWhen this creature enters, each noncreature artifact you control becomes a 4/4 artifact creature until end of turn."
+  },
+  {
+   "name": "Sharding Sphinx",
+   "cost": "{4}{U}{U}",
+   "type_line": "Artifact Creature \u2014 Sphinx",
+   "keywords": "[\"Flying\"]",
+   "text": "Flying\nWhenever an artifact creature you control deals combat damage to a player, you may create a 1/1 blue Thopter artifact creature token with flying."
+  },
+  {
+   "name": "Master of Etherium",
+   "cost": "{2}{U}",
+   "type_line": "Artifact Creature \u2014 Vedalken Wizard",
+   "keywords": "[]",
+   "text": "Master of Etherium's power and toughness are each equal to the number of artifacts you control.\nOther artifact creatures you control get +1/+1."
+  },
+  {
+   "name": "Steel Overseer",
+   "cost": "{2}",
+   "type_line": "Artifact Creature \u2014 Construct",
+   "keywords": "[]",
+   "text": "{T}: Put a +1/+1 counter on each artifact creature you control."
+  },
+  {
+   "name": "Sai, Master Thopterist",
+   "cost": "{2}{U}",
+   "type_line": "Legendary Creature \u2014 Human Artificer",
+   "keywords": "[]",
+   "text": "Whenever you cast an artifact spell, create a 1/1 colorless Thopter artifact creature token with flying.\n{1}{U}, Sacrifice two artifacts: Draw a card."
+  },
+  {
+   "name": "Efficient Construction",
+   "cost": "{3}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever you cast an artifact spell, create a 1/1 colorless Thopter artifact creature token with flying."
+  },
+  {
+   "name": "Thopter Spy Network",
+   "cost": "{2}{U}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "At the beginning of your upkeep, if you control an artifact, create a 1/1 colorless Thopter artifact creature token with flying.\nWhenever one or more artifact creatures you control deal combat damage to a player, draw a card."
+  },
+  {
+   "name": "Counterspell",
+   "cost": "{U}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell."
+  },
+  {
+   "name": "Swan Song",
+   "cost": "{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+  },
+  {
+   "name": "Arcane Denial",
+   "cost": "{1}{U}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep."
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Generous Gift",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Elephant creature token."
+  },
+  {
+   "name": "Wrath of God",
+   "cost": "{2}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all creatures. They can't be regenerated."
+  },
+  {
+   "name": "Supreme Verdict",
+   "cost": "{1}{W}{W}{U}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell can't be countered.\nDestroy all creatures."
+  },
+  {
+   "name": "Farewell",
+   "cost": "{4}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Choose one or more \u2014\n\u2022 Exile all artifacts.\n\u2022 Exile all creatures.\n\u2022 Exile all enchantments.\n\u2022 Exile all graveyards."
+  },
+  {
+   "name": "Tezzeret the Seeker",
+   "cost": "{3}{U}{U}",
+   "type_line": "Legendary Planeswalker \u2014 Tezzeret",
+   "keywords": "[]",
+   "text": "+1: Untap up to two target artifacts.\n\u2212X: Search your library for an artifact card with mana value X or less, put it onto the battlefield, then shuffle.\n\u22125: Artifacts you control become artifact creatures with base power and toughness 5/5 until end of turn."
+  },
+  {
+   "name": "Narset, Parter of Veils",
+   "cost": "{1}{U}{U}",
+   "type_line": "Legendary Planeswalker \u2014 Narset",
+   "keywords": "[]",
+   "text": "Each opponent can't draw more than one card each turn.\n\u22122: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order."
+  },
+  {
+   "name": "Karn, Scion of Urza",
+   "cost": "{4}",
+   "type_line": "Legendary Planeswalker \u2014 Karn",
+   "keywords": "[]",
+   "text": "+1: Reveal the top two cards of your library. An opponent chooses one of them. Put that card into your hand and exile the other with a silver counter on it.\n\u22121: Put a card you own with a silver counter on it from exile into your hand.\n\u22122: Create a 0/0 colorless Construct artifact creature token with \"This token gets +1/+1 for each artifact you control.\""
+  },
+  {
+   "name": "Ugin, the Ineffable",
+   "cost": "{6}",
+   "type_line": "Legendary Planeswalker \u2014 Ugin",
+   "keywords": "[]",
+   "text": "Colorless spells you cast cost {2} less to cast.\n+1: Exile the top card of your library face down and look at it. Create a 2/2 colorless Spirit creature token. When that token leaves the battlefield, put the exiled card into your hand.\n\u22123: Destroy target permanent that's one or more colors."
+  },
+  {
+   "name": "Rhystic Study",
+   "cost": "{2}{U}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+  },
+  {
+   "name": "Mystic Remora",
+   "cost": "{U}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Cumulative upkeep\"]",
+   "text": "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)\nWhenever an opponent casts a noncreature spell, you may draw a card unless that player pays {4}."
+  },
+  {
+   "name": "Smothering Tithe",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[\"Treasure\"]",
+   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+  },
+  {
+   "name": "Island",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Island",
+   "keywords": "[]",
+   "text": "({T}: Add {U}.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Hallowed Fountain",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Glacial Fortress",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or an Island.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Port Town",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "As this land enters, you may reveal a Plains or Island card from your hand. If you don't, this land enters tapped.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Seachrome Coast",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control two or fewer other lands.\n{T}: Add {W} or {U}."
+  },
+  {
+   "name": "Prairie Stream",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Island",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands."
+  },
+  {
+   "name": "Flooded Strand",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle."
+  },
+  {
+   "name": "Hall of Heliod's Generosity",
+   "cost": "",
+   "type_line": "Legendary Land",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{1}{W}, {T}: Put target enchantment card from your graveyard on top of your library."
+  }
+ ],
+ "list": [
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Talisman of Progress",
+   1
+  ],
+  [
+   "Thought Vessel",
+   1
+  ],
+  [
+   "Smuggler's Copter",
+   1
+  ],
+  [
+   "Consulate Dreadnought",
+   1
+  ],
+  [
+   "Peacewalker Colossus",
+   1
+  ],
+  [
+   "Cultivator's Caravan",
+   1
+  ],
+  [
+   "Weatherlight",
+   1
+  ],
+  [
+   "Skysovereign, Consul Flagship",
+   1
+  ],
+  [
+   "Kotori, Pilot Prodigy",
+   1
+  ],
+  [
+   "Depala, Pilot Exemplar",
+   1
+  ],
+  [
+   "Sram, Senior Edificer",
+   1
+  ],
+  [
+   "Padeem, Consul of Innovation",
+   1
+  ],
+  [
+   "Whir of Invention",
+   1
+  ],
+  [
+   "Fabricate",
+   1
+  ],
+  [
+   "Cyberdrive Awakener",
+   1
+  ],
+  [
+   "Sharding Sphinx",
+   1
+  ],
+  [
+   "Master of Etherium",
+   1
+  ],
+  [
+   "Steel Overseer",
+   1
+  ],
+  [
+   "Sai, Master Thopterist",
+   1
+  ],
+  [
+   "Efficient Construction",
+   1
+  ],
+  [
+   "Thopter Spy Network",
+   1
+  ],
+  [
+   "Counterspell",
+   1
+  ],
+  [
+   "Swan Song",
+   1
+  ],
+  [
+   "Arcane Denial",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Generous Gift",
+   1
+  ],
+  [
+   "Wrath of God",
+   1
+  ],
+  [
+   "Supreme Verdict",
+   1
+  ],
+  [
+   "Farewell",
+   1
+  ],
+  [
+   "Tezzeret the Seeker",
+   1
+  ],
+  [
+   "Narset, Parter of Veils",
+   1
+  ],
+  [
+   "Karn, Scion of Urza",
+   1
+  ],
+  [
+   "Ugin, the Ineffable",
+   1
+  ],
+  [
+   "Rhystic Study",
+   1
+  ],
+  [
+   "Mystic Remora",
+   1
+  ],
+  [
+   "Smothering Tithe",
+   1
+  ],
+  [
+   "Island",
+   29
+  ],
+  [
+   "Plains",
+   23
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Hallowed Fountain",
+   1
+  ],
+  [
+   "Glacial Fortress",
+   1
+  ],
+  [
+   "Port Town",
+   1
+  ],
+  [
+   "Seachrome Coast",
+   1
+  ],
+  [
+   "Prairie Stream",
+   1
+  ],
+  [
+   "Flooded Strand",
+   1
+  ],
+  [
+   "Hall of Heliod's Generosity",
+   1
+  ]
+ ]
+}

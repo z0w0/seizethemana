@@ -312,70 +312,133 @@ pub fn show_stats(
     Ok(crate::cli::codes::OK)
 }
 
-/// One stats bucket as JSON: card count and rounded value.
-pub(crate) fn bucket_map(
-    m: &std::collections::BTreeMap<String, Bucket>,
-) -> serde_json::Map<String, serde_json::Value> {
-    serde_json::Map::<String, serde_json::Value>::from_iter(m.iter().map(|(k, b)| {
-        (
-            k.clone(),
-            serde_json::json!({"cards": b.cards, "value": crate::output::round2(b.value)}),
-        )
-    }))
+/// One universe or franchise count and its rounded value.
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct BucketReport {
+    /// Copy count.
+    cards: i64,
+    /// Total value in the bucket.
+    value: f64,
 }
 
-/// The empty-collection JSON contract: the stats object with zeroed
-/// counts and empty buckets, so an agent parsing `collection --json`
-/// gets one shape on both sides of exit 3.
-fn empty_stats_json() -> serde_json::Value {
-    serde_json::json!({
-        "unique_cards": 0,
-        "currency": crate::output::CURRENCY,
-        "total_cards": 0,
-        "foils": 0,
-        "total_value": 0.0,
-        "purchase_total": 0.0,
-        "color_identity": {},
-        "curve": {},
-        "rarity": {},
-        "top_sets": [],
-        "by_universe": {},
-        "by_franchise": {},
-        "locations": [],
-    })
+/// One set count in the collection.
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct SetCountReport {
+    /// Set code.
+    set: String,
+    /// Full set name.
+    set_name: String,
+    /// Copies in the collection.
+    cards: i64,
 }
 
-/// The `collection --json` payload: totals, counts per facet, and the
-/// universe/location splits. Prices round to two decimals.
-pub(crate) fn stats_json(stats: &Stats) -> serde_json::Value {
-    let map = |m: &std::collections::BTreeMap<String, i64>| {
-        serde_json::Map::<String, serde_json::Value>::from_iter(
-            m.iter().map(|(k, v)| (k.clone(), serde_json::json!(v))),
-        )
+/// One collection storage location.
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct LocationReport {
+    /// Binder or deck name.
+    name: String,
+    /// Location type.
+    binder_type: String,
+    /// Number of copies in this location.
+    cards: i64,
+}
+
+/// Complete typed output for `stm collection`.
+#[derive(Debug, Clone, serde::Serialize)]
+pub(crate) struct CollectionStatsReport {
+    /// Distinct card-name count.
+    unique_cards: usize,
+    /// Currency used for values.
+    currency: &'static str,
+    /// Total owned copies.
+    total_cards: i64,
+    /// Foil copies.
+    foils: i64,
+    /// Current value.
+    total_value: f64,
+    /// Purchase total.
+    purchase_total: f64,
+    /// Copies by color identity.
+    color_identity: std::collections::BTreeMap<String, i64>,
+    /// Copies by mana-value curve bucket.
+    curve: std::collections::BTreeMap<String, i64>,
+    /// Copies by rarity.
+    rarity: std::collections::BTreeMap<String, i64>,
+    /// Most-represented sets.
+    top_sets: Vec<SetCountReport>,
+    /// Copies and value by universe.
+    by_universe: std::collections::BTreeMap<String, BucketReport>,
+    /// Copies and value by franchise.
+    by_franchise: std::collections::BTreeMap<String, BucketReport>,
+    /// Copies by binder or deck location.
+    locations: Vec<LocationReport>,
+}
+
+/// Empty collection stats with the same complete shape as a nonempty result.
+fn empty_stats_json() -> CollectionStatsReport {
+    CollectionStatsReport {
+        unique_cards: 0,
+        currency: crate::output::CURRENCY,
+        total_cards: 0,
+        foils: 0,
+        total_value: 0.0,
+        purchase_total: 0.0,
+        color_identity: Default::default(),
+        curve: Default::default(),
+        rarity: Default::default(),
+        top_sets: Vec::new(),
+        by_universe: Default::default(),
+        by_franchise: Default::default(),
+        locations: Vec::new(),
+    }
+}
+
+/// Build typed collection counts, values, and locations.
+pub(crate) fn stats_json(stats: &Stats) -> CollectionStatsReport {
+    let buckets = |rows: &std::collections::BTreeMap<String, Bucket>| {
+        rows.iter()
+            .map(|(key, bucket)| {
+                (
+                    key.clone(),
+                    BucketReport {
+                        cards: bucket.cards,
+                        value: crate::output::round2(bucket.value),
+                    },
+                )
+            })
+            .collect()
     };
-    serde_json::json!({
-        "unique_cards": stats.unique_cards,
-        "currency": crate::output::CURRENCY,
-        "total_cards": stats.total_cards,
-        "foils": stats.foils,
-        "total_value": crate::output::round2(stats.total_value),
-        "purchase_total": crate::output::round2(stats.purchase_total),
-        "color_identity": map(&stats.color_identity),
-        "curve": map(&stats.curve),
-        "rarity": map(&stats.rarity),
-        "top_sets": stats
+    CollectionStatsReport {
+        unique_cards: stats.unique_cards,
+        currency: crate::output::CURRENCY,
+        total_cards: stats.total_cards,
+        foils: stats.foils,
+        total_value: crate::output::round2(stats.total_value),
+        purchase_total: crate::output::round2(stats.purchase_total),
+        color_identity: stats.color_identity.clone(),
+        curve: stats.curve.clone(),
+        rarity: stats.rarity.clone(),
+        top_sets: stats
             .top_sets
             .iter()
-            .map(|(name, code, n)| {
-                serde_json::json!({"set": code, "set_name": name, "cards": n})
+            .map(|(name, code, cards)| SetCountReport {
+                set: code.clone(),
+                set_name: name.clone(),
+                cards: *cards,
             })
-            .collect::<Vec<_>>(),
-        "by_universe": bucket_map(&stats.by_universe),
-        "by_franchise": bucket_map(&stats.by_franchise),
-        "locations": stats.binders.iter().map(|(name, kind, cards)| serde_json::json!({
-            "name": name, "type": kind, "cards": cards,
-        })).collect::<Vec<_>>(),
-    })
+            .collect(),
+        by_universe: buckets(&stats.by_universe),
+        by_franchise: buckets(&stats.by_franchise),
+        locations: stats
+            .binders
+            .iter()
+            .map(|(name, binder_type, cards)| LocationReport {
+                name: name.clone(),
+                binder_type: binder_type.clone(),
+                cards: *cards,
+            })
+            .collect(),
+    }
 }
 
 /// Human collection overview: aligned label column, colored counts,

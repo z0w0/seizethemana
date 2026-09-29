@@ -35,8 +35,8 @@ pub struct FormatRules {
     pub mulligan: MulliganPolicy,
 }
 
-/// Rule table, one row per format `deck legal` knows. Unknown keys fall
-/// back to [`fallback_rules`].
+/// Rule table, one row per format `deck legal` knows. Unknown keys use
+/// the same rules as constructed (`rules_inferred`).
 const TABLE: &[FormatRules] = &[
     FormatRules {
         key: "commander",

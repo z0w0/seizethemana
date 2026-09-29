@@ -23,6 +23,39 @@ pub struct SectionDiff {
     pub changed: Vec<(String, i64, i64)>,
 }
 
+/// One removed or added card in the JSON deck diff.
+#[derive(Debug, Clone, serde::Serialize)]
+struct CardQuantity {
+    /// Display card name.
+    name: String,
+    /// Number of copies.
+    quantity: i64,
+}
+
+/// One card whose quantity changed in the JSON deck diff.
+#[derive(Debug, Clone, serde::Serialize)]
+struct CardQuantityChange {
+    /// Display card name.
+    name: String,
+    /// Old quantity.
+    old_quantity: i64,
+    /// New quantity.
+    new_quantity: i64,
+}
+
+/// Typed JSON representation of one section's changes.
+#[derive(Debug, Clone, serde::Serialize)]
+struct DeckDiffSectionReport {
+    /// Section header.
+    section: String,
+    /// Removed cards.
+    removed: Vec<CardQuantity>,
+    /// Added cards.
+    added: Vec<CardQuantity>,
+    /// Changed card quantities.
+    changed: Vec<CardQuantityChange>,
+}
+
 impl SectionDiff {
     /// True when the two lists are identical.
     pub fn is_empty(&self) -> bool {
@@ -288,15 +321,35 @@ pub fn diff(
     });
 
     if format == DiffFormat::Json {
-        let payload: Vec<serde_json::Value> = sections
+        let payload: Vec<DeckDiffSectionReport> = sections
             .iter()
-            .map(|s| {
-                serde_json::json!({
-                    "section": s.section,
-                    "removed": s.removed.iter().map(|(n, q)| serde_json::json!({"name": display_name(n), "qty": q})).collect::<Vec<_>>(),
-                    "added": s.added.iter().map(|(n, q)| serde_json::json!({"name": display_name(n), "qty": q})).collect::<Vec<_>>(),
-                    "changed": s.changed.iter().map(|(n, a, b)| serde_json::json!({"name": display_name(n), "from": a, "to": b})).collect::<Vec<_>>(),
-                })
+            .map(|section| DeckDiffSectionReport {
+                section: section.section.clone(),
+                removed: section
+                    .removed
+                    .iter()
+                    .map(|(name, quantity)| CardQuantity {
+                        name: display_name(name),
+                        quantity: *quantity,
+                    })
+                    .collect(),
+                added: section
+                    .added
+                    .iter()
+                    .map(|(name, quantity)| CardQuantity {
+                        name: display_name(name),
+                        quantity: *quantity,
+                    })
+                    .collect(),
+                changed: section
+                    .changed
+                    .iter()
+                    .map(|(name, old_quantity, new_quantity)| CardQuantityChange {
+                        name: display_name(name),
+                        old_quantity: *old_quantity,
+                        new_quantity: *new_quantity,
+                    })
+                    .collect(),
             })
             .collect();
         println!("{}", serde_json::to_string_pretty(&payload)?);

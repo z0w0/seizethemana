@@ -1,5 +1,5 @@
-use super::parse_cost::{parse_activation_cost, parse_cost, parse_cost_faces};
-use super::parse_land::parse_tap_yield;
+use super::oracle_parser::cost::{parse_activation_cost, parse_cost, parse_cost_faces};
+use super::oracle_parser::land::parse_tap_yield;
 
 #[test]
 fn parses_plain_and_generic_costs() {
@@ -25,15 +25,15 @@ fn x_and_s_cost_one_generic() {
 #[test]
 fn hybrid_pip_is_flexible() {
     let cost = parse_cost("{W/U}");
-    assert_eq!(cost.flex_pips, 1);
+    assert_eq!(cost.hybrid_pips, 1);
     assert_eq!(cost.total(), 1);
     let both = parse_cost("{W/U}{U/B}");
-    assert_eq!(both.flex_pips, 2);
+    assert_eq!(both.hybrid_pips, 2);
 }
 
 #[test]
 fn phyrexian_pip_is_its_color() {
-    // {B/P} pays black or 2 life (CR 118.3b): the pip rides in the
+    // {B/P} pays black or 2 life (CR 107.4f): the pip rides in the
     // phyrexian lane, payable by life.
     let cost = parse_cost("{1}{B/P}");
     assert_eq!(cost.generic, 1);
@@ -56,7 +56,7 @@ fn colorless_only_cost_has_no_pips() {
     let cost = parse_cost("{3}");
     assert_eq!(cost.generic, 3);
     assert_eq!(cost.pips, [0; 5]);
-    assert_eq!(cost.flex_pips, 0);
+    assert_eq!(cost.hybrid_pips, 0);
 }
 
 #[test]

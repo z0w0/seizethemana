@@ -1,6 +1,6 @@
 //! Parse static buffs, equipment stats, and numeric keyword parameters.
 
-use super::model::Equipment;
+use super::super::model::Equipment;
 
 /// Static creature buff amount: "creatures you control get +2/+2".
 /// Only full-board buffs count (the sim applies them deck-wide).
@@ -33,8 +33,9 @@ fn parse_signed_amount(text: &str) -> Option<(i32, &str)> {
     Some((value, &text[1 + digits.len()..]))
 }
 
-/// Equipment stats: equip cost and equipped-creature buff.
-pub(super) fn parse_equipment(text: &str) -> Option<Equipment> {
+/// Equipment stats: equip or reconfigure cost, buff, and the
+/// reconfigure flag.
+pub(in crate::deck::simulator) fn parse_equipment(text: &str) -> Option<Equipment> {
     // Buff: "Equipped creature gets +1/-1" / "gets +1/+2".
     let buff = {
         let marker = "equipped creature gets ";
@@ -42,8 +43,17 @@ pub(super) fn parse_equipment(text: &str) -> Option<Equipment> {
         let tail = &text[i + marker.len()..];
         parse_power_toughness(tail)?
     };
+    // Reconfigure (CR 702.151): "Reconfigure—Pay {2} or {E}{E}{E}."
+    // The generic mana option is the modeled cost.
+    let reconfigure = text.contains("reconfigure");
+    let reconfigure_cost = text
+        .split_once("reconfigure")
+        .and_then(|(_, tail)| tail.split_once('{'))
+        .and_then(|(_, tail)| tail.split('}').next())
+        .and_then(|digits| digits.trim().parse::<u32>().ok())
+        .filter(|cost| *cost > 0);
     // Equip cost: "Equip {1}" / "Equip {2}".
-    let cost = text
+    let equip_cost = text
         .find("equip ")
         .and_then(|i| {
             text[i + 6..]
@@ -54,7 +64,34 @@ pub(super) fn parse_equipment(text: &str) -> Option<Equipment> {
                 .parse::<u32>()
                 .ok()
         })
-        .filter(|c| *c > 0)
-        .unwrap_or(0);
-    Some(Equipment { cost, buff })
+        .filter(|c| *c > 0);
+    let cost = equip_cost.or(reconfigure_cost).unwrap_or(0);
+    Some(Equipment {
+        cost,
+        buff,
+        reconfigure,
+    })
+}
+
+/// Parse the temporary power and toughness bonus that applies while saddled.
+pub(super) fn parse_saddled_buff(text: &str) -> Option<(i32, i32)> {
+    if !text.contains("saddled") {
+        return None;
+    }
+    let sentence = text
+        .split(['.', '\n'])
+        .find(|line| line.contains("saddled") && line.contains("gets +"))?;
+    let tail = sentence.split("gets +").nth(1)?;
+    let power: String = tail
+        .trim_start_matches('+')
+        .chars()
+        .take_while(|character| character.is_ascii_digit() || *character == '-')
+        .collect();
+    let toughness = tail.split_once('/')?.1;
+    let toughness: String = toughness
+        .trim_start_matches('+')
+        .chars()
+        .take_while(|character| character.is_ascii_digit() || *character == '-')
+        .collect();
+    Some((power.parse().ok()?, toughness.parse().ok()?))
 }

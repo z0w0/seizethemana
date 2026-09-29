@@ -20,7 +20,10 @@ use std::collections::HashMap;
 ///
 /// Checklist items listing the deck's own Game Changers, so the reader can
 /// decide a bracket without re-querying every card.
-pub(super) fn game_changer_checklist(deck: &Deck, cards: &HashMap<String, CardRow>) -> Vec<String> {
+pub(super) fn game_changer_checklist<S: std::hash::BuildHasher>(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow, S>,
+) -> Vec<String> {
     let changers = game_changer_names(deck, cards);
     if changers.is_empty() {
         vec!["this deck has no Game Changers".to_string()]
@@ -36,7 +39,11 @@ pub(super) fn game_changer_checklist(deck: &Deck, cards: &HashMap<String, CardRo
 ///
 /// Sideboard Game Changers are excluded: the sideboard is a commander
 /// wishlist, not part of the deck.
-pub fn game_changer_names(deck: &Deck, cards: &HashMap<String, CardRow>) -> Vec<String> {
+#[must_use]
+pub fn game_changer_names<S: std::hash::BuildHasher>(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow, S>,
+) -> Vec<String> {
     maindeck_copies_by_name(deck)
         .into_iter()
         .filter(|(name, _)| cards.get(name).is_some_and(is_game_changer))
@@ -59,7 +66,7 @@ pub(super) fn print_report(
     bracket: Option<u8>,
     legal: bool,
     violations: &[Violation],
-    note: &Option<BracketNote>,
+    note: Option<&BracketNote>,
     summary: &str,
 ) {
     let styles = out.styles();

@@ -1,19 +1,7 @@
 //! Parsing for keyword names and their typed parameters.
 
-use super::super::oracle_ast::{KeywordAbility, KeywordArgument, KeywordName};
-
-/// The rules category of a known keyword.
-///
-/// CR 702 keyword abilities grant ongoing capabilities; CR 701 keyword
-/// actions change game state; ability words (CR 702.200+) label triggers
-/// and never appear as a `KeywordName`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum KeywordCategory {
-    /// A CR 702 keyword ability.
-    Ability,
-    /// A CR 701 keyword action (e.g. Transform, 701.27).
-    Action,
-}
+use super::super::model::BasicLandType;
+use super::super::oracle_ast::{KeywordArgument, OracleKeyword, OracleKeywordName};
 
 /// One table entry: the Oracle spelling and its parsed variant.
 #[derive(Debug)]
@@ -21,11 +9,7 @@ pub(crate) struct KeywordEntry {
     /// Lowercase Oracle spelling of the keyword head.
     pub(crate) text: &'static str,
     /// The parsed keyword variant.
-    pub(crate) name: KeywordName,
-    /// The rules category of the keyword. Classification data for rule
-    /// documentation and tests; no parser branch reads it yet.
-    #[allow(dead_code)]
-    pub(crate) category: KeywordCategory,
+    pub(crate) name: OracleKeywordName,
 }
 
 /// Every known keyword, one source of truth for spelling lookup, name
@@ -34,158 +18,248 @@ pub(crate) struct KeywordEntry {
 pub(crate) const KEYWORDS: &[KeywordEntry] = &[
     KeywordEntry {
         text: "flying",
-        name: KeywordName::Flying,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Flying,
     },
     KeywordEntry {
         text: "haste",
-        name: KeywordName::Haste,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Haste,
     },
     KeywordEntry {
         text: "double strike",
-        name: KeywordName::DoubleStrike,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::DoubleStrike,
     },
     KeywordEntry {
         text: "first strike",
-        name: KeywordName::FirstStrike,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::FirstStrike,
     },
     KeywordEntry {
         text: "prowess",
-        name: KeywordName::Prowess,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Prowess,
     },
     KeywordEntry {
         text: "trample",
-        name: KeywordName::Trample,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Trample,
     },
     KeywordEntry {
         text: "menace",
-        name: KeywordName::Menace,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Menace,
     },
     KeywordEntry {
         text: "flash",
-        name: KeywordName::Flash,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Flash,
     },
     KeywordEntry {
         text: "undying",
-        name: KeywordName::Undying,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Undying,
     },
     KeywordEntry {
         text: "cascade",
-        name: KeywordName::Cascade,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Cascade,
     },
     KeywordEntry {
         text: "dredge",
-        name: KeywordName::Dredge,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Dredge,
     },
     KeywordEntry {
         text: "ward",
-        name: KeywordName::Ward,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Ward,
     },
     KeywordEntry {
         text: "deathtouch",
-        name: KeywordName::Deathtouch,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Deathtouch,
     },
     KeywordEntry {
         text: "lifelink",
-        name: KeywordName::Lifelink,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Lifelink,
     },
     KeywordEntry {
         text: "vigilance",
-        name: KeywordName::Vigilance,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Vigilance,
     },
     KeywordEntry {
         text: "reach",
-        name: KeywordName::Reach,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Reach,
     },
     KeywordEntry {
         text: "defender",
-        name: KeywordName::Defender,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Defender,
     },
     KeywordEntry {
         text: "indestructible",
-        name: KeywordName::Indestructible,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Indestructible,
     },
     KeywordEntry {
         text: "hexproof",
-        name: KeywordName::Hexproof,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Hexproof,
     },
     KeywordEntry {
         text: "protection",
-        name: KeywordName::Protection,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Protection,
     },
     KeywordEntry {
         text: "crew",
-        name: KeywordName::Crew,
-        category: KeywordCategory::Action,
+        name: OracleKeywordName::Crew,
     },
     KeywordEntry {
         text: "transform",
-        name: KeywordName::Transform,
-        category: KeywordCategory::Action,
+        name: OracleKeywordName::Transform,
     },
     KeywordEntry {
         text: "cycling",
-        name: KeywordName::Cycling,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Cycling,
     },
     KeywordEntry {
         text: "basic landcycling",
-        name: KeywordName::BasicLandcycling,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::BasicLandcycling,
     },
     KeywordEntry {
         text: "landcycling",
-        name: KeywordName::Landcycling,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Landcycling,
+    },
+    KeywordEntry {
+        text: "plainscycling",
+        name: OracleKeywordName::Landcycling,
+    },
+    KeywordEntry {
+        text: "islandcycling",
+        name: OracleKeywordName::Landcycling,
+    },
+    KeywordEntry {
+        text: "swampcycling",
+        name: OracleKeywordName::Landcycling,
+    },
+    KeywordEntry {
+        text: "mountaincycling",
+        name: OracleKeywordName::Landcycling,
+    },
+    KeywordEntry {
+        text: "forestcycling",
+        name: OracleKeywordName::Landcycling,
     },
     KeywordEntry {
         text: "kicker",
-        name: KeywordName::Kicker,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Kicker,
     },
     KeywordEntry {
         text: "flashback",
-        name: KeywordName::Flashback,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Flashback,
     },
     KeywordEntry {
         text: "escape",
-        name: KeywordName::Escape,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Escape,
     },
     KeywordEntry {
         text: "affinity",
-        name: KeywordName::Affinity,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Affinity,
     },
     KeywordEntry {
         text: "improvise",
-        name: KeywordName::Improvise,
-        category: KeywordCategory::Ability,
+        name: OracleKeywordName::Improvise,
+    },
+    KeywordEntry {
+        text: "companion",
+        name: OracleKeywordName::Companion,
+    },
+    KeywordEntry {
+        text: "warp",
+        name: OracleKeywordName::Warp,
+    },
+    KeywordEntry {
+        text: "read ahead",
+        name: OracleKeywordName::ReadAhead,
+    },
+    KeywordEntry {
+        text: "reconfigure",
+        name: OracleKeywordName::Reconfigure,
+    },
+    KeywordEntry {
+        text: "morph",
+        name: OracleKeywordName::Morph,
+    },
+    KeywordEntry {
+        text: "megamorph",
+        name: OracleKeywordName::Megamorph,
+    },
+    KeywordEntry {
+        text: "disguise",
+        name: OracleKeywordName::Disguise,
+    },
+    KeywordEntry {
+        text: "manifest",
+        name: OracleKeywordName::Manifest,
+    },
+    KeywordEntry {
+        text: "proliferate",
+        name: OracleKeywordName::Proliferate,
+    },
+    KeywordEntry {
+        text: "mobilize",
+        name: OracleKeywordName::Mobilize,
+    },
+    KeywordEntry {
+        text: "saddle",
+        name: OracleKeywordName::Saddle,
+    },
+    KeywordEntry {
+        text: "storm",
+        name: OracleKeywordName::Storm,
+    },
+    KeywordEntry {
+        text: "convoke",
+        name: OracleKeywordName::Convoke,
+    },
+    KeywordEntry {
+        text: "delve",
+        name: OracleKeywordName::Delve,
+    },
+    KeywordEntry {
+        text: "offspring",
+        name: OracleKeywordName::Offspring,
+    },
+    KeywordEntry {
+        text: "plot",
+        name: OracleKeywordName::Plot,
+    },
+    KeywordEntry {
+        text: "living metal",
+        name: OracleKeywordName::LivingMetal,
+    },
+    KeywordEntry {
+        text: "afterlife",
+        name: OracleKeywordName::Afterlife,
+    },
+    KeywordEntry {
+        text: "power-up",
+        name: OracleKeywordName::PowerUp,
+    },
+    KeywordEntry {
+        text: "teamwork",
+        name: OracleKeywordName::Teamwork,
+    },
+    KeywordEntry {
+        text: "exhaust",
+        name: OracleKeywordName::Exhaust,
+    },
+    KeywordEntry {
+        text: "amass",
+        name: OracleKeywordName::Amass,
+    },
+    KeywordEntry {
+        text: "explore",
+        name: OracleKeywordName::Explore,
+    },
+    KeywordEntry {
+        text: "connive",
+        name: OracleKeywordName::Connive,
+    },
+    KeywordEntry {
+        text: "empower jace",
+        name: OracleKeywordName::EmpowerJace,
     },
 ];
 
 /// Parse a keyword entry and retain its typed parameters.
-pub(super) fn parse_oracle_keyword(source: &str) -> KeywordAbility {
+pub(super) fn parse_oracle_keyword(source: &str) -> OracleKeyword {
     let trimmed = source.trim();
     let delimiter = keyword_head_end(trimmed);
     let name_text = trimmed[..delimiter]
@@ -195,31 +269,118 @@ pub(super) fn parse_oracle_keyword(source: &str) -> KeywordAbility {
     let name = keyword_name(name_text);
     let mut arguments = Vec::new();
     let tail = &trimmed[delimiter..];
-    for parameter in tail
-        .split([',', '—'])
-        .map(str::trim)
-        .filter(|parameter| !parameter.is_empty())
+    // A specific landcycling spelling ("Forestcycling", "Plainscycling",
+    // …) lowers to the shared Landcycling variant plus the named basic
+    // land type argument.
+    if matches!(name, OracleKeywordName::Landcycling)
+        && let Some(land) = basic_land_type(name_text)
     {
-        // Mana symbols (`{2}`) parse as their numeric value; only the
-        // plain numeric tail carries meaning in the runtime model.
-        if let Ok(value) = parameter
-            .trim_matches(|c| c == '{' || c == '}')
-            .parse::<u32>()
-        {
+        arguments.push(KeywordArgument::BasicLandType(land));
+    }
+    // A cycling life payment ("Cycling—Pay 2 life") rides the keyword
+    // tail as a "pay N life" clause (CR 702.29).
+    let lower_tail = tail.to_ascii_lowercase();
+    if let Some(pay) = lower_tail.find("pay ")
+        && let Some(amount) = lower_tail[pay + "pay ".len()..]
+            .split_whitespace()
+            .next()
+            .and_then(|word| word.parse::<u32>().ok())
+        && lower_tail[pay + "pay ".len()..].contains("life")
+    {
+        arguments.push(KeywordArgument::Life(amount));
+    }
+    // Cost keywords take a full mana cost, even an all-digit one
+    // ("Cycling {2}" is a cost, not a count).
+    let cost_keyword = matches!(
+        name,
+        OracleKeywordName::Offspring
+            | OracleKeywordName::Plot
+            | OracleKeywordName::Cycling
+            | OracleKeywordName::BasicLandcycling
+            | OracleKeywordName::Landcycling
+            | OracleKeywordName::Kicker
+            | OracleKeywordName::Flashback
+            | OracleKeywordName::Escape
+            | OracleKeywordName::Morph
+            | OracleKeywordName::Megamorph
+            | OracleKeywordName::Disguise
+            | OracleKeywordName::Warp
+    );
+    // A brace group is a parameter. A pure-number group ("Crew {2}")
+    // parses as a plain number unless the keyword's parameter is a cost;
+    // a mixed group ("Kicker {1}{R}") keeps the whole mana cost.
+    let brace_groups: Vec<&str> = tail
+        .split('{')
+        .skip(1)
+        .filter_map(|group| group.split('}').next())
+        .collect();
+    let mixed_cost = brace_groups
+        .iter()
+        .any(|symbol| !symbol.chars().all(|c| c.is_ascii_digit()) && !symbol.trim().is_empty());
+    if (mixed_cost || cost_keyword) && tail.contains('{') {
+        if let Some(brace) = tail.find('{') {
+            let symbols: String = tail[brace..]
+                .chars()
+                .take_while(|c| *c == '{' || *c == '}' || c.is_ascii_alphanumeric() || *c == '/')
+                .collect();
+            let cost = super::cost::parse_cost(&symbols);
+            if cost.total() > 0 {
+                arguments.push(KeywordArgument::Mana(cost));
+            }
+        }
+    } else if let Some(symbol) = brace_groups.first()
+        && let Ok(value) = symbol.parse::<u32>()
+    {
+        arguments.push(KeywordArgument::Number(value));
+    }
+    // Amass carries its count after the subtype ("Amass Orcs 2"): read
+    // the last bare number of the tail.
+    if matches!(name, OracleKeywordName::Amass) {
+        let value = tail
+            .split_whitespace()
+            .filter_map(|word| word.trim_matches('.').parse::<u32>().ok())
+            .next_back();
+        if let Some(value) = value {
             arguments.push(KeywordArgument::Number(value));
         }
     }
-    KeywordAbility { name, arguments }
+    // A bare numeric tail ("Mobilize 2", "Crew 3", "Dredge 5"), only
+    // when no parameter was found yet.
+    if arguments.is_empty() {
+        for parameter in tail
+            .split([',', '—'])
+            .map(str::trim)
+            .filter(|parameter| !parameter.is_empty())
+        {
+            if let Ok(value) = parameter.parse::<u32>() {
+                arguments.push(KeywordArgument::Number(value));
+            }
+        }
+    }
+    OracleKeyword { name, arguments }
 }
 
 /// Convert a keyword spelling into a known keyword variant or an open-set name.
-fn keyword_name(name: &str) -> KeywordName {
+fn keyword_name(name: &str) -> OracleKeywordName {
     let lower = name.trim().to_ascii_lowercase();
     KEYWORDS
         .iter()
         .find(|entry| entry.text == lower)
         .map(|entry| entry.name.clone())
-        .unwrap_or(KeywordName::Other(name.to_string()))
+        .unwrap_or(OracleKeywordName::Other(name.to_string()))
+}
+
+/// The basic land type named by a specific landcycling spelling.
+fn basic_land_type(name_text: &str) -> Option<BasicLandType> {
+    let lower = name_text.to_ascii_lowercase();
+    match lower.as_str() {
+        "plainscycling" => Some(BasicLandType::Plains),
+        "islandcycling" => Some(BasicLandType::Island),
+        "swampcycling" => Some(BasicLandType::Swamp),
+        "mountaincycling" => Some(BasicLandType::Mountain),
+        "forestcycling" => Some(BasicLandType::Forest),
+        _ => None,
+    }
 }
 
 /// Find the end of a known keyword name before its typed parameters.
@@ -256,10 +417,7 @@ fn numbered_keyword_head_end(text: &str) -> Option<usize> {
 }
 
 /// Recognize an Oracle line that consists only of a keyword ability.
-pub(super) fn standalone_keyword(
-    source: &str,
-    known_keywords: &[KeywordAbility],
-) -> Option<String> {
+pub(super) fn standalone_keyword(source: &str, known_keywords: &[OracleKeyword]) -> Option<String> {
     let value = source.trim().trim_end_matches('.').trim();
     let candidate = value
         .split_once('(')
@@ -270,15 +428,46 @@ pub(super) fn standalone_keyword(
         .trim_end_matches(['-', '—'])
         .trim();
     let parsed = keyword_name(name);
+    // The remainder after the keyword head must be only its parameter
+    // (a number, a mana cost, or a subtype plus number). Anything else
+    // means the line is a spell or ability sentence that merely starts
+    // with a keyword word ("Storm Drain deals 2 damage …").
+    let tail = candidate[name_end..]
+        .trim()
+        .trim_start_matches(['—', '–', '-', ' '])
+        .trim();
+    let lower_tail = tail.to_ascii_lowercase();
+    let parameter_only = tail.is_empty()
+        || tail.split_whitespace().all(|word| {
+            word.trim_matches(['{', '}', '.', ','])
+                .parse::<u32>()
+                .is_ok()
+                || word.starts_with('{')
+                || matches!(
+                    name.to_ascii_lowercase().as_str(),
+                    "amass"
+                        | "saddle"
+                        | "mobilize"
+                        | "afterlife"
+                        | "teamwork"
+                        | "dredge"
+                        | "crew"
+                        | "connive"
+                        | "empower jace"
+                )
+        })
+        || tail.starts_with('{')
+        || (lower_tail.starts_with("pay ") && lower_tail.contains("life"));
     let ability_word = candidate.split_once('—').is_some_and(|(_, remainder)| {
         let remainder = remainder.trim().to_ascii_lowercase();
         remainder.starts_with("when ")
             || remainder.starts_with("whenever ")
             || remainder.starts_with("at the beginning")
     });
-    let known = !matches!(parsed, KeywordName::Other(_))
+    let known = !matches!(parsed, OracleKeywordName::Other(_))
         || known_keywords.iter().any(|keyword| keyword.name == parsed);
-    (known && !ability_word && !candidate.contains(':')).then(|| candidate.to_string())
+    (known && !ability_word && !candidate.contains(':') && parameter_only)
+        .then(|| candidate.to_string())
 }
 
 /// Recognize a comma-separated line of keyword abilities, such as
@@ -286,8 +475,8 @@ pub(super) fn standalone_keyword(
 /// standalone keyword; otherwise the line is not a keyword list.
 pub(super) fn keyword_line_list(
     source: &str,
-    known_keywords: &[KeywordAbility],
-) -> Option<Vec<KeywordAbility>> {
+    known_keywords: &[OracleKeyword],
+) -> Option<Vec<OracleKeyword>> {
     let stripped = source
         .trim()
         .strip_prefix("//")
@@ -309,7 +498,7 @@ pub(super) fn keyword_line_list(
 }
 
 /// Add a keyword unless the same parsed name already exists.
-pub(super) fn add_keyword(keywords: &mut Vec<KeywordAbility>, keyword: KeywordAbility) {
+pub(super) fn add_keyword(keywords: &mut Vec<OracleKeyword>, keyword: OracleKeyword) {
     if let Some(current) = keywords
         .iter_mut()
         .find(|current| current.name == keyword.name)

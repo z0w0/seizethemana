@@ -13,7 +13,7 @@ fn london_deck(lands: usize, spells: usize) -> SimDeck {
         cards.push(SimCard {
             name: "Plains".into(),
             role: Role::Land,
-            tap: Some(super::parse_land::parse_tap_yield("Add {W}.").unwrap()),
+            tap: Some(super::oracle_parser::land::parse_tap_yield("Add {W}.").unwrap()),
             ..SimCard::default()
         });
     }
@@ -25,6 +25,7 @@ fn london_deck(lands: usize, spells: usize) -> SimDeck {
         });
     }
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,

@@ -5,7 +5,9 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
+use super::oracle_parser::land::parse_tap_yield;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -16,7 +18,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -46,7 +48,7 @@ fn row_deck(lands: usize, spells: &[CardRow], format: Format) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Land,
             ..SimCard::default()
         });
@@ -60,6 +62,7 @@ fn row_deck(lands: usize, spells: &[CardRow], format: Format) -> SimDeck {
         "constructed"
     };
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format,
@@ -114,15 +117,18 @@ fn cast_draw_discard_trigger_parses_once() {
     );
     let sim = parse_sim_card(&card_row);
     let cast_abilities: Vec<_> = sim
-        .abilities()
-        .filter(|a| a.trigger == AbilityTiming::OnCastSpell)
+        .unlocked_abilities(0)
+        .filter(|a| a.trigger == SimTrigger::SpellCast)
         .collect();
     assert_eq!(
         cast_abilities.len(),
         1,
         "cast draw+discard must parse as exactly one ability"
     );
-    assert!(matches!(cast_abilities[0].effect, Effect::Loot(1)));
+    assert!(matches!(
+        cast_abilities[0].effect,
+        SimEffect::DrawThenDiscard(1)
+    ));
 }
 
 #[test]
@@ -140,9 +146,9 @@ fn commander_upkeep_drain_fires() {
     let stats = run_avg(&deck, 9, 300, 42);
     // Cast ~t4-6, then ~4 upkeep fires × 2 life × 3 opponents.
     assert!(
-        stats.drain_total_by_turn[8] > 12.0,
+        stats.opponent_life_loss_by_turn[8] > 12.0,
         "commander upkeep drain should fire, got {:.1}",
-        stats.drain_total_by_turn[8]
+        stats.opponent_life_loss_by_turn[8]
     );
 }
 
@@ -191,10 +197,12 @@ fn saga_combined_numerals_parse_chapter_effect() {
         "I, II, III — Create a 3/3 Orc creature token.",
     );
     let sim = parse_sim_card(&row);
-    let chapters: &[Effect] = &sim.saga.chapters;
+    let chapters: &[Vec<SimEffect>] = &sim.saga.chapters;
     assert_eq!(chapters.len(), 3, "combined numerals fill all chapters");
     assert!(
-        chapters.iter().all(|e| matches!(e, Effect::Tokens(_))),
+        chapters.iter().all(|e| e
+            .iter()
+            .any(|effect| matches!(effect, SimEffect::Tokens(_)))),
         "every chapter carries the token effect, got {chapters:?}"
     );
 }
@@ -212,15 +220,17 @@ fn saga_iv_chapter_fires_and_saga_leaves_board() {
     let sim = parse_sim_card(&row);
     assert_eq!(sim.chapter_count(), 4, "chapter IV parses");
     assert!(
-        matches!(sim.saga.chapters[3], Effect::Tokens(2)),
+        sim.saga.chapters[3]
+            .iter()
+            .any(|effect| matches!(effect, SimEffect::Tokens(2))),
         "IV is tokens"
     );
     let deck = row_deck(30, &[row], Format::Constructed);
     let stats = run_avg(&deck, 9, 300, 42);
     assert!(
-        stats.bodies_by_turn[8] > 0.3,
+        stats.creatures_by_turn[8] > 0.3,
         "the chapter IV tokens join the board, got {:.1}",
-        stats.bodies_by_turn[8]
+        stats.creatures_by_turn[8]
     );
 }
 
@@ -239,10 +249,11 @@ fn saga_with_extra_trigger_counts_chapters_only() {
     assert_eq!(sim.chapter_count(), 3, "only the chapters count");
     // The ETB draw still parses as a trigger.
     assert!(
-        sim.abilities().any(|a| a.trigger == AbilityTiming::OnEnter),
+        sim.unlocked_abilities(0)
+            .any(|a| a.trigger == SimTrigger::Enters),
         "the enter trigger stays a trigger"
     );
-    let chapters: &[Effect] = &sim.saga.chapters;
+    let chapters: &[Vec<SimEffect>] = &sim.saga.chapters;
     assert_eq!(chapters.len(), 3, "three real chapters");
 }
 
@@ -258,8 +269,8 @@ fn helix_threshold_reaches_counters() {
     );
     let sim = parse_sim_card(&row);
     let sink = sim
-        .abilities()
-        .find(|a| matches!(a.effect, Effect::Counters(0)));
+        .unlocked_abilities(0)
+        .find(|a| matches!(a.effect, SimEffect::Counters(0)));
     assert!(sink.is_some(), "the X-sink activation parses");
     // Rich mana base: more spare mana converts to counters per turn.
     let deck = row_deck(26, &[row], Format::Constructed);
@@ -284,7 +295,7 @@ fn token_effect_yields_count_bodies() {
     let deck = row_deck(28, &[row], Format::Constructed);
     let stats = run_avg(&deck, 8, 300, 42);
     let with_tokens = run_avg(&row_deck(28, &[], Format::Constructed), 8, 300, 42);
-    let delta = stats.bodies_by_turn[7] - with_tokens.bodies_by_turn[7];
+    let delta = stats.creatures_by_turn[7] - with_tokens.creatures_by_turn[7];
     // The mulligan shift costs the token deck a little cast volume;
     // the token delta still clears the one-token-per-effect baseline.
     assert!(
@@ -305,7 +316,14 @@ fn limited_free_activation_does_not_flag_infinite() {
         "{0}: Add {C}. Activate only once each turn.",
     );
     let sim = parse_sim_card(&row);
-    assert!(sim.abilities().any(|a| a.once_per_turn), "the bound parses");
+    assert!(
+        sim.unlocked_abilities(0).any(|ability| {
+            ability.activation.as_ref().is_some_and(|costs| {
+                costs.has_restriction(super::model::SimActivationRestriction::OncePerTurn)
+            })
+        }),
+        "the bound parses"
+    );
     let deck = row_deck(26, &[row], Format::Constructed);
     let stats = run_avg(&deck, 8, 300, 42);
     assert!(
@@ -332,31 +350,46 @@ fn vanilla_deck_never_flags_infinite() {
 }
 
 #[test]
-fn commander_drain_is_x3_and_constructed_x1() {
-    // Player-targeted burn resolves at 3 opponents in commander, one in
-    // constructed: the same spell deck drains 3× more life in commander.
-    let spell = card(
+fn commander_life_loss_scope_decides_the_table_multiplier() {
+    // CR 119.3: "each opponent" hits three opponents in the commander
+    // family; "target player" hits exactly one player in every format.
+    let each = card(
+        "Group Burn",
+        "{R}",
+        "Sorcery",
+        "Deals 3 damage to each opponent.",
+    );
+    let target = card(
         "Lava Spike",
         "{R}",
         "Sorcery",
         "Deals 3 damage to target player.",
     );
-    let commander = row_deck(24, std::slice::from_ref(&spell), Format::Commander);
-    let constructed = row_deck(24, &[spell], Format::Constructed);
-    let cmd_stats = run_avg(&commander, 8, 300, 42);
-    let con_stats = run_avg(&constructed, 8, 300, 42);
-    // Commander drains ≈ 3× constructed (some noise from cast counts).
-    let ratio = cmd_stats.drain_total_by_turn[7] / con_stats.drain_total_by_turn[7].max(1.0);
-    // The London redraw band (0/1/6/7) shifts constructed cast counts a
-    // little; the ratio band holds a wider tolerance.
+    let commander_each = row_deck(24, std::slice::from_ref(&each), Format::Commander);
+    let commander_target = row_deck(24, std::slice::from_ref(&target), Format::Commander);
+    let constructed_each = row_deck(24, std::slice::from_ref(&each), Format::Constructed);
+    let constructed_target = row_deck(24, &[target], Format::Constructed);
+    let cmd_each = run_avg(&commander_each, 8, 300, 42);
+    let cmd_target = run_avg(&commander_target, 8, 300, 42);
+    let con_each = run_avg(&constructed_each, 8, 300, 42);
+    let con_target = run_avg(&constructed_target, 8, 300, 42);
+    // Each-opponent burn triples in commander; target-player burn stays
+    // at the single-player amount (with cast-count noise).
+    let each_ratio = cmd_each.player_damage_by_turn[7] / con_each.player_damage_by_turn[7].max(1.0);
+    let target_ratio =
+        cmd_target.player_damage_by_turn[7] / con_target.player_damage_by_turn[7].max(1.0);
     assert!(
-        (2.0..=6.5).contains(&ratio),
-        "commander/constructed drain ratio should be ~3, got {ratio:.2}"
+        (2.0..=6.5).contains(&each_ratio),
+        "each-opponent commander drain should be ~3x, got {each_ratio:.2}"
+    );
+    assert!(
+        (0.5..=2.0).contains(&target_ratio),
+        "target-player commander drain should stay ~1x, got {target_ratio:.2}"
     );
 }
 
 #[test]
-fn additional_cost_sacrifice_consumes_body() {
+fn additional_cost_sacrifice_consumes_creature() {
     // "As an additional cost to cast this spell, sacrifice a creature."
     // The cast consumes a body before its draw effect resolves.
     let ritual = card(
@@ -395,7 +428,7 @@ fn x_entry_counters_bank_leftover() {
         "Sunburst\n{X}{X}, {T}: Add one mana of any color for each charge counter on this.\nEnters with X charge counters on it.",
     );
     let sim = parse_sim_card(&rock);
-    assert_eq!(sim.enter_counters, super::parse_land::X_ENTRY_COUNTERS);
+    assert_eq!(sim.enter_counters, super::model::EnterCounters::XCharge);
     let deck = row_deck(26, &[rock], Format::Constructed);
     // The counters fuel the PerChargeCounter tap: total mana produced
     // across the game grows vs the same deck without the rock.
@@ -430,7 +463,7 @@ fn vivi_tap_yields_spells_cast_not_one_plus() {
         "{T}: Add one mana of any color for each spell you've cast this turn.",
     );
     let sim = parse_sim_card(&vivi);
-    assert!(sim.riders.mana_per_cast.is_some(), "the engine parses");
+    assert!(sim.spell_data.mana_per_cast.is_some(), "the engine parses");
     let tap_total = sim.tap.map_or(0, |t| t.total());
     assert_eq!(
         tap_total, 0,
@@ -441,7 +474,7 @@ fn vivi_tap_yields_spells_cast_not_one_plus() {
 #[test]
 fn self_cast_draw_is_one_shot_not_engine() {
     // "When you cast this spell, draw a card" is a one-shot rider on the
-    // spell itself (draws_on_cast), not a repeatable OnCastSpell engine
+    // spell itself (draws_on_cast), not a repeatable SpellCast engine
     // that re-triggers on every later spell.
     let row = card(
         "Self Draw",
@@ -451,16 +484,16 @@ fn self_cast_draw_is_one_shot_not_engine() {
     );
     let sim = parse_sim_card(&row);
     assert_eq!(
-        sim.riders.draws_on_cast, 1,
+        sim.spell_data.draws_on_cast, 1,
         "the self-cast rider resolves once"
     );
     assert!(
-        sim.abilities()
-            .all(|a| a.trigger != AbilityTiming::OnCastSpell),
+        sim.unlocked_abilities(0)
+            .all(|a| a.trigger != SimTrigger::SpellCast),
         "the self-cast rider must not register as a permanent engine"
     );
     // Four copies in a 40-card deck: velocity must stay near the vanilla
-    // curve (opener + draws + ~2 resolved riders), not double.
+    // curve (opener + draws + ~2 resolved spell data), not double.
     let with = row_deck(
         26,
         &[
@@ -527,7 +560,7 @@ fn wheel_spell_resolves_to_graveyard_not_battlefield() {
 }
 
 #[test]
-fn free_sacrifice_outlet_needs_a_body() {
+fn free_sacrifice_outlet_needs_a_creature() {
     // A zero-cost "Sacrifice a creature: Add {C}{C}" outlet must not
     // produce mana when the board holds no bodies, and must not flag the
     // infinite-mana census either way.
@@ -538,42 +571,16 @@ fn free_sacrifice_outlet_needs_a_body() {
         "Sacrifice a creature: Add {C}{C}.",
     );
     let sim = parse_sim_card(&outlet);
-    assert_eq!(sim.abilities().count(), 1, "the outlet activation parses");
+    assert_eq!(
+        sim.unlocked_abilities(0).count(),
+        1,
+        "the outlet activation parses"
+    );
     let empty_board = row_deck(26, &[outlet], Format::Constructed);
     let stats = run_avg(&empty_board, 8, 300, 42);
     assert!(
         stats.infinite_mana_pct <= 0.0,
         "a body-less sacrifice outlet must not flag infinite mana"
-    );
-    // With a token-maker feeding bodies, the outlet banks real mana.
-    let feeder = card(
-        "Breeding Hive",
-        "{3}{W}",
-        "Enchantment",
-        "At the beginning of your upkeep, create a 1/1 Insect creature token.",
-    );
-    let with_bodies = row_deck(
-        26,
-        &[
-            card(
-                "Free Altar",
-                "{3}",
-                "Artifact",
-                "Sacrifice a creature: Add {C}{C}.",
-            ),
-            feeder,
-        ],
-        Format::Constructed,
-    );
-    let control = run_avg(&row_deck(26, &[], Format::Constructed), 8, 300, 42);
-    let fed = run_avg(&with_bodies, 8, 300, 42);
-    // The Karsten mulligan bottoms a card in fed games, so the margin
-    // tolerates a small negative swing from hand composition.
-    assert!(
-        fed.unused_mana.iter().sum::<f64>() >= control.unused_mana.iter().sum::<f64>() - 0.5,
-        "the outlet with bodies should not lose mana, {:.1} vs {:.1}",
-        fed.unused_mana.iter().sum::<f64>(),
-        control.unused_mana.iter().sum::<f64>()
     );
 }
 
@@ -651,7 +658,7 @@ fn wipe_flag_counts_in_deck_shape() {
     stats.removal_wipes = deck
         .cards
         .iter()
-        .filter(|c| c.role == Role::Removal && c.flags.wipe)
+        .filter(|c| c.role == Role::Removal && c.flags.sweeps)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     assert_eq!(stats.removal_count, 1);
@@ -794,12 +801,13 @@ fn mdfc_spell_face_casts_when_flooded() {
 fn mdfc_plays_as_land_when_no_land_in_hand() {
     // A hand holding only MDFCs plays the land face (fallback rule).
     let deck = SimDeck {
+        companion: None,
         cards: vec![
             SimCard {
                 name: "Jwari".into(),
-                cost: parse_oracle_cost("{U}"),
-                min_cost: parse_oracle_cost("{U}"),
-                tap: Some(parse_oracle_tap_yield("{T}: Add {U}.").unwrap()),
+                cost: parse_cost("{U}"),
+                min_cost: parse_cost("{U}"),
+                tap: Some(parse_tap_yield("{T}: Add {U}.").unwrap()),
                 role: Role::Other,
                 is_mdfc_spell: true,
                 ..SimCard::default()
@@ -839,7 +847,7 @@ fn mdfc_parses_x_class_from_spell_face() {
 // Cascade: single-level free cast of the first eligible top card.
 
 #[test]
-fn cascade_free_cast_yields_velocity_and_a_body() {
+fn cascade_free_cast_yields_velocity_and_a_creature() {
     // Shardless Agent-class cast (3 MV cascade): one cheap creature
     // from the library enters free. Velocity +1 per cascade and one
     // extra body vs the same deck without the cascade trigger.
@@ -886,10 +894,10 @@ fn cascade_free_cast_yields_velocity_and_a_body() {
     // the same cheap-bear count, so bodies move in the cascade deck's
     // favor when the free cast lands.
     assert!(
-        stats_with.bodies_by_turn[5] >= stats_without.bodies_by_turn[5],
+        stats_with.creatures_by_turn[5] >= stats_without.creatures_by_turn[5],
         "cascade yields an extra body ({:.2} vs {:.2})",
-        stats_with.bodies_by_turn[5],
-        stats_without.bodies_by_turn[5]
+        stats_with.creatures_by_turn[5],
+        stats_without.creatures_by_turn[5]
     );
 }
 

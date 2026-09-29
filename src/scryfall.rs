@@ -75,7 +75,7 @@ pub struct ScryfallCard {
     #[serde(default)]
     pub game_changer: Option<bool>,
     #[serde(default)]
-    pub legalities: Option<serde_json::Map<String, serde_json::Value>>,
+    pub legalities: Option<std::collections::BTreeMap<String, String>>,
     #[serde(rename = "set", default)]
     pub set_code: Option<String>,
     #[serde(default)]
@@ -528,12 +528,7 @@ mod tests {
             rarity: Some("common".into()),
             edhrec_rank: Some(1000),
             game_changer: None,
-            legalities: Some(
-                serde_json::json!({"modern": "legal"})
-                    .as_object()
-                    .unwrap()
-                    .clone(),
-            ),
+            legalities: Some([("modern".to_string(), "legal".to_string())].into()),
             set_code: Some("tst".into()),
             set_name: Some("Test Set".into()),
             lang: Some("en".into()),
@@ -607,10 +602,11 @@ mod tests {
         let reprint = ScryfallCard {
             released_at: Some("2099-01-01".into()),
             legalities: Some(
-                serde_json::json!({"commander": "legal", "modern": "legal"})
-                    .as_object()
-                    .unwrap()
-                    .clone(),
+                [
+                    ("commander".to_string(), "legal".to_string()),
+                    ("modern".to_string(), "legal".to_string()),
+                ]
+                .into(),
             ),
             ..card("B", "normal", &["paper"])
         };
@@ -619,10 +615,11 @@ mod tests {
         let future = ScryfallCard {
             released_at: Some("2099-01-01".into()),
             legalities: Some(
-                serde_json::json!({"commander": "not_legal", "modern": "not_legal"})
-                    .as_object()
-                    .unwrap()
-                    .clone(),
+                [
+                    ("commander".to_string(), "not_legal".to_string()),
+                    ("modern".to_string(), "not_legal".to_string()),
+                ]
+                .into(),
             ),
             ..card("C", "normal", &["paper"])
         };

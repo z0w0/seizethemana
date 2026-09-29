@@ -1,9 +1,59 @@
+use super::model::BasicLandType;
 use super::oracle_ast::{
-    AbilityRestriction, ActivationCost, ActivationTarget, CostObject, KeywordArgument, KeywordName,
-    ObjectSubject, OracleAbility, OracleEffect, PlayerScope, SagaChapter, StaticEffect,
-    StaticTarget, TriggerEvent, TurnStep, UnsupportedAbilityKind,
+    AbilityRestriction, ActivationCost, ActivationTarget, CostObject, DamageTarget,
+    KeywordArgument, ObjectSubject, OracleAbility, OracleEffect, OracleKeywordName,
+    OracleSagaChapter, OracleStaticEffect, OracleTriggerEvent, PlayerScope, StaticTarget,
+    UnsupportedAbilityKind,
 };
 use super::oracle_parser::parse_oracle_text;
+
+#[test]
+fn land_data_reads_entry_and_fetch_rules() {
+    let text = "This land enters tapped.\n{T}, Pay 2 life, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.";
+    let parsed = parse_oracle_text(text, &[]);
+    let land = super::oracle_parser::land::parse_land_data(text, &parsed.abilities);
+    assert!(land.enters_tapped);
+    assert_eq!(land.fetch.as_ref().map(|fetch| fetch.life_cost), Some(2));
+    assert_eq!(
+        land.fetch.as_ref().map(|fetch| fetch.basic_only),
+        Some(true)
+    );
+    assert!(land.fetch_enters_tapped);
+
+    let plain_text = "{T}: Add {G}.";
+    let plain_oracle = parse_oracle_text(plain_text, &[]);
+    let plain = super::oracle_parser::land::parse_land_data(plain_text, &plain_oracle.abilities);
+    assert!(!plain.enters_tapped);
+    assert!(plain.fetch.is_none());
+}
+
+#[test]
+fn tap_data_reads_mana_activation_and_sacrifice_cost() {
+    let card = parse_oracle_text("{T}, Sacrifice this artifact: Add {C}{C}.", &[]);
+    let [OracleAbility::Activated(ability)] = card.abilities.as_slice() else {
+        panic!("expected typed activation");
+    };
+    assert!(
+        ability
+            .costs
+            .iter()
+            .any(|cost| matches!(cost, ActivationCost::Sacrifice { .. }))
+    );
+    assert!(
+        matches!(ability.effects.first(), Some(OracleEffect::Mana(yield_)) if yield_.colorless == 2)
+    );
+
+    let non_mana = parse_oracle_text("{T}: Draw a card.", &[]);
+    let [OracleAbility::Activated(ability)] = non_mana.abilities.as_slice() else {
+        panic!("expected typed activation");
+    };
+    assert!(
+        !ability
+            .effects
+            .iter()
+            .any(|effect| matches!(effect, OracleEffect::Mana(_)))
+    );
+}
 
 /// Parse one activation effect from synthetic Oracle text.
 fn activation_effect(text: &str) -> OracleEffect {
@@ -15,7 +65,7 @@ fn activation_effect(text: &str) -> OracleEffect {
 }
 
 /// Parse the event node from a triggered Oracle ability.
-fn trigger_event(text: &str) -> TriggerEvent {
+fn trigger_event(text: &str) -> OracleTriggerEvent {
     let card = parse_oracle_text(text, &[]);
     let [OracleAbility::Triggered(ability)] = card.abilities.as_slice() else {
         panic!("expected one triggered ability for {text:?}");
@@ -24,7 +74,7 @@ fn trigger_event(text: &str) -> TriggerEvent {
 }
 
 /// Parse the static-effect node from synthetic Oracle text.
-fn static_effect(text: &str) -> StaticEffect {
+fn static_effect(text: &str) -> OracleStaticEffect {
     let card = parse_oracle_text(text, &[]);
     let [OracleAbility::Static(ability)] = card.abilities.as_slice() else {
         panic!(
@@ -101,7 +151,7 @@ fn parses_distinct_trigger_events_and_keeps_unsupported_effects_inert() {
         .collect::<Vec<_>>();
 
     assert_eq!(triggers.len(), 2);
-    assert!(matches!(triggers[0].event, TriggerEvent::Attacks(_)));
+    assert!(matches!(triggers[0].event, OracleTriggerEvent::Attacks(_)));
     assert!(matches!(
         triggers[0].effects.as_slice(),
         [OracleEffect::Draw(1)]
@@ -110,7 +160,7 @@ fn parses_distinct_trigger_events_and_keeps_unsupported_effects_inert() {
         triggers[1].effects.as_slice(),
         [OracleEffect::Unsupported(_)]
     ));
-    assert!(triggers[1].to_runtime().is_none());
+    assert!(triggers[1].to_runtime_all().is_empty());
 }
 
 /// Parse keyword names and typed parameters from card data and Oracle text.
@@ -126,26 +176,29 @@ fn parses_keyword_names_and_parameters_from_both_sources() {
         ],
     );
 
-    assert!(card.has_keyword(&KeywordName::Flying));
-    assert_eq!(card.keyword_number(&KeywordName::Dredge), Some(5));
+    assert!(card.has_keyword(&OracleKeywordName::Flying));
+    assert_eq!(card.keyword_number(&OracleKeywordName::Dredge), Some(5));
     let ward = card
         .keywords
         .iter()
-        .find(|keyword| keyword.name == KeywordName::Ward)
+        .find(|keyword| keyword.name == OracleKeywordName::Ward)
         .expect("ward keyword");
     assert!(matches!(
         ward.arguments.as_slice(),
         [KeywordArgument::Number(2)]
     ));
-    // The Prototype tail (`—{2}{U}, 3/3`) stays out: a mixed-symbol cost
-    // does not decompose into a single numeral, and the size is not a
-    // numeric parameter.
+    // The Prototype tail (`—{2}{U}, 3/3`) keeps its mixed-symbol mana
+    // cost as a typed Mana argument; the size (3/3) is not a numeric
+    // parameter.
     let prototype = card
         .keywords
         .iter()
-        .find(|keyword| matches!(&keyword.name, KeywordName::Other(name) if name == "Prototype"))
+        .find(|keyword| matches!(&keyword.name, OracleKeywordName::Other(name) if name == "Prototype"))
         .expect("prototype keyword");
-    assert!(matches!(prototype.arguments.as_slice(), []));
+    assert!(matches!(
+        prototype.arguments.as_slice(),
+        [KeywordArgument::Mana(cost)] if cost.generic == 2 && cost.pips[1] == 1
+    ));
 }
 
 /// Keep static rules and spell effects in distinct AST variants.
@@ -156,7 +209,7 @@ fn parses_static_and_spell_effect_nodes_separately() {
     assert!(card.abilities.iter().any(|ability| matches!(
         ability,
         OracleAbility::Static(static_ability)
-            if matches!(static_ability.effects.as_slice(), [StaticEffect::CreatureBuff { power: 2, toughness: 2 }])
+            if matches!(static_ability.effects.as_slice(), [OracleStaticEffect::CreatureBuff { power: 2, toughness: 2 }])
     )));
     assert!(card.abilities.iter().any(|ability| matches!(
         ability,
@@ -199,10 +252,12 @@ fn parses_every_keyword_name_and_parameter_type() {
         "Protection",
         "Affinity",
         "Improvise",
+        "Warp",
+        "Read ahead",
         "Prototype",
     ];
     let card = parse_oracle_text(
-        "Crew 3\nDredge 5\nWard {2}\nKicker {1}{R}\nPrototype—{2}{U}, 3/3",
+        "Crew 3\nDredge 5\nWard {2}\nKicker {1}{R}\nPrototype—{2}{U}, 3/3\nMorph {2}{U}\nMegamorph {1}{G}\nDisguise {1}{U}\nWarp {1}{W}",
         &names[..names.len() - 1]
             .iter()
             .map(|name| (*name).to_string())
@@ -211,45 +266,50 @@ fn parses_every_keyword_name_and_parameter_type() {
     );
 
     for name in [
-        KeywordName::Flying,
-        KeywordName::Haste,
-        KeywordName::DoubleStrike,
-        KeywordName::Prowess,
-        KeywordName::Trample,
-        KeywordName::Menace,
-        KeywordName::Flash,
-        KeywordName::Undying,
-        KeywordName::Cascade,
-        KeywordName::Crew,
-        KeywordName::Cycling,
-        KeywordName::BasicLandcycling,
-        KeywordName::Landcycling,
-        KeywordName::Dredge,
-        KeywordName::Kicker,
-        KeywordName::Flashback,
-        KeywordName::Escape,
-        KeywordName::Transform,
-        KeywordName::Ward,
-        KeywordName::FirstStrike,
-        KeywordName::Deathtouch,
-        KeywordName::Lifelink,
-        KeywordName::Vigilance,
-        KeywordName::Reach,
-        KeywordName::Defender,
-        KeywordName::Indestructible,
-        KeywordName::Hexproof,
-        KeywordName::Protection,
-        KeywordName::Affinity,
-        KeywordName::Improvise,
+        OracleKeywordName::Flying,
+        OracleKeywordName::Haste,
+        OracleKeywordName::DoubleStrike,
+        OracleKeywordName::Prowess,
+        OracleKeywordName::Trample,
+        OracleKeywordName::Menace,
+        OracleKeywordName::Flash,
+        OracleKeywordName::Undying,
+        OracleKeywordName::Cascade,
+        OracleKeywordName::Crew,
+        OracleKeywordName::Cycling,
+        OracleKeywordName::BasicLandcycling,
+        OracleKeywordName::Landcycling,
+        OracleKeywordName::Dredge,
+        OracleKeywordName::Kicker,
+        OracleKeywordName::Flashback,
+        OracleKeywordName::Escape,
+        OracleKeywordName::Transform,
+        OracleKeywordName::Ward,
+        OracleKeywordName::FirstStrike,
+        OracleKeywordName::Deathtouch,
+        OracleKeywordName::Lifelink,
+        OracleKeywordName::Vigilance,
+        OracleKeywordName::Reach,
+        OracleKeywordName::Defender,
+        OracleKeywordName::Indestructible,
+        OracleKeywordName::Hexproof,
+        OracleKeywordName::Protection,
+        OracleKeywordName::Affinity,
+        OracleKeywordName::Improvise,
+        OracleKeywordName::Morph,
+        OracleKeywordName::Megamorph,
+        OracleKeywordName::Disguise,
+        OracleKeywordName::Warp,
+        OracleKeywordName::ReadAhead,
     ] {
         assert!(card.has_keyword(&name), "missing keyword {name:?}");
     }
-    assert_eq!(card.keyword_number(&KeywordName::Crew), Some(3));
-    assert_eq!(card.keyword_number(&KeywordName::Dredge), Some(5));
+    assert_eq!(card.keyword_number(&OracleKeywordName::Crew), Some(3));
+    assert_eq!(card.keyword_number(&OracleKeywordName::Dredge), Some(5));
     let ward = card
         .keywords
         .iter()
-        .find(|keyword| keyword.name == KeywordName::Ward)
+        .find(|keyword| keyword.name == OracleKeywordName::Ward)
         .expect("ward");
     assert!(matches!(
         ward.arguments.as_slice(),
@@ -258,20 +318,26 @@ fn parses_every_keyword_name_and_parameter_type() {
     let kicker = card
         .keywords
         .iter()
-        .find(|keyword| keyword.name == KeywordName::Kicker)
+        .find(|keyword| keyword.name == OracleKeywordName::Kicker)
         .expect("kicker");
     assert!(
-        matches!(kicker.arguments.as_slice(), []),
-        "a multi-symbol kicker cost does not decompose to a single numeral"
+        matches!(
+            kicker.arguments.as_slice(),
+            [KeywordArgument::Mana(cost)] if cost.generic == 1 && cost.pips[3] == 1
+        ),
+        "a multi-symbol kicker cost keeps its typed mana cost"
     );
     let prototype = card
         .keywords
         .iter()
-        .find(|keyword| matches!(&keyword.name, KeywordName::Other(name) if name == "Prototype"))
+        .find(|keyword| matches!(&keyword.name, OracleKeywordName::Other(name) if name == "Prototype"))
         .expect("prototype");
     assert!(
-        matches!(prototype.arguments.as_slice(), []),
-        "the mixed-symbol prototype cost and the 3/3 size stay out"
+        matches!(
+            prototype.arguments.as_slice(),
+            [KeywordArgument::Mana(cost)] if cost.generic == 2 && cost.pips[1] == 1
+        ),
+        "the mixed-symbol prototype cost keeps its typed mana cost"
     );
 
     let oracle_keyword = parse_oracle_text("Vigilance", &[]);
@@ -281,9 +347,51 @@ fn parses_every_keyword_name_and_parameter_type() {
     ));
 }
 
-/// Ability words never parse as keyword names: their labels strip off
-/// (CR 702.200+), the trigger behind the label parses, and no
-/// `KeywordName` variant carries an ability word.
+/// Cycling life payments and landcycling land types arrive as typed
+/// arguments, not raw text: "Cycling—Pay 2 life" yields a `Life(2)`
+/// argument and "Forestcycling" yields `BasicLandType(Forest)`.
+#[test]
+fn cycling_life_and_landcycling_type_arrive_as_typed_arguments() {
+    let card = parse_oracle_text(
+        "Cycling—Pay 2 life. (Pay 2 life, Discard this card: Draw a card.)",
+        &["Cycling".to_string()],
+    );
+    assert_eq!(card.keyword_life(&OracleKeywordName::Cycling), Some(2));
+
+    let forest = parse_oracle_text(
+        "Forestcycling {1} ({1}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)",
+        &["Forestcycling".to_string()],
+    );
+    assert_eq!(forest.basic_land_type(), Some(BasicLandType::Forest));
+    assert!(forest.has_keyword(&OracleKeywordName::Landcycling));
+
+    let mountain = parse_oracle_text(
+        "Mountaincycling {1} ({1}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
+        &["Mountaincycling".to_string()],
+    );
+    assert_eq!(mountain.basic_land_type(), Some(BasicLandType::Mountain));
+}
+
+/// Morph, megamorph, and disguise turn-up costs parse as typed mana
+/// arguments on their keywords.
+#[test]
+fn face_down_costs_parse_as_typed_mana_arguments() {
+    let card = parse_oracle_text(
+        "Morph {2}{U}\nMegamorph {1}{G}\nDisguise {1}{U}",
+        &[
+            "Morph".to_string(),
+            "Megamorph".to_string(),
+            "Disguise".to_string(),
+        ],
+    );
+    assert!(card.keyword_cost(&OracleKeywordName::Morph).is_some());
+    assert!(card.keyword_cost(&OracleKeywordName::Megamorph).is_some());
+    assert!(card.keyword_cost(&OracleKeywordName::Disguise).is_some());
+}
+
+/// SimAbility words never parse as keyword names: their labels strip off
+/// (CR 207.2c), the trigger behind the label parses, and no
+/// `OracleKeywordName` variant carries an ability word.
 #[test]
 fn ability_words_strip_to_their_trigger_and_stay_out_of_keyword_names() {
     let landfall = parse_oracle_text(
@@ -293,7 +401,7 @@ fn ability_words_strip_to_their_trigger_and_stay_out_of_keyword_names() {
     assert!(
         !landfall.keywords.iter().any(|keyword| matches!(
             &keyword.name,
-            KeywordName::Other(name) if name.eq_ignore_ascii_case("landfall")
+            OracleKeywordName::Other(name) if name.eq_ignore_ascii_case("landfall")
         )),
         "landfall is an ability word, not a keyword name"
     );
@@ -318,12 +426,11 @@ fn ability_words_strip_to_their_trigger_and_stay_out_of_keyword_names() {
     assert!(matches!(unlabeled.keywords.as_slice(), []));
 }
 
-/// The keyword table carries its category tag and stays consistent:
-/// every entry maps its own spelling, Transform is a keyword action
-/// (CR 701.27), and no entry carries an ability word.
+/// The keyword table stays consistent: every known spelling maps to its typed keyword variant, and no entry
+/// carries an ability word.
 #[test]
-fn keyword_table_categories_stay_consistent() {
-    use crate::deck::simulator::oracle_parser::keywords::{KEYWORDS, KeywordCategory};
+fn keyword_table_spellings_round_trip() {
+    use crate::deck::simulator::oracle_parser::keywords::KEYWORDS;
 
     for entry in KEYWORDS {
         // Every spelling round-trips: the name lookup finds the same entry.
@@ -337,16 +444,11 @@ fn keyword_table_categories_stay_consistent() {
             "entry {entry:?} does not round-trip to its own variant"
         );
     }
-    let transform = KEYWORDS
-        .iter()
-        .find(|entry| entry.text == "transform")
-        .expect("transform in the table");
-    assert_eq!(transform.category, KeywordCategory::Action);
     assert!(
         KEYWORDS
             .iter()
             .all(|entry| !entry.text.eq_ignore_ascii_case("landfall")),
-        "ability words never appear as KeywordName variants"
+        "ability words never appear as OracleKeywordName variants"
     );
     // The prefix collision keeps the longer spelling first: a lookup of
     // "basic landcycling" must not match "landcycling"'s shorter head.
@@ -428,7 +530,7 @@ fn parses_all_activation_cost_shapes_and_limits() {
             if condition.contains("three artifacts")
     )));
     assert!(
-        ability.to_runtime().is_none(),
+        ability.to_runtime_all().is_empty(),
         "unknown conditions stay inert"
     );
     assert!(matches!(
@@ -500,7 +602,7 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
     ));
     assert!(matches!(
         activation_effect("Draw two cards, then discard a card."),
-        OracleEffect::Loot(2)
+        OracleEffect::DrawThenDiscard(2)
     ));
     assert!(matches!(
         activation_effect("Draw a card and put a -1/-1 counter on target creature."),
@@ -523,7 +625,7 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
     );
     assert!(matches!(
         activation_effect("Untap this creature."),
-        OracleEffect::UntapSelf
+        OracleEffect::UntapSource
     ));
 
     let banked = parse_oracle_text(
@@ -540,25 +642,25 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
 
     assert!(matches!(
         activation_effect("Create three Treasure tokens."),
-        OracleEffect::Tokens(3)
+        OracleEffect::CreateTreasureTokens(3)
     ));
     assert!(matches!(
         activation_effect("Put two charge counters on this artifact."),
-        OracleEffect::Counters(2)
+        OracleEffect::PutChargeCounters(2)
     ));
     assert!(matches!(
         activation_effect("Put X charge counters on this artifact."),
-        OracleEffect::Counters(0)
+        OracleEffect::PutChargeCounters(0)
     ));
     assert!(matches!(
         activation_effect("You may play an additional land this turn."),
-        OracleEffect::ExtraLand
+        OracleEffect::AdditionalLandPlay
     ));
     assert!(matches!(
         activation_effect(
             "Exile this creature, then return it to the battlefield under its owner's control."
         ),
-        OracleEffect::Blink
+        OracleEffect::ExileThenReturn
     ));
     assert!(matches!(
         activation_effect("You become the monarch."),
@@ -577,7 +679,7 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
     ));
     assert!(matches!(
         activation_effect("Each player discards their hand, then draws seven cards."),
-        OracleEffect::Wheel
+        OracleEffect::DiscardHandThenDraw
     ));
     assert!(matches!(
         activation_effect("Take an extra turn after this one."),
@@ -585,25 +687,23 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
     ));
     assert!(matches!(
         activation_effect("Scry 2."),
-        OracleEffect::Look {
-            count: 2,
-            surveil: false
-        }
+        OracleEffect::Scry(2)
     ));
     assert!(matches!(
         activation_effect("Surveil 3."),
-        OracleEffect::Look {
-            count: 3,
-            surveil: true
-        }
+        OracleEffect::Surveil(3)
     ));
     assert!(matches!(
         activation_effect("Target opponent loses two life."),
-        OracleEffect::Drain(2)
+        OracleEffect::LoseLife { amount: 2, .. }
     ));
     assert!(matches!(
         activation_effect("This spell deals 3 damage to target player."),
-        OracleEffect::Drain(3)
+        OracleEffect::Damage {
+            amount: 3,
+            target: DamageTarget::Player,
+            ..
+        }
     ));
 
     let threshold = parse_oracle_text(
@@ -615,7 +715,7 @@ fn parses_every_effect_variant_and_preserves_unsupported_clauses() {
     };
     assert!(matches!(
         threshold.effects.as_slice(),
-        [OracleEffect::WinThreshold(20)]
+        [OracleEffect::WinsAtCounters(20)]
     ));
 
     assert!(matches!(
@@ -670,7 +770,7 @@ fn parses_search_types_filters_destinations_and_optional_choices() {
     let green = search_spec(
         "You may search your library for a green creature card with mana value exactly 3, then shuffle.",
     );
-    assert_eq!(green.color, Some('G'));
+    assert_eq!(green.color, Some(super::model::ManaColor::Green));
     assert_eq!(green.mana_value, Some(3));
     assert!(green.optional);
     assert_eq!(green.destination, Destination::Hand);
@@ -706,84 +806,117 @@ fn parses_search_types_filters_destinations_and_optional_choices() {
     assert_eq!(restricted.destination, Destination::Battlefield);
 }
 
+/// Parse each named mana color and basic land type into its enum.
+#[test]
+fn parses_named_colors_and_basic_land_types_as_enums() {
+    use super::model::ManaColor;
+
+    for (name, color) in [
+        ("white", ManaColor::White),
+        ("blue", ManaColor::Blue),
+        ("black", ManaColor::Black),
+        ("red", ManaColor::Red),
+        ("green", ManaColor::Green),
+    ] {
+        assert_eq!(
+            search_spec(&format!(
+                "Search your library for a {name} creature card, then shuffle."
+            ))
+            .color,
+            Some(color)
+        );
+    }
+
+    for land in BasicLandType::ALL {
+        let text = format!(
+            "{{T}}, Sacrifice this land: Search your library for a {} card, then shuffle.",
+            land.name()
+        );
+        let oracle = parse_oracle_text(&text, &[]);
+        let parsed = super::oracle_parser::land::parse_land_data(&text, &oracle.abilities);
+        assert_eq!(
+            parsed.fetch.expect("basic land type target").target_types,
+            vec![land]
+        );
+    }
+}
+
 /// Parse trigger events, scopes, and object subjects.
 #[test]
 fn parses_trigger_events_scopes_conditions_and_subjects() {
     let cases = [
         (
             "When this creature enters, draw a card.",
-            TriggerEvent::Enters(ObjectSubject::ThisPermanent),
+            OracleTriggerEvent::Enters(ObjectSubject::ThisPermanent),
         ),
         (
             "At the beginning of your upkeep, draw a card.",
-            TriggerEvent::BeginningOfStep {
-                step: TurnStep::Upkeep,
-                player: PlayerScope::You,
-            },
+            OracleTriggerEvent::BeginningOfUpkeep(PlayerScope::You),
         ),
         (
             "At the beginning of your end step, draw a card.",
-            TriggerEvent::BeginningOfStep {
-                step: TurnStep::EndStep,
-                player: PlayerScope::You,
-            },
+            OracleTriggerEvent::BeginningOfEndStep(PlayerScope::You),
         ),
         (
             "At the beginning of your first main phase, draw a card.",
-            TriggerEvent::BeginningOfStep {
-                step: TurnStep::FirstMainPhase,
-                player: PlayerScope::You,
-            },
+            OracleTriggerEvent::BeginningOfPrecombatMain(PlayerScope::You),
         ),
         (
             "At the beginning of each opponent's upkeep, draw a card.",
-            TriggerEvent::BeginningOfStep {
-                step: TurnStep::Other,
+            OracleTriggerEvent::BeginningOfOther {
+                phase: "upkeep".to_string(),
                 player: PlayerScope::Opponent,
             },
         ),
         (
             "At the beginning of each player's upkeep, draw a card.",
-            TriggerEvent::BeginningOfStep {
-                step: TurnStep::Other,
+            OracleTriggerEvent::BeginningOfOther {
+                phase: "upkeep".to_string(),
                 player: PlayerScope::Any,
             },
         ),
         (
+            "At the beginning of combat on your turn, draw a card.",
+            OracleTriggerEvent::BeginningOfOther {
+                phase: "combat".to_string(),
+                player: PlayerScope::You,
+            },
+        ),
+        (
             "Whenever a creature enters, draw a card.",
-            TriggerEvent::Enters(ObjectSubject::Any),
+            OracleTriggerEvent::Enters(ObjectSubject::Any),
         ),
         (
             "Whenever another creature attacks, draw a card.",
-            TriggerEvent::Attacks(ObjectSubject::AnotherPermanent),
+            OracleTriggerEvent::Attacks(ObjectSubject::AnotherPermanent),
         ),
         (
             "Whenever a land you control attacks, draw a card.",
-            TriggerEvent::Attacks(ObjectSubject::ControlledLand),
+            OracleTriggerEvent::Attacks(ObjectSubject::ControlledLand),
         ),
         (
             "Whenever this creature deals combat damage to a player, draw a card.",
-            TriggerEvent::CombatDamageToPlayer(ObjectSubject::ThisPermanent),
+            OracleTriggerEvent::CombatDamageToPlayer(ObjectSubject::ThisPermanent),
         ),
         (
             "Whenever you cast a spell, draw a card.",
-            TriggerEvent::CastsSpell { this_spell: false },
+            OracleTriggerEvent::CastsSpell { this_spell: false },
         ),
         (
             "When you cast this spell, draw a card.",
-            TriggerEvent::CastsSpell { this_spell: true },
+            OracleTriggerEvent::CastsSpell { this_spell: true },
         ),
         (
             "Whenever this creature dies, draw a card.",
-            TriggerEvent::Dies(ObjectSubject::ThisPermanent),
+            OracleTriggerEvent::Dies(ObjectSubject::ThisPermanent),
         ),
         (
             "Whenever a land you control enters, draw a card.",
-            TriggerEvent::LandEnters(PlayerScope::You),
+            OracleTriggerEvent::LandEnters(PlayerScope::You),
         ),
         (
             "Whenever you tap a nonland permanent for mana, draw a card.",
-            TriggerEvent::TappedForMana,
+            OracleTriggerEvent::TappedForMana,
         ),
     ];
     for (source, expected) in cases {
@@ -791,15 +924,15 @@ fn parses_trigger_events_scopes_conditions_and_subjects() {
     }
     assert!(matches!(
         trigger_event("Whenever this creature becomes tapped, draw a card."),
-        TriggerEvent::Other(_)
+        OracleTriggerEvent::Other(_)
     ));
     assert!(matches!(
         trigger_event("Whenever an opponent's creature dies, draw a card."),
-        TriggerEvent::Other(_)
+        OracleTriggerEvent::Other(_)
     ));
     assert!(matches!(
         trigger_event("Whenever a creature attacks you, draw a card."),
-        TriggerEvent::Other(_)
+        OracleTriggerEvent::Other(_)
     ));
 
     let once = parse_oracle_text(
@@ -812,7 +945,7 @@ fn parses_trigger_events_scopes_conditions_and_subjects() {
     assert!(once.once_per_turn);
     assert_eq!(
         once.condition.as_deref(),
-        Some("you control another creature, draw a card")
+        Some("you control another creature")
     );
 
     let plain = parse_oracle_text("At the beginning of your upkeep, mill three cards.", &[]);
@@ -827,65 +960,65 @@ fn parses_trigger_events_scopes_conditions_and_subjects() {
 fn parses_static_targets_buffs_costs_and_unknown_rules() {
     assert!(matches!(
         static_effect("Creatures you control get +2/-1."),
-        StaticEffect::CreatureBuff {
+        OracleStaticEffect::CreatureBuff {
             power: 2,
             toughness: -1
         }
     ));
     assert!(matches!(
         static_effect("Creatures you control have flying."),
-        StaticEffect::KeywordGrant { target: StaticTarget::CreaturesYouControl, keyword }
-            if keyword.name == KeywordName::Flying
+        OracleStaticEffect::KeywordGrant { target: StaticTarget::CreaturesYouControl, keyword }
+            if keyword.name == OracleKeywordName::Flying
     ));
     assert!(matches!(
         static_effect("Lands you control have vigilance."),
-        StaticEffect::KeywordGrant { target: StaticTarget::LandsYouControl, keyword }
-            if keyword.name == KeywordName::Vigilance
+        OracleStaticEffect::KeywordGrant { target: StaticTarget::LandsYouControl, keyword }
+            if keyword.name == OracleKeywordName::Vigilance
     ));
     assert!(matches!(
         static_effect("Spells you cast have lifelink."),
-        StaticEffect::KeywordGrant { target: StaticTarget::SpellsYouCast, keyword }
-            if keyword.name == KeywordName::Lifelink
+        OracleStaticEffect::KeywordGrant { target: StaticTarget::SpellsYouCast, keyword }
+            if keyword.name == OracleKeywordName::Lifelink
     ));
     assert!(matches!(
         static_effect("Permanents you control have hexproof."),
-        StaticEffect::KeywordGrant { target: StaticTarget::PermanentsYouControl, keyword }
-            if keyword.name == KeywordName::Hexproof
+        OracleStaticEffect::KeywordGrant { target: StaticTarget::PermanentsYouControl, keyword }
+            if keyword.name == OracleKeywordName::Hexproof
     ));
     assert!(matches!(
         static_effect("Creatures you control have \"{T}: Add one mana of any color.\""),
-        StaticEffect::ManaGrant { target: StaticTarget::CreaturesYouControl, yield_ }
+        OracleStaticEffect::ManaGrant { target: StaticTarget::CreaturesYouControl, yield_ }
             if yield_.any_pips == 1
     ));
     assert!(matches!(
         static_effect("Lands you control have \"{T}: Add one mana of any color.\""),
-        StaticEffect::ManaGrant { target: StaticTarget::LandsYouControl, yield_ }
+        OracleStaticEffect::ManaGrant { target: StaticTarget::LandsYouControl, yield_ }
             if yield_.any_pips == 1
     ));
     assert!(matches!(
         static_effect("Permanents you control have \"{T}: Add {C}.\""),
-        StaticEffect::ManaGrant { target: StaticTarget::PermanentsYouControl, yield_ }
+        OracleStaticEffect::ManaGrant { target: StaticTarget::PermanentsYouControl, yield_ }
             if yield_.colorless == 1
     ));
     assert!(matches!(
         static_effect("Artifact spells you cast cost {1} less to cast."),
-        StaticEffect::CostReduction { amount: 1, spell_class }
+        OracleStaticEffect::CostReduction { amount: 1, spell_class }
             if spell_class == "artifact spells you cast"
     ));
     assert!(matches!(
         static_effect("You may play an additional land on each of your turns."),
-        StaticEffect::AdditionalLandDrop
+        OracleStaticEffect::AdditionalLandDrop
     ));
     assert!(matches!(
         static_effect("If there are 20 or more tower counters on this artifact, you win the game."),
-        StaticEffect::WinThreshold(20)
+        OracleStaticEffect::WinsAtCounters(20)
     ));
     let unsupported =
         static_effect("As long as you control a creature, this permanent has flying.");
     assert!(
         matches!(
             unsupported,
-            StaticEffect::Unsupported(ref text) if text.to_ascii_lowercase().contains("as long as")
+            OracleStaticEffect::Unsupported(ref text) if text.to_ascii_lowercase().contains("as long as")
         ),
         "unexpected static node: {unsupported:?}"
     );
@@ -918,7 +1051,7 @@ fn preserves_unsupported_ability_shapes_without_inventing_effects() {
 #[test]
 fn parses_combined_saga_chapters_in_order_and_keeps_unsupported_text() {
     let card = parse_oracle_text("I, II — Draw a card.\nIII — Venture into the dungeon.", &[]);
-    let chapters = card.saga_chapters().collect::<Vec<&SagaChapter>>();
+    let chapters = card.saga_chapters().collect::<Vec<&OracleSagaChapter>>();
     assert_eq!(chapters.len(), 2);
     assert_eq!(chapters[0].chapters, [1, 2]);
     assert!(matches!(

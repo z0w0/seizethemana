@@ -4,7 +4,9 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
+use super::oracle_parser::land::parse_tap_yield;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -13,7 +15,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -41,7 +43,7 @@ pub(super) fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -64,6 +66,7 @@ pub(super) fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
         }
     }
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -81,7 +84,7 @@ fn same_seed_same_game() {
     assert_eq!(ga.opener_lands, gb.opener_lands);
     assert_eq!(ga.commander_castable, gb.commander_castable);
     assert_eq!(ga.cards_seen, gb.cards_seen);
-    assert_eq!(ga.bodies, gb.bodies);
+    assert_eq!(ga.creatures, gb.creatures);
 }
 
 #[test]
@@ -146,7 +149,7 @@ fn five_color_commander_needs_all_pips() {
     for _ in 0..40 {
         cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -167,6 +170,7 @@ fn five_color_commander_needs_all_pips() {
         });
     }
     let mut deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![super::model::SimCard {
             name: "Boss".into(),
@@ -195,7 +199,7 @@ fn five_color_commander_needs_all_pips() {
     for _ in 0..40 {
         deck.cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -211,7 +215,7 @@ fn five_color_commander_needs_all_pips() {
                 generic: 2,
                 ..Cost::default()
             },
-            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Rock,
             ..super::model::SimCard::default()
         });
@@ -244,6 +248,7 @@ fn creature_commander_can_use_creature_only_mana() {
         )));
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![super::model::SimCard {
             name: "Generic Boss".into(),
@@ -271,14 +276,14 @@ fn creature_commander_can_use_creature_only_mana() {
 // Station end-to-end: crew -> station -> attack-draw chain
 
 #[test]
-fn vehicle_crews_and_station_tiers_unlock() {
+fn vehicle_crews_and_striations_unlock() {
     // A vehicle + crew bodies + a spacecraft commander. Crew 2 needs two
-    // bodies (BODY_POWER 2); bodies station the spacecraft (4+ animate).
+    // creatures (token power 2); creatures station the spacecraft (4+ animate).
     let mut cards = Vec::new();
     for _ in 0..30 {
         cards.push(super::model::SimCard {
             name: "Island".into(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {U}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {U}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -318,6 +323,7 @@ fn vehicle_crews_and_station_tiers_unlock() {
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -328,9 +334,9 @@ fn vehicle_crews_and_station_tiers_unlock() {
     // Crewing produces bodies by turn 6.
     let stats = aggregate(&logs, &deck, 10);
     assert!(
-        stats.bodies_by_turn[5] > 0.3,
+        stats.creatures_by_turn[5] > 0.3,
         "expected crewed vehicles as bodies by t6, got {:.2}",
-        stats.bodies_by_turn[5]
+        stats.creatures_by_turn[5]
     );
 }
 
@@ -341,7 +347,7 @@ fn station_tokens_feed_the_commander() {
     for _ in 0..30 {
         cards.push(super::model::SimCard {
             name: "Plains".into(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -358,12 +364,13 @@ fn station_tokens_feed_the_commander() {
                 generic: 2,
                 ..Cost::default()
             },
-            tap: Some(parse_oracle_tap_yield("{T}: Add one mana of any color.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add one mana of any color.").unwrap()),
             role: Role::Rock,
             ..super::model::SimCard::default()
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![super::model::SimCard {
             name: "IGS".into(),
@@ -373,18 +380,18 @@ fn station_tokens_feed_the_commander() {
             },
             role: Role::Wincon,
             is_station_card: true,
-            station_tiers: vec![
+            striations: vec![
                 // ETB tokens (the sim fires them as station fuel bodies).
-                Tier {
+                SimStriation {
                     at: 0,
                     animate: false,
-                    abilities: vec![super::model::Ability {
-                        trigger: AbilityTiming::OnEnter,
-                        effect: super::model::Effect::Tokens(2),
-                        ..super::model::Ability::default()
+                    abilities: vec![super::model::SimAbility {
+                        trigger: SimTrigger::Enters,
+                        effect: super::model::SimEffect::Tokens(2),
+                        ..super::model::SimAbility::default()
                     }],
                 },
-                Tier {
+                SimStriation {
                     at: 12,
                     animate: true,
                     abilities: vec![],
@@ -400,9 +407,9 @@ fn station_tokens_feed_the_commander() {
     let stats = aggregate(&logs, &deck, 10);
     // ETB tokens exist as bodies once the commander is cast.
     assert!(
-        stats.bodies_by_turn[9] > 0.2,
+        stats.creatures_by_turn[9] > 0.2,
         "commander tokens should count as bodies by t10, got {:.2}",
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[9]
     );
     // The commander is a station card: online means animated, not cast.
     // It needs 12 counters = 6 body-taps; some games get there by t10.
@@ -434,6 +441,7 @@ fn fetch_land_searches_a_land() {
         cards.push(parse_sim_card(&bear));
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -462,7 +470,13 @@ fn verge_land_gate_blocks_early_mode() {
         "{T}: Add {B}.\n{T}: Add {R}. Activate only if you control a Swamp or a Mountain.",
     );
     let sim = parse_sim_card(&verge);
-    assert_eq!(sim.gate_types, vec!["Swamp", "Mountain"]);
+    assert_eq!(
+        sim.gate_types,
+        vec![
+            super::model::BasicLandType::Swamp,
+            super::model::BasicLandType::Mountain
+        ]
+    );
     // A lone verge never satisfies its own gate.
     let mut cards = Vec::new();
     for _ in 0..35 {
@@ -500,6 +514,7 @@ fn verge_land_gate_blocks_early_mode() {
         });
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -582,9 +597,9 @@ fn sacrifice_outlet_consumes_bodies_and_fires_deaths() {
     // death tokens in a share of games. The payoff is one copy in 66, so
     // the bar is low — it proves sacrifice + death-token firing works.
     assert!(
-        stats.bodies_by_turn[9] >= 0.1,
+        stats.creatures_by_turn[9] >= 0.1,
         "aristocrats board collapsed: {}",
-        stats.bodies_by_turn[9]
+        stats.creatures_by_turn[9]
     );
 }
 
@@ -676,7 +691,7 @@ fn graveyard_return_makes_bodies() {
     // Vanilla stub decks have zero bodies when no creature was drawn early;
     // the reanimator deck must produce bodies at some point.
     assert!(
-        stats.bodies_by_turn[9] > 0.0,
+        stats.creatures_by_turn[9] > 0.0,
         "reanimator produced no bodies"
     );
 }
@@ -713,11 +728,13 @@ fn walker_loyalty_gates_activations() {
     row.loyalty = Some("4".to_string());
     let walker = parse_sim_card(&row);
     assert_eq!(walker.starting_loyalty, Some(4));
-    assert!(
-        walker
-            .abilities()
-            .any(|a| a.loyalty_cost == 2 && matches!(a.effect, Effect::Draw(2)))
-    );
+    assert!(walker.unlocked_abilities(0).any(|ability| {
+        ability
+            .activation
+            .as_ref()
+            .is_some_and(|costs| costs.loyalty_change() == -2)
+            && matches!(ability.effect, SimEffect::Draw(2))
+    }));
     deck.cards.push(walker);
     let mut rng = ChaCha8Rng::seed_from_u64(67);
     let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 10)).collect();

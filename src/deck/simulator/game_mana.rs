@@ -1,14 +1,14 @@
 //! Mana payment for the goldfish game loop: pool building, pip matching,
 //! and cost payment split from game.rs to keep files small.
 
-use super::game::{Permanent, Pool, card_of};
-use super::model::{Restriction, Role, Scale, SimDeck, TapYield};
+use super::game::{ManaPool, Permanent, card_of};
+use super::model::{ManaYield, Role, Scale, SimDeck, SpendRestriction};
 
 /// Distinct colors among permanents on the battlefield (printed card
 /// colors). Powers `ColorsPresent` scaling (Faeburrow Elder).
-fn colors_present(deck: &SimDeck, board: &[Permanent]) -> u32 {
+fn colors_present(deck: &SimDeck, battlefield: &[Permanent]) -> u32 {
     let mut found = [false; 5];
-    for p in board {
+    for p in battlefield {
         for (i, has) in card_of(deck, p).colors.iter().enumerate() {
             if *has {
                 found[i] = true;
@@ -18,17 +18,15 @@ fn colors_present(deck: &SimDeck, board: &[Permanent]) -> u32 {
     found.iter().filter(|c| **c).count() as u32
 }
 
-/// Add one tap's yield to the pool (no turn/board context: best-case
-/// turn, empty board for scaling).
-pub(super) fn add_yield(y: &TapYield, pool: &mut Pool) {
-    add_yield_turns_empty_board(y, pool, u32::MAX);
+/// Add one tap's yield to the pool without battlefield scaling.
+pub(super) fn add_yield(y: &ManaYield, pool: &mut ManaPool) {
+    add_yield_turns_unscaled(y, pool, u32::MAX);
 }
 
-/// Turn-aware variant with an empty board (no deck context: scaling
-/// resolves to nothing).
-pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u32) {
-    // No deck context: every scale resolves to zero (the old
-    // empty-board behavior). The hot tap-budget path builds no
+/// Turn-aware variant without battlefield scaling.
+pub(super) fn add_yield_turns_unscaled(y: &ManaYield, pool: &mut ManaPool, turn: u32) {
+    // No battlefield context: every scale resolves to zero. The hot
+    // tap-budget path builds no
     // throwaway deck for this.
     if y.opponent_any {
         if turn >= 2 {
@@ -40,14 +38,15 @@ pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u
     if let Some(restriction) = y.restriction {
         // Restricted buckets pay their own cast class; each pip still
         // picks any color the source could produce.
-        let pips =
-            any_pips + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
+        let pips = any_pips
+            + y.fixed.iter().map(|amount| u32::from(*amount)).sum::<u32>()
+            + u32::from(y.choice.iter().any(|available| *available));
         if pips > 0 {
             match restriction {
-                Restriction::Creature => pool.creature_only += pips,
-                Restriction::Legendary => pool.legendary_only += pips,
-                Restriction::Artifact => pool.artifact_only += pips,
-                Restriction::InstantSorcery => pool.instant_sorcery_only += pips,
+                SpendRestriction::Creature => pool.creature_only += pips,
+                SpendRestriction::Legendary => pool.legendary_only += pips,
+                SpendRestriction::Artifact => pool.artifact_only += pips,
+                SpendRestriction::InstantSorcery => pool.instant_sorcery_only += pips,
             }
         } else {
             pool.colorless += y.colorless;
@@ -64,7 +63,11 @@ pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u
         return;
     }
     for (i, p) in y.fixed.iter().enumerate() {
-        pool.fixed[i] += u32::from(*p);
+        let pips = u32::from(*p);
+        pool.fixed[i] += pips;
+        if y.cannot_pay_generic {
+            pool.fixed_no_generic[i] += pips;
+        }
     }
     let choice_colors = y.choice.iter().filter(|c| **c).count();
     if any_pips > 0 || choice_colors > 1 {
@@ -77,14 +80,14 @@ pub(super) fn add_yield_turns_empty_board(y: &TapYield, pool: &mut Pool, turn: u
     pool.colorless += y.colorless;
 }
 
-/// Turn- and board-aware variant. Opponent-dependent mana is generic-only
-/// from turn two, a conservative approximation without an opponent board.
+/// Turn- and battlefield-aware variant. Opponent-dependent mana is generic-only
+/// from turn two, a conservative approximation without an opponent battlefield.
 pub(super) fn add_yield_turns(
     deck: &SimDeck,
-    y: &TapYield,
-    pool: &mut Pool,
+    y: &ManaYield,
+    pool: &mut ManaPool,
     turn: u32,
-    board: &[Permanent],
+    battlefield: &[Permanent],
 ) {
     if y.opponent_any {
         if turn >= 2 {
@@ -94,7 +97,7 @@ pub(super) fn add_yield_turns(
     }
     let any_pips = y.any_pips;
     let scale_pips = match y.scaling {
-        Some(Scale::ColorsPresent) => colors_present(deck, board),
+        Some(Scale::ColorsPresent) => colors_present(deck, battlefield),
         Some(Scale::PerChargeCounter) => 0, // resolved at activation
         None => 0,
     };
@@ -103,13 +106,14 @@ pub(super) fn add_yield_turns(
         // picks any color the source could produce.
         let pips = any_pips
             + scale_pips
-            + u32::from(y.choice.iter().any(|c| *c) || y.fixed.iter().any(|p| *p > 0));
+            + y.fixed.iter().map(|amount| u32::from(*amount)).sum::<u32>()
+            + u32::from(y.choice.iter().any(|available| *available));
         if pips > 0 {
             match restriction {
-                Restriction::Creature => pool.creature_only += pips,
-                Restriction::Legendary => pool.legendary_only += pips,
-                Restriction::Artifact => pool.artifact_only += pips,
-                Restriction::InstantSorcery => pool.instant_sorcery_only += pips,
+                SpendRestriction::Creature => pool.creature_only += pips,
+                SpendRestriction::Legendary => pool.legendary_only += pips,
+                SpendRestriction::Artifact => pool.artifact_only += pips,
+                SpendRestriction::InstantSorcery => pool.instant_sorcery_only += pips,
             }
         } else {
             pool.colorless += y.colorless;
@@ -126,7 +130,11 @@ pub(super) fn add_yield_turns(
         return;
     }
     for (i, p) in y.fixed.iter().enumerate() {
-        pool.fixed[i] += u32::from(*p);
+        let pips = u32::from(*p);
+        pool.fixed[i] += pips;
+        if y.cannot_pay_generic {
+            pool.fixed_no_generic[i] += pips;
+        }
     }
     let choice_colors = y.choice.iter().filter(|c| **c).count();
     if any_pips > 0 || choice_colors > 1 {
@@ -141,7 +149,7 @@ pub(super) fn add_yield_turns(
 }
 
 /// True when the cost is payable in total from the pool.
-pub(super) fn payable(cost: &super::model::Cost, pool: &Pool) -> bool {
+pub(super) fn payable(cost: &super::model::Cost, pool: &ManaPool) -> bool {
     // Phyrexian pips pay with 2 life each, not mana, so the pool owes
     // only the mana part.
     pool.total() >= cost.total() - phyrexian_life_charge(cost) / 2
@@ -154,7 +162,7 @@ pub(super) fn payable(cost: &super::model::Cost, pool: &Pool) -> bool {
 /// flexible pool, with colorless covering only generic/flex costs —
 /// never a monocolor pip. This mirrors how `pay_cost` spends: each
 /// flexible source is consumed at most once.
-pub(super) fn pips_ok(cost: &super::model::Cost, pool: &Pool) -> bool {
+pub(super) fn pips_ok(cost: &super::model::Cost, pool: &ManaPool) -> bool {
     // Generic + flex pips and colorless needs draw from flexible and
     // colorless mana first (see `pay_cost`), so monocolor pips compete
     // for the flexible pool only when generic needs are small. The
@@ -174,7 +182,7 @@ pub(super) fn pips_ok(cost: &super::model::Cost, pool: &Pool) -> bool {
     }
     // Generic and flex pips: paid from remaining flexible, then
     // colorless, then spare fixed pips (mirroring `pay_cost`'s order).
-    let mut generic_left = cost.generic + cost.flex_pips;
+    let mut generic_left = cost.generic + cost.hybrid_pips;
     let flexible_left = flex.saturating_sub(pip_shortfall);
     let from_flex = generic_left.min(flexible_left);
     generic_left -= from_flex;
@@ -182,15 +190,23 @@ pub(super) fn pips_ok(cost: &super::model::Cost, pool: &Pool) -> bool {
     // Spare fixed pips over-pay colors legally.
     let mut spare = 0u32;
     for i in 0..5 {
-        spare += pool.fixed[i].saturating_sub(u32::from(cost.pips[i]));
+        spare += pool.fixed[i]
+            .saturating_sub(u32::from(cost.pips[i]))
+            .saturating_sub(pool.fixed_no_generic[i]);
     }
     generic_left.saturating_sub(spare) == 0
 }
 
 /// Mana a non-restricted cast can reach: the general pool only (each
 /// restricted bucket is its own budget).
-pub(super) fn usable_for_noncreature(pool: &Pool) -> u32 {
-    pool.fixed.iter().sum::<u32>() + pool.flexible + pool.colorless
+pub(super) fn usable_for_noncreature(pool: &ManaPool) -> u32 {
+    pool.fixed
+        .iter()
+        .zip(pool.fixed_no_generic)
+        .map(|(fixed, no_generic)| fixed.saturating_sub(no_generic))
+        .sum::<u32>()
+        + pool.flexible
+        + pool.colorless
 }
 
 /// The spend-restriction classes of a card's cast. A card can belong to
@@ -200,26 +216,26 @@ pub(super) fn usable_for_noncreature(pool: &Pool) -> u32 {
 /// Plaza of Heroes); the artifact class skips lands; the
 /// instant/sorcery class reads the interaction flag's type-line gate
 /// (flash creatures are not instant casts).
-pub(super) fn cast_restrictions(card: &super::model::SimCard) -> Vec<Restriction> {
+pub(super) fn cast_restrictions(card: &super::model::SimCard) -> Vec<SpendRestriction> {
     let mut classes = Vec::new();
     if card.flags.is_interaction {
-        classes.push(Restriction::InstantSorcery);
+        classes.push(SpendRestriction::InstantSorcery);
     }
     if card.is_artifact && card.role != Role::Land {
-        classes.push(Restriction::Artifact);
+        classes.push(SpendRestriction::Artifact);
     }
     if card.is_creature {
-        classes.push(Restriction::Creature);
+        classes.push(SpendRestriction::Creature);
     }
     if card.is_legendary {
-        classes.push(Restriction::Legendary);
+        classes.push(SpendRestriction::Legendary);
     }
     classes
 }
 
 /// The mana a cast of these classes may legally spend: the general pool
 /// plus every restricted bucket whose class the card belongs to.
-pub(super) fn usable_for_classes(pool: &Pool, classes: &[Restriction]) -> u32 {
+pub(super) fn usable_for_classes(pool: &ManaPool, classes: &[SpendRestriction]) -> u32 {
     let mut usable = usable_for_noncreature(pool);
     for class in classes {
         usable += bucket_of(pool, *class);
@@ -228,12 +244,12 @@ pub(super) fn usable_for_classes(pool: &Pool, classes: &[Restriction]) -> u32 {
 }
 
 /// The restricted bucket for a cast class.
-pub(super) fn bucket_of(pool: &Pool, restriction: Restriction) -> u32 {
+pub(super) fn bucket_of(pool: &ManaPool, restriction: SpendRestriction) -> u32 {
     match restriction {
-        Restriction::Creature => pool.creature_only,
-        Restriction::Legendary => pool.legendary_only,
-        Restriction::Artifact => pool.artifact_only,
-        Restriction::InstantSorcery => pool.instant_sorcery_only,
+        SpendRestriction::Creature => pool.creature_only,
+        SpendRestriction::Legendary => pool.legendary_only,
+        SpendRestriction::Artifact => pool.artifact_only,
+        SpendRestriction::InstantSorcery => pool.instant_sorcery_only,
     }
 }
 
@@ -245,8 +261,8 @@ pub(super) fn bucket_of(pool: &Pool, restriction: Restriction) -> u32 {
 /// the buckets only owe the mana part of the cost.
 pub(super) fn pay_restricted_cost(
     cost: &super::model::Cost,
-    pool: &mut Pool,
-    classes: &[Restriction],
+    pool: &mut ManaPool,
+    classes: &[SpendRestriction],
 ) {
     let mana_total = cost.total() - phyrexian_life_charge(cost) / 2;
     let mut paid = 0u32;
@@ -259,11 +275,11 @@ pub(super) fn pay_restricted_cost(
         spend_bucket(pool, *class, spent);
         paid += spent;
     }
-    let mut rest = cost.clone();
+    let mut rest = *cost;
     rest.generic = rest.generic.saturating_sub(paid);
     paid = paid.saturating_sub(cost.generic);
-    rest.flex_pips = rest.flex_pips.saturating_sub(paid);
-    paid = paid.saturating_sub(cost.flex_pips);
+    rest.hybrid_pips = rest.hybrid_pips.saturating_sub(paid);
+    paid = paid.saturating_sub(cost.hybrid_pips);
     for pip in rest.pips.iter_mut() {
         if paid == 0 {
             break;
@@ -276,17 +292,17 @@ pub(super) fn pay_restricted_cost(
 }
 
 /// Drain one class's bucket by `spent` mana.
-fn spend_bucket(pool: &mut Pool, class: Restriction, spent: u32) {
+fn spend_bucket(pool: &mut ManaPool, class: SpendRestriction, spent: u32) {
     match class {
-        Restriction::Creature => pool.creature_only -= spent,
-        Restriction::Legendary => pool.legendary_only -= spent,
-        Restriction::Artifact => pool.artifact_only -= spent,
-        Restriction::InstantSorcery => pool.instant_sorcery_only -= spent,
+        SpendRestriction::Creature => pool.creature_only -= spent,
+        SpendRestriction::Legendary => pool.legendary_only -= spent,
+        SpendRestriction::Artifact => pool.artifact_only -= spent,
+        SpendRestriction::InstantSorcery => pool.instant_sorcery_only -= spent,
     }
 }
 
 /// The life a phyrexian-pip cost charges when the best-case agent pays
-/// it with life instead of mana (2 life per `{X/P}` pip, CR 118.3b).
+/// it with life instead of mana (2 life per `{X/P}` pip, CR 107.4f).
 pub(super) fn phyrexian_life_charge(cost: &super::model::Cost) -> u32 {
     2 * cost.phyrexian.iter().map(|p| u32::from(*p)).sum::<u32>()
 }
@@ -294,18 +310,23 @@ pub(super) fn phyrexian_life_charge(cost: &super::model::Cost) -> u32 {
 /// Pay a cost from the pool. Pips come from fixed sources first, then
 /// flexible sources. Generic comes from flexible, then colorless, then
 /// spare fixed pips (over-paying colors is legal).
-pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut Pool) {
+pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut ManaPool) {
     let mut flexible = pool.flexible;
     for (i, need) in cost.pips.iter().enumerate() {
         let mut need = u32::from(*need);
-        let from_fixed = need.min(pool.fixed[i]);
+        let unrestricted = pool.fixed[i].saturating_sub(pool.fixed_no_generic[i]);
+        let from_fixed = need.min(unrestricted);
         pool.fixed[i] -= from_fixed;
         need -= from_fixed;
+        let from_no_generic = need.min(pool.fixed_no_generic[i]);
+        pool.fixed[i] -= from_no_generic;
+        pool.fixed_no_generic[i] -= from_no_generic;
+        need -= from_no_generic;
         let from_flex = need.min(flexible);
         consume_flexible(pool, from_flex);
         flexible -= from_flex;
     }
-    let mut remaining = cost.flex_pips + cost.generic;
+    let mut remaining = cost.hybrid_pips + cost.generic;
     let from_flex = remaining.min(flexible);
     consume_flexible(pool, from_flex);
     remaining -= from_flex;
@@ -316,14 +337,16 @@ pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut Pool) {
         if remaining == 0 {
             break;
         }
-        let spare = pool.fixed[i].min(remaining);
+        let spare = pool.fixed[i]
+            .saturating_sub(pool.fixed_no_generic[i])
+            .min(remaining);
         pool.fixed[i] -= spare;
         remaining -= spare;
     }
 }
 
 /// Consume `n` mana from flexible sources.
-pub(super) fn consume_flexible(pool: &mut Pool, n: u32) {
+pub(super) fn consume_flexible(pool: &mut ManaPool, n: u32) {
     pool.flexible -= pool.flexible.min(n);
 }
 
@@ -337,8 +360,8 @@ pub(super) fn effective_min_cost(
     card: &super::model::SimCard,
     battlefield: &[Permanent],
 ) -> super::model::Cost {
-    if !card.board_discount {
-        return card.min_cost.clone();
+    if !card.battlefield_discount {
+        return card.min_cost;
     }
     // Affinity for artifacts / improvise (CR 702.41a, 702.126a): the
     // cost drops one generic per artifact, capped at the printed
@@ -349,7 +372,7 @@ pub(super) fn effective_min_cost(
         .filter(|p| p.card.deck_idx().is_some() && card_of(deck, p).role != Role::Land)
         .filter(|p| card_of(deck, p).is_artifact)
         .count() as u32;
-    let mut eff = card.cost.clone();
+    let mut eff = card.cost;
     eff.generic = eff.generic.saturating_sub(artifacts);
     eff
 }

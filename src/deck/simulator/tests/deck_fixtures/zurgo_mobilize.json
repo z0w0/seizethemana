@@ -1,0 +1,605 @@
+{
+ "commanders": [
+  {
+   "name": "Zurgo, Thunder's Decree",
+   "cost": "{R}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Orc Warrior",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nDuring your end step, Warrior tokens you control have \"This token can't be sacrificed.\""
+  }
+ ],
+ "cards": [
+  {
+   "name": "Zurgo, Thunder's Decree",
+   "cost": "{R}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Orc Warrior",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nDuring your end step, Warrior tokens you control have \"This token can't be sacrificed.\""
+  },
+  {
+   "name": "Sol Ring",
+   "cost": "{1}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}{C}."
+  },
+  {
+   "name": "Arcane Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Fellwar Stone",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+  },
+  {
+   "name": "Talisman of Conviction",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{T}: Add {C}.\n{T}: Add {R} or {W}. This artifact deals 1 damage to you."
+  },
+  {
+   "name": "Boros Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {R}{W}."
+  },
+  {
+   "name": "Rakdos Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {B}{R}."
+  },
+  {
+   "name": "Orzhov Signet",
+   "cost": "{2}",
+   "type_line": "Artifact",
+   "keywords": "[]",
+   "text": "{1}, {T}: Add {W}{B}."
+  },
+  {
+   "name": "Voice of Victory",
+   "cost": "{1}{W}",
+   "type_line": "Creature \u2014 Human Bard",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+  },
+  {
+   "name": "Dragonback Lancer",
+   "cost": "{3}{W}",
+   "type_line": "Creature \u2014 Human Soldier",
+   "keywords": "[\"Flying\", \"Mobilize\"]",
+   "text": "Flying\nMobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)"
+  },
+  {
+   "name": "Stadium Headliner",
+   "cost": "{R}",
+   "type_line": "Creature \u2014 Goblin Warrior",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)\n{1}{R}, Sacrifice this creature: It deals damage equal to the number of creatures you control to target creature."
+  },
+  {
+   "name": "Shock Brigade",
+   "cost": "{1}{R}",
+   "type_line": "Creature \u2014 Goblin Soldier",
+   "keywords": "[\"Menace\", \"Mobilize\"]",
+   "text": "Menace (This creature can't be blocked except by two or more creatures.)\nMobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)"
+  },
+  {
+   "name": "Reigning Victor",
+   "cost": "{2/R}{2/W}{2/B}",
+   "type_line": "Creature \u2014 Orc Warrior",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)\nWhen this creature enters, target creature gets +1/+0 and gains indestructible until end of turn. (Damage and effects that say \"destroy\" don't destroy it.)"
+  },
+  {
+   "name": "Zurgo's Vanguard",
+   "cost": "{2}{R}",
+   "type_line": "Creature \u2014 Dog Soldier",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)\nZurgo's Vanguard's power is equal to the number of creatures you control."
+  },
+  {
+   "name": "Bone-Cairn Butcher",
+   "cost": "{1}{R}{W}{B}",
+   "type_line": "Creature \u2014 Demon",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nAttacking tokens you control have deathtouch."
+  },
+  {
+   "name": "Nightblade Brigade",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Goblin Soldier",
+   "keywords": "[\"Surveil\", \"Mobilize\", \"Deathtouch\"]",
+   "text": "Deathtouch\nMobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)\nWhen this creature enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+  },
+  {
+   "name": "Venerated Stormsinger",
+   "cost": "{3}{B}",
+   "type_line": "Creature \u2014 Orc Cleric",
+   "keywords": "[\"Mobilize\"]",
+   "text": "Mobilize 1 (Whenever this creature attacks, create a tapped and attacking 1/1 red Warrior creature token. Sacrifice it at the beginning of the next end step.)\nWhenever this creature or another creature you control dies, each opponent loses 1 life and you gain 1 life."
+  },
+  {
+   "name": "Avenger of the Fallen",
+   "cost": "{2}{B}",
+   "type_line": "Creature \u2014 Human Warrior",
+   "keywords": "[\"Mobilize\", \"Deathtouch\"]",
+   "text": "Deathtouch\nMobilize X, where X is the number of creature cards in your graveyard. (Whenever this creature attacks, create X tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)"
+  },
+  {
+   "name": "Commissar Severina Raine",
+   "cost": "{1}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Human Soldier",
+   "keywords": "[\"Summary Execution\", \"Leading from the Front\"]",
+   "text": "Leading from the Front \u2014 Whenever Commissar Severina Raine attacks, each opponent loses X life, where X is the number of other attacking creatures.\nSummary Execution \u2014 {2}, Sacrifice another creature: You gain 2 life and draw a card."
+  },
+  {
+   "name": "Adeline, Resplendent Cathar",
+   "cost": "{1}{W}{W}",
+   "type_line": "Legendary Creature \u2014 Human Knight",
+   "keywords": "[\"Vigilance\"]",
+   "text": "Vigilance\nAdeline's power is equal to the number of creatures you control.\nWhenever you attack, for each opponent, create a 1/1 white Human creature token that's tapped and attacking that player or a planeswalker they control."
+  },
+  {
+   "name": "Arabella, Abandoned Doll",
+   "cost": "{R}{W}",
+   "type_line": "Legendary Artifact Creature \u2014 Toy",
+   "keywords": "[]",
+   "text": "Whenever Arabella attacks, it deals X damage to each opponent and you gain X life, where X is the number of creatures you control with power 2 or less."
+  },
+  {
+   "name": "Isshin, Two Heavens as One",
+   "cost": "{R}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Human Samurai",
+   "keywords": "[]",
+   "text": "If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time."
+  },
+  {
+   "name": "Winota, Joiner of Forces",
+   "cost": "{2}{R}{W}",
+   "type_line": "Legendary Creature \u2014 Human Warrior",
+   "keywords": "[]",
+   "text": "Whenever a non-Human creature you control attacks, look at the top six cards of your library. You may put a Human creature card from among them onto the battlefield tapped and attacking. It gains indestructible until end of turn. Put the rest of the cards on the bottom of your library in a random order."
+  },
+  {
+   "name": "Krenko, Tin Street Kingpin",
+   "cost": "{2}{R}",
+   "type_line": "Legendary Creature \u2014 Goblin",
+   "keywords": "[]",
+   "text": "Whenever Krenko attacks, put a +1/+1 counter on it, then create a number of 1/1 red Goblin creature tokens equal to Krenko's power."
+  },
+  {
+   "name": "Aurelia, the Warleader",
+   "cost": "{2}{R}{R}{W}{W}",
+   "type_line": "Legendary Creature \u2014 Angel",
+   "keywords": "[\"Flying\", \"Vigilance\", \"Haste\"]",
+   "text": "Flying, vigilance, haste\nWhenever Aurelia attacks for the first time each turn, untap all creatures you control. After this phase, there is an additional combat phase."
+  },
+  {
+   "name": "Gisela, Blade of Goldnight",
+   "cost": "{4}{R}{W}{W}",
+   "type_line": "Legendary Creature \u2014 Angel",
+   "keywords": "[\"Flying\", \"First strike\", \"Double\"]",
+   "text": "Flying, first strike\nIf a source would deal damage to an opponent or a permanent an opponent controls, that source deals double that damage to that player or permanent instead.\nIf a source would deal damage to you or a permanent you control, prevent half that damage, rounded up."
+  },
+  {
+   "name": "Ravos, Soultender",
+   "cost": "{3}{W}{B}",
+   "type_line": "Legendary Creature \u2014 Human Cleric",
+   "keywords": "[\"Flying\", \"Partner\"]",
+   "text": "Flying\nOther creatures you control get +1/+1.\nAt the beginning of your upkeep, you may return target creature card from your graveyard to your hand.\nPartner (You can have two commanders if both have partner.)"
+  },
+  {
+   "name": "Swords to Plowshares",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller gains life equal to its power."
+  },
+  {
+   "name": "Path to Exile",
+   "cost": "{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle."
+  },
+  {
+   "name": "Generous Gift",
+   "cost": "{2}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target permanent. Its controller creates a 3/3 green Elephant creature token."
+  },
+  {
+   "name": "Anguished Unmaking",
+   "cost": "{1}{W}{B}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Exile target nonland permanent. You lose 3 life."
+  },
+  {
+   "name": "Boros Charm",
+   "cost": "{R}{W}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one \u2014\n\u2022 Boros Charm deals 4 damage to target player or planeswalker.\n\u2022 Permanents you control gain indestructible until end of turn.\n\u2022 Target creature gains double strike until end of turn."
+  },
+  {
+   "name": "Rakdos Charm",
+   "cost": "{B}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Choose one \u2014\n\u2022 Exile target player's graveyard.\n\u2022 Destroy target artifact.\n\u2022 Each creature deals 1 damage to its controller."
+  },
+  {
+   "name": "Terminate",
+   "cost": "{B}{R}",
+   "type_line": "Instant",
+   "keywords": "[]",
+   "text": "Destroy target creature. It can't be regenerated."
+  },
+  {
+   "name": "Wear // Tear",
+   "cost": "{1}{R} // {W}",
+   "type_line": "Instant // Instant",
+   "keywords": "[\"Fuse\"]",
+   "text": "Destroy target artifact.\nFuse (You may cast one or both halves of this card from your hand.)\n// Destroy target enchantment.\nFuse (You may cast one or both halves of this card from your hand.)"
+  },
+  {
+   "name": "Wrath of God",
+   "cost": "{2}{W}{W}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "Destroy all creatures. They can't be regenerated."
+  },
+  {
+   "name": "Blasphemous Act",
+   "cost": "{8}{R}",
+   "type_line": "Sorcery",
+   "keywords": "[]",
+   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+  },
+  {
+   "name": "Damn",
+   "cost": "{B}{B}",
+   "type_line": "Sorcery",
+   "keywords": "[\"Overload\"]",
+   "text": "Destroy target creature. A creature destroyed this way can't be regenerated.\nOverload {2}{W}{W} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+  },
+  {
+   "name": "Skullclamp",
+   "cost": "{1}",
+   "type_line": "Artifact \u2014 Equipment",
+   "keywords": "[\"Equip\"]",
+   "text": "Equipped creature gets +1/-1.\nWhenever equipped creature dies, draw two cards.\nEquip {1}"
+  },
+  {
+   "name": "Impact Tremors",
+   "cost": "{1}{R}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Whenever a creature you control enters, this enchantment deals 1 damage to each opponent."
+  },
+  {
+   "name": "Purphoros, God of the Forge",
+   "cost": "{3}{R}",
+   "type_line": "Legendary Enchantment Creature \u2014 God",
+   "keywords": "[\"Indestructible\"]",
+   "text": "Indestructible\nAs long as your devotion to red is less than five, Purphoros isn't a creature.\nWhenever another creature you control enters, Purphoros deals 2 damage to each opponent.\n{2}{R}: Creatures you control get +1/+0 until end of turn."
+  },
+  {
+   "name": "Anointed Procession",
+   "cost": "{3}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "If an effect would create one or more tokens under your control, it creates twice that many of those tokens instead."
+  },
+  {
+   "name": "Intangible Virtue",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "Creature tokens you control get +1/+1 and have vigilance."
+  },
+  {
+   "name": "Honor of the Pure",
+   "cost": "{1}{W}",
+   "type_line": "Enchantment",
+   "keywords": "[]",
+   "text": "White creatures you control get +1/+1."
+  },
+  {
+   "name": "Mountain",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {R}.)"
+  },
+  {
+   "name": "Plains",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {W}.)"
+  },
+  {
+   "name": "Swamp",
+   "cost": "",
+   "type_line": "Basic Land \u2014 Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {B}.)"
+  },
+  {
+   "name": "Command Tower",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "{T}: Add one mana of any color in your commander's color identity."
+  },
+  {
+   "name": "Sacred Foundry",
+   "cost": "",
+   "type_line": "Land \u2014 Mountain Plains",
+   "keywords": "[]",
+   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Blood Crypt",
+   "cost": "",
+   "type_line": "Land \u2014 Swamp Mountain",
+   "keywords": "[]",
+   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Godless Shrine",
+   "cost": "",
+   "type_line": "Land \u2014 Plains Swamp",
+   "keywords": "[]",
+   "text": "({T}: Add {W} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+  },
+  {
+   "name": "Clifftop Retreat",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Mountain or a Plains.\n{T}: Add {R} or {W}."
+  },
+  {
+   "name": "Dragonskull Summit",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+  },
+  {
+   "name": "Isolated Chapel",
+   "cost": "",
+   "type_line": "Land",
+   "keywords": "[]",
+   "text": "This land enters tapped unless you control a Plains or a Swamp.\n{T}: Add {W} or {B}."
+  }
+ ],
+ "list": [
+  [
+   "Sol Ring",
+   1
+  ],
+  [
+   "Arcane Signet",
+   1
+  ],
+  [
+   "Fellwar Stone",
+   1
+  ],
+  [
+   "Talisman of Conviction",
+   1
+  ],
+  [
+   "Boros Signet",
+   1
+  ],
+  [
+   "Rakdos Signet",
+   1
+  ],
+  [
+   "Orzhov Signet",
+   1
+  ],
+  [
+   "Voice of Victory",
+   1
+  ],
+  [
+   "Dragonback Lancer",
+   1
+  ],
+  [
+   "Stadium Headliner",
+   1
+  ],
+  [
+   "Shock Brigade",
+   1
+  ],
+  [
+   "Reigning Victor",
+   1
+  ],
+  [
+   "Zurgo's Vanguard",
+   1
+  ],
+  [
+   "Bone-Cairn Butcher",
+   1
+  ],
+  [
+   "Nightblade Brigade",
+   1
+  ],
+  [
+   "Venerated Stormsinger",
+   1
+  ],
+  [
+   "Avenger of the Fallen",
+   1
+  ],
+  [
+   "Commissar Severina Raine",
+   1
+  ],
+  [
+   "Adeline, Resplendent Cathar",
+   1
+  ],
+  [
+   "Arabella, Abandoned Doll",
+   1
+  ],
+  [
+   "Isshin, Two Heavens as One",
+   1
+  ],
+  [
+   "Winota, Joiner of Forces",
+   1
+  ],
+  [
+   "Krenko, Tin Street Kingpin",
+   1
+  ],
+  [
+   "Aurelia, the Warleader",
+   1
+  ],
+  [
+   "Gisela, Blade of Goldnight",
+   1
+  ],
+  [
+   "Ravos, Soultender",
+   1
+  ],
+  [
+   "Swords to Plowshares",
+   1
+  ],
+  [
+   "Path to Exile",
+   1
+  ],
+  [
+   "Generous Gift",
+   1
+  ],
+  [
+   "Anguished Unmaking",
+   1
+  ],
+  [
+   "Boros Charm",
+   1
+  ],
+  [
+   "Rakdos Charm",
+   1
+  ],
+  [
+   "Terminate",
+   1
+  ],
+  [
+   "Wear // Tear",
+   1
+  ],
+  [
+   "Wrath of God",
+   1
+  ],
+  [
+   "Blasphemous Act",
+   1
+  ],
+  [
+   "Damn",
+   1
+  ],
+  [
+   "Skullclamp",
+   1
+  ],
+  [
+   "Impact Tremors",
+   1
+  ],
+  [
+   "Purphoros, God of the Forge",
+   1
+  ],
+  [
+   "Anointed Procession",
+   1
+  ],
+  [
+   "Intangible Virtue",
+   1
+  ],
+  [
+   "Honor of the Pure",
+   1
+  ],
+  [
+   "Mountain",
+   17
+  ],
+  [
+   "Plains",
+   17
+  ],
+  [
+   "Swamp",
+   15
+  ],
+  [
+   "Command Tower",
+   1
+  ],
+  [
+   "Sacred Foundry",
+   1
+  ],
+  [
+   "Blood Crypt",
+   1
+  ],
+  [
+   "Godless Shrine",
+   1
+  ],
+  [
+   "Clifftop Retreat",
+   1
+  ],
+  [
+   "Dragonskull Summit",
+   1
+  ],
+  [
+   "Isolated Chapel",
+   1
+  ]
+ ]
+}

@@ -4,7 +4,7 @@
 //! drops-made detector read it as 0.0%); a 35-land deck must not flood.
 
 use super::deck::build_sim_deck;
-use super::findings::{find_problems, mana_base};
+use super::findings::{analyze_findings, mana_base};
 use super::game::run_game;
 use super::hypgeo::flood_expectation;
 use super::model::Role;
@@ -214,7 +214,10 @@ fn mana_base_verdicts_match_bands() {
     assert_eq!(verdict.bracket_target_lands, [33, 38]);
     assert_eq!(verdict.verdict, "on target", "{}", verdict.verdict);
     assert_eq!(verdict.total_sources, 44, "35 lands + 9 rocks");
-    assert_eq!(verdict.rocks, 9, "the rock rows classify as rocks");
+    assert_eq!(
+        verdict.artifact_mana_sources, 9,
+        "artifact sources are counted"
+    );
 
     // A 44-land deck: trim lands.
     let (deck, cards) = deck_with_lands(44, "fat");
@@ -503,9 +506,9 @@ fn rock_heavy_screw_suggests_color_fix_not_lands() {
         .map(|_| super::game::run_game(&sim_deck, &mut rng, 10))
         .collect();
     let stats = super::aggregate::aggregate(&logs, &sim_deck, 10);
-    let problems = find_problems(&stats, &sim_deck);
+    let problems = analyze_findings(&stats, &sim_deck);
     for p in &problems {
-        if p.kind == "mana_screw" {
+        if p.kind == "insufficient_land_drops" {
             assert!(
                 p.suggestion.contains("color") || p.suggestion.contains("colors"),
                 "a rock-heavy deck's screw advice names colors: {}",
@@ -545,11 +548,11 @@ fn flood_finding_respects_the_lands_matter_plan() {
     let logs: Vec<_> = (0..4000)
         .map(|_| run_game(&sim_deck, &mut rng, 10))
         .collect();
-    let problems = find_problems(
+    let problems = analyze_findings(
         &super::aggregate::aggregate(&logs, &sim_deck, 10),
         &sim_deck,
     );
-    if let Some(flood) = problems.iter().find(|p| p.kind == "mana_flood") {
+    if let Some(flood) = problems.iter().find(|p| p.kind == "excess_lands_seen") {
         assert!(
             flood.suggestion.contains("no land trim"),
             "lands-matter deck on target must not get a trim: {}",

@@ -62,7 +62,7 @@ pub struct PieceRef {
 }
 
 /// Assembly outcome for one variant in one game set.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone)]
 pub struct ComboAccess {
     /// Piece names joined with " + ".
     pub combo: String,
@@ -74,10 +74,8 @@ pub struct ComboAccess {
     pub bracket_tag: Option<String>,
     /// Target turn: max(manaValueNeeded, highest piece cmc), clamped.
     pub target_turn: u32,
-    /// Share of games where every piece reached a required zone in time,
-    /// serialized 0-100 (the JSON percent scale).
-    #[serde(serialize_with = "crate::deck::simulator::report::serialize_pct")]
-    pub pct_games: f64,
+    /// Share of games where every piece reached a required zone in time.
+    pub game_share: f64,
     /// Names of the pieces the deck lacks (empty for complete combos).
     pub missing: Vec<String>,
 }
@@ -270,7 +268,7 @@ pub fn measure(
             produces: candidate.produces.iter().take(2).cloned().collect(),
             bracket_tag: candidate.bracket_tag.clone(),
             target_turn: target,
-            pct_games: pct,
+            game_share: pct,
             missing: candidate.missing.clone(),
         };
         if candidate.complete {
@@ -289,8 +287,8 @@ pub fn measure(
 /// Rank complete combos: assembly rate first, feature count second.
 pub fn rank_complete(rows: &mut [ComboAccess]) {
     rows.sort_by(|a, b| {
-        b.pct_games
-            .partial_cmp(&a.pct_games)
+        b.game_share
+            .partial_cmp(&a.game_share)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then(b.produces.len().cmp(&a.produces.len()))
     });

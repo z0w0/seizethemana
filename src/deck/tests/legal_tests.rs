@@ -739,7 +739,7 @@ fn bracket_3_library_search_is_advisory_not_check() {
         "bracket 3 has no hard tutor count"
     );
     // No advisory when the deck searches nothing.
-    let cards = cards
+    let cards: std::collections::HashMap<String, CardRow> = cards
         .into_iter()
         .filter(|(n, _)| n != "Demonic Tutor" && n != "The Seriema")
         .collect();

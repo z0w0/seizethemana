@@ -1,8 +1,8 @@
 //! Deck construction for the simulator: joins parsed deck text to card
 //! rows and converts each entry into a `SimCard` via `parse`.
 
-use super::model::{Ability, AbilityTiming, Effect, Format, Role, SimCard, SimDeck, Tier};
-use super::oracle_parse::parse_sim_card;
+use super::model::{Format, Role, SimCard, SimDeck};
+use super::oracle_lower::parse_sim_card;
 use crate::db::CardRow;
 use crate::deck::grammar::is_bench_section;
 use std::collections::HashMap;
@@ -22,31 +22,6 @@ fn make_sim_card(
             ..SimCard::default()
         },
     }
-}
-
-/// The commander's engine tier: draw 1 per turn while on the battlefield
-/// when its oracle shows an unconditional repeatable draw — upkeep or
-/// end-step triggers. Attack-gated draws ("Whenever N attacks, draw…")
-/// stay off: they need animation and combat, which the normal attack path
-/// models.
-fn commander_engine_tier(cmd: &CardRow) -> Option<Tier> {
-    let lower = cmd.oracle_text.to_ascii_lowercase();
-    let trigger = if lower.starts_with("at the beginning of your upkeep") {
-        Some(AbilityTiming::OnUpkeep)
-    } else if lower.starts_with("at the beginning of your end step") {
-        Some(AbilityTiming::OnEndStep)
-    } else {
-        None
-    }?;
-    (lower.contains("draw") || lower.contains("investigate")).then_some(Tier {
-        at: 0,
-        animate: false,
-        abilities: vec![Ability {
-            trigger,
-            effect: Effect::Draw(1),
-            ..Ability::default()
-        }],
-    })
 }
 
 /// Build a `SimDeck` from parsed deck text joined to card rows.
@@ -83,18 +58,6 @@ pub fn build_sim_deck(
         };
         let mut sim = make_sim_card(&entry, cards);
         sim.role = Role::Wincon;
-        if let Some(card) = cards.get(name)
-            // The synthetic draw tier only fills the gap when the real
-            // parse produced no OnUpkeep draw already (otherwise both
-            // fire and upkeep draws double).
-            && sim.abilities().all(|a| {
-                !matches!(a.trigger, AbilityTiming::OnUpkeep | AbilityTiming::OnEndStep)
-                    || !matches!(a.effect, Effect::Draw(_))
-            })
-            && let Some(tier) = commander_engine_tier(card)
-        {
-            sim.station_tiers.insert(0, tier);
-        }
         commanders.push(sim);
     }
     let mut library = Vec::new();
@@ -114,12 +77,44 @@ pub fn build_sim_deck(
             }
         }
     }
+    // The companion lives in `cards` but never in the library: the
+    // fetch step moves it to hand once {3} is paid (CR 702.139a).
+    let companion = companion_card(deck, cards, &mut library);
     SimDeck {
+        companion,
         cards: library,
         commanders,
         format,
         rules,
     }
+}
+
+/// The deck's companion (CR 702.139) as an index into `cards`.
+///
+/// A deck may reveal at most one companion (CR 103.2b), so the first
+/// bench card with the Companion keyword wins. The condition is not
+/// validated: the sim assumes a legal companion, documented in the
+/// output assumptions. The card joins `cards` so casts can reference it,
+/// but never the library.
+fn companion_card(
+    deck: &crate::deck::grammar::Deck,
+    cards: &HashMap<String, CardRow>,
+    library: &mut Vec<SimCard>,
+) -> Option<super::model::CardIdx> {
+    let entry = deck
+        .sections
+        .iter()
+        .filter(|(section, _)| is_bench_section(section))
+        .flat_map(|(_, entries)| entries)
+        .find(|entry| {
+            cards
+                .get(&entry.name)
+                .is_some_and(|card| parse_sim_card(card).has_companion)
+        })?;
+    let sim = make_sim_card(entry, cards);
+    let idx = super::model::CardIdx(library.len() as u32);
+    library.push(sim);
+    Some(idx)
 }
 
 /// The deck's format key: `commander` when a COMMANDER section exists,
@@ -142,6 +137,7 @@ pub fn apply_format_override(deck: &mut SimDeck, format: &str) -> bool {
         let mut merged = deck.commanders.clone();
         merged.extend(deck.cards.clone());
         *deck = SimDeck {
+            companion: None,
             cards: merged,
             commanders: Vec::new(),
             format: Format::Constructed,

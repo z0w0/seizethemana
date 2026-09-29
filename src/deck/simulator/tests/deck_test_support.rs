@@ -15,7 +15,8 @@ use super::aggregate::aggregate;
 pub(super) use super::deck::build_sim_deck;
 pub(super) use super::game::run_game;
 
-pub(super) use super::oracle_parse::{parse_oracle_cost as parse_cost, parse_sim_card};
+pub(super) use super::oracle_lower::parse_sim_card;
+pub(super) use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use crate::deck::grammar::{Deck, DeckEntry};
 use rand::SeedableRng;
@@ -112,6 +113,8 @@ pub(super) const MODERN_FIXTURES: &[&str] = &[
     "ruby-storm",
     "tameshi-belcher",
     "whack 12 modern",
+    "boros energy 2026",
+    "oculus manifest modern",
 ];
 
 pub(super) const COMMANDER_FIXTURES: &[&str] = &[
@@ -165,6 +168,10 @@ pub(super) const COMMANDER_FIXTURES: &[&str] = &[
     "yuriko ninja tempo",
     "yshtola burn control",
     "zada token storm",
+    "shorikai vehicles",
+    "infinite guideline station",
+    "zurgo mobilize",
+    "sauron the dark lord",
 ];
 
 /// Parse a fixture file (`tests/deck_fixtures/<name>.json`).
@@ -303,6 +310,16 @@ pub(super) fn fixture(name: &str) -> DeckFixture {
         "vivi storm" => include_str!("deck_fixtures/vivi_storm.json"),
         "yshtola burn control" => include_str!("deck_fixtures/yshtola_burn_control.json"),
         "zada token storm" => include_str!("deck_fixtures/zada_token_storm.json"),
+        "boros energy 2026" => include_str!("deck_fixtures/boros_energy_2026.json"),
+        "oculus manifest modern" => {
+            include_str!("deck_fixtures/oculus_manifest_modern.json")
+        }
+        "shorikai vehicles" => include_str!("deck_fixtures/shorikai_vehicles.json"),
+        "infinite guideline station" => {
+            include_str!("deck_fixtures/infinite_guideline_station.json")
+        }
+        "zurgo mobilize" => include_str!("deck_fixtures/zurgo_mobilize.json"),
+        "sauron the dark lord" => include_str!("deck_fixtures/sauron_the_dark_lord.json"),
         _ => unreachable!("unknown fixture {name}"),
     };
     serde_json::from_str(text).expect("fixture JSON parses")
@@ -396,7 +413,7 @@ pub(super) fn sim(
     stats.removal_wipes = sim_deck
         .cards
         .iter()
-        .filter(|c| c.role == super::model::Role::Removal && c.flags.wipe)
+        .filter(|c| c.role == super::model::Role::Removal && c.flags.sweeps)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats

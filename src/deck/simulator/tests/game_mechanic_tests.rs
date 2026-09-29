@@ -7,7 +7,8 @@ use super::aggregate::aggregate;
 use super::game::run_game;
 use super::game_tests::stub_deck;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -18,7 +19,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -54,6 +55,7 @@ fn hasted_creature_attacks_entry_turn() {
         cards.push(rows[1].clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -89,6 +91,7 @@ fn landfall_engine_draws_on_land_drops() {
         cards.push(landfall_body.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -126,6 +129,7 @@ fn planeswalker_fires_loyalty_and_gains() {
         cards.push(card("Bear", "{2}", "Creature — Bear", "Vanilla."));
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![parse_sim_card(&cmd)],
         format: Format::Commander,
@@ -161,6 +165,7 @@ fn x_spell_pays_leftover_and_drains() {
         cards.push(x_drain.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -170,9 +175,9 @@ fn x_spell_pays_leftover_and_drains() {
     let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
     let stats = aggregate(&logs, &deck, 8);
     assert!(
-        stats.drain_total_by_turn[7] > 10.0,
-        "X drain spell should convert floated mana to drain, got {:.1}",
-        stats.drain_total_by_turn[7]
+        stats.opponent_life_loss_by_turn[7] > 10.0,
+        "X drain spell should convert floated mana to life_loss, got {:.1}",
+        stats.opponent_life_loss_by_turn[7]
     );
 }
 
@@ -195,6 +200,7 @@ fn extra_land_drop_engine_ramps() {
         cards.push(aesi_shape.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -237,6 +243,7 @@ fn extra_turn_replays_land_drop_and_engines() {
         cards.push(engine.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -275,6 +282,7 @@ fn per_cast_mana_engine_feeds_pool() {
         cards.push(cantrip.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -313,6 +321,7 @@ fn infinite_mana_engine_flags_census() {
         cards.push(card("Bear", "{2}", "Creature — Bear", "Vanilla."));
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -349,6 +358,7 @@ fn upkeep_drain_engine_resolves() {
         cards.push(card("Bear", "{2}", "Creature — Bear", "Vanilla."));
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -359,9 +369,9 @@ fn upkeep_drain_engine_resolves() {
     let stats = aggregate(&logs, &deck, 7);
     // Constructed: x1 per engine per turn. 6 copies x ~5 turns.
     assert!(
-        stats.drain_total_by_turn[6] > 2.0,
+        stats.opponent_life_loss_by_turn[6] > 2.0,
         "upkeep drain engine should resolve, got {:.1}",
-        stats.drain_total_by_turn[6]
+        stats.opponent_life_loss_by_turn[6]
     );
 }
 
@@ -388,6 +398,7 @@ fn constructed_drain_is_x1_not_x3() {
         cards.push(burn.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -398,9 +409,9 @@ fn constructed_drain_is_x1_not_x3() {
     let stats = aggregate(&logs, &deck, 8);
     // 6 copies x 3 damage, each cast once at most: total ≤ 18 avg.
     assert!(
-        stats.drain_total_by_turn[7] <= 20.0,
+        stats.opponent_life_loss_by_turn[7] <= 20.0,
         "constructed drain should be x1, got {:.1}",
-        stats.drain_total_by_turn[7]
+        stats.opponent_life_loss_by_turn[7]
     );
 }
 
@@ -426,6 +437,7 @@ fn kicker_pays_from_spare_mana() {
         cards.push(kicked.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -434,11 +446,11 @@ fn kicker_pays_from_spare_mana() {
     let mut rng = ChaCha8Rng::seed_from_u64(41);
     let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
     let stats = aggregate(&logs, &deck, 8);
-    // Kicked casts drain 5, unkicked 3. Either way, drain happens.
+    // Kicked casts deal 5 damage, unkicked 3. Neither is direct life loss.
     assert!(
-        stats.drain_total_by_turn[7] > 3.0,
-        "kicker burn should drain, got {:.1}",
-        stats.drain_total_by_turn[7]
+        stats.player_damage_by_turn[7] > 3.0,
+        "kicker burn should deal damage, got {:.1}",
+        stats.player_damage_by_turn[7]
     );
 }
 
@@ -471,6 +483,7 @@ fn kicker_ignores_restricted_bucket_mana() {
         cards.push(parse_sim_card(&kicked));
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -482,7 +495,10 @@ fn kicker_ignores_restricted_bucket_mana() {
     // by turn 6 the pool has at most ~5 general mana, so with the old
     // bucket-inflated check the drain compounded past the real spend.
     // With the fix, turn-5 drain stays at the unkicked rate mostly.
-    let over_drain = logs.iter().filter(|log| log.drain_total[5] > 10).count();
+    let over_drain = logs
+        .iter()
+        .filter(|log| log.opponent_life_loss[5] > 10)
+        .count();
     assert_eq!(
         over_drain, 0,
         "restricted-bucket mana must not fund a free kick: {over_drain}/200 games over-drain"
@@ -506,6 +522,7 @@ fn saga_chapters_fire_payoffs() {
         cards.push(saga.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -540,6 +557,7 @@ fn token_count_etb_feeds_bodies() {
         cards.push(maker.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -551,16 +569,16 @@ fn token_count_etb_feeds_bodies() {
     // Each cast Quad Maker = 1 body + 4 tokens; bodies by t6 should
     // exceed what 2-token ETBs would give.
     assert!(
-        stats.bodies_by_turn[5] > 3.0,
+        stats.creatures_by_turn[5] > 3.0,
         "four-token ETB should fill the board, got {:.2}",
-        stats.bodies_by_turn[5]
+        stats.creatures_by_turn[5]
     );
 }
 
 #[test]
 fn loyalty_token_plus1_counts_as_engine() {
     // A planeswalker +1 that creates tokens is a repeatable once-per-turn
-    // engine: it registers in engines_online the turn after the first
+    // source: it registers in repeatable_sources_online the turn after the first
     // activation (Liliana, Dreadhorde General class).
     let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
     let mut row = card(
@@ -571,11 +589,13 @@ fn loyalty_token_plus1_counts_as_engine() {
     );
     row.loyalty = Some("4".to_string());
     let walker = parse_sim_card(&row);
-    assert!(
-        walker
-            .abilities()
-            .any(|a| a.loyalty_gain == 1 && matches!(a.effect, Effect::Tokens(_)))
-    );
+    assert!(walker.unlocked_abilities(0).any(|ability| {
+        ability
+            .activation
+            .as_ref()
+            .is_some_and(|costs| costs.loyalty_change() == 1)
+            && matches!(ability.effect, SimEffect::Tokens(_))
+    }));
     deck.cards.push(walker);
     let mut rng = ChaCha8Rng::seed_from_u64(89);
     let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 10)).collect();
@@ -583,9 +603,9 @@ fn loyalty_token_plus1_counts_as_engine() {
     // Token engines only exist in games where the walker was drawn and
     // cast (1 copy in 66); a low bar: some games show an engine online.
     assert!(
-        stats.engines_by_turn[9] > 0.0,
+        stats.repeatable_sources_by_turn[9] > 0.0,
         "loyalty +1 token engines should register: {:.3}",
-        stats.engines_by_turn[9]
+        stats.repeatable_sources_by_turn[9]
     );
 }
 
@@ -633,7 +653,7 @@ fn sparse_deck_still_reports_screw() {
     );
 }
 
-/// A phyrexian kicker pip pays with 2 life (CR 118.3b): the kick's
+/// A phyrexian kicker pip pays with 2 life (CR 107.4f): the kick's
 /// mana part drops by the pip, the cast charges the life, and a
 /// life-starved board skips the kick.
 #[test]
@@ -659,6 +679,7 @@ fn kicker_phyrexian_pip_pays_life() {
         cards.push(kicked.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards: cards.iter().map(parse_sim_card).collect(),
         commanders: vec![],
         format: Format::Constructed,
@@ -668,11 +689,11 @@ fn kicker_phyrexian_pip_pays_life() {
     let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
     let stats = aggregate(&logs, &deck, 8);
     // The kick fires in most games (1 mana + 2 life is cheap) and the
-    // drain bumps from 3 to 5; the kick costs life, so life_paid moves.
+    // damage bumps from 3 to 5; the kick costs life, so life_paid moves.
     assert!(
-        stats.drain_total_by_turn[7] > 8.0,
-        "phyrexian kicker burn should drain across games, got {:.1}",
-        stats.drain_total_by_turn[7]
+        stats.player_damage_by_turn[7] > 8.0,
+        "phyrexian kicker burn should deal damage across games, got {:.1}",
+        stats.player_damage_by_turn[7]
     );
     let life_paid = stats.life_paid_avg;
     assert!(

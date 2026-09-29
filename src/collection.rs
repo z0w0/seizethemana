@@ -32,6 +32,29 @@ pub enum BinderType {
     Deck,
 }
 
+/// One binder location in a collection search result.
+#[derive(Debug, Clone, serde::Serialize)]
+struct CollectionLocationReport {
+    /// Binder or deck name.
+    binder: String,
+    /// Binder category.
+    binder_type: String,
+    /// Copies at this location.
+    quantity: i64,
+}
+
+/// Full card detail with collection-search score and locations.
+#[derive(Debug, Clone, serde::Serialize)]
+struct CollectionSearchReport {
+    /// Card detail shared with `stm card`.
+    #[serde(flatten)]
+    card: crate::card::CardReport,
+    /// Semantic search score.
+    score: f64,
+    /// Collection locations containing the card.
+    locations: Vec<CollectionLocationReport>,
+}
+
 impl BinderType {
     pub fn as_str(self) -> &'static str {
         match self {
@@ -538,7 +561,10 @@ pub fn run_query(
         .collect();
     if out_hits.is_empty() {
         if json {
-            println!("[]");
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Vec::<CollectionSearchReport>::new())?
+            );
         } else {
             out.error("no cards matched");
             out.hint("try broader words, or drop filters");
@@ -551,7 +577,7 @@ pub fn run_query(
         // One batched query per finish kind instead of four per card name.
         let ranges = crate::prints::price_ranges(conn, &names)?;
         let available_all = available_counts_all(conn)?;
-        let items: Vec<serde_json::Value> = out_hits
+        let items: Vec<CollectionSearchReport> = out_hits
             .iter()
             .map(|h| {
                 let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
@@ -559,7 +585,7 @@ pub fn run_query(
                     .unwrap_or_default();
                 // `owned` and `available` come from card_json (collection
                 // counts); `locations` is this command's per-hit extra.
-                let mut v = crate::card::card_json(
+                let card = crate::card::card_json(
                     &h.card,
                     &tag_index,
                     &range,
@@ -567,16 +593,19 @@ pub fn run_query(
                     &owned_counts,
                     &available_all,
                 );
-                v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
-                v["locations"] = serde_json::json!(
-                    h.locations
+                CollectionSearchReport {
+                    card,
+                    score: (f64::from(h.score) * 10_000.0).round() / 10_000.0,
+                    locations: h
+                        .locations
                         .iter()
-                        .map(|(b, t, q)| serde_json::json!({
-                            "binder": b, "type": t, "quantity": q,
-                        }))
-                        .collect::<Vec<_>>()
-                );
-                v
+                        .map(|(binder, binder_type, quantity)| CollectionLocationReport {
+                            binder: binder.clone(),
+                            binder_type: binder_type.clone(),
+                            quantity: *quantity,
+                        })
+                        .collect(),
+                }
             })
             .collect();
         println!("{}", serde_json::to_string_pretty(&items)?);

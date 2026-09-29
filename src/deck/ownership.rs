@@ -111,7 +111,7 @@ pub fn deck_assigned_map(
 /// `available` is the [`available_map`] and `assigned` the
 /// [`deck_assigned_map`] for this deck. `held_elsewhere` counts copies
 /// assigned to *other* decks (visible via the `held_elsewhere_map`); pass
-/// it to slot_map so missing slots can explain why they are missing.
+/// it to `slot_map` so missing slots can explain why they are missing.
 #[derive(Debug, Clone, PartialEq)]
 pub struct SlotOwnership {
     /// Copies assigned to this deck.
@@ -171,9 +171,13 @@ pub fn held_elsewhere_map(
 /// missing slots then report the plain `not_owned` reason.
 pub fn slot_map(
     deck: &super::Deck,
-    available: &std::collections::HashMap<String, i64>,
-    assigned: &std::collections::HashMap<String, i64>,
-    held_elsewhere: &std::collections::HashMap<String, (i64, Vec<String>)>,
+    available: &std::collections::HashMap<String, i64, impl std::hash::BuildHasher>,
+    assigned: &std::collections::HashMap<String, i64, impl std::hash::BuildHasher>,
+    held_elsewhere: &std::collections::HashMap<
+        String,
+        (i64, Vec<String>),
+        impl std::hash::BuildHasher,
+    >,
     is_basic: impl Fn(&str) -> bool,
 ) -> std::collections::HashMap<String, SlotOwnership> {
     let mut needed: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
@@ -188,7 +192,7 @@ pub fn slot_map(
         let in_deck = assigned.get(&name).copied().unwrap_or(0);
         let total = available.get(&name).copied().unwrap_or(0);
         let in_binder = total - in_deck;
-        let held_elsewhere = held_elsewhere.get(&name).map(|(n, _)| *n).unwrap_or(0);
+        let held_elsewhere = held_elsewhere.get(&name).map_or(0, |(n, _)| *n);
         let missing = (qty_needed - total).max(0);
         let coverage = if missing <= 0 {
             if in_deck >= qty_needed {

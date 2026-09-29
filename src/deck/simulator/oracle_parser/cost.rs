@@ -1,6 +1,6 @@
 //! Convert Scryfall mana-cost strings into simulator Cost values.
 
-use super::model::Cost;
+use super::super::model::Cost;
 
 /// Parse a Scryfall mana-cost string (`{2}{W}{W}`, `{W/U}`, `{1}{B/P}`,
 /// multi-face `{2}{B} // {B}`) into a cost. Multi-face costs union the
@@ -40,14 +40,18 @@ pub fn parse_cost(mana_cost: &str) -> Cost {
             .collect();
         let colored: Vec<usize> = letters
             .chars()
-            .filter_map(|c| super::model::COLORS.iter().position(|w| c == *w))
+            .filter_map(|c| {
+                super::super::model::COLORS
+                    .iter()
+                    .position(|color| c == color.symbol())
+            })
             .collect();
         if colored.len() == 1 && phyrexian {
             cost.phyrexian[colored[0]] += 1;
         } else if colored.len() == 1 {
             cost.pips[colored[0]] += 1;
         } else if colored.len() > 1 {
-            cost.flex_pips += 1;
+            cost.hybrid_pips += 1;
         }
     }
     cost

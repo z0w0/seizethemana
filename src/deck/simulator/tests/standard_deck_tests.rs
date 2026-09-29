@@ -146,9 +146,9 @@ fn topdeck_boros_tokens_emerges_bodies() {
     let deck = fixture_deck("boros tokens topdeck");
     let stats = sim(&deck, &cards, 200, 8);
     assert!(
-        stats.bodies_by_turn[5] > 2.5,
+        stats.creatures_by_turn[5] > 2.5,
         "boros tokens bodies by t6: {:.2}",
-        stats.bodies_by_turn[5]
+        stats.creatures_by_turn[5]
     );
 }
 
@@ -241,16 +241,16 @@ fn mono_blue_flash_holds_instant_speed() {
 }
 
 #[test]
-fn amalia_lifegain_combo_gains_life_drains() {
-    // Amalia lifegain: exploration + drain effects push the drain
-    // census (the combo plan converts life gain into burn).
+fn amalia_lifegain_combo_gains_life_deals_damage() {
+    // Amalia lifegain: exploration plus damage effects push the damage
+    // census (the combo plan converts life gain into damage).
     let cards = fixture_cards("amalia lifegain combo standard");
     let deck = fixture_deck("amalia lifegain combo standard");
     let stats = sim(&deck, &cards, 200, 8);
     assert!(
-        stats.drain_total_by_turn[7] > 0.3,
-        "amalia drain by t8: {:.1}",
-        stats.drain_total_by_turn[7]
+        stats.player_damage_by_turn[7] > 0.3,
+        "amalia damage by t8: {:.1}",
+        stats.player_damage_by_turn[7]
     );
 }
 
@@ -283,7 +283,7 @@ fn degradation_fixtures_report_known_problems() {
         let deck = fixture_deck(name);
         let sim_deck = build_sim_deck(&deck, &cards, None);
         let stats = sim(&deck, &cards, 200, 8);
-        let problems = super::findings::find_problems(&stats, &sim_deck);
+        let problems = super::findings::analyze_findings(&stats, &sim_deck);
         let kinds: Vec<&str> = problems.iter().map(|p| p.kind).collect();
         assert!(
             !kinds.is_empty(),

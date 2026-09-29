@@ -29,6 +29,50 @@ pub struct Completion {
 /// The best example combo a missing card completes: (pieces, bracket tag).
 type BestExample = (String, Option<String>);
 
+/// Best completed-combo details for a suggested card.
+#[derive(Debug, serde::Serialize)]
+struct CompletionComboReport {
+    /// Names of the combo pieces.
+    pieces: String,
+    /// Spellbook bracket tag.
+    bracket_tag: Option<String>,
+    /// Win feature produced by the combo.
+    produces: Vec<&'static str>,
+    /// Completed Spellbook variant count.
+    variants_completed: usize,
+}
+
+/// Typed card-suggestion row with its combo completion.
+#[derive(Debug, serde::Serialize)]
+struct ComboCompletionReport {
+    /// Card name.
+    name: String,
+    /// Oracle identifier.
+    oracle_id: String,
+    /// Printed mana cost.
+    mana_cost: String,
+    /// Mana value.
+    mana_value: f64,
+    /// Card type line.
+    type_line: String,
+    /// EDHREC rank.
+    edhrec_rank: Option<i64>,
+    /// Game Changer status.
+    game_changer: Option<bool>,
+    /// Copies owned.
+    owned: i64,
+    /// Suggestion score.
+    score: f64,
+    /// Cheapest price when known.
+    price: Option<f64>,
+    /// Best combo completion.
+    combo: CompletionComboReport,
+    /// Oracle rules text.
+    oracle_text: String,
+    /// Commander color identity.
+    color_identity: Option<Vec<String>>,
+}
+
 /// Rank cards that complete one-card-away combo variants for the deck.
 ///
 /// Every near-miss variant (the deck holds all pieces but one) contributes
@@ -301,34 +345,34 @@ fn print_json(conn: &Connection, completions: &[Completion]) -> anyhow::Result<(
     let names: Vec<String> = completions.iter().map(|c| c.card.name.clone()).collect();
     // One batched query per finish kind instead of four per card name.
     let ranges = crate::prints::price_ranges(conn, &names)?;
-    let items: Vec<serde_json::Value> = completions
+    let items: Vec<ComboCompletionReport> = completions
         .iter()
-        .map(|c| {
-            let identity: serde_json::Value =
-                serde_json::from_str(&c.card.color_identity).unwrap_or_default();
-            serde_json::json!({
-                "name": c.card.name,
-                "oracle_id": c.card.oracle_id,
-                "mana_cost": c.card.mana_cost,
-                "cmc": c.card.cmc,
-                "type_line": c.card.type_line,
-                "edhrec_rank": c.card.edhrec_rank,
-                "game_changer": c.card.game_changer,
-                "owned": owned.get(&c.card.name).copied().unwrap_or(0),
-                "score": (c.score * 10_000.0).round() / 10_000.0,
-                "price": ranges
-                    .get(&c.card.name)
-                    .and_then(|r| r.cheapest.as_ref())
-                    .and_then(|p| p.usd),
-                "combo": {
-                    "pieces": c.best.0,
-                    "bracket_tag": c.best.1,
-                    "produces": if c.win_game { vec!["Win the game"] } else { vec![] },
-                    "variants_completed": c.variants_completed,
+        .map(|c| ComboCompletionReport {
+            name: c.card.name.clone(),
+            oracle_id: c.card.oracle_id.clone(),
+            mana_cost: c.card.mana_cost.clone(),
+            mana_value: c.card.cmc,
+            type_line: c.card.type_line.clone(),
+            edhrec_rank: c.card.edhrec_rank,
+            game_changer: c.card.game_changer,
+            owned: owned.get(&c.card.name).copied().unwrap_or(0),
+            score: f64::from((c.score * 10_000.0).round() / 10_000.0),
+            price: ranges
+                .get(&c.card.name)
+                .and_then(|range| range.cheapest.as_ref())
+                .and_then(|print| print.usd),
+            combo: CompletionComboReport {
+                pieces: c.best.0.clone(),
+                bracket_tag: c.best.1.clone(),
+                produces: if c.win_game {
+                    vec!["Win the game"]
+                } else {
+                    vec![]
                 },
-                "oracle_text": c.card.oracle_text,
-                "color_identity": identity,
-            })
+                variants_completed: c.variants_completed,
+            },
+            oracle_text: c.card.oracle_text.clone(),
+            color_identity: serde_json::from_str(&c.card.color_identity).ok(),
         })
         .collect();
     println!("{}", serde_json::to_string_pretty(&items)?);

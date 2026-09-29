@@ -110,7 +110,7 @@ pub(super) fn print_json(
     Ok(())
 }
 
-/// Full card detail as a JSON value (also used by collection JSON output).
+/// Full card detail as a typed report (also used by collection JSON output).
 ///
 /// Price fields are per-printing and in US dollars: `price`/`price_foil`
 /// carry the cheapest released English printing, `max_price`/`max_price_foil`
@@ -129,12 +129,11 @@ pub fn card_json(
     universe: &crate::universe::CardUniverse,
     owned_all: &std::collections::HashMap<String, i64>,
     available_all: &std::collections::HashMap<String, i64>,
-) -> serde_json::Value {
-    let colors: serde_json::Value = serde_json::from_str(&card.colors).unwrap_or_default();
-    let identity: serde_json::Value =
-        serde_json::from_str(&card.color_identity).unwrap_or_default();
-    let keywords: serde_json::Value = serde_json::from_str(&card.keywords).unwrap_or_default();
-    let legalities: serde_json::Value = serde_json::from_str(&card.legalities).unwrap_or_default();
+) -> CardReport {
+    let colors = serde_json::from_str(&card.colors).ok();
+    let identity = serde_json::from_str(&card.color_identity).ok();
+    let keywords = serde_json::from_str(&card.keywords).ok();
+    let legalities = serde_json::from_str(&card.legalities).ok();
     let (usd, usd_foil) = (
         range.cheapest.as_ref().and_then(|p| p.usd),
         range.cheapest_foil.as_ref().and_then(|p| p.usd_foil),
@@ -144,50 +143,109 @@ pub fn card_json(
         range.priciest_foil.as_ref().and_then(|p| p.usd_foil),
     );
     let basic = crate::collection::is_basic_name(&card.name);
-    let owned = if basic {
-        serde_json::Value::Null
-    } else {
-        serde_json::json!(owned_all.get(&card.name).copied().unwrap_or(0))
-    };
-    let available = if basic {
-        serde_json::Value::Null
-    } else {
-        serde_json::json!(available_all.get(&card.name).copied().unwrap_or(0))
-    };
-    serde_json::json!({
-        "name": card.name,
-        "oracle_id": card.oracle_id,
-        "mana_cost": card.mana_cost,
-        "cmc": card.cmc,
-        "type_line": card.type_line,
-        "colors": colors,
-        "color_identity": identity,
-        "keywords": keywords,
-        "power": card.power,
-        "toughness": card.toughness,
-        "loyalty": card.loyalty,
-        "oracle_text": card.oracle_text,
-        "rarity": card.rarity,
-        "edhrec_rank": card.edhrec_rank,
-        "legalities": legalities,
-        "game_changer": card.game_changer,
-        "set": card.set_code,
-        "set_name": universe.set_name,
-        "set_type": universe.set_type,
-        "block": universe.block,
-        "universe": universe.universe,
-        "franchise": universe.franchise,
-        "collector_number": card.collector_number,
-        "scryfall_id": card.scryfall_id,
-        "released_at": card.released_at,
-        "tags": tag_index.labels_for(&card.oracle_id),
-        "price": usd,
-        "price_foil": usd_foil,
-        "max_price": max_usd,
-        "max_price_foil": max_usd_foil,
-        "owned": owned,
-        "available": available,
-    })
+    CardReport {
+        name: card.name.clone(),
+        oracle_id: card.oracle_id.clone(),
+        mana_cost: card.mana_cost.clone(),
+        mana_value: card.cmc,
+        type_line: card.type_line.clone(),
+        colors,
+        color_identity: identity,
+        keywords,
+        power: card.power.clone(),
+        toughness: card.toughness.clone(),
+        loyalty: card.loyalty.clone(),
+        oracle_text: card.oracle_text.clone(),
+        rarity: card.rarity.clone(),
+        edhrec_rank: card.edhrec_rank,
+        legalities,
+        game_changer: card.game_changer,
+        set: card.set_code.clone(),
+        set_name: universe.set_name.clone(),
+        set_type: universe.set_type.clone(),
+        block: universe.block.clone(),
+        universe: universe.universe.to_string(),
+        franchise: universe.franchise.clone(),
+        collector_number: card.collector_number.clone(),
+        scryfall_id: card.scryfall_id.clone(),
+        released_at: card.released_at.clone(),
+        tags: tag_index.labels_for(&card.oracle_id),
+        price: usd,
+        price_foil: usd_foil,
+        max_price: max_usd,
+        max_price_foil: max_usd_foil,
+        owned: (!basic).then(|| owned_all.get(&card.name).copied().unwrap_or(0)),
+        available: (!basic).then(|| available_all.get(&card.name).copied().unwrap_or(0)),
+    }
+}
+
+/// Typed card-detail row shared by card, collection, and search output.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct CardReport {
+    /// Card name.
+    pub name: String,
+    /// Oracle identifier.
+    pub oracle_id: String,
+    /// Printed mana cost.
+    pub mana_cost: String,
+    /// Mana value.
+    pub mana_value: f64,
+    /// Card type line.
+    pub type_line: String,
+    /// Colors in the card's color identity data.
+    pub colors: Option<Vec<String>>,
+    /// Commander color identity.
+    pub color_identity: Option<Vec<String>>,
+    /// Oracle keywords.
+    pub keywords: Option<Vec<String>>,
+    /// Printed power.
+    pub power: Option<String>,
+    /// Printed toughness.
+    pub toughness: Option<String>,
+    /// Printed loyalty.
+    pub loyalty: Option<String>,
+    /// Oracle rules text.
+    pub oracle_text: String,
+    /// Rarity.
+    pub rarity: String,
+    /// EDHREC rank.
+    pub edhrec_rank: Option<i64>,
+    /// Format legality data from the card source.
+    pub legalities: Option<std::collections::BTreeMap<String, String>>,
+    /// Whether the card is marked as a game changer.
+    pub game_changer: Option<bool>,
+    /// Set code.
+    pub set: String,
+    /// Set name when known.
+    pub set_name: Option<String>,
+    /// Set type when known.
+    pub set_type: Option<String>,
+    /// Block when known.
+    pub block: Option<String>,
+    /// Universe when known.
+    pub universe: String,
+    /// Franchise when known.
+    pub franchise: Option<String>,
+    /// Collector number.
+    pub collector_number: String,
+    /// Scryfall identifier.
+    pub scryfall_id: String,
+    /// Release date.
+    pub released_at: String,
+    /// Search tags.
+    pub tags: Vec<String>,
+    /// Cheapest normal-print price.
+    pub price: Option<f64>,
+    /// Cheapest foil price.
+    pub price_foil: Option<f64>,
+    /// Highest normal-print price.
+    pub max_price: Option<f64>,
+    /// Highest foil price.
+    pub max_price_foil: Option<f64>,
+    /// All owned copies, null for unlimited basic lands.
+    pub owned: Option<i64>,
+    /// Available binder copies, null for unlimited basic lands.
+    pub available: Option<i64>,
 }
 
 /// Render a framed magic-card-style view on stdout.
@@ -361,13 +419,10 @@ fn print_text(
     // banned and not_legal never count), wrapped inside the frame.
     // Wrap plain text first, then style, so ANSI codes never split mid-wrap.
     let legal: Vec<String> =
-        serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&card.legalities)
+        serde_json::from_str::<std::collections::BTreeMap<String, String>>(&card.legalities)
             .unwrap_or_default()
             .into_iter()
-            .filter(|(_, v)| {
-                v.as_str()
-                    .is_some_and(|s| s == "legal" || s == "restricted")
-            })
+            .filter(|(_, status)| status == "legal" || status == "restricted")
             .map(|(k, _)| k)
             .collect();
     if !legal.is_empty() {
@@ -426,14 +481,15 @@ mod tests {
     #[test]
     fn card_json_carries_all_fields() {
         let index = empty_index();
-        let v = card_json(
+        let v = serde_json::to_value(card_json(
             &row(),
             &index,
             &Default::default(),
             &Default::default(),
             &Default::default(),
             &Default::default(),
-        );
+        ))
+        .unwrap();
         assert_eq!(v["name"], "Test Card");
         assert_eq!(v["set"], "TST");
         assert_eq!(v["scryfall_id"], "sid");
@@ -457,14 +513,15 @@ mod tests {
         r.colors = "not json".into();
         r.legalities = "also not".into();
         let index = empty_index();
-        let v = card_json(
+        let v = serde_json::to_value(card_json(
             &r,
             &index,
             &Default::default(),
             &Default::default(),
             &Default::default(),
             &Default::default(),
-        );
+        ))
+        .unwrap();
         assert_eq!(v["colors"], serde_json::Value::Null);
         assert_eq!(v["legalities"], serde_json::Value::Null);
     }
@@ -476,14 +533,15 @@ mod tests {
         let index = empty_index();
         let mut owned = std::collections::HashMap::new();
         owned.insert("Plains".to_string(), 4_i64);
-        let v = card_json(
+        let v = serde_json::to_value(card_json(
             &r,
             &index,
             &Default::default(),
             &Default::default(),
             &owned,
             &Default::default(),
-        );
+        ))
+        .unwrap();
         // Basics are unlimited-supply: owned/available stay null even when
         // collection rows exist.
         assert_eq!(v["owned"], serde_json::Value::Null);
@@ -497,14 +555,15 @@ mod tests {
         owned.insert("Test Card".to_string(), 3_i64);
         let mut available = std::collections::HashMap::new();
         available.insert("Test Card".to_string(), 2_i64);
-        let v = card_json(
+        let v = serde_json::to_value(card_json(
             &row(),
             &index,
             &Default::default(),
             &Default::default(),
             &owned,
             &available,
-        );
+        ))
+        .unwrap();
         assert_eq!(v["owned"], 3);
         assert_eq!(v["available"], 2);
     }

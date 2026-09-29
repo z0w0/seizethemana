@@ -1,23 +1,21 @@
-//! Problem findings from the aggregated simulation stats: the deck
-//! problems (`find_problems`), the mana-base verdict, and combo-pair
+//! Findings from the aggregated simulation stats: deck diagnoses
+//! (`analyze_findings`), the mana-base verdict, and combo-pair
 //! assembly timing. Split from `aggregate` to keep files small.
 
 use super::aggregate::{CardCast, SimStats};
 use super::game::GameLog;
-use super::model::{Role, SimDeck};
+use super::model::{ManaColor, Role, SimDeck};
 
 /// One combo pair's assembly timing: share of games where both pieces
 /// were seen in hand by the target turn.
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone)]
 pub struct ComboAccess {
     /// Both piece names, "A + B".
     pub pair: String,
     /// Target turn: the later piece's cast-on-curve turn.
     pub target_turn: u32,
-    /// Share of games with both pieces seen in hand by the target turn,
-    /// serialized 0-100 (the JSON percent scale).
-    #[serde(serialize_with = "crate::deck::simulator::report::serialize_pct")]
-    pub pct_games: f64,
+    /// Share of games with both pieces seen by the target turn.
+    pub game_share: f64,
 }
 
 /// Compute combo pair access from game logs. Pieces the deck does not
@@ -39,7 +37,7 @@ pub fn piece_pair_access(
             out.push(ComboAccess {
                 pair: format!("{a} + {b}"),
                 target_turn: 0,
-                pct_games: 0.0,
+                game_share: 0.0,
             });
             continue;
         };
@@ -61,7 +59,7 @@ pub fn piece_pair_access(
         out.push(ComboAccess {
             pair: format!("{a} + {b}"),
             target_turn: target,
-            pct_games: both,
+            game_share: both,
         });
     }
     out
@@ -74,10 +72,10 @@ pub struct PipBlock {
     /// Card name.
     pub name: String,
     /// WUBRG color letter that was missing.
-    pub color: char,
+    pub color: ManaColor,
     /// Share of games with at least one pip-blocked cast of this card
     /// for this color.
-    pub pct_games: f64,
+    pub game_share: f64,
 }
 
 /// Severity-scaled magnitude word for a share (the suggestion sizes to the
@@ -96,8 +94,7 @@ fn magnitude(pct: f64) -> &'static str {
 /// spells. A rock-heavy deck's sources do not read as land-screwed.
 fn ramp_source_count(deck: &SimDeck) -> usize {
     use super::model::Role;
-    deck.cards
-        .iter()
+    deck.library_cards()
         .filter(|c| matches!(c.role, Role::Rock | Role::Dork | Role::RampSpell))
         .count()
 }
@@ -105,14 +102,14 @@ fn ramp_source_count(deck: &SimDeck) -> usize {
 /// The deck's mana base against the target bands (research-derived:
 /// EDHREC average decks n=46 across 11 commanders, 2026-09; Sam Black's
 /// cEDH land-count guidance; Frank Karsten's 60-card land-count method).
-#[derive(Debug, Default, Clone, serde::Serialize)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct ManaBase {
     /// Land count (basics + nonbasic lands).
     pub lands: usize,
-    /// Rocks.
-    pub rocks: usize,
+    /// Artifact mana sources.
+    pub artifact_mana_sources: usize,
     /// Creature mana sources.
-    pub dorks: usize,
+    pub creature_mana_sources: usize,
     /// Ramp spells (search lands, ritual-class accelerants).
     pub ramp_spells: usize,
     /// Total mana sources (lands + ramp).
@@ -128,10 +125,11 @@ pub struct ManaBase {
     /// The bracket the bands came from (inferred from the Game Changer
     /// census when the command got no explicit `--bracket`); `null` for
     /// 60-card formats.
+    #[serde(deserialize_with = "super::report_schema::deserialize_present_option")]
     pub bracket: Option<u8>,
     /// True when `bracket` was inferred from the Game Changer census
     /// rather than passed explicitly.
-    pub bracket_inferred: bool,
+    pub bracket_inferred_from_game_changers: bool,
 }
 
 /// Land and ramp target bands by bracket (1-5). Lands-matter decks widen
@@ -150,9 +148,9 @@ fn bracket_bands(bracket: u8, lands_matter: bool) -> ([usize; 2], [usize; 2]) {
 
 /// True when the card draws or cantrips (velocity, not raw card count).
 fn is_draw_or_cantrip(card: &super::model::SimCard) -> bool {
-    card.riders.draws_on_cast > 0
-        || card.riders.scry_on_cast > 0
-        || card.riders.surveils_on_cast > 0
+    card.spell_data.draws_on_cast > 0
+        || card.spell_data.scry_on_cast > 0
+        || card.spell_data.surveils_on_cast > 0
 }
 
 /// Land band for a 60-card deck from its average nonland mana value and
@@ -194,7 +192,11 @@ fn constructed_land_band(deck: &SimDeck) -> [usize; 2] {
 /// compare against Karsten-style bands derived from the deck's average
 /// mana value, with `bracket: null` and no ramp verdict. A bracket
 /// outside 1-5 falls back to the casual band.
-pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBase {
+pub fn mana_base(
+    deck: &SimDeck,
+    bracket: u8,
+    bracket_inferred_from_game_changers: bool,
+) -> ManaBase {
     use super::model::Role;
     // Land/spell MDFCs count as partial land sources (Karsten's
     // weights, shared with the mana audit) — they are one card, not two.
@@ -205,22 +207,29 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
             0.0
         }
     };
-    let lands = deck.cards.iter().filter(|c| c.role == Role::Land).count();
+    let lands = deck
+        .library_cards()
+        .filter(|c| c.role == Role::Land)
+        .count();
     let mdfc_lands = deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.is_mdfc_spell)
         .map(mdfc_weight)
         .sum::<f64>();
     let lands = (lands as f64 + mdfc_lands).round() as usize;
-    let rocks = deck.cards.iter().filter(|c| c.role == Role::Rock).count();
-    let dorks = deck.cards.iter().filter(|c| c.role == Role::Dork).count();
+    let artifact_mana_sources = deck
+        .library_cards()
+        .filter(|c| c.role == Role::Rock)
+        .count();
+    let creature_mana_sources = deck
+        .library_cards()
+        .filter(|c| c.role == Role::Dork)
+        .count();
     let ramp_spells = deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == Role::RampSpell)
         .count();
-    let total_sources = lands + rocks + dorks + ramp_spells;
+    let total_sources = lands + artifact_mana_sources + creature_mana_sources + ramp_spells;
     if deck.format == super::model::Format::Constructed {
         let land_band = constructed_land_band(deck);
         let verdict = if lands < land_band[0] {
@@ -246,21 +255,21 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
         };
         return ManaBase {
             lands,
-            rocks,
-            dorks,
+            artifact_mana_sources,
+            creature_mana_sources,
             ramp_spells,
             total_sources,
             bracket_target_lands: land_band,
             bracket_target_ramp: [0, 0],
             verdict,
             bracket: None,
-            bracket_inferred: false,
+            bracket_inferred_from_game_changers: false,
         };
     }
     // Lands-matter: the commander or any card name carries a landfall /
     // lands-matter engine signal. The parse marks extra-land-drop boards
     // (`extra_land_drops`); their presence widens the band.
-    let lands_matter = deck.cards.iter().any(|c| c.flags.extra_land_drops)
+    let lands_matter = deck.library_cards().any(|c| c.flags.extra_land_drops)
         || deck.commanders.iter().any(|c| c.flags.extra_land_drops);
     let bracket = bracket.clamp(1, 5);
     let (land_band, ramp_band) = bracket_bands(bracket, lands_matter);
@@ -289,11 +298,11 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
             land_band[1],
             suffix
         )
-    } else if ramp_spells + rocks + dorks < ramp_band[0] {
+    } else if ramp_spells + artifact_mana_sources + creature_mana_sources < ramp_band[0] {
         format!(
             "add {} ramp ({} of band {}-{}){}",
-            (ramp_band[0] - (rocks + dorks + ramp_spells)).max(1),
-            rocks + dorks + ramp_spells,
+            (ramp_band[0] - (artifact_mana_sources + creature_mana_sources + ramp_spells)).max(1),
+            artifact_mana_sources + creature_mana_sources + ramp_spells,
             ramp_band[0],
             ramp_band[1],
             suffix
@@ -305,12 +314,12 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
     };
     ManaBase {
         lands,
-        rocks,
-        dorks,
+        artifact_mana_sources,
+        creature_mana_sources,
         ramp_spells,
         total_sources,
         bracket_target_lands: land_band,
-        bracket_inferred,
+        bracket_inferred_from_game_changers,
         bracket_target_ramp: ramp_band,
         verdict,
         bracket: Some(bracket),
@@ -319,27 +328,26 @@ pub fn mana_base(deck: &SimDeck, bracket: u8, bracket_inferred: bool) -> ManaBas
 
 /// One deck problem found by the simulation.
 #[derive(Debug, Clone)]
-pub struct Problem {
-    /// Problem kind ("mana_flood", "color_screw", "draw_starvation", ...).
+pub struct Finding {
+    /// Stable finding kind that names the measured deficit.
     pub kind: &'static str,
     /// Severity bucket from the affected-game share.
     pub severity: &'static str,
     /// Share of games affected, when game-count based.
-    pub pct_games: Option<f64>,
+    pub game_share: Option<f64>,
     /// Color letter for `color_screw` problems.
-    pub color: Option<char>,
+    pub color: Option<ManaColor>,
     /// Human explanation with the numbers.
-    pub detail: String,
+    pub explanation: String,
     /// Category + magnitude suggestion (never specific cards).
     pub suggestion: String,
-    /// Cards or counts behind the finding, filled by
-    /// [`super::findings_detail::explain`] (empty until then).
-    pub offenders: Vec<ProblemOffender>,
+    /// Cards or counts behind the finding, filled by the detail pass.
+    pub evidence: Vec<FindingEvidence>,
 }
 
-/// Re-export so callers of `Problem` can name the offender type without
+/// Re-export so callers of `Finding` can name the evidence type without
 /// importing the detail module.
-pub use super::findings_detail::ProblemOffender;
+pub use super::findings_detail::FindingEvidence;
 
 /// Severity bucket for an affected-game share.
 fn severity(pct: f64) -> &'static str {
@@ -362,7 +370,7 @@ fn color_source_shape(deck: &SimDeck, color_index: usize) -> (usize, usize, &'st
     let mut dedicated = 0usize;
     let mut choice = 0usize;
     let mut enters_tapped = 0usize;
-    for card in deck.cards.iter().filter(|c| c.role == Role::Land) {
+    for card in deck.library_cards().filter(|c| c.role == Role::Land) {
         let Some(y) = &card.tap else { continue };
         let serves = y.any_pips > 0
             || y.opponent_any
@@ -393,25 +401,25 @@ fn color_source_shape(deck: &SimDeck, color_index: usize) -> (usize, usize, &'st
 }
 
 /// Find deck problems from the aggregated stats.
-pub fn find_problems(stats: &SimStats, deck: &SimDeck) -> Vec<Problem> {
+pub fn analyze_findings(stats: &SimStats, deck: &SimDeck) -> Vec<Finding> {
     let commander = !deck.commanders.is_empty();
     let turns = stats.turns as usize;
-    let mut problems = Vec::new();
-    screw_flood_problems(stats, deck, turns, &mut problems);
-    commander_late_problem(stats, deck, commander, turns, &mut problems);
-    color_screw_problems(stats, deck, &mut problems);
-    draw_unused_problems(stats, commander, turns, &mut problems);
-    dead_cards_problem(stats, deck, commander, &mut problems);
-    access_problems(stats, commander, turns, &mut problems);
+    let mut findings = Vec::new();
+    screw_flood_problems(stats, deck, turns, &mut findings);
+    commander_late_problem(stats, deck, commander, turns, &mut findings);
+    color_screw_problems(stats, deck, &mut findings);
+    draw_unused_problems(stats, commander, turns, &mut findings);
+    dead_cards_problem(stats, deck, commander, &mut findings);
+    access_problems(stats, commander, turns, &mut findings);
     // Cause-level detail: every problem gets its offender list (and, where
     // the data supports it, a cause-specific suggestion) from the same
     // aggregated stats — with the same dead-card threshold the finding
     // itself used.
     let dead_threshold = if commander { 0.60 } else { 0.55 };
-    for problem in &mut problems {
-        super::findings_detail::explain_with_threshold(problem, stats, deck, dead_threshold);
+    for finding in &mut findings {
+        super::findings_detail::explain_with_threshold(finding, stats, deck, dead_threshold);
     }
-    problems
+    findings
 }
 
 /// Mana screw and flood findings, against the draw-adjusted expectation.
@@ -419,7 +427,7 @@ fn screw_flood_problems(
     stats: &SimStats,
     deck: &SimDeck,
     turns: usize,
-    problems: &mut Vec<Problem>,
+    findings: &mut Vec<Finding>,
 ) {
     if turns >= 4 && stats.screw_pct >= 0.20 {
         let constructed = deck.format == super::model::Format::Constructed;
@@ -448,17 +456,17 @@ fn screw_flood_problems(
                 sources
             )
         };
-        problems.push(Problem {
-            kind: "mana_screw",
+        findings.push(Finding {
+            kind: "insufficient_land_drops",
             severity: severity(stats.screw_pct * 100.0),
-            pct_games: Some(stats.screw_pct * 100.0),
+            game_share: Some(stats.screw_pct),
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you run out of lands often: {:.1}% of games had 2 or fewer lands by turn 4",
                 stats.screw_pct * 100.0
             ),
             suggestion,
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
     // Flood fires when the rate sits well above the velocity-adjusted
@@ -467,7 +475,7 @@ fn screw_flood_problems(
     // all). Lands-matter decks flood by design: their finding reads as
     // an observation, never a trim instruction.
     if turns >= 4 && stats.flood_pct > 0.0 {
-        let lands_matter = deck.cards.iter().any(|c| c.flags.extra_land_drops)
+        let lands_matter = deck.library_cards().any(|c| c.flags.extra_land_drops)
             || deck.commanders.iter().any(|c| c.flags.extra_land_drops);
         let detail = format!(
             "too many lands: {:.1}% of games saw 6 or more lands by turn 4 (about {:.1}% is normal at this deck's draw rate)",
@@ -482,17 +490,17 @@ fn screw_flood_problems(
             } else {
                 ""
             };
-            problems.push(Problem {
-                kind: "mana_flood",
+            findings.push(Finding {
+                kind: "excess_lands_seen",
                 severity: severity(stats.flood_pct * 100.0),
-                pct_games: Some(stats.flood_pct * 100.0),
+                game_share: Some(stats.flood_pct),
                 color: None,
-                detail,
+                explanation: detail,
                 suggestion: format!(
                     "trim {} land slots toward the curve{lands_matter_note}",
                     magnitude(stats.flood_pct * 100.0)
                 ),
-                offenders: Vec::new(),
+                evidence: Vec::new(),
             });
         }
     }
@@ -504,31 +512,31 @@ fn commander_late_problem(
     deck: &SimDeck,
     commander: bool,
     turns: usize,
-    problems: &mut Vec<Problem>,
+    findings: &mut Vec<Finding>,
 ) {
     if commander && turns >= 4 {
         let cmc_turn =
             (deck.commanders.first().map(|c| c.cost.total()).unwrap_or(0) as usize).clamp(1, turns);
         let by_curve = stats.commander_castable_by[cmc_turn.min(12)];
         if by_curve < 0.60 {
-            problems.push(Problem {
-                kind: "commander_late",
+            findings.push(Finding {
+                kind: "late_commander_cast",
                 severity: severity((1.0 - by_curve) * 100.0),
-                pct_games: Some((1.0 - by_curve) * 100.0),
+                game_share: Some(1.0 - by_curve),
                 color: None,
-                detail: format!(
+                explanation: format!(
                     "your commander comes down late: castable by turn {cmc_turn} in only {:.1}% of games",
                     by_curve * 100.0
                 ),
                 suggestion: "add 2-3 ramp sources or lower the early curve".to_string(),
-                offenders: Vec::new(),
+                evidence: Vec::new(),
             });
         }
     }
 }
 
 /// Color screw findings: any color pip missed in 10%+ of games.
-fn color_screw_problems(stats: &SimStats, deck: &SimDeck, problems: &mut Vec<Problem>) {
+fn color_screw_problems(stats: &SimStats, deck: &SimDeck, findings: &mut Vec<Finding>) {
     use super::model::COLORS;
     /// True for the unlimited basic land names (the same exemption
     /// `deck update`'s singleton guard uses). Wastes and snow basics are
@@ -553,22 +561,23 @@ fn color_screw_problems(stats: &SimStats, deck: &SimDeck, problems: &mut Vec<Pro
             } else if choice_sources > 0 {
                 format!(
                     "swap basics for lands that also tap for {} (choice sources exist but basics still dominate)",
-                    COLORS[i],
+                    COLORS[i].symbol(),
                 )
             } else {
                 format!(
                     "add ~2-3 {} sources (dual lands that tap for {} beat more basics)",
-                    COLORS[i], COLORS[i],
+                    COLORS[i].symbol(),
+                    COLORS[i].symbol(),
                 )
             };
-            problems.push(Problem {
-                kind: "color_screw",
+            findings.push(Finding {
+                kind: "insufficient_color_mana",
                 severity: severity(pct * 100.0),
-                pct_games: Some(pct * 100.0),
+                game_share: Some(*pct),
                 color: Some(COLORS[i]),
-                detail: format!(
+                explanation: format!(
                     "you have enough lands, but not the right colors: {} mana is missing in {:.1}% of games ({} dedicated {} source{}, {} choice land{})",
-                    COLORS[i],
+                    COLORS[i].symbol(),
                     pct * 100.0,
                     few_sources,
                     shape,
@@ -577,7 +586,7 @@ fn color_screw_problems(stats: &SimStats, deck: &SimDeck, problems: &mut Vec<Pro
                     if choice_sources == 1 { "" } else { "s" }
                 ),
                 suggestion,
-                offenders: Vec::new(),
+                evidence: Vec::new(),
             });
         }
     }
@@ -588,35 +597,35 @@ fn draw_unused_problems(
     stats: &SimStats,
     commander: bool,
     turns: usize,
-    problems: &mut Vec<Problem>,
+    findings: &mut Vec<Finding>,
 ) {
     let draw_turn = if commander { 6 } else { 5 };
     if turns >= draw_turn && stats.starved_pct >= 0.25 {
-        problems.push(Problem {
-            kind: "draw_starvation",
+        findings.push(Finding {
+            kind: "limited_draw_access",
             severity: severity(stats.starved_pct * 100.0),
-            pct_games: Some(stats.starved_pct * 100.0),
+            game_share: Some(stats.starved_pct),
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you run out of cards to play: {:.1}% of games saw no draw source by turn {draw_turn}",
                 stats.starved_pct * 100.0
             ),
             suggestion: "add 2-3 draw engines".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
     if turns >= 6 && stats.unused_mana[5] >= 2.5 {
-        problems.push(Problem {
-            kind: "mana_unused",
+        findings.push(Finding {
+            kind: "unused_mana",
             severity: severity((stats.unused_mana[5] / 2.5) * 100.0),
-            pct_games: None,
+            game_share: None,
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you end turns with unused mana: {:.1} left over on average by turn 6",
                 stats.unused_mana[5]
             ),
             suggestion: "add cheaper spells or more card draw to spend the mana".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
 }
@@ -626,7 +635,7 @@ fn dead_cards_problem(
     stats: &SimStats,
     deck: &SimDeck,
     commander: bool,
-    problems: &mut Vec<Problem>,
+    findings: &mut Vec<Finding>,
 ) {
     let threshold = if commander { 0.60 } else { 0.55 };
     // Board-discount cards (improvise, affinity) cast far earlier in real
@@ -635,7 +644,7 @@ fn dead_cards_problem(
     let discount_names: std::collections::HashSet<&str> = deck
         .cards
         .iter()
-        .filter(|c| c.board_discount)
+        .filter(|c| c.battlefield_discount)
         .map(|c| c.name.as_str())
         .collect();
     // Reactive spells (removal, fogs, protection) never fire in a
@@ -680,53 +689,53 @@ fn dead_cards_problem(
         worst.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
         worst.truncate(3);
         let names: Vec<String> = worst.iter().map(|(n, _)| (*n).clone()).collect();
-        problems.push(Problem {
-            kind: "dead_cards",
+        findings.push(Finding {
+            kind: "low_castability",
             severity: severity(dead_names.len() as f64 * 5.0),
-            pct_games: None,
+            game_share: None,
             color: None,
-            detail: format!(
+            explanation: format!(
                 "these cards sit in your hand too long: {} cards cast on time under {:.0}% of the time. Worst: {}",
                 dead_names.len(),
                 threshold * 100.0,
                 names.join(", ")
             ),
             suggestion: "cut or discount late cards, or add ramp".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
 }
 
 /// Starved-category and interaction-readiness findings.
-fn access_problems(stats: &SimStats, commander: bool, turns: usize, problems: &mut Vec<Problem>) {
+fn access_problems(stats: &SimStats, commander: bool, turns: usize, findings: &mut Vec<Finding>) {
     if turns >= 5 && stats.removal_count > 0 && stats.removal_access_5 < 0.40 {
-        problems.push(Problem {
-            kind: "category_starved",
+        findings.push(Finding {
+            kind: "low_removal_access",
             severity: severity((1.0 - stats.removal_access_5) * 100.0),
-            pct_games: Some((1.0 - stats.removal_access_5) * 100.0),
+            game_share: Some(1.0 - stats.removal_access_5),
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you rarely see a removal spell: only {:.1}% of games had one by turn 5 ({} copies)",
                 stats.removal_access_5 * 100.0,
                 stats.removal_count
             ),
             suggestion: "add 2-3 interaction pieces".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
     if commander && turns >= 8 && stats.wincon_count > 0 && stats.wincon_access_8 < 0.40 {
-        problems.push(Problem {
-            kind: "category_starved",
+        findings.push(Finding {
+            kind: "low_win_condition_access",
             severity: severity((1.0 - stats.wincon_access_8) * 100.0),
-            pct_games: Some((1.0 - stats.wincon_access_8) * 100.0),
+            game_share: Some(1.0 - stats.wincon_access_8),
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you rarely see a way to win: only {:.1}% of games had a win condition in hand by turn 8 ({} copies)",
                 stats.wincon_access_8 * 100.0,
                 stats.wincon_count
             ),
             suggestion: "add 1-2 win conditions or more draw".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
     // Interaction readiness: access is fine but the answer is rarely
@@ -736,18 +745,18 @@ fn access_problems(stats: &SimStats, commander: bool, turns: usize, problems: &m
         && stats.interaction_ready_by_turn[4] < 0.40
         && stats.removal_access_5 >= 0.40
     {
-        problems.push(Problem {
-            kind: "interaction_unready",
+        findings.push(Finding {
+            kind: "limited_interaction_readiness",
             severity: severity((1.0 - stats.interaction_ready_by_turn[4]) * 100.0),
-            pct_games: Some((1.0 - stats.interaction_ready_by_turn[4]) * 100.0),
+            game_share: Some(1.0 - stats.interaction_ready_by_turn[4]),
             color: None,
-            detail: format!(
+            explanation: format!(
                 "you hold answers but cannot afford to cast them when it matters: instant-speed answers were in hand with enough spare mana by turn 5 in only {:.1}% of games ({} copies)",
                 stats.interaction_ready_by_turn[4] * 100.0,
                 stats.interaction_instant_count
             ),
             suggestion: "add cheaper instant-speed answers".to_string(),
-            offenders: Vec::new(),
+            evidence: Vec::new(),
         });
     }
 }

@@ -16,7 +16,7 @@ pub struct HandCard {
     /// Mana cost as printed.
     pub mana_cost: String,
     /// Mana value.
-    pub cmc: f64,
+    pub mana_value: f64,
     /// Type line (Creature, Instant, ...).
     pub type_line: String,
 }
@@ -32,6 +32,15 @@ pub struct HandRow {
     pub mulliganed: bool,
     /// One-line plain-English read of the hand.
     pub advice: String,
+}
+
+/// JSON response for a seeded hand sample.
+#[derive(Debug, serde::Serialize)]
+struct HandSampleReport<'a> {
+    /// Seed used to deal the sample.
+    seed: u64,
+    /// Dealt hands.
+    hands: &'a [HandRow],
 }
 
 /// Keep/mulligan advice for one opener: land count against the format's
@@ -94,13 +103,13 @@ fn hand_cards(
                 Some(row) => HandCard {
                     name: row.name.clone(),
                     mana_cost: row.mana_cost.clone(),
-                    cmc: row.cmc,
+                    mana_value: row.cmc,
                     type_line: row.type_line.clone(),
                 },
                 None => HandCard {
                     name: sim.name.clone(),
                     mana_cost: String::new(),
-                    cmc: f64::from(sim.cost.total()),
+                    mana_value: f64::from(sim.cost.total()),
                     type_line: String::new(),
                 },
             }
@@ -150,7 +159,7 @@ pub fn hand(
     }
 
     if json {
-        let wrapped = serde_json::json!({ "seed": seed, "hands": rows });
+        let wrapped = HandSampleReport { seed, hands: &rows };
         println!("{}", serde_json::to_string_pretty(&wrapped)?);
         return Ok(crate::cli::codes::OK);
     }

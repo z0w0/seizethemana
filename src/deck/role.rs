@@ -52,35 +52,34 @@ pub enum Role {
 impl Role {
     /// Parse a role word or alias ("draw", "card-draw", "card draw");
     /// `None` when the word names no role.
+    #[must_use]
     pub fn parse(s: &str) -> Option<Role> {
         let norm = |w: &str| w.replace(['-', '_', ' '], "");
         let q = norm(s).to_ascii_lowercase();
         Some(match q.as_str() {
             // Card advantage
-            "draw" | "carddraw" | "drawcards" | "drawengine" => Role::Draw,
-            "cardadvantage" | "cardadv" => Role::Draw,
-            "cantrip" | "cantrips" => Role::CardSelection,
-            "scry" | "scrying" | "surveil" => Role::CardSelection,
-            "cardselection" | "filtering" | "selection" => Role::CardSelection,
-            "wheel" | "wheels" => Role::Draw,
-            "loot" | "looting" | "rummage" | "rummaging" | "impulse" => Role::Discard,
-            "discard" | "discardoutlet" | "discardsynergy" => Role::Discard,
+            "draw" | "carddraw" | "drawcards" | "drawengine" | "cardadvantage" | "cardadv"
+            | "wheel" | "wheels" => Role::Draw,
+            "cantrip" | "cantrips" | "scry" | "scrying" | "surveil" | "cardselection"
+            | "filtering" | "selection" => Role::CardSelection,
+            "loot" | "looting" | "rummage" | "rummaging" | "impulse" | "discard"
+            | "discardoutlet" | "discardsynergy" => Role::Discard,
             "mill" | "milling" | "millself" => Role::Mill,
             // Mana
             "ramp" | "mana" | "manaacceleration" | "manaramp" => Role::Ramp,
-            "landramp" => Role::Ramp,
-            "manarock" | "rocks" | "rock" => Role::Ramp,
-            "manadork" | "dorks" | "dork" => Role::Ramp,
+            "landramp" | "manarock" | "rocks" | "rock" | "manadork" | "dorks" | "dork" => {
+                Role::Ramp
+            }
             "manafixing" | "fixing" | "colors" | "land" | "manabase" => Role::Land,
             "manasink" | "sink" => Role::ManaSink,
             // Interaction
-            "removal" | "interaction" | "killspell" | "kill" | "spotremoval" => Role::Removal,
+            "removal" | "interaction" | "killspell" | "kill" | "spotremoval" | "bounce"
+            | "bouncer" | "tapper" | "tapdown" | "freeze" => Role::Removal,
             "boardwipe" | "wipe" | "wrath" | "wratheffect" | "sweeper" | "boardclear"
             | "massremoval" => Role::BoardWipe,
             "counterspell" | "counters" | "counter" | "countermagic" | "interactioncounters" => {
                 Role::Counterspell
             }
-            "bounce" | "bouncer" | "tapper" | "tapdown" | "freeze" => Role::Removal,
             "theft" | "steal" | "stealing" | "gaimcontrol" | "gaincontrol" => Role::Theft,
             "protection" | "protect" | "hexproof" | "ward" | "indestructible" | "prevention"
             | "damageprevention" | "pillowfort" => Role::Protection,
@@ -92,8 +91,8 @@ impl Role {
             "sacrifice" | "sac" | "sacoutlet" | "sacrificeoutlet" | "aristocrats"
             | "aristocrat" => Role::Sacrifice,
             "reanimate" | "reanimator" | "reanimation" => Role::Reanimate,
-            "recursion" | "graveyardrecursion" | "gyrecursion" | "regrowth" => Role::Recursion,
-            "graveyard" | "graveyardmatters" | "gymatters" | "gy" => Role::Recursion,
+            "recursion" | "graveyardrecursion" | "gyrecursion" | "regrowth" | "graveyard"
+            | "graveyardmatters" | "gymatters" | "gy" => Role::Recursion,
             // Board presence
             "token" | "tokens" | "tokengenerator" | "gowide" | "widestrate" => Role::Token,
             "anthem" | "anthems" | "pumpall" | "buffall" | "teamboost" => Role::Anthem,
@@ -138,6 +137,7 @@ impl Role {
     }
 
     /// All names that resolve to this role, for the help line.
+    #[must_use]
     pub fn known_names() -> &'static [&'static str] {
         &[
             "draw",
@@ -213,6 +213,7 @@ impl Role {
     }
 
     /// Substrings that mark the role in oracle text (keyword leg).
+    #[must_use]
     pub fn keywords(self) -> &'static [&'static str] {
         match self {
             Role::Draw => &["draw ", "investigate", "surveil"],
@@ -278,6 +279,7 @@ impl Role {
 
     /// Tagger labels that mark this role (tag leg). Labels are matched as
     /// whole words against the real Tagger vocabulary.
+    #[must_use]
     pub fn tag_labels(self) -> &'static [&'static str] {
         match self {
             Role::Draw => &["draw", "wheel", "burst", "engine"],
@@ -306,7 +308,7 @@ impl Role {
             Role::Stax => &["toll", "slug", "hate"],
             Role::GraveyardHate => &["hate", "exile"],
             Role::Combo => &["win", "combo"],
-            Role::Storm => &["copy", "cast"],
+            Role::Storm | Role::Spellslinger => &["copy", "cast"],
             Role::Blink => &["bounce", "rescue"],
             Role::Landfall => &["landfall", "land"],
             Role::Artifact => &["artifact", "synergy"],
@@ -318,7 +320,6 @@ impl Role {
             Role::GroupHug => &["hug", "symmetrical"],
             Role::Politics => &["per-player", "player"],
             Role::Voltron => &["equipment", "power"],
-            Role::Spellslinger => &["copy", "cast"],
             Role::Typal => &["typal", "count"],
             Role::ManaSink => &["sink"],
             Role::ExtraTurn => &["turn", "extra"],

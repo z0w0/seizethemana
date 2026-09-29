@@ -65,6 +65,7 @@ fn singleton_deck_size(format: &str) -> i64 {
 /// split is a full commander deck (100); anything else backfills to 60.
 /// The shared target for `--backfill-basics` so a backfilled deck never
 /// fails the size check `deck legal` applies.
+#[must_use]
 pub fn singleton_size_for_deck(deck: &Deck) -> i64 {
     let has_commander = deck.section_index("COMMANDER").is_some();
     let has_deck = deck.section_index("DECK").is_some();
@@ -76,7 +77,7 @@ pub fn singleton_size_for_deck(deck: &Deck) -> i64 {
 }
 
 /// One rule violation, with the cards that broke it.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Violation {
     /// Rule name, e.g. "copy limit" or "commander color identity".
     pub rule: String,
@@ -85,6 +86,29 @@ pub struct Violation {
     pub cards: Vec<String>,
     /// Human explanation with the numbers.
     pub detail: String,
+}
+
+/// Typed JSON response for `stm deck legal`.
+#[derive(Debug, serde::Serialize)]
+struct LegalReport {
+    /// Deck name.
+    name: String,
+    /// Checked format.
+    format: String,
+    /// Whether the format was inferred.
+    format_assumed: bool,
+    /// Commander bracket when applicable.
+    bracket: Option<u8>,
+    /// Whether the deck passed the checks.
+    legal: bool,
+    /// Rule violations.
+    violations: Vec<Violation>,
+    /// Advisories for the table.
+    advisories: Vec<String>,
+    /// Manual review notes.
+    notes: Vec<String>,
+    /// Short verdict summary.
+    summary: String,
 }
 
 /// A check the CLI cannot decide; the reader validates these by hand.
@@ -105,6 +129,7 @@ pub enum InferredFormat {
 }
 
 /// Guess the format from deck shape.
+#[must_use]
 pub fn infer_format(deck: &Deck) -> InferredFormat {
     if deck.section_index("COMMANDER").is_some() {
         InferredFormat::Commander
@@ -117,6 +142,7 @@ pub fn infer_format(deck: &Deck) -> InferredFormat {
 /// commander` pin, or no pin at all and the deck has a `// COMMANDER`
 /// section. A pinned non-commander format is never commander. The one
 /// shared predicate for every format-aware branch.
+#[must_use]
 pub fn is_commander(deck: &Deck, pinned_format: Option<&str>) -> bool {
     match pinned_format {
         Some(fmt) => fmt.eq_ignore_ascii_case("commander"),
@@ -192,7 +218,10 @@ fn keyword_has_partner(keywords: &str) -> bool {
 
 /// Commander count per deck rules: exactly one commander, or exactly two
 /// when both carry a partner-style keyword.
-fn commander_legal(names: &[String], cards: &HashMap<String, CardRow>) -> Option<Violation> {
+fn commander_legal(
+    names: &[String],
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
+) -> Option<Violation> {
     match names.len() {
         1 => {
             let card = cards.get(&names[0]);
@@ -265,17 +294,19 @@ fn commander_legal(names: &[String], cards: &HashMap<String, CardRow>) -> Option
 ///
 /// The shared parser for every format gate (legal, suggest, cuts):
 /// `None` when the map is malformed or the format key is missing.
+#[must_use]
 pub fn legality_in(legalities_json: &str, format: &str) -> Option<String> {
-    serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(legalities_json)
+    serde_json::from_str::<std::collections::BTreeMap<String, String>>(legalities_json)
         .ok()
-        .and_then(|m| m.get(format).and_then(|v| v.as_str().map(String::from)))
+        .and_then(|map| map.get(format).cloned())
 }
 
 /// The full `legalities` JSON map, empty when malformed (multi-format
 /// gates that probe several keys read this).
+#[must_use]
 pub fn legality_in_map(
     legalities_json: &str,
-) -> Option<serde_json::Map<String, serde_json::Value>> {
+) -> Option<std::collections::BTreeMap<String, String>> {
     serde_json::from_str(legalities_json).ok()
 }
 
@@ -283,6 +314,7 @@ pub fn legality_in_map(
 ///
 /// Since Edge of Eternities (2025), legendary Vehicles and Spacecraft with a
 /// printed power/toughness box are also legal commanders.
+#[must_use]
 pub fn is_commander_type(card: &CardRow) -> bool {
     card.type_line.contains("Legendary Creature")
         || card.type_line.contains("Legendary Planeswalker")
@@ -296,6 +328,7 @@ pub fn is_commander_type(card: &CardRow) -> bool {
 ///
 /// The one parser for every identity check (legal, suggest, cuts): colorless
 /// parses to "" and malformed JSON to "" as well.
+#[must_use]
 pub fn identity_letters(color_identity_json: &str) -> String {
     serde_json::from_str::<Vec<String>>(color_identity_json)
         .unwrap_or_default()
@@ -322,7 +355,7 @@ fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
 /// Partner pair).
 fn singleton_violations(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     format: &str,
     maindeck_counts: &[(String, i64)],
 ) -> Vec<Violation> {
@@ -369,7 +402,7 @@ fn singleton_violations(
 /// COMMANDER section (called only for singleton formats).
 fn commander_identity_violations(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     maindeck_counts: &[(String, i64)],
 ) -> Vec<Violation> {
     let commander_section = commander_names(deck);
@@ -429,7 +462,7 @@ fn commander_identity_violations(
 /// cap, and the 4-copy limit spanning maindeck + sideboard.
 fn constructed_violations(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     format: Option<&str>,
 ) -> Vec<Violation> {
     let mut violations = Vec::new();
@@ -476,11 +509,11 @@ fn constructed_violations(
     violations
 }
 
-/// Per-card format legality: banned or not_legal fails. Skipped when the
+/// Per-card format legality: banned or `not_legal` fails. Skipped when the
 /// format is unknown (no legality key to test).
 fn format_legality_violations(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     format: &str,
 ) -> Vec<Violation> {
     let format_key = format.to_ascii_lowercase();
@@ -543,7 +576,7 @@ fn format_legality_violations(
 /// kit. Returns `(violations, advisories)`.
 fn bracket_game_changer_check(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     maindeck_counts: &[(String, i64)],
     bracket: u8,
 ) -> (Vec<Violation>, Vec<String>) {
@@ -615,9 +648,10 @@ fn bracket_game_changer_check(
 /// (unknown cards, copy limits, size, commander rules, Game Changer cap);
 /// advisories are informational notes (e.g. Game Changers waiting in the
 /// sideboard) that never affect the exit code.
+#[must_use]
 pub fn check(
     deck: &Deck,
-    cards: &HashMap<String, CardRow>,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
     format: Option<&str>,
     bracket: Option<u8>,
 ) -> (Vec<Violation>, Vec<String>) {
@@ -671,7 +705,11 @@ pub fn check(
 ///
 /// Counts the maindeck (bench sections excluded); the sideboard and
 /// maybeboard are noted separately when present.
-pub fn summary_line(deck: &Deck, cards: &HashMap<String, CardRow>) -> String {
+#[must_use]
+pub fn summary_line(
+    deck: &Deck,
+    cards: &HashMap<String, CardRow, impl std::hash::BuildHasher>,
+) -> String {
     let counts: Vec<(String, i64)> = deck
         .sections
         .iter()
@@ -696,15 +734,18 @@ pub fn summary_line(deck: &Deck, cards: &HashMap<String, CardRow>) -> String {
     let maybeboard = deck.maybeboard_total();
     let mut base = format!("{total} cards, {unique} unique ({basics} basic-land copies)");
     if sideboard > 0 {
-        base.push_str(&format!(" + {sideboard} sideboard"));
+        use std::fmt::Write as _;
+        let _ = write!(base, " + {sideboard} sideboard");
     }
     if maybeboard > 0 {
-        base.push_str(&format!(" + {maybeboard} maybeboard"));
+        use std::fmt::Write as _;
+        let _ = write!(base, " + {maybeboard} maybeboard");
     }
     base
 }
 
 /// True when a stored card is on the Game Changer list.
+#[must_use]
 pub fn is_game_changer(card: &CardRow) -> bool {
     card.game_changer == Some(true)
 }
@@ -715,6 +756,9 @@ pub fn is_game_changer(card: &CardRow) -> bool {
 /// does not (JSON still prints the full report either way). A missing deck
 /// file is the shared deck-not-found error: exit 1 with a "create it
 /// first" hint from the dispatcher.
+///
+/// # Errors
+/// Returns errors from loading the deck, querying card data, or serializing the report.
 pub fn legal(
     paths: &crate::paths::Paths,
     conn: &rusqlite::Connection,
@@ -808,28 +852,18 @@ pub fn legal(
     };
 
     if json {
-        let violations: Vec<serde_json::Value> = violations
-            .iter()
-            .map(|v| {
-                serde_json::json!({
-                    "rule": v.rule,
-                    "cards": v.cards,
-                    "detail": v.detail,
-                })
-            })
-            .collect();
         let notes: Vec<String> = note.map(|n| n.checks).unwrap_or_default();
-        let v = serde_json::json!({
-            "name": name,
-            "format": format,
-            "format_assumed": assumed,
-            "bracket": bracket,
-            "legal": legal,
-            "violations": violations,
-            "advisories": advisories,
-            "notes": notes,
-            "summary": summary,
-        });
+        let v = LegalReport {
+            name: name.to_string(),
+            format,
+            format_assumed: assumed,
+            bracket,
+            legal,
+            violations,
+            advisories,
+            notes,
+            summary,
+        };
         println!("{}", serde_json::to_string_pretty(&v)?);
     } else {
         super::bracket::print_report(
@@ -840,7 +874,7 @@ pub fn legal(
             bracket,
             legal,
             &violations,
-            &note,
+            note.as_ref(),
             &summary,
         );
     }

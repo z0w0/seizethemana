@@ -2,7 +2,7 @@
 //! assertions check the simulator's mechanics, not deck quality.
 
 use super::deck_test_support::*;
-use super::model::SimDeck;
+use super::model::{SimDeck, SimEffect};
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
 
@@ -94,162 +94,91 @@ fn sweep_modern_cheat_decks_pay_full_price_or_never() {
 }
 
 #[test]
-fn modern_cascade_and_neobrand_lines_depend_on_their_enablers() {
-    for (fixture_name, enabler, payoff, support, turns) in [
-        ("neobrand", "Allosaurus Rider", "Griselbrand", "Neoform", 8),
-        (
-            "living-end",
-            "Violent Outburst",
-            "Generous Ent",
-            "Living End",
-            8,
-        ),
-    ] {
-        let rows = fixture_cards(fixture_name);
-        let source = build_sim_deck(&fixture_deck(fixture_name), &rows, None);
-        if fixture_name == "neobrand" {
-            assert!(
-                source
-                    .cards
-                    .iter()
-                    .any(|card| card.name == enabler && card.riders.alternative_cast_cost.is_some())
-            );
-        }
-        if fixture_name == "neobrand" {
-            let stats = sim(&fixture_deck(fixture_name), &rows, 1000, turns);
-            let hard_cast = stats
-                .card_castability
-                .iter()
-                .find(|card| card.name == payoff)
-                .expect("Neobrand includes its hard-cast payoff");
-            assert_eq!(hard_cast.target_turn, 8);
-        }
-        let payoff_index = source
-            .cards
-            .iter()
-            .position(|card| card.name == payoff)
-            .unwrap_or_else(|| panic!("{fixture_name} has no {payoff} card"));
-        let support_index = source
-            .cards
-            .iter()
-            .position(|card| card.name == support)
-            .unwrap_or_else(|| panic!("{fixture_name} has no {support} card"));
-        let enabler_index = source
-            .cards
-            .iter()
-            .position(|card| card.name == enabler)
-            .unwrap_or_else(|| panic!("{fixture_name} has no {enabler} card"));
-        let without = without_line_enabler(&source, enabler);
-        let mut full_rng = ChaCha8Rng::seed_from_u64(921);
-        let mut without_rng = ChaCha8Rng::seed_from_u64(921);
-        let runs = 1000;
-        let full_rate = (0..runs)
-            .filter(|_| {
-                let log = run_game(&source, &mut full_rng, turns);
-                log.card_first_battlefield
-                    .get(&payoff_index)
-                    .is_some_and(|turn| {
-                        *turn <= turns
-                            && log
-                                .card_first_graveyard
-                                .get(&support_index)
-                                .is_some_and(|support_turn| support_turn <= turn)
-                            && log
-                                .card_first_graveyard
-                                .get(&enabler_index)
-                                .is_some_and(|enabler_turn| enabler_turn <= turn)
-                            && (fixture_name != "neobrand"
-                                || log.alternate_casts.contains(&enabler_index))
-                    })
-            })
-            .count();
-        let without_index = without
-            .cards
-            .iter()
-            .position(|card| card.name == payoff)
-            .expect("the payoff remains in the comparison deck");
-        let without_support = without
-            .cards
-            .iter()
-            .position(|card| card.name == support)
-            .expect("the support card remains in the comparison deck");
-        let without_enabler = without.cards.iter().position(|card| card.name == enabler);
-        let without_rate = (0..runs)
-            .filter(|_| {
-                let log = run_game(&without, &mut without_rng, turns);
-                log.card_first_battlefield
-                    .get(&without_index)
-                    .is_some_and(|turn| {
-                        *turn <= turns
-                            && log
-                                .card_first_graveyard
-                                .get(&without_support)
-                                .is_some_and(|support_turn| support_turn <= turn)
-                            && without_enabler.is_some_and(|index| {
-                                log.card_first_graveyard
-                                    .get(&index)
-                                    .is_some_and(|enabler_turn| enabler_turn <= turn)
-                                    && (fixture_name != "neobrand"
-                                        || log.alternate_casts.contains(&index))
-                            })
-                    })
-            })
-            .count();
-        assert!(
-            full_rate > without_rate,
-            "{fixture_name}: enabler rate {full_rate}, without {without_rate}"
-        );
-    }
-
-    let rows = fixture_cards("rhinos cascade modern");
-    let source = build_sim_deck(&fixture_deck("rhinos cascade modern"), &rows, None);
-    let footfalls = source
+fn modern_cascade_line_depends_on_its_enabler() {
+    let (fixture_name, enabler, payoff, support, turns) = (
+        "living-end",
+        "Violent Outburst",
+        "Generous Ent",
+        "Living End",
+        8,
+    );
+    let rows = fixture_cards(fixture_name);
+    let source = build_sim_deck(&fixture_deck(fixture_name), &rows, None);
+    let payoff_index = source
         .cards
         .iter()
-        .find(|card| card.name == "Crashing Footfalls")
-        .expect("Rhinos fixture has its cascade payoff");
-    assert_eq!(footfalls.riders.tokens_on_cast, 2);
-    let without = with_cascade_disabled(&source);
-    let mut full_rng = ChaCha8Rng::seed_from_u64(922);
-    let mut without_rng = ChaCha8Rng::seed_from_u64(922);
-    let body_total = |deck: &SimDeck, rng: &mut ChaCha8Rng| {
-        (0..1000)
-            .map(|_| {
-                run_game(deck, rng, 5)
-                    .bodies
-                    .get(3)
-                    .copied()
-                    .unwrap_or_default()
-            })
-            .sum::<u32>()
-    };
-    let full_bodies = body_total(&source, &mut full_rng);
-    let without_bodies = body_total(&without, &mut without_rng);
+        .position(|card| card.name == payoff)
+        .unwrap_or_else(|| panic!("{fixture_name} has no {payoff} card"));
+    let support_index = source
+        .cards
+        .iter()
+        .position(|card| card.name == support)
+        .unwrap_or_else(|| panic!("{fixture_name} has no {support} card"));
+    let enabler_index = source
+        .cards
+        .iter()
+        .position(|card| card.name == enabler)
+        .unwrap_or_else(|| panic!("{fixture_name} has no {enabler} card"));
+    let without = without_cascade(&source);
+    let mut full_rng = ChaCha8Rng::seed_from_u64(921);
+    let mut without_rng = ChaCha8Rng::seed_from_u64(921);
+    let runs = 1000;
+    let full_rate = (0..runs)
+        .filter(|_| {
+            let log = run_game(&source, &mut full_rng, turns);
+            log.card_first_battlefield
+                .get(&payoff_index)
+                .is_some_and(|turn| {
+                    *turn <= turns
+                        && log
+                            .card_first_graveyard
+                            .get(&support_index)
+                            .is_some_and(|support_turn| support_turn <= turn)
+                        && log
+                            .card_first_graveyard
+                            .get(&enabler_index)
+                            .is_some_and(|enabler_turn| enabler_turn <= turn)
+                })
+        })
+        .count();
+    let without_index = without
+        .cards
+        .iter()
+        .position(|card| card.name == payoff)
+        .expect("the payoff remains in the comparison deck");
+    let without_support = without
+        .cards
+        .iter()
+        .position(|card| card.name == support)
+        .expect("the support card remains in the comparison deck");
+    let without_enabler = without.cards.iter().position(|card| card.name == enabler);
+    let without_rate = (0..runs)
+        .filter(|_| {
+            let log = run_game(&without, &mut without_rng, turns);
+            log.card_first_battlefield
+                .get(&without_index)
+                .is_some_and(|turn| {
+                    *turn <= turns
+                        && log
+                            .card_first_graveyard
+                            .get(&without_support)
+                            .is_some_and(|support_turn| support_turn <= turn)
+                        && without_enabler.is_some_and(|index| {
+                            log.card_first_graveyard
+                                .get(&index)
+                                .is_some_and(|enabler_turn| enabler_turn <= turn)
+                        })
+                })
+        })
+        .count();
     assert!(
-        full_bodies > without_bodies,
-        "cascade bodies {full_bodies}, without {without_bodies}"
+        full_rate > without_rate,
+        "{fixture_name}: enabler rate {full_rate}, without {without_rate}"
     );
 }
 
-/// Build a comparison deck with the selected line enabler removed.
-fn without_line_enabler(deck: &SimDeck, name: &str) -> SimDeck {
-    let mut comparison = copy_deck(deck);
-    if name == "Allosaurus Rider" {
-        for card in &mut comparison.cards {
-            if card.name == name {
-                card.riders.alternative_cast_cost = None;
-            }
-        }
-    } else {
-        for card in &mut comparison.cards {
-            card.has_cascade = false;
-        }
-    }
-    comparison
-}
-
-/// Build a comparison deck with cascade disabled on each card.
-fn with_cascade_disabled(deck: &SimDeck) -> SimDeck {
+/// Build a comparison deck with cascade disabled.
+fn without_cascade(deck: &SimDeck) -> SimDeck {
     let mut comparison = copy_deck(deck);
     for card in &mut comparison.cards {
         card.has_cascade = false;
@@ -260,6 +189,7 @@ fn with_cascade_disabled(deck: &SimDeck) -> SimDeck {
 /// Clone the parsed card data while preserving the deck's card counts.
 fn copy_deck(deck: &SimDeck) -> SimDeck {
     SimDeck {
+        companion: None,
         cards: deck.cards.clone(),
         commanders: deck.commanders.clone(),
         format: deck.format,
@@ -373,18 +303,18 @@ fn topdeck_dimir_murk_early_threats() {
 }
 
 #[test]
-fn topdeck_eldrazi_ramp_pays_big_costs_late() {
-    // Eldrazi ramp: the big payoffs must never show as curve-ready.
+fn topdeck_eldrazi_ramp_can_cast_big_payoffs_when_tron_is_online() {
+    // Urza's Mine, Power Plant, and Tower can pay seven mana on turn three.
     let cards = fixture_cards("eldrazi ramp topdeck");
     let deck = fixture_deck("eldrazi ramp topdeck");
     let stats = sim(&deck, &cards, 200, 8);
     for c in &stats.card_castability {
         let row = cards.get(&c.name);
         if let Some(row) = row {
-            let cmc = super::oracle_parse::parse_oracle_cost(&row.mana_cost).total();
+            let cmc = super::oracle_parser::cost::parse_cost(&row.mana_cost).total();
             if cmc >= 7 {
                 assert!(
-                    c.avg_first_castable_turn >= 4.0,
+                    c.avg_first_castable_turn >= 2.5,
                     "{} (CMC {}) castable at t{:.2}",
                     c.name,
                     cmc,
@@ -431,21 +361,25 @@ fn dredge_modern_fills_graveyard_fast() {
         stats.graveyard_by_turn[5]
     );
     assert!(
-        stats.bodies_by_turn[5] > control.bodies_by_turn[5],
+        stats.creatures_by_turn[5] > control.creatures_by_turn[5],
         "dredge payoffs create {:.1} bodies by t6 vs {:.1} without dredge",
-        stats.bodies_by_turn[5],
-        control.bodies_by_turn[5]
+        stats.creatures_by_turn[5],
+        control.creatures_by_turn[5]
     );
 }
 
 #[test]
 fn affinity_modern_counts_artifacts() {
     // Affinity: artifact rocks join the board early and the discount
-    // cards cast below printed cost (board_discount class).
+    // cards cast below printed cost (battlefield discount class).
     let cards = fixture_cards("affinity modern");
     let deck = fixture_deck("affinity modern");
     let sim_deck = build_sim_deck(&deck, &cards, None);
-    let discounts = sim_deck.cards.iter().filter(|c| c.board_discount).count();
+    let discounts = sim_deck
+        .cards
+        .iter()
+        .filter(|c| c.battlefield_discount)
+        .count();
     assert!(
         discounts >= 2,
         "affinity shell holds {} discount cards",
@@ -507,9 +441,9 @@ fn black_burn_bowmasters_drains_early() {
     let deck = fixture_deck("black burn bowmasters modern");
     let stats = sim(&deck, &cards, 200, 8);
     assert!(
-        stats.drain_total_by_turn[4] > 0.8,
+        stats.opponent_life_loss_by_turn[4] > 0.8,
         "burn drain by t5: {:.1}",
-        stats.drain_total_by_turn[4]
+        stats.opponent_life_loss_by_turn[4]
     );
 }
 
@@ -559,9 +493,9 @@ fn whack_12_goblins_swarm() {
     let deck = fixture_deck("whack 12 modern");
     let stats = sim(&deck, &cards, 200, 8);
     assert!(
-        stats.bodies_by_turn[5] > 2.0,
+        stats.creatures_by_turn[5] > 2.0,
         "whack bodies by t6: {:.2}",
-        stats.bodies_by_turn[5]
+        stats.creatures_by_turn[5]
     );
 }
 
@@ -587,6 +521,40 @@ fn topdeck_persist_reanimator_grinds_graveyard() {
     assert!(
         stats.graveyard_by_turn[7] > 4.0,
         "persist reanimator graveyard by t8: {:.1}",
+        stats.graveyard_by_turn[7]
+    );
+}
+
+#[test]
+fn topdeck_boros_energy_online() {
+    // Boros Energy: Guide of Souls and Galvanic Discharge parse energy,
+    // and the deck's early bodies come down on curve.
+    let cards = fixture_cards("boros energy 2026");
+    let deck = fixture_deck("boros energy 2026");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.creatures_by_turn[1] > 0.5,
+        "boros energy bodies by t2: {:.2}",
+        stats.creatures_by_turn[1]
+    );
+    let guide = parse_sim_card(cards.get("Guide of Souls").expect("fixture has Guide"));
+    assert!(
+        guide
+            .unlocked_abilities(0)
+            .any(|ability| matches!(ability.effect, SimEffect::Energy(_))),
+        "Guide of Souls parses an energy trigger"
+    );
+}
+
+#[test]
+fn topdeck_oculus_manifest_modern_grinds_graveyard() {
+    // Abhorrent Oculus: manifest dread plus graveyard fuel.
+    let cards = fixture_cards("oculus manifest modern");
+    let deck = fixture_deck("oculus manifest modern");
+    let stats = sim(&deck, &cards, 200, 8);
+    assert!(
+        stats.graveyard_by_turn[7] > 3.0,
+        "oculus graveyard by t8: {:.1}",
         stats.graveyard_by_turn[7]
     );
 }

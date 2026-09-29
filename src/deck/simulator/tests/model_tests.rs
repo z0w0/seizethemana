@@ -4,8 +4,10 @@
 use super::aggregate::aggregate;
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use super::oracle_parser::draw_amount;
+use super::oracle_parser::land::parse_tap_yield;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -14,7 +16,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -34,6 +36,19 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
     }
 }
 
+#[test]
+fn card_type_predicates_come_from_the_type_line() {
+    let land = parse_sim_card(&card("Plain", "", "Basic Land — Plains", ""));
+    let spell = parse_sim_card(&card("Growth", "{G}", "Sorcery", "Draw a card."));
+    let walker = parse_sim_card(&card("Guide", "{2}{U}", "Planeswalker — Guide", ""));
+    let creature = parse_sim_card(&card("Scout", "{G}", "Creature — Scout", ""));
+
+    assert!(land.is_land);
+    assert!(!spell.is_land);
+    assert!(walker.is_planeswalker);
+    assert!(!creature.is_planeswalker);
+}
+
 /// A card row with keywords and power/toughness.
 fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &str) -> CardRow {
     let mut row = card(name, mana_cost, type_line, text);
@@ -47,48 +62,52 @@ fn test_perm(card_idx: usize) -> super::game::Permanent {
         uid: 0,
         card: super::game::CardRef::Deck(super::model::CardIdx(card_idx as u32)),
         tapped: false,
-        sick: false,
-        counters: 0,
+        summoning_sick: false,
+        counters: Default::default(),
         animated: false,
         crewed: false,
         entered_turn: 1,
         saga_step: 0,
         fired: false,
-        trigger_fired: false,
-        blink_pending: false,
-        loyalty: 0,
+        returned_trigger_pending: false,
         equipped: false,
         equip_host: None,
+        face_down: false,
+        saddled: false,
+        army: false,
+        jace_token: false,
+        sacrifice_at_end: false,
+        attacking_this_turn: false,
     }
 }
 
 #[test]
 fn cost_parses_generic_pips_hybrid_and_faces() {
-    let c = parse_oracle_cost("{2}{W}{W}");
+    let c = parse_cost("{2}{W}{W}");
     assert_eq!(c.generic, 2);
     assert_eq!(c.pips[0], 2);
     assert_eq!(c.total(), 4);
 
-    let hybrid = parse_oracle_cost("{W/U}");
-    assert_eq!(hybrid.flex_pips, 1);
+    let hybrid = parse_cost("{W/U}");
+    assert_eq!(hybrid.hybrid_pips, 1);
     assert!(hybrid.pips.iter().all(|p| *p == 0));
 
-    // Phyrexian {B/P}: payable with black or 2 life (CR 118.3b).
-    let phyrexian = parse_oracle_cost("{1}{B/P}");
+    // Phyrexian {B/P}: payable with black or 2 life (CR 107.4f).
+    let phyrexian = parse_cost("{1}{B/P}");
     assert_eq!(phyrexian.generic, 1);
     assert_eq!(phyrexian.pips[2], 0);
     assert_eq!(phyrexian.phyrexian[2], 1);
     assert_eq!(phyrexian.total(), 2);
 
-    let faces = parse_oracle_cost("{2}{B} // {B}");
+    let faces = parse_cost("{2}{B} // {B}");
     assert_eq!(faces.generic, 2);
     assert_eq!(faces.pips[2], 2);
 
-    let x = parse_oracle_cost("{X}{U}");
+    let x = parse_cost("{X}{U}");
     assert_eq!(x.generic, 1);
     assert_eq!(x.pips[1], 1);
 
-    assert_eq!(parse_oracle_cost("{10}").generic, 10);
+    assert_eq!(parse_cost("{10}").generic, 10);
 }
 
 #[test]
@@ -143,7 +162,7 @@ fn split_card_faces_take_cheapest_face() {
 #[test]
 fn tap_yield_or_is_choice() {
     // Shock dual: one tap, pick one of two colors.
-    let y = parse_oracle_tap_yield("{T}: Add {G} or {U}.").unwrap();
+    let y = parse_tap_yield("{T}: Add {G} or {U}.").unwrap();
     assert_eq!(y.total(), 1);
     assert!(y.choice[4] && y.choice[1]);
     assert!(y.fixed.iter().all(|p| *p == 0));
@@ -152,7 +171,7 @@ fn tap_yield_or_is_choice() {
 #[test]
 fn tap_yield_fixed_set_is_simultaneous() {
     // Jegantha: one tap produces all five at once.
-    let y = parse_oracle_tap_yield("{T}: Add {W}{U}{B}{R}{G}.");
+    let y = parse_tap_yield("{T}: Add {W}{U}{B}{R}{G}.");
     assert!(y.is_some());
     let y = y.unwrap();
     assert_eq!(y.total(), 5);
@@ -164,26 +183,26 @@ fn tap_yield_fixed_set_is_simultaneous() {
 
 #[test]
 fn tap_yield_any_color_prose() {
-    let y = parse_oracle_tap_yield("{T}: Add one mana of any color.");
+    let y = parse_tap_yield("{T}: Add one mana of any color.");
     assert!(y.is_some_and(|y| y.any_pips == 1 && y.total() == 1));
 }
 
 #[test]
 fn tap_yield_colorless() {
-    let y = parse_oracle_tap_yield("{T}: Add {C}.");
+    let y = parse_tap_yield("{T}: Add {C}.");
     assert!(y.is_some_and(|y| y.colorless == 1 && y.total() == 1));
 }
 
 #[test]
 fn tap_yield_double_colorless() {
     // Sol Ring produces {C}{C} on one tap.
-    let y = parse_oracle_tap_yield("{T}: Add {C}{C}.");
+    let y = parse_tap_yield("{T}: Add {C}{C}.");
     assert!(y.is_some_and(|y| y.colorless == 2 && y.total() == 2));
 }
 
 #[test]
 fn tap_yield_none_for_non_mana() {
-    assert!(parse_oracle_tap_yield("Destroy target creature.").is_none());
+    assert!(parse_tap_yield("Destroy target creature.").is_none());
 }
 
 #[test]
@@ -191,10 +210,10 @@ fn tap_yield_opponent_dependent_flags_any() {
     // Opponent-dependent production stays unavailable in a goldfish game.
     // (add_yield_turns gates the turn), not nothing.
     let orchard = "{T}: Add one mana of any color that a land an opponent controls could produce.";
-    let y = parse_oracle_tap_yield(orchard).expect("opponent yield parses");
+    let y = parse_tap_yield(orchard).expect("opponent yield parses");
     assert!(y.opponent_any);
     assert_eq!(y.any_pips, 1);
-    assert!(parse_oracle_tap_yield("{T}: Add {G}.").is_some());
+    assert!(parse_tap_yield("{T}: Add {G}.").is_some());
 }
 
 #[test]
@@ -227,7 +246,7 @@ fn improvise_discount_grows_with_artifacts() {
         "Improvise (Your artifacts can help cast this spell.)\nDestroy all nonartifact creatures.",
     );
     let sim = parse_sim_card(&act);
-    assert!(sim.board_discount);
+    assert!(sim.battlefield_discount);
     assert_eq!(
         sim.min_cost.generic, 6,
         "no parse-time floor: the board decides"
@@ -237,6 +256,7 @@ fn improvise_discount_grows_with_artifacts() {
     let rock_sim = parse_sim_card(&rock);
     let mut battlefield: Vec<super::game::Permanent> = Vec::new();
     let deck = SimDeck {
+        companion: None,
         cards: vec![sim.clone(), rock_sim],
         commanders: vec![],
         format: Format::Constructed,
@@ -263,10 +283,11 @@ fn improvise_discount_grows_with_artifacts() {
     assert_eq!(eff.generic, 0);
     assert_eq!(eff.pips[0], 2, "the white pips never change");
     // Creatures do not count toward the discount even in bulk.
-    let body = card("Bear Cub", "{1}{G}", "Creature — Bear", "");
-    let body_sim = parse_sim_card(&body);
+    let creature = card("Bear Cub", "{1}{G}", "Creature — Bear", "");
+    let creature_sim = parse_sim_card(&creature);
     let deck_bodies = SimDeck {
-        cards: vec![sim.clone(), body_sim],
+        companion: None,
+        cards: vec![sim.clone(), creature_sim],
         commanders: vec![],
         format: Format::Constructed,
         rules: super::format::rules_for("constructed"),
@@ -293,11 +314,11 @@ fn commander_relic_banks_and_releases() {
     );
     let sim = parse_sim_card(&relic);
     assert!(
-        sim.station_tiers
+        sim.striations
             .iter()
             .flat_map(|t| t.abilities.iter())
-            .any(|a| a.trigger == AbilityTiming::PrecombatMainPhase
-                && matches!(a.effect, super::model::Effect::ManaPerCounter(_)))
+            .any(|a| a.trigger == SimTrigger::PrecombatMain
+                && matches!(a.effect, super::model::SimEffect::ManaPerCounter(_)))
     );
     let mut cards = Vec::new();
     for _ in 0..20 {
@@ -312,6 +333,7 @@ fn commander_relic_banks_and_releases() {
         cards.push(sim.clone());
     }
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -330,11 +352,21 @@ fn commander_relic_banks_and_releases() {
 
 // Station tiers
 
+/// Parse station text through the Oracle AST and runtime lowering layers.
+fn parse_striations(text: &str, type_line: &str) -> (Vec<SimStriation>, bool) {
+    let row = card("Station Test", "", type_line, text);
+    let oracle = super::oracle_parser::parse_oracle_card(&row);
+    (
+        super::oracle_lower::lower_striations(&oracle.stations),
+        oracle.stations.is_station_card,
+    )
+}
+
 #[test]
 fn station_single_tier_with_pt_animates() {
     // Galvanizing Sawship: single 3+ tier, becomes a creature.
     let text = "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 3+.)\n3+ | Flying, haste";
-    let (tiers, is_station) = parse_oracle_station_tiers(text, "Artifact — Spacecraft");
+    let (tiers, is_station) = parse_striations(text, "Artifact — Spacecraft");
     assert!(is_station);
     assert_eq!(tiers.len(), 1);
     assert_eq!(tiers[0].at, 3);
@@ -345,7 +377,7 @@ fn station_single_tier_with_pt_animates() {
 fn station_two_tiers_only_last_animates() {
     // Dawnsire: 10+ trigger, 20+ P/T.
     let text = "Station (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 20+.)\n10+ | Whenever you attack, Dawnsire deals 100 damage to up to one target creature or planeswalker.\n20+ | Flying";
-    let (tiers, _) = parse_oracle_station_tiers(text, "Legendary Artifact — Spacecraft");
+    let (tiers, _) = parse_striations(text, "Legendary Artifact — Spacecraft");
     assert_eq!(tiers.len(), 2);
     assert_eq!(tiers[0].at, 10);
     assert!(!tiers[0].animate);
@@ -357,7 +389,7 @@ fn station_two_tiers_only_last_animates() {
 fn station_planet_never_animates() {
     // Uthros, Titanic Godcore: 12+ mana ability, no P/T box.
     let text = "This land enters tapped.\n{T}: Add {U}.\nStation (Tap another creature you control: Put charge counters equal to its power on this Planet. Station only as a sorcery.)\n12+ | {U}, {T}: Add {U} for each artifact you control.";
-    let (tiers, is_station) = parse_oracle_station_tiers(text, "Land — Planet");
+    let (tiers, is_station) = parse_striations(text, "Land — Planet");
     assert!(is_station);
     assert!(tiers.iter().all(|t| !t.animate));
     // The 12+ tier has the mana ability.
@@ -372,7 +404,7 @@ fn station_planet_never_animates() {
 #[test]
 fn station_no_tiers_when_no_markers() {
     let (tiers, is_station) =
-        parse_oracle_station_tiers("Some other text entirely.", "Artifact — Spacecraft");
+        parse_striations("Some other text entirely.", "Artifact — Spacecraft");
     assert!(is_station);
     assert!(tiers.is_empty());
 }
@@ -412,6 +444,136 @@ fn non_vehicle_has_no_crew() {
     assert!(parse_sim_card(&row).crew.is_none());
 }
 
+/// Cascade, undying, companion, and read ahead flags come from their
+/// typed keywords: a grant to other objects stays inert on the granter.
+#[test]
+fn flag_keywords_require_the_keyword_not_the_text() {
+    let cascade = card_kw(
+        "Shardless Agent",
+        "{2}{G}",
+        "Creature — Human Rogue",
+        r#"["Cascade"]"#,
+        "Cascade (When you cast this spell, exile cards from the top of your library.)",
+    );
+    assert!(parse_sim_card(&cascade).has_cascade);
+    // "The first spell you cast from exile each turn has cascade" grants
+    // cascade to other spells, not to this card (Wild-Magic Sorcerer).
+    let granter = card(
+        "Wild-Magic Sorcerer",
+        "{3}{R}",
+        "Creature — Orc Shaman Sorcerer",
+        "The first spell you cast from exile each turn has cascade.",
+    );
+    assert!(!parse_sim_card(&granter).has_cascade);
+
+    let undying = card_kw(
+        "Butcher Ghoul",
+        "{1}{B}",
+        "Creature — Zombie",
+        r#"["Undying"]"#,
+        "Undying (When this creature dies, if it had no +1/+1 counters on it, return it to the battlefield with a +1/+1 counter on it.)",
+    );
+    assert!(parse_sim_card(&undying).has_undying);
+    // Mikaeus grants undying to other creatures, not to itself.
+    let granter = card(
+        "Mikaeus, the Unhallowed",
+        "{3}{B}{B}{B}",
+        "Legendary Creature — Zombie Cleric",
+        "Other non-Human creatures you control get +1/+1 and have undying.",
+    );
+    assert!(!parse_sim_card(&granter).has_undying);
+
+    let read_ahead = card_kw(
+        "Read Ahead Saga",
+        "{1}{U}",
+        "Enchantment — Saga",
+        r#"["Read ahead"]"#,
+        "Read ahead (Choose a chapter and start with that many lore counters.)\nI — Draw a card.",
+    );
+    assert!(parse_sim_card(&read_ahead).read_ahead);
+    let no_read_ahead = card("Saga", "{1}{U}", "Enchantment — Saga", "I — Draw a card.");
+    assert!(!parse_sim_card(&no_read_ahead).read_ahead);
+}
+
+/// Crew and dredge numbers come from typed keyword arguments, so a card
+/// whose text spells a number for another object stays inert.
+#[test]
+fn crew_and_dredge_require_the_keyword_not_the_text() {
+    let crew = card_kw(
+        "Smuggler's Copter",
+        "{2}",
+        "Artifact — Vehicle",
+        r#"["Crew"]"#,
+        "Crew 1 (Tap any number of creatures you control with total power 1 or more.)",
+    );
+    assert_eq!(parse_sim_card(&crew).crew, Some(1));
+    // "Vehicles you control have crew 2" grants crew to other Vehicles;
+    // it must not grant crew to this card itself (Kotori, Pilot Prodigy).
+    let granter = card(
+        "Kotori, Pilot Prodigy",
+        "{1}{W}{U}",
+        "Legendary Creature — Moonfolk Pilot",
+        "Vehicles you control have crew 2.",
+    );
+    assert!(parse_sim_card(&granter).crew.is_none());
+
+    let dredge = card_kw(
+        "Dredger",
+        "{2}{G}",
+        "Creature — Troll",
+        r#"["Dredge"]"#,
+        "Dredge 5 (If you would draw a card, you may mill five cards instead.)",
+    );
+    assert_eq!(parse_sim_card(&dredge).dredge, Some(5));
+    let no_dredge = card("Troll", "{2}{G}", "Creature — Troll", "");
+    assert!(parse_sim_card(&no_dredge).dredge.is_none());
+}
+
+/// Warp, affinity, and improvise lower from their typed keywords: the
+/// alternative cost and board-discount flag require the keyword.
+#[test]
+fn warp_affinity_improvise_lower_from_keywords() {
+    let warp = card_kw(
+        "Mightform Harmonizer",
+        "{2}{G}{G}",
+        "Creature — Insect Druid",
+        r#"["Warp"]"#,
+        "Warp {2}{G} (You may cast this card from your hand for its warp cost.)",
+    );
+    let warp_sim = parse_sim_card(&warp);
+    assert_eq!(warp_sim.min_cost.total(), 3);
+    assert!(!warp_sim.battlefield_discount);
+    // A "warp" mention that is not the Warp keyword stays inert.
+    let no_warp = card(
+        "Warped Riders",
+        "{2}{G}{G}",
+        "Creature",
+        "If a spell was warped this turn, this creature gets +1/+1.",
+    );
+    assert_eq!(parse_sim_card(&no_warp).min_cost.total(), 4);
+
+    let improvise = card_kw(
+        "Organic Extinction",
+        "{6}{W}{W}",
+        "Sorcery",
+        r#"["Improvise"]"#,
+        "Improvise (Your artifacts can help cast this spell.)",
+    );
+    assert!(parse_sim_card(&improvise).battlefield_discount);
+
+    let affinity = card_kw(
+        "Frogmite",
+        "{4}",
+        "Artifact Creature — Frog",
+        r#"["Affinity"]"#,
+        "Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)",
+    );
+    assert!(parse_sim_card(&affinity).battlefield_discount);
+    // No affinity/improvise keyword: the artifact discount stays off.
+    let plain = card("Artifact", "{4}", "Artifact", "");
+    assert!(!parse_sim_card(&plain).battlefield_discount);
+}
+
 // Abilities: ETB, upkeep, attack, cast engines, activations
 
 #[test]
@@ -433,7 +595,7 @@ fn roles_classify_correctly() {
     let ritual = card("Dark Ritual", "{B}", "Instant", "Add {B}{B}{B}.");
     let sim = parse_sim_card(&ritual);
     assert_eq!(sim.role, Role::RampSpell);
-    assert!(sim.riders.mana_on_cast.is_some());
+    assert!(sim.spell_data.mana_on_cast.is_some());
 
     let draw = card("Divination", "{2}{U}", "Sorcery", "Draw two cards.");
     assert_eq!(parse_sim_card(&draw).role, Role::Draw);
@@ -507,6 +669,26 @@ fn draw_amount_six_and_seven() {
     assert_eq!(draw_amount("draw six cards"), 6);
     assert_eq!(draw_amount("draw seven cards"), 7);
     assert_eq!(draw_amount("each player draws seven cards"), 7);
+}
+
+/// Verify enum conversions for all colors and basic land types.
+#[test]
+fn color_and_basic_land_enums_cover_wubrg() {
+    assert_eq!(
+        ManaColor::ALL.map(ManaColor::symbol),
+        ['W', 'U', 'B', 'R', 'G']
+    );
+    for (index, color) in ManaColor::ALL.into_iter().enumerate() {
+        assert_eq!(color.index(), index);
+        assert_eq!(ManaColor::from_symbol(color.symbol()), Some(color));
+    }
+    assert_eq!(
+        BasicLandType::ALL.map(BasicLandType::name),
+        ["Plains", "Island", "Swamp", "Mountain", "Forest"]
+    );
+    for (index, land) in BasicLandType::ALL.into_iter().enumerate() {
+        assert_eq!(land.index(), index);
+    }
 }
 
 // Game loop: pool math

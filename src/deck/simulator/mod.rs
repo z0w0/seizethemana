@@ -7,15 +7,15 @@
 
 /// Log aggregation and stats.
 pub(crate) mod aggregate;
-/// The cast pass and land-drop helpers.
-mod cast_phase;
+/// The cast algorithm and land-drop helpers.
+mod cast_pass;
 /// Combo assembly measurement.
 mod combos;
 /// Opening-hand dealing plus the mulligan policy.
 pub(crate) mod deal;
 /// Deck construction: deck text to `SimDeck`.
 pub(crate) mod deck;
-/// Problem findings and the mana-base verdict.
+/// Simulator findings and the mana-base verdict.
 mod findings;
 /// Finding detail helpers.
 mod findings_detail;
@@ -25,34 +25,24 @@ pub(crate) mod format;
 pub(crate) mod game;
 /// The combat phase.
 mod game_combat;
-/// Commander casts, command-zone sentinel handling, commander damage.
+/// Commander casts, command-zone state, and commander damage.
 mod game_commander;
-/// Effect execution plus the tap budget.
+/// SimEffect execution plus the tap budget.
 mod game_effects;
-/// Pool building and cost payment.
+/// ManaPool building and cost payment.
 mod game_mana;
 /// The per-game turn loop (pure, seeded).
 mod game_run;
 /// Hypergeometric cast ceilings.
 mod hypgeo;
-/// Card data model: costs, tap yields, station tiers, abilities.
+/// Card data model: costs, mana yields, striations, abilities.
 pub(crate) mod model;
 /// Oracle syntax tree: typed nodes for parsed Oracle text.
 mod oracle_ast;
-/// Lowering of Oracle syntax nodes to runtime model data.
-mod oracle_lower;
-/// Card-row parsing and runtime-model construction.
-pub(crate) mod oracle_parse;
-/// Oracle trigger grammar and text parsing.
-mod oracle_parser;
-/// Mana cost text parsing.
-mod parse_cost;
-/// Cycling text parsing.
-mod parse_cycle;
-/// Static buffs, equipment stats, and numeric keyword parameters.
-mod parse_equipment;
-/// Land-specific Oracle text parsing.
-mod parse_land;
+/// Lowering of Oracle syntax nodes and card metadata to runtime data.
+pub(crate) mod oracle_lower;
+/// Oracle text grammar and parsing helpers.
+pub(crate) mod oracle_parser;
 /// Card role and class classification.
 mod role_classify;
 
@@ -67,6 +57,8 @@ mod library_effect_tests;
 mod parse_cost_tests;
 /// JSON report payload.
 mod report;
+/// Typed JSON schema for simulator reports.
+pub(crate) mod report_schema;
 /// Human stdout render of the report.
 pub(crate) mod report_view;
 #[cfg(test)]
@@ -86,11 +78,11 @@ mod combos_tests;
 #[path = "tests/commander_deck_tests.rs"]
 mod commander_deck_tests;
 #[cfg(test)]
+#[path = "tests/counter_keyword_tests.rs"]
+mod counter_keyword_tests;
+#[cfg(test)]
 #[path = "tests/cross_deck_tests.rs"]
 mod cross_deck_tests;
-#[cfg(test)]
-#[path = "tests/deck_fixture_baseline_tests.rs"]
-mod deck_fixture_baseline_tests;
 #[cfg(test)]
 #[path = "tests/deck_test_support.rs"]
 mod deck_test_support;
@@ -100,6 +92,9 @@ mod deck_tests;
 #[cfg(test)]
 #[path = "tests/defining_line_trace_tests.rs"]
 mod defining_line_trace_tests;
+#[cfg(test)]
+#[path = "tests/fixture_mechanics_tests.rs"]
+mod fixture_mechanics_tests;
 #[cfg(test)]
 #[path = "tests/format_tests.rs"]
 mod format_tests;
@@ -127,6 +122,10 @@ mod mana_base_tests;
 #[cfg(test)]
 #[path = "tests/mechanic_tests.rs"]
 mod mechanic_tests;
+/// Tests for the strong-mechanic batch (mobilize, amass, Ring, …).
+#[cfg(test)]
+#[path = "tests/mechanics_tests.rs"]
+mod mechanics_tests;
 #[cfg(test)]
 #[path = "tests/model_tests.rs"]
 mod model_tests;
@@ -139,6 +138,9 @@ mod mulligan_tests;
 #[cfg(test)]
 #[path = "tests/oracle_ast_tests.rs"]
 mod oracle_ast_tests;
+#[cfg(test)]
+#[path = "tests/oracle_review_tests.rs"]
+mod oracle_review_tests;
 /// Exact-state tests for Oracle-driven simulator effects and triggers.
 #[cfg(test)]
 #[path = "tests/oracle_runtime_tests.rs"]
@@ -152,6 +154,9 @@ mod parse_tests;
 #[cfg(test)]
 #[path = "tests/pipeline_tests.rs"]
 mod pipeline_tests;
+#[cfg(test)]
+#[path = "tests/report_cli_tests.rs"]
+mod report_cli_tests;
 #[cfg(test)]
 #[path = "tests/report_tests.rs"]
 mod report_tests;
@@ -245,7 +250,7 @@ pub(crate) fn sim_report_for(
     turns: Option<u32>,
     seed: u64,
     format: Option<&str>,
-) -> serde_json::Value {
+) -> anyhow::Result<report_schema::SimReport> {
     let bench = report::BenchCounts {
         sideboard_cards: deck.sideboard_total(),
         maybeboard_cards: deck.maybeboard_total(),
@@ -257,9 +262,9 @@ pub(crate) fn sim_report_for(
         // is unknown; the CLI only passes validated format names.
         debug_assert!(applied, "unknown format override {f:?}");
     }
-    let total_cards = sim_deck.cards.len() + sim_deck.commanders.len();
+    let total_cards = sim_deck.library_len() + sim_deck.commanders.len();
     if total_cards == 0 {
-        return serde_json::json!({ "deck_shape": { "total_cards": 0 } });
+        anyhow::bail!("deck has no cards");
     }
     let turns = turns.unwrap_or(sim_deck.rules.default_turns);
     let mut rng = ChaCha8Rng::seed_from_u64(seed);
@@ -268,69 +273,42 @@ pub(crate) fn sim_report_for(
         logs.push(game::run_game(&sim_deck, &mut rng, turns));
     }
     let mut stats = aggregate::aggregate(&logs, &sim_deck, turns);
-    stats.removal_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Removal)
-        .count();
-    stats.removal_wipes = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
-        .count();
-    stats.removal_targeted = stats.removal_count - stats.removal_wipes;
-    stats.wincon_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Wincon)
-        .count();
-    stats.draw_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Draw)
-        .count();
-    stats.land_count = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Land)
-        .count();
-    let problems = findings::find_problems(&stats, &sim_deck);
+    apply_role_counts(&mut stats, &sim_deck);
+    let findings = findings::analyze_findings(&stats, &sim_deck);
     let (inferred_bracket, bracket) = if sim_deck.format == model::Format::Constructed {
         (false, 0)
     } else {
         (true, infer_bracket(deck, cards))
     };
     let mana_base = findings::mana_base(&sim_deck, bracket, inferred_bracket);
-    report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base)
+    Ok(report::json_report(
+        &stats, &sim_deck, name, seed, &findings, bench, &mana_base,
+    ))
 }
 
 /// Fill the removal/wincon/draw/land census fields the aggregator leaves
-/// unset: they come from static card data, not game logs.
+/// unset: they come from static card data, not game logs. The companion
+/// starts outside the game, so it is not part of the census.
 fn apply_role_counts(stats: &mut aggregate::SimStats, sim_deck: &model::SimDeck) {
     stats.removal_count = sim_deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == model::Role::Removal)
         .count();
     stats.removal_wipes = sim_deck
-        .cards
-        .iter()
-        .filter(|c| c.role == model::Role::Removal && c.flags.wipe)
+        .library_cards()
+        .filter(|c| c.role == model::Role::Removal && c.flags.sweeps)
         .count();
     stats.removal_targeted = stats.removal_count - stats.removal_wipes;
     stats.wincon_count = sim_deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == model::Role::Wincon)
         .count();
     stats.draw_count = sim_deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == model::Role::Draw)
         .count();
     stats.land_count = sim_deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == model::Role::Land)
         .count();
 }
@@ -381,7 +359,7 @@ pub fn simulate(
         return Ok(crate::cli::codes::USAGE);
     }
 
-    let total_cards = sim_deck.cards.len() + sim_deck.commanders.len();
+    let total_cards = sim_deck.library_len() + sim_deck.commanders.len();
     if total_cards == 0 {
         out.error("deck has no cards");
         out.hint("add cards with: stm deck update <name> --add <spec>");
@@ -402,7 +380,7 @@ pub fn simulate(
     }
     let mut stats = aggregate::aggregate(&logs, &sim_deck, turns);
     apply_role_counts(&mut stats, &sim_deck);
-    let problems = findings::find_problems(&stats, &sim_deck);
+    let findings = findings::analyze_findings(&stats, &sim_deck);
     // Bracket for the mana-base band: explicit flag, else inferred from the
     // Game Changer census (the same signals `deck legal` checks). 60-card
     // decks skip bracket inference entirely (Karsten bands by curve).
@@ -448,87 +426,101 @@ pub fn simulate(
         if let Some(baseline_path) = baseline {
             // JSON diff mode: print the ReportDiff as JSON so agents can
             // gate on new problems without hand-diffing full reports.
-            let baseline: serde_json::Value = read_baseline_json(baseline_path)?;
+            let baseline = read_baseline_report(baseline_path)?;
             let current =
-                report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
-            let diff = report_view::diff_reports(&baseline, &current);
+                report::json_report(&stats, &sim_deck, name, seed, &findings, bench, &mana_base);
+            let diff =
+                report_view::diff_reports(&baseline, &current).map_err(anyhow::Error::msg)?;
             println!("{}", serde_json::to_string_pretty(&diff)?);
             // Diff mode exits on the delta: empty diff or only resolved
             // problems is clean; any new problem exits 1.
-            if diff.problems.iter().any(|p| p.change == "new") {
-                return Ok(crate::cli::codes::ERROR);
-            }
-            return Ok(crate::cli::codes::OK);
+            return Ok(report_view::baseline_exit_code(&diff));
         }
-        let mut v =
-            report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
-        if !combo_rows.is_empty()
-            && let Some(obj) = v.as_object_mut()
-        {
-            obj.insert("combo_access".into(), serde_json::json!(combo_rows));
+        let mut report =
+            report::json_report(&stats, &sim_deck, name, seed, &findings, bench, &mana_base);
+        if !combo_rows.is_empty() {
+            report.combo_access = Some(
+                combo_rows
+                    .iter()
+                    .map(|row| report_schema::PairAccessReport {
+                        pair: row.pair.clone(),
+                        target_turn: row.target_turn,
+                        percent_of_games: report_schema::Percent::from_share(row.game_share),
+                    })
+                    .collect(),
+            );
         }
         // Static colored-source audit on the same census the sim loaded.
-        if let Ok(audit) = super::mana::mana_audit_for(conn, &deck)
-            && let Some(obj) = v.as_object_mut()
-        {
-            obj.insert(
-                "colored_sources".into(),
-                super::mana_audit::colored_sources_json(&audit),
-            );
-        }
-        if let (Some(assembly), Some(obj)) = (&combo_report, v.as_object_mut()) {
-            obj.insert(
-                "combos".into(),
-                report_view::combos_json(assembly, combo_limit),
-            );
-            obj.insert(
-                "win_paths".into(),
-                report_view::win_paths_json(assembly, combo_limit),
-            );
+        let audit = super::mana::mana_audit_for(conn, &deck)?;
+        report.colored_sources = Some(super::mana_audit::colored_sources_report(&audit));
+        if let Some(assembly) = &combo_report {
+            report.combos = Some(report_view::combos_report(assembly, combo_limit));
+            report.win_paths = Some(report_view::win_paths_report(assembly, combo_limit));
         }
         if hypgeo {
-            let ceilings = hypgeo::cast_ceilings(&sim_deck, turns);
-            if let Some(obj) = v.as_object_mut() {
-                obj.insert("hypgeo".into(), ceilings);
-            }
+            report.hypgeo = Some(hypgeo::cast_ceilings(&sim_deck, turns));
         }
-        println!("{}", serde_json::to_string_pretty(&v)?);
+        println!("{}", serde_json::to_string_pretty(&report)?);
     } else if let Some(baseline_path) = baseline {
         // Diff mode: load the prior report and print only the deltas.
-        let baseline = read_baseline_json(baseline_path)?;
+        let baseline = read_baseline_report(baseline_path)?;
         let current =
-            report::json_report(&stats, &sim_deck, name, seed, &problems, bench, &mana_base);
-        let diff = report_view::diff_reports(&baseline, &current);
+            report::json_report(&stats, &sim_deck, name, seed, &findings, bench, &mana_base);
+        let diff = report_view::diff_reports(&baseline, &current).map_err(anyhow::Error::msg)?;
         report_view::print_diff(out, &diff);
         // Diff mode exits on the delta: empty diff or only resolved
         // problems is clean; any new problem exits 1.
-        if diff.problems.iter().any(|p| p.change == "new") {
-            return Ok(crate::cli::codes::ERROR);
-        }
-        return Ok(crate::cli::codes::OK);
+        return Ok(report_view::baseline_exit_code(&diff));
     } else {
-        report::print_report(out, name, &sim_deck, &stats, &problems, &mana_base);
+        let mut report =
+            report::json_report(&stats, &sim_deck, name, seed, &findings, bench, &mana_base);
         if !combo_rows.is_empty() {
-            report_view::print_combo_access(out, &combo_rows);
+            report.combo_access = Some(
+                combo_rows
+                    .iter()
+                    .map(|row| report_schema::PairAccessReport {
+                        pair: row.pair.clone(),
+                        target_turn: row.target_turn,
+                        percent_of_games: report_schema::Percent::from_share(row.game_share),
+                    })
+                    .collect(),
+            );
         }
+        let audit = super::mana::mana_audit_for(conn, &deck)?;
+        report.colored_sources = Some(super::mana_audit::colored_sources_report(&audit));
         if let Some(assembly) = &combo_report {
-            report_view::print_store_combos(out, assembly, combo_limit);
-            report_view::print_win_paths(out, assembly, combo_limit);
+            report.combos = Some(report_view::combos_report(assembly, combo_limit));
+            report.win_paths = Some(report_view::win_paths_report(assembly, combo_limit));
         }
         if hypgeo {
-            report_view::print_hypgeo(out, &hypgeo::cast_ceilings(&sim_deck, turns));
+            report.hypgeo = Some(hypgeo::cast_ceilings(&sim_deck, turns));
+        }
+        report::print_report(out, &report);
+        if let Some(rows) = &report.combo_access {
+            report_view::print_combo_access(out, rows);
+        }
+        if let Some(combos) = &report.combos {
+            report_view::print_store_combos(out, combos);
+        }
+        if let Some(win_paths) = &report.win_paths {
+            report_view::print_win_paths(out, win_paths);
+        }
+        if let Some(ceilings) = &report.hypgeo {
+            report_view::print_hypgeo(out, ceilings);
         }
     }
-    if problems.is_empty() {
-        Ok(crate::cli::codes::OK)
-    } else {
-        Ok(crate::cli::codes::ERROR)
-    }
+    Ok(report_view::normal_exit_code(&findings))
 }
 
-/// Read and parse a baseline report file as JSON.
-fn read_baseline_json(path: &std::path::Path) -> anyhow::Result<serde_json::Value> {
+/// Read and validate a complete typed baseline report.
+fn read_baseline_report(path: &std::path::Path) -> anyhow::Result<report_schema::SimReport> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("reading baseline {}", path.display()))?;
-    serde_json::from_str(&text).with_context(|| format!("parsing baseline {}", path.display()))
+    serde_json::from_str(&text)
+        .with_context(|| {
+            format!(
+                "parsing simulator report baseline {} (save a complete current report with `stm deck simulate --json`)",
+                path.display()
+            )
+        })
 }

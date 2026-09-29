@@ -27,13 +27,14 @@ fn hyper_at_least_basics() {
 #[test]
 fn ceilings_carry_rows() {
     let deck = crate::deck::simulator::model::SimDeck {
+        companion: None,
         cards: vec![],
         commanders: vec![],
         format: crate::deck::simulator::model::Format::Commander,
         rules: crate::deck::simulator::format::rules_for("commander"),
     };
     let payload = cast_ceilings(&deck, 10);
-    assert!(payload.get("cards").is_some());
+    assert!(payload.cards.is_empty());
 }
 
 #[test]

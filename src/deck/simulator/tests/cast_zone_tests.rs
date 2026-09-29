@@ -1,7 +1,8 @@
-use super::cast_phase::{cast_phase, play_land};
-use super::game::{GameState, Pool};
+use super::cast_pass::{cast_pass, play_land};
+use super::game::{GameState, ManaPool};
 use super::model::{Cost, Format, SimDeck};
-use super::oracle_parse::{parse_oracle_cost, parse_sim_card};
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use std::collections::HashMap;
 
@@ -10,7 +11,7 @@ fn row(name: &str, cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.into(),
         oracle_id: String::new(),
         mana_cost: cost.into(),
-        cmc: parse_oracle_cost(cost).total() as f64,
+        cmc: parse_cost(cost).total() as f64,
         type_line: type_line.into(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -32,6 +33,7 @@ fn row(name: &str, cost: &str, type_line: &str, text: &str) -> CardRow {
 
 fn deck(rows: &[CardRow]) -> SimDeck {
     SimDeck {
+        companion: None,
         cards: rows.iter().map(parse_sim_card).collect(),
         commanders: Vec::new(),
         format: Format::Constructed,
@@ -54,12 +56,11 @@ fn state(hand: Vec<usize>, library: Vec<usize>) -> GameState {
         exile: Vec::new(),
         battlefield_seen: HashMap::new(),
         graveyard_seen: HashMap::new(),
-        #[cfg(test)]
-        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
-        drained: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
         life_gained: 0,
         flashback_permissions: std::collections::HashSet::new(),
         replay_casts: 0,
@@ -73,15 +74,70 @@ fn state(hand: Vec<usize>, library: Vec<usize>) -> GameState {
         prowess_casts: 0,
         infinite_mana_suspected: false,
         next_uid: 0,
+        player_counters: Default::default(),
+        activated_this_turn: Default::default(),
+        activated_once: Default::default(),
+        triggered_this_turn: Default::default(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
     }
 }
 
-fn cast_once(deck: &SimDeck, st: &mut GameState, pool: &mut Pool) {
+#[test]
+fn mana_mode_pays_source_sacrifice_and_uses_its_output() {
+    let cards = deck(&[row(
+        "Sacrificing mana artifact",
+        "",
+        "Artifact",
+        "{T}: Add {G}.\nSacrifice this artifact: Add {C}{C}.",
+    )]);
+    let source = &cards.cards[0];
+    let sacrifice_mode = source
+        .unlocked_abilities(0)
+        .find(|ability| {
+            ability
+                .activation
+                .as_ref()
+                .is_some_and(|activation| activation.sacrifices_source())
+        })
+        .expect("source-sacrifice mana mode parses");
+    assert!(matches!(
+        sacrifice_mode.effect_sequence(),
+        [super::model::SimEffect::Mana(yield_)] if yield_.colorless == 2
+    ));
+
+    let mut game = state(Vec::new(), Vec::new());
+    game.next_uid = 1;
+    game.battlefield.push(super::game::new_perm_with(
+        1,
+        &cards,
+        super::model::CardIdx(0),
+        0,
+        false,
+    ));
+
+    let pool = super::game_run::build_pool(&cards, &mut game, 1);
+
+    assert_eq!(pool.colorless, 2, "the chosen mode adds two colorless mana");
+    assert!(pool.fixed.iter().all(|amount| *amount == 0));
+    assert!(
+        game.battlefield.is_empty(),
+        "the mana source was sacrificed"
+    );
+    assert_eq!(game.graveyard, [super::model::CardIdx(0)]);
+}
+
+fn cast_once(deck: &SimDeck, st: &mut GameState, pool: &mut ManaPool) {
     let mut spent = [0.0; 1];
     let mut engines = Vec::new();
     let mut pip_blocks = Vec::new();
     let mut blocked_colors = [false; 5];
-    cast_phase(
+    cast_pass(
         deck,
         st,
         pool,
@@ -100,9 +156,9 @@ fn resolved_spells_reach_the_graveyard_and_permanents_stay_in_play() {
         row("Bear", "{1}", "Creature — Bear", ""),
     ]);
     let mut spell_state = state(vec![0], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut spell_state, &mut pool);
     assert!(spell_state.hand.is_empty());
@@ -115,14 +171,14 @@ fn resolved_spells_reach_the_graveyard_and_permanents_stay_in_play() {
     assert!(spell_state.battlefield.is_empty());
 
     let mut permanent_state = state(vec![1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut permanent_state, &mut pool);
     assert!(permanent_state.graveyard.is_empty());
     assert_eq!(permanent_state.battlefield.len(), 1);
-    assert!(permanent_state.battlefield[0].sick);
+    assert!(permanent_state.battlefield[0].summoning_sick);
 }
 
 #[test]
@@ -143,9 +199,9 @@ fn missing_additional_cost_resources_do_not_spend_mana_or_cards() {
     ];
     let cards = deck(&rows);
     let mut no_creature = state(vec![0], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 2,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut no_creature, &mut pool);
     assert_eq!(
@@ -157,9 +213,9 @@ fn missing_additional_cost_resources_do_not_spend_mana_or_cards() {
     assert_eq!(pool.flexible, 2);
 
     let mut no_discard_fodder = state(vec![1], vec![]);
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 2,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut no_discard_fodder, &mut pool);
     assert_eq!(
@@ -169,7 +225,7 @@ fn missing_additional_cost_resources_do_not_spend_mana_or_cards() {
             .collect::<Vec<_>>()
     );
     assert_eq!(pool.flexible, 2);
-    assert_eq!(cards.cards[1].riders.additional_cost_discards, 2);
+    assert_eq!(cards.cards[1].spell_data.additional_cost_discards, 2);
 }
 
 #[test]
@@ -185,7 +241,7 @@ fn wheel_sees_current_hand_and_resolves_the_cast_copy_once() {
         row("Filler", "{7}", "Sorcery", ""),
     ]);
     let mut st = state(vec![0, 1, 2], vec![]);
-    let mut pool = Pool::default();
+    let mut pool = ManaPool::default();
     cast_once(&cards, &mut st, &mut pool);
     assert_eq!(
         st.graveyard,
@@ -208,9 +264,9 @@ fn life_cost_must_leave_the_player_alive_and_is_paid_on_cast() {
     )]);
     let mut state_at_five = state(vec![0], vec![]);
     state_at_five.life = 5;
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut state_at_five, &mut pool);
     assert_eq!(
@@ -224,9 +280,9 @@ fn life_cost_must_leave_the_player_alive_and_is_paid_on_cast() {
 
     let mut state_at_six = state(vec![0], vec![]);
     state_at_six.life = 6;
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut state_at_six, &mut pool);
     assert_eq!(state_at_six.life, 1);
@@ -249,7 +305,7 @@ fn fetch_sacrifices_itself_and_searches_only_a_matching_land_type() {
             "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle.",
         ),
         row(
-            "Breeding Pool",
+            "Breeding ManaPool",
             "",
             "Land — Forest Island",
             "This land enters tapped.\n{T}: Add {G} or {U}.",
@@ -319,6 +375,74 @@ fn fetch_sacrifices_itself_and_searches_only_a_matching_land_type() {
 }
 
 #[test]
+fn sacrifice_mana_activation_requires_and_consumes_a_creature() {
+    let cards = deck(&[
+        row(
+            "Altar",
+            "{3}",
+            "Artifact",
+            "Sacrifice a creature: Add {C}{C}.",
+        ),
+        row("Bear", "{1}{G}", "Creature — Bear", ""),
+    ]);
+    let mut without_body = state(Vec::new(), Vec::new());
+    without_body.battlefield.push(super::game::new_perm_with(
+        1,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    assert!(
+        super::game_effects::activation::pick_best_activation(
+            &cards,
+            &without_body,
+            &ManaPool::default(),
+            1,
+        )
+        .is_none()
+    );
+
+    let mut with_body = state(Vec::new(), Vec::new());
+    with_body.battlefield.push(super::game::new_perm_with(
+        1,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    with_body.battlefield.push(super::game::new_perm_with(
+        2,
+        &cards,
+        crate::deck::simulator::model::CardIdx(1),
+        0,
+        false,
+    ));
+    let activation = super::game_effects::activation::pick_best_activation(
+        &cards,
+        &with_body,
+        &ManaPool::default(),
+        1,
+    )
+    .expect("the creature pays the activation cost");
+    let mut pool = ManaPool::default();
+    super::game_effects::activation::resolve_activation(
+        &cards,
+        &mut with_body,
+        &mut pool,
+        1,
+        &activation,
+    );
+
+    assert_eq!(pool.colorless, 2);
+    assert_eq!(with_body.battlefield.len(), 1);
+    assert_eq!(
+        with_body.graveyard,
+        [crate::deck::simulator::model::CardIdx(1)]
+    );
+}
+
+#[test]
 fn shock_land_pays_life_to_enter_untapped() {
     let cards = deck(&[row(
         "Steam Vents",
@@ -353,7 +477,7 @@ fn no_mana_cost_spell_is_not_a_zero_cost_hand_cast() {
     assert!(!cards.cards[0].has_mana_cost);
     assert!(cards.cards[1].has_mana_cost);
     let mut st = state(vec![0, 1], vec![]);
-    let mut pool = Pool::default();
+    let mut pool = ManaPool::default();
     cast_once(&cards, &mut st, &mut pool);
     assert_eq!(
         st.hand,
@@ -401,9 +525,9 @@ fn resolved_self_exiling_spell_goes_to_exile_and_sacrifice_triggers_fire() {
         0,
         false,
     ));
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         flexible: 3,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut st, &mut pool);
     assert_eq!(
@@ -421,7 +545,9 @@ fn resolved_self_exiling_spell_goes_to_exile_and_sacrifice_triggers_fire() {
     assert_eq!(st.battlefield.len(), 2);
     assert_eq!(
         st.battlefield[1].card,
-        crate::deck::simulator::game::CardRef::Token
+        crate::deck::simulator::game::CardRef::Token(
+            crate::deck::simulator::game::TokenKind::Creature,
+        )
     );
     assert_eq!(
         cards.cards[0].cost,
@@ -447,13 +573,13 @@ fn flashback_grants_only_the_graveyard_instances_present_at_resolution() {
         row("Later spell", "{R}", "Instant", "Draw a card."),
         row("Drawn", "{0}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].riders.grants_flashback);
+    assert!(cards.cards[0].spell_data.grants_flashback);
     let mut st = state(vec![0], vec![3]);
     st.graveyard.push(crate::deck::simulator::model::CardIdx(1));
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 0, 0, 1, 0],
         flexible: 6,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut st, &mut pool);
 
@@ -469,7 +595,7 @@ fn flashback_grants_only_the_graveyard_instances_present_at_resolution() {
     assert!(st.flashback_permissions.is_empty());
 
     st.graveyard.push(crate::deck::simulator::model::CardIdx(2));
-    cast_once(&cards, &mut st, &mut Pool::default());
+    cast_once(&cards, &mut st, &mut ManaPool::default());
     assert_eq!(st.replay_casts, 1);
     assert!(
         st.graveyard
@@ -497,17 +623,17 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
         row("Draw one", "{0}", "Sorcery", ""),
         row("Draw two", "{0}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].riders.grants_escape);
+    assert!(cards.cards[0].spell_data.grants_escape);
     let mut st = state(vec![0], vec![]);
     st.graveyard.extend(
         [1, 3, 4, 5, 2, 6, 7, 8]
             .iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i)),
     );
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 0, 0, 3, 0],
         flexible: 1,
-        ..Pool::default()
+        ..ManaPool::default()
     };
     cast_once(&cards, &mut st, &mut pool);
 
@@ -539,7 +665,7 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
             .iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i)),
     );
-    cast_once(&cards, &mut no_fuel, &mut Pool::default());
+    cast_once(&cards, &mut no_fuel, &mut ManaPool::default());
     assert!(
         no_fuel
             .graveyard
@@ -572,7 +698,12 @@ fn sacrificed_escape_artifact_can_be_escaped_again_with_remaining_fuel() {
         row("Fuel six", "{9}", "Sorcery", ""),
     ]);
     let mut st = state(Vec::new(), Vec::new());
-    assert!(cards.cards[1].sacrifices_for_mana);
+    assert!(cards.cards[1].unlocked_abilities(0).any(|ability| {
+        ability
+            .activation
+            .as_ref()
+            .is_some_and(|activation| activation.sacrifices_source())
+    }));
     assert!(cards.cards[1].tap.is_some());
     st.next_uid = 1;
     st.battlefield.push(super::game::new_perm_with(
@@ -587,7 +718,7 @@ fn sacrificed_escape_artifact_can_be_escaped_again_with_remaining_fuel() {
             .iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i)),
     );
-    let mut pool = Pool::default();
+    let mut pool = ManaPool::default();
 
     cast_once(&cards, &mut st, &mut pool);
     assert!(st.battlefield.iter().any(|permanent| permanent.card
@@ -614,7 +745,12 @@ fn sacrificed_escape_artifact_can_be_escaped_again_with_remaining_fuel() {
         .expect("the escaped artifact stays in play");
     let parsed_artifact = super::game::card_of(&cards, permanent);
     assert!(!parsed_artifact.is_creature);
-    assert!(parsed_artifact.sacrifices_for_mana);
+    assert!(parsed_artifact.unlocked_abilities(0).any(|ability| {
+        ability
+            .activation
+            .as_ref()
+            .is_some_and(|activation| activation.sacrifices_source())
+    }));
     assert!(parsed_artifact.gate_types.is_empty());
     assert!(
         parsed_artifact
@@ -661,13 +797,13 @@ fn ad_nauseam_reveals_in_order_and_can_cause_a_lethal_reveal() {
         row("One", "{1}", "Sorcery", ""),
         row("Seven", "{7}", "Sorcery", ""),
     ]);
-    assert!(cards.cards[0].riders.reveal_rule.is_some());
+    assert!(cards.cards[0].spell_data.reveal_rule.is_some());
     let mut st = state(vec![0], vec![1, 2, 3]);
     st.life = 5;
-    let mut pool = Pool {
+    let mut pool = ManaPool {
         fixed: [0, 0, 2, 0, 0],
         flexible: 3,
-        ..Pool::default()
+        ..ManaPool::default()
     };
 
     cast_once(&cards, &mut st, &mut pool);
@@ -710,7 +846,7 @@ fn griselbrand_repeats_life_paid_draws_only_while_life_can_pay() {
         false,
     ));
 
-    super::game_effects::spend_leftover(&cards, &mut st, &mut Pool::default(), 1);
+    super::game_effects::spend_leftover(&cards, &mut st, &mut ManaPool::default(), 1);
 
     assert_eq!(st.hand.len(), 14);
     assert_eq!(st.life, 6);
@@ -739,8 +875,8 @@ fn griselbrand_repeats_life_paid_draws_only_while_life_can_pay() {
         0,
         false,
     ));
-    cast_once(&cards, &mut st, &mut Pool::default());
-    super::game_effects::spend_leftover(&cards, &mut st, &mut Pool::default(), 1);
+    cast_once(&cards, &mut st, &mut ManaPool::default());
+    super::game_effects::spend_leftover(&cards, &mut st, &mut ManaPool::default(), 1);
 
     assert_eq!(st.life_gained, 7);
     assert_eq!(st.life, 6);
@@ -785,29 +921,32 @@ fn sacrifice_draw_resolves_undying_and_cancels_the_targets_counter() {
         0,
         false,
     );
-    target.counters = 1;
+    target.counters = super::model::Counters {
+        plus1: 1,
+        ..Default::default()
+    };
     st.battlefield.push(target);
     let ability = cards.cards[0]
-        .abilities()
+        .unlocked_abilities(0)
         .next()
         .expect("the text parses as an activation")
         .clone();
-    assert_eq!(ability.life_cost, 1);
-    assert_eq!(ability.sacrifice_bodies, 1);
-    assert_eq!(ability.cost.total(), 0);
+    let costs = ability.activation.as_ref().expect("typed activation costs");
+    assert_eq!(costs.life_payment(), 1);
+    assert_eq!(costs.creature_sacrifices(), 1);
+    assert_eq!(costs.mana_cost().total(), 0);
     assert!(matches!(
         ability.effect,
-        super::model::Effect::DrawAndMinusCounter
+        super::model::SimEffect::DrawAndMinusCounter
     ));
     let activation =
-        super::game_effects::pick_best_activation_public(&cards, &st, &Pool::default())
+        super::game_effects::activation::pick_best_activation(&cards, &st, &ManaPool::default(), 1)
             .expect("the ability has a legal sacrifice and target");
 
-    super::game_effects::resolve_activation_public(
+    super::game_effects::activation::resolve_activation(
         &cards,
         &mut st,
-        &mut Pool::default(),
-        1,
+        &mut ManaPool::default(),
         1,
         &activation,
     );
@@ -826,14 +965,14 @@ fn sacrifice_draw_resolves_undying_and_cancels_the_targets_counter() {
             == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
                 1,
             ))
-            && permanent.counters == 1
+            && permanent.counters.plus1 == 1
     }));
     assert!(st.battlefield.iter().any(|permanent| {
         permanent.card
             == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
                 2,
             ))
-            && permanent.counters == 0
+            && permanent.counters == Default::default()
     }));
 
     let mut no_target = state(Vec::new(), vec![3]);
@@ -851,14 +990,17 @@ fn sacrifice_draw_resolves_undying_and_cancels_the_targets_counter() {
         0,
         false,
     ));
-    let activation =
-        super::game_effects::pick_best_activation_public(&cards, &no_target, &Pool::default())
-            .expect("the optional target can be absent");
-    super::game_effects::resolve_activation_public(
+    let activation = super::game_effects::activation::pick_best_activation(
+        &cards,
+        &no_target,
+        &ManaPool::default(),
+        1,
+    )
+    .expect("the optional target can be absent");
+    super::game_effects::activation::resolve_activation(
         &cards,
         &mut no_target,
-        &mut Pool::default(),
-        1,
+        &mut ManaPool::default(),
         1,
         &activation,
     );
@@ -872,4 +1014,57 @@ fn sacrifice_draw_resolves_undying_and_cancels_the_targets_counter() {
     );
     assert!(no_target.battlefield.iter().all(|permanent| permanent.card
         != crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
+}
+
+#[test]
+fn undying_returns_through_minus_counters() {
+    // Undying (CR 702.93) checks only +1/+1 counters: a creature carrying
+    // a -1/-1 counter (and no +1/+1) still returns when it dies.
+    let cards = deck(&[
+        row(
+            "Sacrifice engine",
+            "{2}{B}{B}",
+            "Creature — Human Cleric",
+            "Pay 1 life, Sacrifice another creature: Draw a card, then put a -1/-1 counter on up to one target creature.",
+        ),
+        row("Fodder", "{G}", "Creature — Wolf", "Undying"),
+        row("Drawn", "{0}", "Sorcery", ""),
+    ]);
+    let mut st = state(Vec::new(), vec![2]);
+    st.battlefield.push(super::game::new_perm_with(
+        1,
+        &cards,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    let mut fodder = super::game::new_perm_with(
+        2,
+        &cards,
+        crate::deck::simulator::model::CardIdx(1),
+        0,
+        false,
+    );
+    fodder.counters = super::model::Counters {
+        minus1: 1,
+        ..Default::default()
+    };
+    st.battlefield.push(fodder);
+    let activation =
+        super::game_effects::activation::pick_best_activation(&cards, &st, &ManaPool::default(), 1)
+            .expect("the ability has a legal sacrifice");
+    super::game_effects::activation::resolve_activation(
+        &cards,
+        &mut st,
+        &mut ManaPool::default(),
+        1,
+        &activation,
+    );
+    assert!(st.battlefield.iter().any(|permanent| {
+        permanent.card
+            == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
+                1,
+            ))
+            && permanent.counters.plus1 == 1
+    }));
 }

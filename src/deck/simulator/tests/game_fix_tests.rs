@@ -5,7 +5,8 @@
 
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -16,7 +17,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -45,6 +46,7 @@ fn deck_from(rows: &[(CardRow, usize)]) -> SimDeck {
         }
     }
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -73,7 +75,7 @@ fn creature_restricted_land_pays_creature_cast() {
     let deck = deck_from(&rows);
     let mut rng = ChaCha8Rng::seed_from_u64(11);
     let logs: Vec<_> = (0..300).map(|_| run_game(&deck, &mut rng, 8)).collect();
-    let big_body: Vec<usize> = deck
+    let large_creature_set: Vec<usize> = deck
         .cards
         .iter()
         .enumerate()
@@ -86,7 +88,7 @@ fn creature_restricted_land_pays_creature_cast() {
     let cast_games = logs
         .iter()
         .filter(|log| {
-            big_body
+            large_creature_set
                 .iter()
                 .any(|i| log.card_first_battlefield.contains_key(i))
         })
@@ -111,12 +113,11 @@ fn crewed_vehicle_reverts_next_turn() {
         exile: Vec::new(),
         battlefield_seen: Default::default(),
         graveyard_seen: Default::default(),
-        #[cfg(test)]
-        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
-        drained: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
         life_gained: 0,
         flashback_permissions: std::collections::HashSet::new(),
         replay_casts: 0,
@@ -130,23 +131,40 @@ fn crewed_vehicle_reverts_next_turn() {
         prowess_casts: 0,
         infinite_mana_suspected: false,
         next_uid: 0,
+        player_counters: Default::default(),
+        activated_this_turn: Default::default(),
+        activated_once: Default::default(),
+        triggered_this_turn: Default::default(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
     };
     st.battlefield.push(super::game::Permanent {
         uid: 1,
-        card: crate::deck::simulator::game::CardRef::Token,
+        card: crate::deck::simulator::game::CardRef::Token(
+            crate::deck::simulator::game::TokenKind::Creature,
+        ),
         tapped: false,
-        sick: false,
-        counters: 0,
+        summoning_sick: false,
+        counters: Default::default(),
         animated: false,
         crewed: true,
         entered_turn: 0,
         saga_step: 0,
         fired: false,
-        trigger_fired: false,
-        blink_pending: false,
-        loyalty: 0,
+        returned_trigger_pending: false,
         equipped: false,
         equip_host: None,
+        face_down: false,
+        saddled: false,
+        army: false,
+        jace_token: false,
+        sacrifice_at_end: false,
+        attacking_this_turn: false,
     });
     super::game_run::expire_crew(&mut st);
     assert!(!st.battlefield[0].crewed, "crew must expire at end of turn");
@@ -172,6 +190,7 @@ fn equipment_buff_survives_board_shift() {
         parse_sim_card(&tiny),
     ];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -186,12 +205,11 @@ fn equipment_buff_survives_board_shift() {
         exile: Vec::new(),
         battlefield_seen: Default::default(),
         graveyard_seen: Default::default(),
-        #[cfg(test)]
-        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
-        drained: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
         life_gained: 0,
         flashback_permissions: std::collections::HashSet::new(),
         replay_casts: 0,
@@ -205,6 +223,17 @@ fn equipment_buff_survives_board_shift() {
         prowess_casts: 0,
         infinite_mana_suspected: false,
         next_uid: 0,
+        player_counters: Default::default(),
+        activated_this_turn: Default::default(),
+        activated_once: Default::default(),
+        triggered_this_turn: Default::default(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
     };
     // Board: host (pos 0), gear (pos 1), a small body (pos 2). Bodies
     // enter unsick so equip can pick its host this turn.
@@ -215,7 +244,7 @@ fn equipment_buff_survives_board_shift() {
         1,
         false,
     );
-    host_perm.sick = false;
+    host_perm.summoning_sick = false;
     st.battlefield.push(host_perm);
     st.battlefield.push(super::game::new_perm_with(
         2,
@@ -231,10 +260,10 @@ fn equipment_buff_survives_board_shift() {
         1,
         false,
     );
-    tiny_perm.sick = false;
+    tiny_perm.summoning_sick = false;
     st.battlefield.push(tiny_perm);
     // Equip: pay the equip cost onto the strongest body.
-    let mut pool = super::game::Pool::default();
+    let mut pool = super::game::ManaPool::default();
     pool.fixed[2] = 4;
     super::game_mana::pay_cost(
         &super::model::Cost {
@@ -254,20 +283,26 @@ fn equipment_buff_survives_board_shift() {
     // A token enters before the next combat, shifting positions.
     let token = super::game::Permanent {
         uid: 9,
-        card: crate::deck::simulator::game::CardRef::Token,
+        card: crate::deck::simulator::game::CardRef::Token(
+            crate::deck::simulator::game::TokenKind::Creature,
+        ),
         tapped: false,
-        sick: false,
-        counters: 0,
+        summoning_sick: false,
+        counters: Default::default(),
         animated: false,
         crewed: false,
         entered_turn: 2,
         saga_step: 0,
         fired: false,
-        trigger_fired: false,
-        blink_pending: false,
-        loyalty: 0,
+        returned_trigger_pending: false,
         equipped: false,
         equip_host: None,
+        face_down: false,
+        saddled: false,
+        army: false,
+        jace_token: false,
+        sacrifice_at_end: false,
+        attacking_this_turn: false,
     };
     st.battlefield.insert(0, token);
     let combat = super::game_combat::combat_phase(&deck, &mut st, 2, &[1, 1, 1, 1, 1, 1, 1, 1]);
@@ -329,9 +364,9 @@ fn blink_refires_once_land_search_does_not() {
     // (opener 7 + 2 draws = 9), and a repeated search would push the
     // census past what the deck could hold.
     assert!(
-        log.lands_seen_by_11 <= 9,
+        log.lands_seen_by_turn_4 <= 9,
         "fetch searches once: {}",
-        log.lands_seen_by_11
+        log.lands_seen_by_turn_4
     );
 }
 
@@ -474,9 +509,9 @@ fn x_cost_wipes_restricted_buckets() {
         spent.iter().any(|s| *s >= 3.0),
         "X spell should spend the leftover pool: {spent:?}"
     );
-    // Pool-level unit pin: a plain sorcery X spell belongs to no cast
+    // ManaPool-level unit pin: a plain sorcery X spell belongs to no cast
     // class, so every bucket is illegal and discards.
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         creature_only: 3,
         legendary_only: 2,
         artifact_only: 1,
@@ -484,7 +519,7 @@ fn x_cost_wipes_restricted_buckets() {
         colorless: 5,
         ..Default::default()
     };
-    let x = super::cast_phase::convert_pool_to_x_probe(&parse_sim_card(&x_spell), &mut pool);
+    let x = super::cast_pass::cast_resolve::convert_pool_to_x(&parse_sim_card(&x_spell), &mut pool);
     assert_eq!(x, 5, "the X value counts only legally fundable mana");
     assert_eq!(
         pool.creature_only + pool.legendary_only + pool.artifact_only + pool.instant_sorcery_only,
@@ -495,13 +530,13 @@ fn x_cost_wipes_restricted_buckets() {
     // buckets stay illegal and discard.
     let mut creature_card = parse_sim_card(&x_spell);
     creature_card.is_creature = true;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         creature_only: 3,
         legendary_only: 2,
         colorless: 5,
         ..Default::default()
     };
-    let x = super::cast_phase::convert_pool_to_x_probe(&creature_card, &mut pool);
+    let x = super::cast_pass::cast_resolve::convert_pool_to_x(&creature_card, &mut pool);
     assert_eq!(x, 8, "the creature bucket funds X with the general pool");
     assert_eq!(pool.creature_only, 0, "the member bucket is spent into X");
     assert_eq!(pool.legendary_only, 0, "unrelated buckets discard");
@@ -548,6 +583,7 @@ fn fetch_targets_only_its_pair() {
         "As this land enters, you may pay 2 life. If you do, it enters untapped.\n{T}: Add {U}.\n{T}: Add {R}. Activate only if you control an Island or a Mountain.",
     )));
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -569,68 +605,118 @@ fn fetch_targets_only_its_pair() {
     );
 }
 
-/// The fetch-name table and the land-type table stay consistent: every
-/// recognized fetch carries a nonempty target pair, and every land type
-/// entry that looks like a fetch matches the fetch table.
+/// Fetch targets come from parsed Oracle search clauses.
 #[test]
-fn fetch_tables_stay_consistent() {
-    for name in [
-        "Flooded Strand",
-        "Polluted Delta",
-        "Windswept Heath",
-        "Wooded Foothills",
-        "Fabled Passage",
-        "Scalding Tarn",
-        "Arid Mesa",
-        "Marsh Flats",
-        "Misty Rainforest",
-        "Bloodstained Mire",
-        "Verdant Catacombs",
-        "Prismatic Vista",
-        "Terramorphic Expanse",
-        "Evolving Wilds",
-        "Escape Tunnel",
-    ] {
-        assert!(
-            !super::game::fetch_target_pair(name).is_empty(),
-            "{name} must map to its fetch pair"
-        );
+fn fetch_targets_come_from_oracle_text() {
+    use super::model::BasicLandType::{self, *};
+    let cases: &[(&str, &str, &[BasicLandType], bool)] = &[
+        (
+            "Flooded Strand",
+            "a Plains or Island card",
+            &[Plains, Island],
+            false,
+        ),
+        (
+            "Polluted Delta",
+            "an Island or Swamp card",
+            &[Island, Swamp],
+            false,
+        ),
+        (
+            "Windswept Heath",
+            "a Plains or Forest card",
+            &[Plains, Forest],
+            false,
+        ),
+        (
+            "Wooded Foothills",
+            "a Mountain or Forest card",
+            &[Mountain, Forest],
+            false,
+        ),
+        (
+            "Scalding Tarn",
+            "an Island or Mountain card",
+            &[Island, Mountain],
+            false,
+        ),
+        (
+            "Arid Mesa",
+            "a Plains or Mountain card",
+            &[Plains, Mountain],
+            false,
+        ),
+        (
+            "Marsh Flats",
+            "a Plains or Swamp card",
+            &[Plains, Swamp],
+            false,
+        ),
+        (
+            "Misty Rainforest",
+            "a Forest or Island card",
+            &[Island, Forest],
+            false,
+        ),
+        (
+            "Bloodstained Mire",
+            "a Swamp or Mountain card",
+            &[Swamp, Mountain],
+            false,
+        ),
+        (
+            "Verdant Catacombs",
+            "a Swamp or Forest card",
+            &[Swamp, Forest],
+            false,
+        ),
+        (
+            "Fabled Passage",
+            "a basic land card",
+            &BasicLandType::ALL,
+            true,
+        ),
+        (
+            "Prismatic Vista",
+            "a basic land card",
+            &BasicLandType::ALL,
+            true,
+        ),
+        (
+            "Terramorphic Expanse",
+            "a basic land card",
+            &BasicLandType::ALL,
+            true,
+        ),
+        (
+            "Evolving Wilds",
+            "a basic land card",
+            &BasicLandType::ALL,
+            true,
+        ),
+        (
+            "Escape Tunnel",
+            "a basic land card",
+            &BasicLandType::ALL,
+            true,
+        ),
+    ];
+    for (name, target, expected_types, basic_only) in cases {
         let parsed = parse_sim_card(&card(
             name,
             "",
             "Land",
-            "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+            &format!(
+                "{{T}}, Sacrifice this land: Search your library for {target}, put it onto the battlefield tapped, then shuffle."
+            ),
         ));
         assert!(parsed.is_fetch_land, "{name} must parse as a fetch");
+        assert_eq!(
+            parsed.fetch_target_types, *expected_types,
+            "{name} must use only target types named in Oracle text"
+        );
+        assert_eq!(parsed.fetch_basic_only, *basic_only);
     }
-    // Named fetches carry their real pair, never all five basics.
-    assert_eq!(
-        super::game::fetch_target_pair("Polluted Delta"),
-        &["Island", "Swamp"],
-        "Polluted Delta targets the blue-black pair"
-    );
-    assert_eq!(
-        super::game::fetch_target_pair("Flooded Strand"),
-        &["Plains", "Island"],
-        "Flooded Strand targets the white-blue pair"
-    );
-    assert_eq!(
-        super::game::fetch_target_pair("Marsh Flats"),
-        &["Plains", "Swamp"],
-        "Marsh Flats targets the white-black pair"
-    );
-    assert_eq!(
-        super::game::fetch_target_pair("Arid Mesa"),
-        &["Plains", "Mountain"],
-        "Arid Mesa targets the red-white pair"
-    );
-    assert_eq!(
-        super::game::fetch_target_pair("Misty Rainforest"),
-        &["Island", "Forest"],
-        "Misty Rainforest targets the blue-green pair"
-    );
-    // Generic search lands (any basic) keep the full set.
-    assert_eq!(super::game::fetch_target_pair("Evolving Wilds").len(), 5);
 
     let oracle_named_fetch = parse_sim_card(&card(
         "Oracle Fetch",
@@ -641,7 +727,10 @@ fn fetch_tables_stay_consistent() {
     assert!(oracle_named_fetch.is_fetch_land);
     assert_eq!(
         oracle_named_fetch.fetch_target_types,
-        [false, true, false, false, true]
+        vec![
+            super::model::BasicLandType::Island,
+            super::model::BasicLandType::Forest,
+        ]
     );
     assert!(!oracle_named_fetch.fetch_basic_only);
     let same_name_without_search = parse_sim_card(&card("Oracle Fetch", "", "Land", ""));
@@ -680,6 +769,7 @@ fn misty_rainforest_opens_its_own_pair() {
         "As this land enters, you may pay 2 life. If you do, it enters untapped.\n{T}: Add {C}.\n{T}: Add {G}. Activate only if you control a Forest or a Plains.",
     )));
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -757,6 +847,7 @@ fn battlefield_self_mill_not_overridden_by_commander() {
     lib.push(parse_sim_card(&self_miller));
     lib.push(parse_sim_card(&self_miller));
     let deck = SimDeck {
+        companion: None,
         cards: lib,
         commanders,
         format: Format::Commander,
@@ -858,14 +949,14 @@ fn graveyard_exchange_sacrifice_loop_terminates_with_death_tokens() {
             false,
         ));
     }
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         flexible: 4,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     // This call is the test: the loop must finish in bounded rounds
     // (the death-token refills keep the board alive for a while; the
     // cap bounds the exchange regardless).
-    super::cast_phase::cast_phase(
+    super::cast_pass::cast_pass(
         &cards,
         &mut st,
         &mut pool,
@@ -910,11 +1001,11 @@ fn opponent_mill_leaves_player_zones_untouched() {
         opp_mill,
     ]);
     let mut st = super::turn_loop_tests::state(vec![1], vec![0]);
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         flexible: 4,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
-    super::cast_phase::cast_phase(
+    super::cast_pass::cast_pass(
         &cards,
         &mut st,
         &mut pool,
@@ -963,11 +1054,11 @@ fn graveyard_cast_gates_on_additional_life_cost() {
     st.flashback_permissions
         .insert(crate::deck::simulator::model::CardIdx(0));
     st.life = 4;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         flexible: 4,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
-    super::cast_phase::cast_graveyard_spells_probe(
+    super::cast_pass::cast_graveyard_spells(
         &cards,
         &mut st,
         &mut pool,
@@ -995,11 +1086,11 @@ fn graveyard_cast_gates_on_additional_life_cost() {
         .flashback_permissions
         .insert(crate::deck::simulator::model::CardIdx(0));
     st_ok.life = 5;
-    let mut pool_ok = super::game::Pool {
+    let mut pool_ok = super::game::ManaPool {
         flexible: 4,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
-    super::cast_phase::cast_graveyard_spells_probe(
+    super::cast_pass::cast_graveyard_spells(
         &cards,
         &mut st_ok,
         &mut pool_ok,
@@ -1026,6 +1117,7 @@ fn summoning_sick_bodies_crew_and_station() {
     let elf = card("Fresh Elf", "{G}", "Creature — Elf", "");
     let cards = vec![parse_sim_card(&vehicle), parse_sim_card(&elf)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1046,10 +1138,10 @@ fn summoning_sick_bodies_crew_and_station() {
         1,
         false,
     ));
-    st.battlefield[1].sick = true;
-    let mut pool = super::game::Pool::default();
+    st.battlefield[1].summoning_sick = true;
+    let mut pool = super::game::ManaPool::default();
     let empty: Vec<crate::deck::simulator::model::CardIdx> = Vec::new();
-    super::game_effects::tap_budget_probe(&deck, &mut st.battlefield, &mut pool, &empty);
+    super::game_effects::tap_budget(&deck, &mut st.battlefield, &mut pool, &empty);
     assert!(
         st.battlefield[0].crewed,
         "a summoning-sick body may crew (CR 702.122a)"
@@ -1072,6 +1164,7 @@ fn entry_turn_crewed_vehicle_waits_one_turn_to_attack() {
     let elf = card("Elf", "{G}", "Creature — Elf", "");
     let cards = vec![parse_sim_card(&vehicle), parse_sim_card(&elf)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1086,27 +1179,31 @@ fn entry_turn_crewed_vehicle_waits_one_turn_to_attack() {
             0,
         )),
         tapped: false,
-        sick: false,
-        counters: 0,
+        summoning_sick: false,
+        counters: Default::default(),
         animated: false,
         crewed: true,
         entered_turn: 2,
         saga_step: 0,
         fired: false,
-        trigger_fired: false,
-        blink_pending: false,
-        loyalty: 0,
+        returned_trigger_pending: false,
         equipped: false,
         equip_host: None,
+        face_down: false,
+        saddled: false,
+        army: false,
+        jace_token: false,
+        sacrifice_at_end: false,
+        attacking_this_turn: false,
     });
-    let combat = super::game_combat::combat_phase_probe(&deck, &mut st, 2, &[0]);
+    let combat = super::game_combat::combat_phase(&deck, &mut st, 2, &[0]);
     assert_eq!(
         combat.attackers, 0,
         "an entry-turn crewed vehicle cannot attack (CR 302.6)"
     );
     // The same vehicle crewed on a later turn attacks.
     st.battlefield[0].entered_turn = 1;
-    let combat = super::game_combat::combat_phase_probe(&deck, &mut st, 2, &[0]);
+    let combat = super::game_combat::combat_phase(&deck, &mut st, 2, &[0]);
     assert_eq!(
         combat.attackers, 1,
         "a crewed vehicle controlled since turn start attacks"
@@ -1129,6 +1226,7 @@ fn once_each_turn_trigger_fires_once() {
     );
     let cards = vec![parse_sim_card(&bounded), parse_sim_card(&unbounded)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1147,19 +1245,9 @@ fn once_each_turn_trigger_fires_once() {
         // Two land drops in the same turn fire the landfall trigger
         // twice; the bounded engine may draw only once.
         let first = st.hand.len();
-        super::game::fire_triggers_probe(
-            &deck,
-            &mut st,
-            super::model::AbilityTiming::OnLandfall,
-            2,
-        );
+        super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::LandEnters, 2);
         let second = st.hand.len();
-        super::game::fire_triggers_probe(
-            &deck,
-            &mut st,
-            super::model::AbilityTiming::OnLandfall,
-            2,
-        );
+        super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::LandEnters, 2);
         (second - first) + (st.hand.len() - second)
     };
     assert_eq!(
@@ -1187,6 +1275,7 @@ fn trigger_and_activation_once_flags_do_not_cross() {
     );
     let cards = vec![parse_sim_card(&hybrid)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1202,36 +1291,33 @@ fn trigger_and_activation_once_flags_do_not_cross() {
         false,
     ));
     // The turn boundary cleared summoning sickness.
-    st.battlefield[0].sick = false;
-    let mut pool = super::game::Pool {
+    st.battlefield[0].summoning_sick = false;
+    let mut pool = super::game::ManaPool {
         colorless: 6,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     // The once-each-turn upkeep trigger fires; the paid activation must
     // stay usable.
-    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnUpkeep, 2);
+    super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::Upkeep, 2);
     assert!(
-        super::game_effects::pick_best_activation_public(&deck, &st, &pool).is_some(),
+        super::game_effects::activation::pick_best_activation(&deck, &st, &pool, 2).is_some(),
         "the trigger's once-per-turn marker never gates the activation"
     );
     // The activation fires (its own ledger marks the permanent); a
     // later once-each-turn trigger still fires.
-    let activation = super::game_effects::pick_best_activation_public(&deck, &st, &pool)
+    let activation = super::game_effects::activation::pick_best_activation(&deck, &st, &pool, 2)
         .expect("the activation is usable");
-    super::game_effects::resolve_activation_public(&deck, &mut st, &mut pool, 2, 1, &activation);
-    assert!(
-        st.battlefield[0].fired,
-        "the activation marks its own ledger"
-    );
+    super::game_effects::activation::resolve_activation(&deck, &mut st, &mut pool, 2, &activation);
+    assert!(st.battlefield[0].tapped, "the activation pays its tap cost");
     let hand = st.hand.len();
-    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnEndStep, 2);
+    super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::EndStep, 2);
     assert_eq!(
         st.hand.len() - hand,
         0,
         "no end-step trigger exists on this card"
     );
     let hand = st.hand.len();
-    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnUpkeep, 2);
+    super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::Upkeep, 2);
     assert_eq!(
         st.hand.len() - hand,
         0,
@@ -1253,6 +1339,7 @@ fn unbounded_sibling_fires_beside_the_once_trigger() {
     );
     let cards = vec![parse_sim_card(&twin)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1268,9 +1355,9 @@ fn unbounded_sibling_fires_beside_the_once_trigger() {
         false,
     ));
     let first = st.hand.len();
-    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnLandfall, 2);
+    super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::LandEnters, 2);
     let second = st.hand.len();
-    super::game::fire_triggers_probe(&deck, &mut st, super::model::AbilityTiming::OnLandfall, 2);
+    super::game::fire_triggers(&deck, &mut st, super::model::SimTrigger::LandEnters, 2);
     assert_eq!(
         second - first,
         2,
@@ -1283,20 +1370,17 @@ fn unbounded_sibling_fires_beside_the_once_trigger() {
     );
 }
 
-/// A counter-pump win condition works end to end (Darksteel Reactor
-/// class): the upkeep "put a charge counter" pump registers as an
-/// engine, the "When this has twenty or more charge counters, you win"
-/// state trigger lowers to the upkeep win check, and the threshold
-/// census records the turn.
+/// A counter-pump win condition works through normal casting and upkeep.
 #[test]
 fn counter_pump_win_threshold_fires() {
     let reactor = card(
         "Darksteel Reactor",
-        "{4}",
+        "{0}",
         "Artifact",
         "Indestructible (Effects that say \"destroy\" don't destroy this artifact.)\nAt the beginning of your upkeep, you may put a charge counter on this artifact.\nWhen this artifact has twenty or more charge counters on it, you win the game.",
     );
     let deck = SimDeck {
+        companion: None,
         cards: vec![parse_sim_card(&reactor)],
         commanders: vec![],
         format: Format::Constructed,
@@ -1305,53 +1389,47 @@ fn counter_pump_win_threshold_fires() {
     // The reactor's pump and win trigger parse to the runtime model.
     let sim = &deck.cards[0];
     let pump = sim
-        .abilities()
-        .find(|a| matches!(a.effect, Effect::Counters(_)))
+        .unlocked_abilities(0)
+        .find(|a| matches!(a.effect, SimEffect::Counters(_)))
         .expect("the upkeep pump parses");
     assert!(
-        matches!(pump.effect, Effect::Counters(1)),
+        matches!(pump.effect, SimEffect::Counters(1)),
         "the upkeep pump lowers: {:?}",
         pump.effect
     );
     let win = sim
-        .abilities()
-        .find(|a| matches!(a.effect, Effect::WinThreshold { .. }))
+        .unlocked_abilities(0)
+        .find(|a| matches!(a.effect, SimEffect::WinThreshold { .. }))
         .expect("the state-trigger win lowers");
     assert_eq!(
         win.trigger,
-        super::model::AbilityTiming::OnUpkeep,
+        super::model::SimTrigger::Upkeep,
         "a state-trigger win check normalizes to the upkeep check"
     );
-    // The pump engine registers at cast; fire_upkeep_engine grows the
-    // host by uid; the win check fires at the threshold.
-    let mut engines = Vec::new();
-    let mut st = super::turn_loop_tests::state(vec![], vec![]);
-    st.battlefield.push(super::game::new_perm_with(
-        7,
-        &deck,
-        crate::deck::simulator::model::CardIdx(0),
-        1,
-        false,
-    ));
-    let mut census = super::game_run::TurnCensus::new(3, 1);
-    super::cast_phase::engine_registration_probe(&deck, &mut st, &mut engines, 1);
-    assert!(
-        engines.iter().any(|(uid, _)| *uid == 7),
-        "the upkeep counter pump registers as an engine: {:?}",
-        engines
-    );
-    super::game_run::fire_upkeep_engine_probe(&deck, &mut st, 7, 1);
-    assert_eq!(
-        st.battlefield[0].counters, 1,
-        "the upkeep pump adds its counter to the host"
-    );
-    for _ in 0..19 {
-        super::game_run::fire_upkeep_engine_probe(&deck, &mut st, 7, 2);
+    let mut st = super::turn_loop_tests::state(vec![0], vec![]);
+    let mut census = super::game_run::TurnCensus::new(22, 1);
+    let commander = super::game_commander::CommanderProfile::new(&deck);
+    let mut repeatable_sources = Vec::new();
+    for turn in 1..=22 {
+        super::game_run::run_turn(
+            &deck,
+            &mut st,
+            &mut census,
+            &commander,
+            &mut repeatable_sources,
+            turn,
+            false,
+        );
     }
-    super::game_run::check_win_thresholds_probe(&deck, &mut st, &mut census, 3);
+    assert_eq!(
+        repeatable_sources.len(),
+        1,
+        "the upkeep source registers once"
+    );
+    assert_eq!(st.battlefield[0].counters.charge, 21);
     assert_eq!(
         census.win_threshold_turn,
-        Some(3),
+        Some(21),
         "the reactor wins the game at twenty charge counters"
     );
 }
@@ -1370,8 +1448,8 @@ fn one_or_more_counters_trigger_is_not_a_win() {
     );
     let sim = parse_sim_card(&watcher);
     assert!(
-        !sim.abilities()
-            .any(|a| matches!(a.effect, Effect::WinThreshold { .. })),
+        !sim.unlocked_abilities(0)
+            .any(|a| matches!(a.effect, SimEffect::WinThreshold { .. })),
         "a counter-placement trigger never parses as a win threshold"
     );
     // The shape also gates a win-worded event on the state form: a
@@ -1384,8 +1462,8 @@ fn one_or_more_counters_trigger_is_not_a_win() {
     ));
     assert!(
         !nonwin
-            .abilities()
-            .any(|a| matches!(a.effect, Effect::WinThreshold { .. })),
+            .unlocked_abilities(0)
+            .any(|a| matches!(a.effect, SimEffect::WinThreshold { .. })),
         "a non-win threshold trigger never parses as a win"
     );
 }
@@ -1403,6 +1481,7 @@ fn interaction_readiness_spends_only_instant_legal_mana() {
     );
     let cards = vec![parse_sim_card(&answer)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1411,21 +1490,21 @@ fn interaction_readiness_spends_only_instant_legal_mana() {
     let mut census = super::game_run::TurnCensus::new(1, 1);
     let st = super::turn_loop_tests::state(vec![0], vec![]);
     // Creature-only mana cannot fund the instant: readiness stays off.
-    let pool = super::game::Pool {
+    let pool = super::game::ManaPool {
         creature_only: 3,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
-    super::game_run::record_interaction_readiness_probe(&deck, &st, &pool, &mut census, 1);
+    super::game_run::census::record_interaction_readiness(&deck, &st, &pool, &mut census, 1);
     assert!(
         !census.interaction_ready[0],
         "creature-only mana never readies an instant"
     );
     // The instant/sorcery bucket covers the pips: readiness turns on.
-    let pool = super::game::Pool {
+    let pool = super::game::ManaPool {
         instant_sorcery_only: 2,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
-    super::game_run::record_interaction_readiness_probe(&deck, &st, &pool, &mut census, 1);
+    super::game_run::census::record_interaction_readiness(&deck, &st, &pool, &mut census, 1);
     assert!(
         census.interaction_ready[0],
         "instant/sorcery mana readies the answer"
@@ -1448,6 +1527,7 @@ fn own_flashback_casts_from_the_graveyard() {
     );
     let cards = vec![parse_sim_card(&looting)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1455,7 +1535,10 @@ fn own_flashback_casts_from_the_graveyard() {
     };
     let sim = &deck.cards[0];
     assert_eq!(
-        sim.riders.own_flashback.as_ref().map(|cost| cost.total()),
+        sim.spell_data
+            .own_flashback
+            .as_ref()
+            .map(|cost| cost.total()),
         Some(3),
         "the printed flashback cost parses"
     );
@@ -1463,13 +1546,13 @@ fn own_flashback_casts_from_the_graveyard() {
     let mut st = super::turn_loop_tests::state(vec![], vec![1]);
     st.graveyard.push(crate::deck::simulator::model::CardIdx(0));
     st.seen = st.hand.len() as u32 + st.library.len() as u32;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         flexible: 3,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     let mut mana_spent = [0.0];
     let mut engines = Vec::new();
-    super::cast_phase::cast_graveyard_spells_probe(
+    super::cast_pass::cast_graveyard_spells(
         &deck,
         &mut st,
         &mut pool,
@@ -1507,6 +1590,7 @@ fn own_escape_pays_the_printed_cost_and_exiles_fodder() {
         parse_sim_card(&fodder),
     ];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1514,7 +1598,11 @@ fn own_escape_pays_the_printed_cost_and_exiles_fodder() {
     };
     let ogre_sim = &deck.cards[0];
     assert_eq!(
-        ogre_sim.riders.own_escape.as_ref().map(|cost| cost.total()),
+        ogre_sim
+            .spell_data
+            .own_escape
+            .as_ref()
+            .map(|cost| cost.total()),
         Some(4),
         "the printed escape cost parses"
     );
@@ -1526,13 +1614,13 @@ fn own_escape_pays_the_printed_cost_and_exiles_fodder() {
         crate::deck::simulator::model::CardIdx(3),
     ];
     st.seen = st.hand.len() as u32 + st.library.len() as u32;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         flexible: 4,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     let mut mana_spent = [0.0];
     let mut engines = Vec::new();
-    super::cast_phase::cast_graveyard_spells_probe(
+    super::cast_pass::cast_graveyard_spells(
         &deck,
         &mut st,
         &mut pool,
@@ -1575,18 +1663,19 @@ fn flashback_grant_text_does_not_read_a_self_cost() {
     let looting = card("Test Looting", "{1}{R}", "Sorcery", "Flashback {2}{R}");
     let cards = vec![parse_sim_card(&granter), parse_sim_card(&looting)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
         rules: super::format::rules_for("constructed"),
     };
     assert!(
-        deck.cards[0].riders.own_flashback.is_none(),
+        deck.cards[0].spell_data.own_flashback.is_none(),
         "grant shapes carry no self cost"
     );
     assert_eq!(
         deck.cards[1]
-            .riders
+            .spell_data
             .own_flashback
             .as_ref()
             .map(|cost| cost.total()),
@@ -1614,6 +1703,7 @@ fn multi_effect_triggers_lower_every_clause() {
     );
     let cards = vec![parse_sim_card(&treasure), parse_sim_card(&drain)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Commander,
@@ -1621,46 +1711,35 @@ fn multi_effect_triggers_lower_every_clause() {
     };
     let cache = &deck.cards[0];
     let entries: Vec<_> = cache
-        .abilities()
-        .filter(|a| a.trigger == super::model::AbilityTiming::OnEnter)
+        .unlocked_abilities(0)
+        .filter(|a| a.trigger == super::model::SimTrigger::Enters)
         .collect();
-    assert_eq!(
-        entries.len(),
-        2,
-        "the draw clause and the token clause lower separately: {:?}",
-        entries
-            .iter()
-            .map(|a| format!("{:?}", a.effect))
-            .collect::<Vec<_>>()
-    );
-    assert!(entries.iter().any(|a| matches!(a.effect, Effect::Draw(1))));
-    assert!(
-        entries
-            .iter()
-            .any(|a| matches!(a.effect, Effect::Tokens(_)))
-    );
+    assert_eq!(entries.len(), 1, "one trigger has one runtime identity");
+    assert!(matches!(
+        entries[0].effect_sequence(),
+        [SimEffect::Draw(1), SimEffect::Treasures(1)]
+    ));
     let sting = &deck.cards[1];
     let entries: Vec<_> = sting
-        .abilities()
-        .filter(|a| a.trigger == super::model::AbilityTiming::OnEnter)
+        .unlocked_abilities(0)
+        .filter(|a| a.trigger == super::model::SimTrigger::Enters)
         .collect();
-    assert_eq!(entries.len(), 2);
-    assert!(entries.iter().any(|a| matches!(a.effect, Effect::Drain(_))));
-    assert!(
-        entries
-            .iter()
-            .any(|a| matches!(a.effect, Effect::GainLife(_)))
-    );
+    assert_eq!(entries.len(), 1);
+    assert!(matches!(
+        entries[0].effect_sequence(),
+        [SimEffect::LoseLife { .. }, SimEffect::GainLife(1)]
+    ));
 }
 
-/// A phyrexian pip pays with 2 life (CR 118.3b): `{1}{B/P}` casts with
+/// A phyrexian pip pays with 2 life (CR 107.4f): `{1}{B/P}` casts with
 /// colorless-only mana, charging 2 life; a life-starved cast stays in
 /// hand.
 #[test]
 fn phyrexian_pip_pays_life() {
-    let probe = card("Test Probe", "{1}{B/P}", "Sorcery", "Draw a card.");
-    let cards = vec![parse_sim_card(&probe)];
+    let spell = card("Life-Paid Spell", "{1}{B/P}", "Sorcery", "Draw a card.");
+    let cards = vec![parse_sim_card(&spell)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1671,12 +1750,24 @@ fn phyrexian_pip_pays_life() {
     // Colorless-only mana + 2 life covers the cast.
     let mut st = super::turn_loop_tests::state(vec![0], vec![]);
     st.life = 10;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         colorless: 1,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     let mut engines = Vec::new();
-    super::cast_phase::cast_phase_probe(&deck, &mut st, &mut pool, &mut engines, 1);
+    let mut mana_spent = [0.0];
+    let mut pip_blocks = Vec::new();
+    let mut blocked_colors = [false; 5];
+    super::cast_pass::cast_pass(
+        &deck,
+        &mut st,
+        &mut pool,
+        1,
+        &mut mana_spent,
+        &mut engines,
+        &mut pip_blocks,
+        &mut blocked_colors,
+    );
     assert_eq!(st.life, 8, "the phyrexian pip charged 2 life");
     assert_eq!(st.life_paid, 2, "the life payment lands in the life ledger");
     assert!(
@@ -1686,12 +1777,24 @@ fn phyrexian_pip_pays_life() {
     // A life-starved agent (2 life) cannot pay the pip.
     let mut st = super::turn_loop_tests::state(vec![0], vec![]);
     st.life = 2;
-    let mut pool = super::game::Pool {
+    let mut pool = super::game::ManaPool {
         colorless: 1,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     let mut engines = Vec::new();
-    super::cast_phase::cast_phase_probe(&deck, &mut st, &mut pool, &mut engines, 1);
+    let mut mana_spent = [0.0];
+    let mut pip_blocks = Vec::new();
+    let mut blocked_colors = [false; 5];
+    super::cast_pass::cast_pass(
+        &deck,
+        &mut st,
+        &mut pool,
+        1,
+        &mut mana_spent,
+        &mut engines,
+        &mut pip_blocks,
+        &mut blocked_colors,
+    );
     assert_eq!(st.life, 2, "a cast at lethal life never pays the pip");
     assert!(
         st.hand.contains(&crate::deck::simulator::model::CardIdx(0)),
@@ -1712,6 +1815,7 @@ fn doesnt_untap_static_survives_the_untap_step() {
     );
     let cards = vec![parse_sim_card(&basalt)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1732,7 +1836,7 @@ fn doesnt_untap_static_survives_the_untap_step() {
     st.battlefield[0].tapped = true;
     // The turn-boundary untap leaves a doesn't-untap permanent tapped:
     // the pool builds nothing from it the next turn.
-    let pool = super::game_run::build_pool_probe(&deck, &mut st, 2);
+    let pool = super::game_run::build_pool(&deck, &mut st, 2);
     assert_eq!(
         pool.total(),
         0,
@@ -1761,6 +1865,7 @@ fn static_grant_converts_every_land_tap() {
         parse_sim_card(&land),
     ];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1783,7 +1888,7 @@ fn static_grant_converts_every_land_tap() {
             false,
         ));
     }
-    let pool = super::game_run::build_pool_probe(&deck, &mut st, 1);
+    let pool = super::game_run::build_pool(&deck, &mut st, 1);
     assert_eq!(
         pool.flexible, 6,
         "the lantern and the five lands each yield one any-color pip"
@@ -1795,7 +1900,7 @@ fn static_grant_converts_every_land_tap() {
     );
 }
 
-/// A phyrexian activation pip pays with 2 life (CR 118.3b): the
+/// A phyrexian activation pip pays with 2 life (CR 107.4f): the
 /// resolution charges the life and spends no pool mana for the pip,
 /// and a life-starved board skips the activation.
 #[test]
@@ -1808,6 +1913,7 @@ fn phyrexian_activation_charges_life() {
     );
     let cards = vec![parse_sim_card(&drain_mage)];
     let deck = SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -1822,16 +1928,16 @@ fn phyrexian_activation_charges_life() {
         0,
         false,
     ));
-    st.battlefield[0].sick = false;
-    let mut pool = super::game::Pool {
+    st.battlefield[0].summoning_sick = false;
+    let mut pool = super::game::ManaPool {
         colorless: 6,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     // Cost {2}{B/P}: gate needs 2 mana + life above 2.
     let hand_before = st.hand.len();
-    let activation = super::game_effects::pick_best_activation_public(&deck, &st, &pool)
+    let activation = super::game_effects::activation::pick_best_activation(&deck, &st, &pool, 1)
         .expect("the pip activation is usable with 6 mana and full life");
-    super::game_effects::resolve_activation_public(&deck, &mut st, &mut pool, 1, 1, &activation);
+    super::game_effects::activation::resolve_activation(&deck, &mut st, &mut pool, 1, &activation);
     assert_eq!(st.life, 18, "the phyrexian pip charged 2 life");
     assert_eq!(
         pool.colorless, 4,
@@ -1853,14 +1959,14 @@ fn phyrexian_activation_charges_life() {
         0,
         false,
     ));
-    low.battlefield[0].sick = false;
-    let pool = super::game::Pool {
+    low.battlefield[0].summoning_sick = false;
+    let pool = super::game::ManaPool {
         colorless: 6,
-        ..super::game::Pool::default()
+        ..super::game::ManaPool::default()
     };
     low.life = 2;
     assert!(
-        super::game_effects::pick_best_activation_public(&deck, &low, &pool).is_none(),
+        super::game_effects::activation::pick_best_activation(&deck, &low, &pool, 1).is_none(),
         "life at the charge level cannot fire the pip activation"
     );
 }

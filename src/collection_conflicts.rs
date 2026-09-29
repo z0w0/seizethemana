@@ -27,6 +27,15 @@ pub struct ConflictDeck {
     pub quantity: i64,
 }
 
+/// Complete typed JSON response for the shared-card conflict report.
+#[derive(Debug, serde::Serialize)]
+struct ConflictReport {
+    /// Cards with uncovered deck demand.
+    rows: Vec<ConflictRow>,
+    /// Registered decks without a decklist to check.
+    unverified_decks: Vec<String>,
+}
+
 /// Cards wanted by more deck slots than the collection covers.
 ///
 /// A card conflicts when the sum of its non-basic slot demand across every
@@ -120,10 +129,10 @@ fn finish_conflicts(
     json: bool,
 ) -> anyhow::Result<i32> {
     if json {
-        let payload = serde_json::json!({
-            "rows": rows,
-            "unverified_decks": unverified,
-        });
+        let payload = ConflictReport {
+            rows,
+            unverified_decks: unverified,
+        };
         println!("{}", serde_json::to_string_pretty(&payload)?);
         return Ok(crate::cli::codes::OK);
     }

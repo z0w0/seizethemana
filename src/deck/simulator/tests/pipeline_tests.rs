@@ -2,7 +2,8 @@
 
 /// A minimal card row for tests.
 use super::deck::build_sim_deck;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use std::collections::HashMap;
@@ -11,7 +12,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -66,7 +67,7 @@ fn stationz_commander_full_pipeline() {
     let sim = parse_sim_card(&igs);
     assert!(sim.is_station_card);
     assert_eq!(sim.animate_at(), Some(12));
-    assert!(sim.station_tiers.iter().any(|t| t.at == 12 && t.animate));
+    assert!(sim.striations.iter().any(|t| t.at == 12 && t.animate));
     assert_eq!(sim.cost.pips, [1, 1, 1, 1, 1]);
     assert!(!sim.is_creature);
 
@@ -86,12 +87,7 @@ fn stationz_commander_full_pipeline() {
         });
     let sim_deck = build_sim_deck(&deck, &cards, None);
     // Commander engine tier present.
-    assert!(
-        sim_deck.commanders[0]
-            .station_tiers
-            .iter()
-            .any(|t| t.at == 0)
-    );
+    assert!(sim_deck.commanders[0].striations.iter().any(|t| t.at == 0));
 }
 
 #[test]
@@ -119,8 +115,11 @@ fn drain_burn_and_scry_register_in_game() {
     let sim_deck = build_sim_deck(&deck, &cards, None);
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(7);
     let log = super::game::run_game(&sim_deck, &mut rng, 6);
-    // Burn drains players 3× its amount when cast.
-    assert!(log.drain_total[5] > 0, "burn spells drain over 6 turns");
+    // Burn deals player damage without entering direct life-loss totals.
+    assert!(
+        log.player_damage[5] > 0,
+        "burn spells deal damage over 6 turns"
+    );
     // Scry gives awareness credit.
     assert!(
         log.awareness.iter().copied().fold(0.0_f64, f64::max) > 0.0,
@@ -296,7 +295,7 @@ fn combat_power_counts_buff_and_double_strike() {
         "evasion within attackers"
     );
     assert!(
-        log.attackers[7] <= log.bodies[7],
+        log.attackers[7] <= log.creatures[7],
         "attackers never exceed bodies"
     );
 }
@@ -335,15 +334,18 @@ fn partner_deck_casts_both_commanders() {
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
     let log = super::game::run_game(&sim_deck, &mut rng, 3);
     // Both commanders are zero/one-cost creatures: two bodies from turn 1.
-    assert!(log.bodies[0] >= 2, "both partners cast: {}", log.bodies[0]);
+    assert!(
+        log.creatures[0] >= 2,
+        "both partners cast: {}",
+        log.creatures[0]
+    );
 }
 
 #[test]
 fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
-    // Two partners, each with an upkeep draw. The sentinel fix: each
-    // cast commander fires its own engine once per turn (not once per
-    // sentinel), and a partner whose upkeep draw is parsed registers an
-    // engine even when the first partner lacks one.
+    // Two partners, each with an upkeep draw. Each cast commander fires
+    // its own engine once per turn, and a partner whose upkeep draw is
+    // parsed registers an engine even when the first partner lacks one.
     let first = card(
         "Free Leader",
         "",
@@ -379,7 +381,10 @@ fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
     // Partner pair: two engines online from turn 1 (both partners cast).
     let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(1);
     let log = super::game::run_game(&sim_deck, &mut rng, 3);
-    assert_eq!(log.engines_online[0], 2, "one engine per cast partner");
+    assert_eq!(
+        log.repeatable_sources_online[0], 2,
+        "one source per cast partner"
+    );
     // Same-seed solo run: one commander, one engine, one draw per turn.
     let solo_deck = deck_text("DECK", &[("Island", 40), ("Filler", 20)]);
     let mut solo = solo_deck;
@@ -396,7 +401,7 @@ fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
     // The solo comparison: strip the partner's upkeep text by comparing
     // against a deck where only the first partner carries the engine —
     // the growth delta must stay at 2 draws/turn (both engines), not 3
-    // (per-sentinel double-fire) or 1 (the missing engine).
+    // (a duplicate engine) or 1 (the missing engine).
     let second_silent = card("Cheap Partner", "{0}", "Legendary Creature — Human", "");
     let cards_silent = cards_map(vec![
         card(
@@ -435,8 +440,7 @@ fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
     // Turn 3: cast interference (free filler casts also enter the seen
     // census and diverge with the libraries), so the bound is a range:
     // the second engine adds 0-2 pops (its draw plus hand-limit noise).
-    // It must never exceed the +2 double-fire of the old per-sentinel
-    // bug.
+    // It must never exceed the +2 double-fire from duplicate registration.
     let growth_pair3 = log.cards_seen[2] - log.cards_seen[1];
     let growth_solo3 = silent_log.cards_seen[2] - silent_log.cards_seen[1];
     assert!(
@@ -447,8 +451,8 @@ fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
 
 #[test]
 fn commander_engine_fires_on_extra_turns() {
-    // An extra turn replays the commander's upkeep engine: the sentinel
-    // must resolve even though it is not a battlefield uid. The deck
+    // An extra turn replays the commander's upkeep engine from the
+    // command zone. The deck
     // holds a {0} "take an extra turn" sorcery, so the extra turn is
     // guaranteed.
     let commander = card(

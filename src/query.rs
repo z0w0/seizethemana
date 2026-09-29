@@ -1,7 +1,5 @@
 use anyhow::Context;
 
-use crate::cli;
-use crate::cli::codes;
 use crate::db::{self, CardRow};
 use crate::embed::{self, VectorStore};
 use crate::output::Output;
@@ -971,118 +969,8 @@ fn to_hits<T: Into<f64>>(
         .collect()
 }
 
-/// Entry point for `stm query`.
-#[allow(clippy::too_many_arguments)]
-pub fn run_query(
-    paths: &Paths,
-    conn: &mut rusqlite::Connection,
-    out: &mut Output,
-    text: &str,
-    cli_filters: &cli::CardFilters,
-    max_price: Option<f64>,
-    limit: u32,
-    json: bool,
-) -> anyhow::Result<i32> {
-    let filters = CardFilters::from_cli(cli_filters)?;
-    // --max-price: a SQL-side budget filter (cheapest released English
-    // print at or under the cap). Passed as the search's restrict set,
-    // so the fusion fills the limit window with under-cap candidates.
-    let price_allow: Option<std::collections::HashSet<String>> = match max_price {
-        Some(max_price) => Some(
-            crate::prints::names_under_price(conn, max_price)?
-                .into_iter()
-                .collect(),
-        ),
-        None => None,
-    };
-    let hits = match run_search(
-        paths,
-        conn,
-        out,
-        text,
-        &filters,
-        limit as usize,
-        price_allow.as_ref(),
-    ) {
-        Ok(hits) => hits,
-        Err(err) => {
-            // Distinguish "not set up" so the agent knows what to run.
-            if !paths.is_setup() {
-                out.error(&format!("{err:#}"));
-                out.hint("run 'stm setup' first");
-                return Ok(codes::ERROR);
-            }
-            return Err(err);
-        }
-    };
-    if hits.is_empty() {
-        if json {
-            println!("[]");
-        } else if max_price.is_some() {
-            out.error("no cards matched");
-            out.hint("try broader words, or raise --max-price");
-        } else {
-            out.error("no cards matched");
-            out.hint("try broader words, or drop filters");
-        }
-        return Ok(codes::NO_RESULTS);
-    }
-    if json {
-        let names: Vec<String> = hits.iter().map(|h| h.card.name.clone()).collect();
-        // One batched query per finish kind instead of four per card name.
-        let ranges = crate::prints::price_ranges(conn, &names)?;
-        let tag_index = crate::tags::TagIndex::load(conn)?;
-        let owned_all = crate::collection::owned_counts_all(conn)?;
-        let available_all = crate::collection::available_counts_all(conn)?;
-        let items: Vec<serde_json::Value> = hits
-            .iter()
-            .map(|h| -> anyhow::Result<serde_json::Value> {
-                let range = ranges.get(&h.card.name).cloned().unwrap_or_default();
-                let universe =
-                    crate::universe::card_universe(conn, &h.card.name, &h.card.set_code)?;
-                let mut v = crate::card::card_json(
-                    &h.card,
-                    &tag_index,
-                    &range,
-                    &universe,
-                    &owned_all,
-                    &available_all,
-                );
-                v["score"] = serde_json::json!((f64::from(h.score) * 10_000.0).round() / 10_000.0);
-                Ok(v)
-            })
-            .collect::<anyhow::Result<_>>()?;
-        print_json(items)?;
-    } else {
-        print_text(out, &hits);
-    }
-    Ok(codes::OK)
-}
-
-/// Print results as a JSON array.
-fn print_json(items: Vec<serde_json::Value>) -> anyhow::Result<()> {
-    println!("{}", serde_json::to_string_pretty(&items)?);
-    Ok(())
-}
-
-/// Print results as numbered lines with score, cost, and type line.
-fn print_text(out: &Output, hits: &[Hit]) {
-    let styles = out.styles();
-    let rank_width = hits.len().to_string().len().max(2);
-    for (i, hit) in hits.iter().enumerate() {
-        let line = format!(
-            "{:>width$}. {} {} {} {} {}",
-            i + 1,
-            styles.card_name(&hit.card.name),
-            styles.mana_pips(&hit.card.mana_cost),
-            styles.rarity(&hit.card.rarity),
-            styles.dim(&hit.card.type_line),
-            styles.dim(&format!("({:.3})", hit.score)),
-            width = rank_width,
-        );
-        println!("{line}");
-    }
-}
+mod command;
+pub use command::run_query;
 
 #[cfg(test)]
 #[path = "tests/query_tests.rs"]

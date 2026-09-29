@@ -1,14 +1,30 @@
 //! Parsing for supported spell, trigger, activation, and Saga effects.
 
-use super::super::model::{SearchCardType, SearchDestination, SearchSpec};
+use super::super::model::{
+    BasicLandType, ManaColor, SearchCardType, SearchDestination, SearchSpec,
+};
 use super::super::oracle_ast::OracleEffect;
 use super::super::oracle_parser::{amount_after, draw_amount};
 
 /// Parse supported search words into explicit card constraints.
 fn parse_oracle_search_spec(text: &str) -> SearchSpec {
     let mana_value = search_mana_value(text);
+    let card_type = search_card_type(text);
+    let land_types = if matches!(
+        card_type,
+        Some(SearchCardType::Land | SearchCardType::BasicLand)
+    ) {
+        let types = BasicLandType::ALL.map(|land| text.contains(&land.name().to_ascii_lowercase()));
+        if types.iter().any(|allowed| *allowed) {
+            types
+        } else {
+            [true; 5]
+        }
+    } else {
+        [false; 5]
+    };
     SearchSpec {
-        card_type: search_card_type(text),
+        card_type,
         color: search_color(text),
         colorless: text.contains("colorless"),
         mana_value: if text.contains("exactly") {
@@ -32,6 +48,8 @@ fn parse_oracle_search_spec(text: &str) -> SearchSpec {
             || text.contains("up to one"),
         top_count: search_top_count(text),
         non_human: text.contains("non-human"),
+        land_types,
+        basic_land_only: matches!(card_type, Some(SearchCardType::BasicLand)),
     }
 }
 
@@ -53,7 +71,11 @@ fn search_card_type(text: &str) -> Option<SearchCardType> {
         Some(SearchCardType::Artifact)
     } else if text.contains("permanent") {
         Some(SearchCardType::Permanent)
-    } else if text.contains("land") {
+    } else if text.contains("land")
+        || BasicLandType::ALL
+            .iter()
+            .any(|kind| text.contains(&kind.name().to_ascii_lowercase()))
+    {
         Some(SearchCardType::Land)
     } else {
         None
@@ -61,13 +83,13 @@ fn search_card_type(text: &str) -> Option<SearchCardType> {
 }
 
 /// Find the first supported color named by a search phrase.
-fn search_color(text: &str) -> Option<char> {
+fn search_color(text: &str) -> Option<ManaColor> {
     [
-        ("white", 'W'),
-        ("blue", 'U'),
-        ("black", 'B'),
-        ("red", 'R'),
-        ("green", 'G'),
+        ("white", ManaColor::White),
+        ("blue", ManaColor::Blue),
+        ("black", ManaColor::Black),
+        ("red", ManaColor::Red),
+        ("green", ManaColor::Green),
     ]
     .into_iter()
     .find_map(|(word, symbol)| text.contains(word).then_some(symbol))
@@ -117,6 +139,11 @@ fn search_top_count(text: &str) -> Option<usize> {
 
 /// Parse supported effects from Oracle text and preserve unknown clauses.
 pub(super) fn parse_oracle_effects(source: &str) -> Vec<OracleEffect> {
+    // Reminder text (parenthesized) clarifies a keyword; it is not rules
+    // text for the resolution, so drop it before effect parsing. This
+    // keeps "it explores. (Reveal the top card …)" from reading as a
+    // search effect.
+    let source = &strip_reminder_text(source);
     let lower = source.to_ascii_lowercase();
     if lower.contains("at the beginning of the next end step") {
         return vec![OracleEffect::Unsupported(source.to_string())];
@@ -130,23 +157,48 @@ pub(super) fn parse_oracle_effects(source: &str) -> Vec<OracleEffect> {
         .collect()
 }
 
+/// Remove parenthesized reminder text from an effect sentence.
+fn strip_reminder_text(source: &str) -> String {
+    let mut out = String::with_capacity(source.len());
+    let mut depth = 0u32;
+    for ch in source.chars() {
+        match ch {
+            '(' => depth += 1,
+            ')' => depth = depth.saturating_sub(1),
+            _ if depth == 0 => out.push(ch),
+            _ => {}
+        }
+    }
+    out
+}
+
 /// Parse compound effect forms that take precedence over clause splitting.
 fn parse_compound_effect(source: &str, lower: &str) -> Option<Vec<OracleEffect>> {
+    // The One Ring class: the add-counter-and-draw-per-counter sentence
+    // is one resolution, so it must beat the clause splitter.
+    if lower.contains("put a burden counter")
+        && lower.contains("draw a card for each burden counter")
+    {
+        return Some(vec![OracleEffect::AddBurdenCounter]);
+    }
+    if lower.contains("lose") && lower.contains("life for each burden counter") {
+        return Some(vec![OracleEffect::BurdenLifeLoss]);
+    }
     if lower.contains("remove all charge counters")
         && lower.contains("for each charge counter removed")
         && lower.contains("add ")
     {
         return Some(vec![
-            super::super::parse_land::parse_tap_yield(lower)
+            super::land::parse_tap_yield(lower)
                 .map(OracleEffect::ManaPerCounter)
                 .unwrap_or_else(|| OracleEffect::Unsupported(source.to_string())),
         ]);
     }
     if lower.contains("exile") && lower.contains("return it to the battlefield") {
-        return Some(vec![OracleEffect::Blink]);
+        return Some(vec![OracleEffect::ExileThenReturn]);
     }
     if lower.contains("each player") && lower.contains("discards") && lower.contains("draws") {
-        return Some(vec![OracleEffect::Wheel]);
+        return Some(vec![OracleEffect::DiscardHandThenDraw]);
     }
     if lower.contains("as an additional cost to cast this spell") {
         return None;
@@ -155,7 +207,7 @@ fn parse_compound_effect(source: &str, lower: &str) -> Option<Vec<OracleEffect>>
         return Some(vec![if lower.contains("you may draw") {
             OracleEffect::Draw(draw_amount(lower).max(1))
         } else {
-            OracleEffect::Loot(draw_amount(lower).max(1))
+            OracleEffect::DrawThenDiscard(draw_amount(lower).max(1))
         }]);
     }
     if lower.contains("draw") && lower.contains("-1/-1 counter") {
@@ -231,6 +283,11 @@ fn is_effect_clause(source: &str) -> bool {
         "deal ",
         "destroy ",
         "counter ",
+        "amass ",
+        "explore",
+        "connive",
+        "the ring tempts you",
+        "empower jace",
     ]
     .iter()
     .any(|prefix| lower.starts_with(prefix))
@@ -243,7 +300,9 @@ fn parse_oracle_effect_clause(source: &str) -> OracleEffect {
         .or_else(|| parse_card_effect(source, &lower))
         .or_else(|| parse_life_and_counter_effect(source, &lower))
         .unwrap_or_else(|| {
-            if lower.contains("deals") && lower.contains("damage to") {
+            if lower.contains("deals")
+                && (lower.contains("damage to") || lower.contains("damage divided"))
+            {
                 parse_damage_effect(source, &lower)
             } else {
                 OracleEffect::Unsupported(source.to_string())
@@ -254,21 +313,56 @@ fn parse_oracle_effect_clause(source: &str) -> OracleEffect {
 /// Parse effects that change permanents or create tokens.
 fn parse_permanent_effect(source: &str, lower: &str) -> Option<OracleEffect> {
     if lower.starts_with("untap this ") {
-        Some(OracleEffect::UntapSelf)
+        Some(OracleEffect::UntapSource)
+    } else if let Some(energy) = energy_gain(lower) {
+        Some(OracleEffect::Energy(energy))
+    } else if lower.contains("proliferate") {
+        Some(OracleEffect::Proliferate)
+    } else if let Some(amount) = amass_keyword(lower) {
+        Some(OracleEffect::Amass(amount))
+    } else if lower.starts_with("amass ") {
+        // A bare "amass Orcs N" clause with no parseable number still
+        // raises the Army by one (the per-resolution floor).
+        Some(OracleEffect::Amass(amass_amount(lower).unwrap_or(1)))
+    } else if lower.contains("the ring tempts you") {
+        Some(OracleEffect::RingTempts)
+    } else if lower.contains("empower jace") {
+        Some(OracleEffect::EmpowerJace(
+            keyword_number(lower, "empower jace").unwrap_or(1),
+        ))
+    } else if lower.starts_with("explore")
+        || lower.contains(" explores")
+        || lower.contains("explores.")
+    {
+        Some(OracleEffect::Explore)
+    } else if lower.contains("connive") {
+        Some(OracleEffect::Connive(
+            keyword_number(lower, "connive").unwrap_or(1),
+        ))
+    } else if lower.contains("put a burden counter")
+        && lower.contains("draw a card for each burden counter")
+    {
+        // The One Ring class (CR 122 counters): the activation adds one
+        // burden counter, then draws for the new total.
+        Some(OracleEffect::AddBurdenCounter)
+    } else if lower.contains("lose 1 life for each burden counter")
+        || (lower.contains("lose") && lower.contains("life for each burden counter"))
+    {
+        Some(OracleEffect::BurdenLifeLoss)
     } else if lower.contains("remove all charge counters") && lower.contains("add ") {
         Some(
-            super::super::parse_land::parse_tap_yield(&lower.replace('"', ""))
+            super::land::parse_tap_yield(&lower.replace('"', ""))
                 .map(OracleEffect::ManaPerCounter)
                 .unwrap_or_else(|| OracleEffect::Unsupported(source.to_string())),
         )
     } else if lower.contains("additional land") {
-        Some(OracleEffect::ExtraLand)
+        Some(OracleEffect::AdditionalLandPlay)
     } else if lower.contains("exile") && lower.contains("return it to the battlefield") {
-        Some(OracleEffect::Blink)
+        Some(OracleEffect::ExileThenReturn)
     } else if lower.contains("you become the monarch") {
         Some(OracleEffect::Monarch)
     } else if lower.contains("create") && lower.contains("token") {
-        Some(OracleEffect::Tokens(token_amount(lower)))
+        Some(parse_token_effect(lower))
     } else if lower.starts_with("mill ")
         || lower.contains(", mill ")
         || lower.starts_with("target player mills ")
@@ -281,6 +375,37 @@ fn parse_permanent_effect(source: &str, lower: &str) -> Option<OracleEffect> {
     }
 }
 
+/// Read a numeric keyword head from a clause ("amass Orcs 2").
+fn keyword_number(lower: &str, head: &str) -> Option<u32> {
+    let start = lower.find(head)?;
+    let tail = &lower[start + head.len()..];
+    let digits: String = tail
+        .trim_start()
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    if let Ok(n) = digits.parse::<u32>() {
+        return (n > 0).then_some(n);
+    }
+    tail.split_whitespace()
+        .find_map(|word| word.trim_matches(['.', ',']).parse::<u32>().ok())
+        .filter(|n| *n > 0)
+}
+
+/// Read the amount of an "amass <subtype> N" clause without a keyword
+/// node (used when the clause appears as a bare resolution).
+fn amass_amount(lower: &str) -> Option<u32> {
+    keyword_number(lower, "amass")
+}
+
+/// Recognize the amass keyword-action head when the parser kept it as a
+/// keyword entry.
+fn amass_keyword(lower: &str) -> Option<u32> {
+    (lower.starts_with("amass ") || lower.contains(", amass "))
+        .then(|| amass_amount(lower))
+        .flatten()
+}
+
 /// Parse effects that draw, move, or filter cards.
 fn parse_card_effect(source: &str, lower: &str) -> Option<OracleEffect> {
     if lower.contains("from your graveyard") && lower.contains("return") {
@@ -291,18 +416,12 @@ fn parse_card_effect(source: &str, lower: &str) -> Option<OracleEffect> {
     } else if lower.contains("take an extra turn") || lower.contains("takes an extra turn") {
         Some(OracleEffect::ExtraTurn)
     } else if lower.contains("surveil") {
-        Some(OracleEffect::Look {
-            count: amount_after(lower, "surveil").max(1),
-            surveil: true,
-        })
+        Some(OracleEffect::Surveil(amount_after(lower, "surveil").max(1)))
     } else if lower.contains("scry") {
-        Some(OracleEffect::Look {
-            count: amount_after(lower, "scry"),
-            surveil: false,
-        })
+        Some(OracleEffect::Scry(amount_after(lower, "scry")))
     } else if lower.contains("add ") {
         Some(
-            super::super::parse_land::parse_tap_yield(&lower.replace('"', ""))
+            super::land::parse_tap_yield(&lower.replace('"', ""))
                 .map(OracleEffect::Mana)
                 .unwrap_or_else(|| OracleEffect::Unsupported(source.to_string())),
         )
@@ -320,7 +439,7 @@ fn parse_card_effect(source: &str, lower: &str) -> Option<OracleEffect> {
 /// Parse life and counter effects from a clause.
 fn parse_life_and_counter_effect(_source: &str, lower: &str) -> Option<OracleEffect> {
     if lower.contains("or more") && lower.contains("counter") && lower.contains("win") {
-        Some(OracleEffect::WinThreshold(
+        Some(OracleEffect::WinsAtCounters(
             parse_number_before(lower, "or more").unwrap_or(u32::MAX),
         ))
     } else if lower.contains("counter") && lower.contains("put ") {
@@ -329,32 +448,78 @@ fn parse_life_and_counter_effect(_source: &str, lower: &str) -> Option<OracleEff
         } else {
             parse_number_after(lower, "put").unwrap_or(1)
         };
-        Some(OracleEffect::Counters(count))
+        Some(OracleEffect::PutChargeCounters(count))
     } else if (lower.contains("loses") || lower.contains(" lose ")) && lower.contains("life") {
-        Some(OracleEffect::Drain(
-            parse_number_after(lower, "loses")
-                .or_else(|| parse_number_after(lower, "lose"))
-                .unwrap_or(1),
-        ))
+        let amount = parse_number_after(lower, "loses")
+            .or_else(|| parse_number_after(lower, "lose"))
+            .unwrap_or(1);
+        Some(OracleEffect::LoseLife {
+            amount,
+            scope: life_loss_scope(lower),
+        })
     } else {
         None
     }
 }
 
-/// Parse player-targeted damage as drain; other damage stays unsupported.
-fn parse_damage_effect(source: &str, lower: &str) -> OracleEffect {
-    let player_target = lower.contains("damage to target player")
-        || lower.contains("damage to target opponent")
-        || lower.contains("damage to each opponent")
-        || lower.contains("damage to each player");
-    if !player_target {
-        return OracleEffect::Unsupported(source.to_string());
+/// Who a life-loss or damage clause reaches (CR 119.3). "Each opponent"
+/// and "each player" use the format's opponent multiplier; "target
+/// player"/"target opponent" affect exactly one player.
+fn life_loss_scope(lower: &str) -> super::super::model::LifeLossScope {
+    use super::super::model::LifeLossScope;
+    if lower.contains("each opponent") || lower.contains("each player") {
+        if lower.contains("each player") && !lower.contains("each opponent") {
+            LifeLossScope::EachPlayer
+        } else {
+            LifeLossScope::EachOpponent
+        }
+    } else if lower.contains("target player") || lower.contains("target opponent") {
+        LifeLossScope::TargetPlayer
+    } else {
+        // Unqualified "you lose N life" is a self-cost, not a drain; the
+        // conservative read of any other phrasing is one opponent.
+        LifeLossScope::TargetPlayer
     }
+}
+
+/// Parse player-targeted damage as drain; other damage stays unsupported.
+fn parse_damage_effect(_source: &str, lower: &str) -> OracleEffect {
+    // The amount follows "deals" as a word or a digit ("deals 2 damage").
     let amount = lower
         .split_once("deals ")
-        .and_then(|(_, tail)| parse_oracle_number_word(tail))
+        .and_then(|(_, tail)| {
+            let tail = tail.trim_start();
+            let digits: String = tail.chars().take_while(|c| c.is_ascii_digit()).collect();
+            digits
+                .parse::<u32>()
+                .ok()
+                .or_else(|| parse_oracle_number_word(tail))
+        })
         .unwrap_or(1);
-    OracleEffect::Drain(amount)
+    let target = if lower.contains("damage to target player")
+        || lower.contains("damage to target opponent")
+        || lower.contains("damage to each opponent")
+        || lower.contains("damage to each player")
+    {
+        super::super::oracle_ast::DamageTarget::Player
+    } else if lower.contains("damage to target battle") {
+        super::super::oracle_ast::DamageTarget::Battle
+    } else if lower.contains("damage to any target")
+        || lower.contains("damage divided as you choose") && lower.contains("targets")
+    {
+        super::super::oracle_ast::DamageTarget::AnyTarget
+    } else if lower.contains("damage to target creature")
+        || lower.contains("damage to target planeswalker")
+    {
+        super::super::oracle_ast::DamageTarget::Permanent
+    } else {
+        super::super::oracle_ast::DamageTarget::Other
+    };
+    OracleEffect::Damage {
+        amount,
+        target,
+        scope: life_loss_scope(lower),
+    }
 }
 
 /// Parse a number word immediately after a phrase.
@@ -392,6 +557,27 @@ fn token_amount(lower: &str) -> u32 {
         })
 }
 
+/// Token creation scoped by the "for each" clause. "For each opponent"
+/// creates that many tokens for every opponent (three in the commander
+/// family); the count is capped at the creature cap. Any other scaling
+/// ("for each creature you control") keeps the bounded best-case 8.
+fn parse_token_effect(lower: &str) -> OracleEffect {
+    if lower.contains("for each opponent") {
+        // Per-opponent counts are small in practice ("for each opponent,
+        // create a 1/1 … token"); read the amount after "create".
+        let per_opponent = lower
+            .split_once("create")
+            .and_then(|(_, tail)| parse_oracle_number_word(tail.trim_start()))
+            .unwrap_or(1)
+            .clamp(1, 4);
+        OracleEffect::CreateTokensPerOpponent { per_opponent }
+    } else if lower.contains("treasure token") {
+        OracleEffect::CreateTreasureTokens(token_amount(lower))
+    } else {
+        OracleEffect::CreateTokens(token_amount(lower))
+    }
+}
+
 /// Count cards milled from a digit or number word after "mill".
 fn mill_amount(text: &str) -> u32 {
     let mut best = 0;
@@ -410,6 +596,24 @@ fn mill_amount(text: &str) -> u32 {
         }
     }
     best
+}
+
+/// Parse an energy gain: "you get {E}{E}", "you get three {E} (…)", or
+/// "you get six {E} (…)". A symbol run counts its symbols; a numeric
+/// word before "{E}" supplies the count.
+fn energy_gain(lower: &str) -> Option<u32> {
+    if !lower.contains("{e}") || !lower.contains("get ") {
+        return None;
+    }
+    let tail = lower.split_once("get ")?.1;
+    let symbols = tail.matches("{e}").count() as u32;
+    if symbols > 1 {
+        return Some(symbols);
+    }
+    if symbols == 0 {
+        return None;
+    }
+    Some(parse_oracle_number_word(tail).unwrap_or(1).max(1))
 }
 
 /// Parse a digit or common number word at the start of a clause.

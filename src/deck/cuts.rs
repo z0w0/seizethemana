@@ -152,7 +152,7 @@ pub fn cut_rows(
     let exempt: std::collections::HashSet<&str> = sim_deck
         .cards
         .iter()
-        .filter(|c| c.board_discount || c.role == super::simulator::model::Role::Removal)
+        .filter(|c| c.battlefield_discount || c.role == super::simulator::model::Role::Removal)
         .map(|c| c.name.as_str())
         .collect();
     let castability: std::collections::HashMap<&str, f64> = stats
@@ -638,7 +638,7 @@ fn role_census(
         .filter(|(s, _)| !super::grammar::is_bench_section(s))
         .flat_map(|(_, e)| e.iter())
         .filter_map(|e| cards_by_name.get(&e.name))
-        .filter(|card| super::simulator::oracle_parse::parse_sim_card(card).role == want)
+        .filter(|card| super::simulator::oracle_lower::parse_sim_card(card).role == want)
         .map(|card| card.name.clone())
         .collect()
 }
@@ -719,7 +719,7 @@ fn make_room_rows(
     // later bench cards fall through to the next-best same-role cut.
     let mut used: std::collections::HashSet<usize> = std::collections::HashSet::new();
     for card in &bench {
-        let sim_role = super::simulator::oracle_parse::parse_sim_card(card).role;
+        let sim_role = super::simulator::oracle_lower::parse_sim_card(card).role;
         // Prefer a same-role cut (the swap keeps the deck's role census).
         let pick = rows
             .iter()
@@ -727,7 +727,7 @@ fn make_room_rows(
             .find(|(i, row)| {
                 !used.contains(i)
                     && cards_by_name.get(&row.name).is_some_and(|inc| {
-                        super::simulator::oracle_parse::parse_sim_card(inc).role == sim_role
+                        super::simulator::oracle_lower::parse_sim_card(inc).role == sim_role
                     })
             })
             .or_else(|| rows.iter().enumerate().find(|(i, _)| !used.contains(i)))
@@ -739,7 +739,7 @@ fn make_room_rows(
         let pick = &rows[pick];
         let mut reasons = Vec::new();
         let same_role = cards_by_name.get(&pick.name).is_some_and(|inc| {
-            super::simulator::oracle_parse::parse_sim_card(inc).role == sim_role
+            super::simulator::oracle_lower::parse_sim_card(inc).role == sim_role
         });
         reasons.push(if same_role {
             format!(

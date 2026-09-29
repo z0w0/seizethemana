@@ -456,7 +456,7 @@ format>` (e.g. `--format modern`) to simulate a commander list as a
   mythic) in `mana_base`. Cascade reveals from the library top and
   free-casts the first nonland card with lower printed mana value through
   normal spell resolution. The report
-  carries `wincons.p50_lethal_turn` — the best-case goldfish kill turn
+  carries `win_conditions.p50_lethal_turn` — the best-case goldfish kill turn
   (unblocked; an upper bound, labeled as such).
 - **Keyword and effect signals (goldfish-aligned).**
   - Haste attacks the entry turn.
@@ -466,10 +466,23 @@ format>` (e.g. `--format modern`) to simulate a commander list as a
     paid-equipment buffs (one body each), double strike, prowess, and
     landfall; trample/flying/menace show as an evasion census.
   - Combat-damage triggers fire per connecting attacker.
-  - Burn/drain accumulate into `drain_total_by_turn` (×3 commander,
-    ×1 60-card).
+  - Burn and life loss accumulate into
+    `win_conditions.opponent_life_loss_by_turn` ("each opponent"
+    counts per opponent — three in commander, one in 60-card — while
+    "target player" counts once).
   - X-cost drain/draw/mill/token spells pay the leftover pool as X.
     Kicker pays from spare mana and bumps the rider.
+  - Mobilize creates tapped-and-attacking Warriors that join the swing
+    and are sacrificed at the end step; amass grows one Army body with
+    +1/+1 counters; afterlife creates Spirit bodies on death; the Ring's
+    temptations raise the emblem (level 2 attack-loots, level 4 combat
+    drains 3 per opponent); empower Jace makes a Jace planeswalker
+    token; The One Ring's burden counters draw and cost life.
+  - Power-up and exhaust fire once per game (Power-up discounts on the
+    entry turn); saddle taps bodies for a "while saddled" buff; convoke
+    and delve are real payment options; storm, offspring, plot, explore,
+    connive, living metal, read ahead, and descend/raid conditions are
+    modeled.
   - Per-cast mana engines (Vivi) fire once per spell cast (their own tap
     clause does not double count).
   - "Additional land" grants a second drop.
@@ -479,54 +492,56 @@ format>` (e.g. `--format modern`) to simulate a commander list as a
     draw, upkeep and end-step engines); the turn log marks the slot
     as extra and `--turns` stays the maximum turns taken.
   - Zero-cost untapped mana engines cap out and flag
-    `wincons.infinite_mana_pct`; "Activate only once each turn" engines
+    `win_conditions.percent_games_with_suspected_infinite_mana`; "Activate only once each turn" engines
     do not.
   - Win-threshold engines (Darksteel Reactor, Helix Pinnacle's {X} sink)
     and planeswalker ultimates report a first-online share.
   - Scry/surveil give zero draw credit — they feed
-    `library_awareness_by_turn`; surveil puts the cards in the graveyard.
+    `velocity.library_awareness_by_turn`; surveil puts the cards in the graveyard.
   - Every draw checks dredge first. Library-to-graveyard Oracle triggers
     resolve only for cards milled from the library, not discarded cards.
   - Imprint and blocking are not modeled.
 - **Interaction readiness is capacity, not events.** The goldfish never
   fires answers; it measures instant-speed interaction in hand **and**
-  affordable with spare mana (`interaction.ready_pct_by_turn` +
-  `mana_held_avg`). Access (seen in hand, `role_access`), ready (in hand
+  affordable with spare mana
+  (`interaction.percent_games_with_ready_interaction_by_turn` +
+  `interaction.mana_held_avg`). Access (seen in hand, `role_access`), ready (in hand
   - affordable), mana held (spare while ready). Never claim a counter or
     removal resolved.
-- **Exit 1 means the simulation found problems** (the result, not a crash).
-  Problem kinds: `mana_screw`, `mana_flood`, `color_screw` (enough mana,
-  wrong colors), `commander_late`, `draw_starvation`, `mana_unused`,
-  `dead_cards` (3+ distinct non-reactive spells cast on-time under 60% in
-  commander, under 55% in 60-card formats), `category_starved`
-  (removal, wincons), `interaction_unready` (answers seen but rarely
-  affordable with spare mana → "add cheaper instant-speed answers").
-  Each problem carries a category + magnitude suggestion ("add 2-3 draw
-  engines") — never card names. Cards exempt from `dead_cards`: reactive
+- **Exit 1 means the simulation reported findings** (the result, not a crash).
+  Finding kinds: `insufficient_land_drops`, `excess_lands_seen`,
+  `late_commander_cast`, `insufficient_color_mana`, `limited_draw_access`,
+  `unused_mana`, `low_castability`, `low_removal_access`,
+  `low_win_condition_access`, and `limited_interaction_readiness`.
+  Findings carry a stable `identity`, `severity`, optional
+  `percent_of_games` and `color`, `explanation`, `suggestion`, and
+  `evidence`. Evidence rows carry `subject`, `explanation`, and optional
+  `percent_of_games`. Suggestions name categories and quantities, not card
+  names. Cards exempt from `low_castability`: reactive
   removal (including fogs and protection — they classify as Removal) and
   improvise/affinity discount cards. Stax Locks are NOT exempt: judge
   them by `role_access` too, but a castability flag on a lock piece can
   be real signal (a dead stax piece is a real finding).
-- Human output = aggregates + worst-3 slow-to-cast cards + pip-block
-  offenders + problems. `--json` contract: see the JSON shapes section.
-  `--combo "A + B"` (repeatable) adds `combo_access` (share of games with
-  both pieces in hand by the target turn). A synced combo store adds
-  `combos` (Spellbook variants joined to the deck: complete combos with
-  assembly rates + one-card-away near-misses; `--combo-limit N` caps each
-  list, default 20) and `win_paths` (complete combos whose Spellbook
-  `produces` label contains a win feature — "Win the game", "Infinite
-  damage", "Infinite turns", …). `--hypgeo` adds `hypgeo` (exact
-  cast-on-curve ceilings = an upper bound on the real cast rate; the
-  sim's castability is draw-agnostic and naturally sits above its
-  ceiling — the two answer different questions, not one scale).
-  `station` is null for non-spacecraft commanders.
+- Human output = aggregates + slow-to-cast cards + pip-block evidence
+  - findings. `--json` contract: see the JSON shapes section.
+    `--combo "A + B"` (repeatable) adds `combo_access` (share of games with
+    both pieces in hand by the target turn). A synced combo store adds
+    `combos` (Spellbook variants joined to the deck: complete combos with
+    assembly rates + one-card-away near-misses; `--combo-limit N` caps each
+    list, default 20) and `win_paths` (complete combos whose Spellbook
+    `produces` label contains a win feature — "Win the game", "Infinite
+    damage", "Infinite turns", …). `--hypgeo` adds `hypgeo` (exact
+    cast-on-curve ceilings = an upper bound on the real cast rate; the
+    sim's castability is draw-agnostic and naturally sits above its
+    ceiling — the two answer different questions, not one scale).
+    `station` is null for non-spacecraft commanders.
 - The model is a **consistency diagnostic, not a win-rate predictor**.
   The JSON `assumptions` array ships the full limit list at runtime
   (best-case agent, no opponents, fixed engine delay, artifact-count
   discounts, token caps, unmodeled mechanics) — quote it instead of
-  restating it. `draw.pct_seen_by_turn` and `role_access` are
+  restating it. `draw.draw_source_percent_seen_by_turn` and `role_access` are
   hand-visibility (share of games with the role in hand), not engines
-  online — use `engines_online_by_turn` for online counts. Seed baselines
+  online — use `repeatable_sources_by_turn` for repeatable sources online. Seed baselines
   are version-local: regenerate the baseline JSON after upgrading `stm`.
 - **Fix loop (the standard validation step for any deck edit):** simulate
   with a seed, apply the edit, re-simulate with the same seed and diff:
@@ -535,14 +550,14 @@ format>` (e.g. `--format modern`) to simulate a commander list as a
 stm deck simulate <name> --seed 42 --json > /tmp/base.json
 # ... apply deck update ...
 stm deck simulate <name> --seed 42 --baseline /tmp/base.json
-# prints deltas only: shape counts, metric lines, problems (+ new / - resolved)
-# exit 1 only when a problem is new
+# prints typed metric, finding, and deck-shape deltas
+# exit 1 only when a new finding appears
 ```
 
 Identical seeds = identical shuffle baselines, so differences isolate the
 deck change. Add `--json` to the diff run for the same deltas as JSON
-(`{metrics: [{path, old, new}], shape: [{name, old, new}], problems:
-[{change, kind, detail}]}`) — with `--baseline` set, `--json` prints the
+(`{metrics: [{path, old, new}], findings: [{change, identity, kind,
+explanation}], shape: [{name, old, new}]}`) — with `--baseline` set, `--json` prints the
 delta object, not the full report. Without `--baseline`, `--json` prints
 the full report as before.
 
@@ -698,85 +713,74 @@ tapland_count, untapped_t1_sources}`. `format` holds only
   by pips; 60-card by the full pip-shape table, corrected for land
   count). Human output prints the per-color table, the worst 3
   deficits, and "add 2-3 more <color> sources".
-- `deck simulate <name> --json` carries two mana-source blocks from
-  `deck mana`: `colored_sources` is the Karsten audit block (the same
-  shape `deck mana --json` returns), and `color_sources` is a static
-  census of land tap yields per color (`fixed_source_lands`
-  dedicated single-color, `choice_source_lands`
-  multi-color pickers, `flexible_nonland_sources` rocks/dorks,
-  `scaling_sources` per-color/per-counter growers) — read
-  `color_sources` next to `color_screw` to pick fixes.
-- `deck simulate <name> --json` → `{name, format, runs, turns, seed,
-deck_shape, assumptions, opening_hand, land_drops, mana_base,
-mana_base_bracket_inferred, commander,
-station, bodies_by_turn, engines_online_by_turn, mana, draw, role_access,
-velocity, combat, wincons, interaction, color_screw, color_sources,
-pip_blocks, graveyard, milestones, card_castability, problems, summary,
-combo_access?, combos?, win_paths?, hypgeo?, colored_sources?}`.
+- `deck simulate <name> --json` returns the typed `SimReport` object:
+  `{name, format, runs, turns, seed, deck_shape, assumptions,
+opening_hand, land_drops, mana_base, commander?, station?, companion?,
+creatures_by_turn, repeatable_sources_by_turn, mana, draw, role_access,
+velocity, combat, win_conditions, interaction, color_mana_shortage,
+color_pip_blocks, graveyard, milestones, color_sources,
+card_castability, findings, summary, combo_access?, colored_sources?,
+combos?, win_paths?, hypgeo?}`. `commander`, `station`, and
+  `companion` are null when not applicable. Percent fields use the 0–100
+  scale and two decimal places. The exact contract is defined by the
+  typed report structures.
   `deck_shape.total_cards` is the simulated library
   plus commander (bench sections excluded; `deck_shape.sideboard_cards`
   and `deck_shape.maybeboard_cards` count them). `commander` is null for non-commander decks; `station` is null for
   non-spacecraft commanders (`{online_by_t6, p50_online_turn}`).
-  **`mana_base` = `{lands, rocks, dorks, ramp_spells, total_sources,
-bracket_target_lands: [min, max], bracket_target_ramp: [min, max],
-bracket, verdict, bracket_inferred}`** — the deck's counts against the
-  target band. `bracket_inferred` duplicates the top-level
-  `mana_base_bracket_inferred` flag.
+  **`mana_base`** gives land and ramp counts, target bands, a verdict,
+  `bracket`, and `bracket_inferred_from_game_changers`. The inferred flag
+  is nested in `mana_base`, not a top-level report key.
   Commander decks use bracket bands (without `--bracket` the bracket is
   inferred from the Game Changer census: 0 GC → 2, 1–3 → 3, 4+ → 4;
-  the report carries `mana_base_bracket_inferred: true` when that
+  the report carries `mana_base.bracket_inferred_from_game_changers: true` when that
   happened). 60-card decks use Karsten-style bands from the deck's
   average mana value — under 2.0: 20–22 lands, 2.0–3.0: 22–25, 3.0+:
   25–28, minus up to 2 for every four cheap cantrips — and report
   `bracket: null` with `bracket_target_ramp: [0, 0]`. The verdict is the norm anchor:
   "add/trim lands", "add ramp", or "on target". Check it before acting on
-  any land suggestion: `land_drops.flood_pct_6plus_lands_seen_in_11`
+  any land suggestion: `land_drops.percent_games_with_six_or_more_lands_by_turn_4`
   counts lands _seen_ by end of turn 4 (opener + draws + cantrips), and
-  `flood_expectation` matches that actual draw volume — a rate within
+  `land_drops.expected_percent_with_six_or_more_lands_by_turn_4` matches that actual draw volume — a rate within
   10pp of the expectation fires no finding, so a cantrip deck never
   gets a wrong "trim lands". Never treat "add lands" as the only lever
   when `total_sources` is fine and rocks/dorks are few.
-  `bodies_by_turn` counts creatures, animated spacecraft, and ETB tokens
-  per turn; `engines_online_by_turn` counts repeatable engines.
+  `creatures_by_turn` counts creatures and animated spacecraft;
+  `repeatable_sources_by_turn` counts repeatable engines.
   `combat` carries `attack_power_avg_by_turn`, `attack_power_p90_by_t8`,
-  `attackers_by_turn`, `evasive_by_turn`. `wincons` carries
-  `drain_total_by_turn`, `extra_turns_pct`, `win_threshold_p50_turn`,
-  `win_threshold_pct`, `ultimate_online_pct`, `infinite_mana_pct`,
-  `lethal_damage_by_turn`, `p50_lethal_turn`, `lethal_note`
+  `attackers_by_turn`, `evasive_by_turn`. `win_conditions` carries
+  `opponent_life_loss_by_turn`, `percent_games_with_extra_turn`,
+  `win_threshold_p50_turn`, `percent_games_reaching_counter_win_threshold`,
+  `percent_games_with_affordable_ultimate`,
+  `percent_games_with_suspected_infinite_mana`,
+  `percent_games_at_or_above_table_life_by_turn`, `p50_lethal_turn`, `lethal_note`
   (`p50_lethal_turn` is the best-case goldfish kill turn, labeled as an
   upper bound).
-  `interaction` carries `ready_pct_by_turn`, `mana_held_avg`,
+  `interaction` carries `percent_games_with_ready_interaction_by_turn`, `mana_held_avg`,
   `instant_speed_count`, and the note "capacity, not events".
   For the two mana-source blocks (`colored_sources` Karsten audit,
   `color_sources` tap-yield census) see the `deck mana` bullet above.
-  `pip_blocks` names the worst
+  `color_pip_blocks` names the worst
   card×color offenders (which card's cast got pip-blocked).
-  `problems` is an array of `{kind, severity, pct_games, color, detail,
-suggestion, offenders}`; severity is `high` (≥20% games), `medium`
-  (10–20%), or `low` for game-share problems; `dead_cards` and
-  `mana_unused` severity scales with their counts instead (and their
-  `pct_games` is null). `offenders` carries the cards or counts behind
-  the finding (`{name, detail, pct_games?}`) — the human Problems block
-  is plain English and names these cards; quote it directly to users
-  instead of re-deriving findings from raw metrics.
-  Every `pct_*` field in the report is 0–100 percent at two decimals.
-  Color-screw details name the dedicated source count and shape.
-  `card_castability` rows are `{name, cmc, target_turn,
-pct_castable_by_target, avg_first_castable_turn}` (one row per card
-  copy: a 4-of reports four rows; the `dead_cards` problem dedups
-  distinct names). `land_drops` is flat: `screw_pct_2_or_fewer_by_t4`,
-  `flood_pct_6plus_lands_seen_in_11`, `flood_expectation`,
-  `p50_drops_by_4`, `p95_drops_by_4`, plus `hit_all_by_turn`, an
-  object keyed `"1".."N"` with the share of games that hit every drop
-  through that turn.
-  `commander` is `{name, cmc, pct_castable_by_turn, avg_first_cast_turn,
-p50_cast_turn, p95_cast_turn, on_curve_pct}`.
-- `deck simulate <name> --baseline prior.json` diffs the
-  fresh run against that JSON and prints deltas only — shape counts,
-  metric lines (`path: old → new`), and problems (`+` new, `-` resolved).
-  Exit 1 only when a problem is _new_; identical or improved decks exit 0.
-  Add `--json` for the same deltas as the JSON delta object (see the
-  fix loop in Part 1). Use it instead of saving and diffing JSON by hand.
+  `findings` rows contain `{kind, identity, severity, percent_of_games,
+color, explanation, suggestion, evidence}`. Evidence rows contain
+  `{subject, explanation, percent_of_games}`. Stable kinds are
+  `insufficient_land_drops`, `excess_lands_seen`, `late_commander_cast`,
+  `insufficient_color_mana`, `limited_draw_access`, `unused_mana`,
+  `low_castability`, `low_removal_access`, `low_win_condition_access`,
+  and `limited_interaction_readiness`. Null percentages mean the measure
+  is not based on a game share. Public percentages use the 0–100 scale.
+  `card_castability` rows contain `name`, `mana_value`, `target_turn`,
+  `percent_castable_by_target`, and `avg_first_castable_turn`.
+  `land_drops` includes observed and expected 4-turn flood percentages
+  and drop percentiles. `commander` includes
+  `percent_castable_by_turn`, `avg_first_cast_turn`, `p50_cast_turn`,
+  `p95_cast_turn`, and optional `percent_castable_by_curve`.
+- `deck simulate <name> --baseline prior.json` loads the same typed
+  report schema and prints metric, finding, and deck-shape deltas.
+  JSON output is `{metrics: [{path, old, new}], findings: [{change,
+identity, kind, explanation}], shape: [{name, old, new}]}`. Exit 1 only
+  when a new finding appears. There is no legacy report schema.
 - `deck suggest <name> --json` → array of `{name, oracle_id, mana_cost,
 cmc, type_line, edhrec_rank, game_changer, owned, price, score,
 tags, oracle_text, color_identity}`. Ranked by fit: semantic search and
@@ -1014,7 +1018,7 @@ win condition. Combo decks count 3–4 cheap draw/ramp spells as one land.
 
 Build priority: enabler > payoff > enhancer. Too many enhancers (anthems,
 lords, payoffs' boosters) fill hands with cards that do nothing alone —
-`dead_cards` catches this after a sim.
+`low_castability` catches this after a sim.
 
 **Mana-curve targets:** commander nonlands spread ≈ 9/18/15/10/5/5 across
 MV 1–6+, average MV near 3. 60-card decks scale the same shape to the
@@ -1023,9 +1027,9 @@ archetype; aggro averages near 2.
 **Simulation verifies these counts** (see Part 1's fix loop): static
 counts say the deck _contains_ 10 ramp pieces; the sim says whether the
 deck _draws_ them early enough (`role_access`), whether the commander
-comes down on curve (`commander.on_curve_pct`), and whether the curve is
+comes down on curve (`commander.percent_castable_by_curve`), and whether the curve is
 playable (`card_castability`). Run it after the skeleton and after every
-confirmed batch, and let `problems[]` drive the next batch.
+confirmed batch, and let `findings[]` drive the next batch.
 
 #### Colored sources (mana-base sanity check)
 
@@ -1132,7 +1136,7 @@ let the user decide. Then run `stm deck
 show <name> --json`, check the power targets above, and present the final:
 total cards, curve, ramp counts, owned/total, **total spend vs budget**, and
 `stm deck legal` output (including the bracket checklist review). Run a
-final `stm deck simulate <name> --seed 42 --json` and present its `problems[]`
+final `stm deck simulate <name> --seed 42 --json` and present its `findings[]`
 (or "no findings") as the deck's consistency report. Write a
 short primer with `stm
 deck primer <name> --set`. The primer describes the deck **as it stands
@@ -1162,7 +1166,7 @@ exceed it.
    precon). Then `stm deck show <name> --json` (curve,
    ramp, prices, ownership) and `stm deck legal <name> --bracket <b>` once
    the user names a target bracket. **Run `stm deck simulate <name>
---json` too** — its `problems[]` are the primary diagnosis input. Run
+--json` too** — its `findings[]` are the primary diagnosis input. Run
    `stm deck mana <name>` first (static, instant): every deficit line is
    a concrete mana-base fix. Report:
    total value, missing cost, any violations, gaps against the power
@@ -1179,27 +1183,27 @@ exceed it.
 
    **Problem-kind → fix mapping** (drives the swap batches):
 
-   | Problem kind          | What it means                  | First fix                                                                |
-   | --------------------- | ------------------------------ | ------------------------------------------------------------------------ |
-   | `mana_screw`          | too few early lands            | add 2-3 land slots                                                       |
-   | `mana_flood`          | too many early lands           | trim ~2 land slots toward the curve                                      |
-   | `commander_late`      | commander rarely on curve      | add 2-3 ramp sources or lower the early curve                            |
-   | `color_screw`         | enough mana, wrong colors      | read `color_sources` + `pip_blocks`; add/fix sources for the named color |
-   | `draw_starvation`     | no draw source seen by t6      | add 2-3 draw engines                                                     |
-   | `mana_unused`         | mana floats unspent            | add cheaper spells or more draw                                          |
-   | `dead_cards`          | 3+ spells cast late            | cut/discount late cards, or add ramp (check `card_castability`)          |
-   | `category_starved`    | removal/wincons rarely in hand | fill the starved role (`deck suggest --role`)                            |
-   | `interaction_unready` | answers seen but unaffordable  | add cheaper instant-speed answers                                        |
+   | Finding kind                    | What it means                          | First fix                                                         |
+   | ------------------------------- | -------------------------------------- | ----------------------------------------------------------------- |
+   | `insufficient_land_drops`       | Few lands by turn four                 | Add land slots or two-mana ramp.                                  |
+   | `excess_lands_seen`             | More lands seen than expected          | Check the land plan, then consider trimming.                      |
+   | `late_commander_cast`           | Commander misses its curve target      | Add ramp or lower the early curve.                                |
+   | `insufficient_color_mana`       | Enough mana, wrong colors              | Read `color_sources` and `color_pip_blocks`; fix the named color. |
+   | `limited_draw_access`           | No draw source seen by the target turn | Add draw engines.                                                 |
+   | `unused_mana`                   | Mana often goes unused                 | Add cheaper spells or card draw.                                  |
+   | `low_castability`               | Several cards miss their curve targets | Check `card_castability`; cut or discount late cards.             |
+   | `low_removal_access`            | Removal is rarely seen                 | Fill the removal role.                                            |
+   | `low_win_condition_access`      | Win conditions are rarely seen         | Fill the win-condition role.                                      |
+   | `limited_interaction_readiness` | Answers are seen but unaffordable      | Add cheaper instant-speed answers.                                |
 
    **60-card reading notes** (these apply when the deck is not
    commander-shaped):
 
-   - `mana_screw`: the fix is "add lands" (never rocks — no ramp verdict
+   - `insufficient_land_drops`: the fix is "add lands" (never rocks — no ramp verdict
      for 60-card decks; `mana_base.bracket` is `null` and there is no
      ramp band).
-   - `interaction_unready`: read against the deck's instant count.
-   - Bracket fields (`bracket`, `mana_base_bracket_inferred`) are absent
-     for 60-card decks; ignore bracket advice.
+   - `limited_interaction_readiness`: read against the deck's instant count.
+   - The bracket is `null` for 60-card decks; ignore commander bracket advice.
    - Sideboard slots are part of tuning: reserve ~15 slots against the
      expected metagame instead of widening the main deck.
    - `deck simulate` runs 8 turns and London mulligans for 60-card
@@ -1233,7 +1237,7 @@ decks/<name>.changes.md` (the original is the first operand; for diff
       the file format takes `add/remove/set/move` lines and `#`
       comments).
    4. `stm deck simulate <name> --seed <same> --baseline <prev.json>
- --json` → the JSON delta object (`metrics`/`shape`/`problems`);
+ --json` → the JSON delta object (`metrics`/`findings`/`shape`);
       exit 1 only when a problem is new. Report the deltas.
    5. One question per batch → next batch.
 
@@ -1243,7 +1247,7 @@ decks/<name>.changes.md` (the original is the first operand; for diff
 6. **Apply and verify.** `stm deck update` per confirmed batch. After each
    batch, re-simulate with the same seed and show the metric deltas (the
    fix loop in Part 1) — a batch is working when its target metric moved
-   and no new `problems[]` appeared. `deck cuts --for <role>
+   and no new `findings[]` appeared. `deck cuts --for <role>
  --bracket <b>` makes room
    for a fill: it ranks incumbents by expendability (castability faults,
    Game Changer over-cap, curve outliers) and pairs each cut with fill

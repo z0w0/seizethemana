@@ -61,6 +61,7 @@ fn spell_deck(names: &[&str]) -> SimDeck {
         ..SimCard::default()
     }));
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -90,7 +91,7 @@ fn hand_pair_assembles_by_target_turn() {
     let assembly = measure(&candidates, &logs, &deck, 8);
     assert_eq!(assembly.variants_considered, 1);
     let row = &assembly.complete[0];
-    assert!(row.pct_games > 0.01, "hand pair never assembled: {row:?}");
+    assert!(row.game_share > 0.01, "hand pair never assembled: {row:?}");
     assert_eq!(row.target_turn, 3);
 }
 

@@ -1,5 +1,5 @@
 //! Aggregation of game logs into the report values: per-game stats, role
-//! access, castability, and color-screw census. Problem findings and the
+//! access, castability, and color-screw census. Finding analysis and the
 //! mana-base verdict live in `findings`.
 
 use std::collections::HashMap;
@@ -71,7 +71,7 @@ pub struct SimStats {
     /// Games with no draw source seen by turn 6.
     pub starved_pct: f64,
     /// P(at least one draw-role card seen in hand by turn t), t = 1..=N.
-    /// Hand visibility, not engines online: `engines_online_by_turn` has
+    /// Hand visibility, not repeatable sources online: the source count has
     /// the online count.
     pub draw_sources: Vec<f64>,
     /// P(removal seen by turn 5).
@@ -96,6 +96,8 @@ pub struct SimStats {
     pub replay_casts_avg: f64,
     /// Average life paid for costs and activations per game.
     pub life_paid_avg: f64,
+    /// Average life gained (lifelink, gain-life effects) per game.
+    pub life_gained_avg: f64,
     /// Average cards drawn by life-funded actions per game.
     pub life_funded_draws_avg: f64,
     /// Per-card castability rows.
@@ -114,10 +116,15 @@ pub struct SimStats {
     pub station_online_pct: f64,
     /// Median first online turn for the commander station.
     pub station_p50_turn: u32,
+    /// P(companion fetched to hand by turn 6) across games with a
+    /// companion (0 when the deck has none).
+    pub companion_online_pct: f64,
+    /// Median first turn the companion reached hand.
+    pub companion_p50_turn: u32,
     /// Average bodies in play by turn.
-    pub bodies_by_turn: Vec<f64>,
+    pub creatures_by_turn: Vec<f64>,
     /// Average engines online by turn.
-    pub engines_by_turn: Vec<f64>,
+    pub repeatable_sources_by_turn: Vec<f64>,
     /// Average attacking power on the board by turn.
     pub attack_power_by_turn: Vec<f64>,
     /// 90th-percentile attacking power by turn 8 (power curve, not a
@@ -138,8 +145,11 @@ pub struct SimStats {
     /// Average fraction of the library evaluated by turn (drawn +
     /// milled + scried/surveiled).
     pub library_awareness_by_turn: Vec<f64>,
-    /// Average life drained by turn (burn, drain engines).
-    pub drain_total_by_turn: Vec<f64>,
+    /// Average cumulative opponent life lost to life-loss effects by turn.
+    pub opponent_life_loss_by_turn: Vec<f64>,
+    /// Average cumulative damage dealt to players by turn, separate from
+    /// direct life loss.
+    pub player_damage_by_turn: Vec<f64>,
     /// P(cumulative player damage at/above the life total by turn t),
     /// indexed 1..turns (lethal census; best-case goldfish, unblocked).
     pub lethal_damage_by_turn: Vec<f64>,
@@ -186,8 +196,8 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     };
     stats.unused_mana = vec![0.0; turns];
     stats.cards_seen = vec![0.0; turns];
-    stats.bodies_by_turn = vec![0.0; turns];
-    stats.engines_by_turn = vec![0.0; turns];
+    stats.creatures_by_turn = vec![0.0; turns];
+    stats.repeatable_sources_by_turn = vec![0.0; turns];
     stats.attack_power_by_turn = vec![0.0; turns];
     stats.evasive_by_turn = vec![0.0; turns];
     stats.attackers_by_turn = vec![0.0; turns];
@@ -195,7 +205,8 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
     stats.self_milled_by_turn = vec![0.0; turns];
     stats.opp_milled_by_turn = vec![0.0; turns];
     stats.library_awareness_by_turn = vec![0.0; turns];
-    stats.drain_total_by_turn = vec![0.0; turns];
+    stats.opponent_life_loss_by_turn = vec![0.0; turns];
+    stats.player_damage_by_turn = vec![0.0; turns];
     stats.lethal_damage_by_turn = vec![0.0; turns];
     stats.interaction_ready_by_turn = vec![0.0; turns];
     stats.free_cast_permanents_by_turn = vec![0.0; turns];
@@ -226,6 +237,11 @@ pub fn aggregate(logs: &[GameLog], deck: &SimDeck, turns: u32) -> SimStats {
         .sum::<f64>()
         / n;
     stats.life_paid_avg = logs.iter().map(|log| f64::from(log.life_paid)).sum::<f64>() / n;
+    stats.life_gained_avg = logs
+        .iter()
+        .map(|log| f64::from(log.life_gained))
+        .sum::<f64>()
+        / n;
     stats.life_funded_draws_avg = logs
         .iter()
         .map(|log| f64::from(log.life_funded_draws))
@@ -294,7 +310,7 @@ fn screw_flood_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, tur
             // turn 4. A deck whose lands exceed ~35 reports flood near
             // its hypergeometric expectation (at the game's actual seen
             // count).
-            if log.lands_seen_by_11 >= 6 {
+            if log.lands_seen_by_turn_4 >= 6 {
                 stats.flood_pct += 1.0 / n;
             }
             seen_by_4.push(log.cards_seen_by_4);
@@ -309,8 +325,11 @@ fn screw_flood_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, tur
     // printed baseline matches the measured bucket even for cantrip
     // decks (a fixed 11-card window reads draw-heavy decks as floodier
     // than they are).
-    let lands_count = deck.cards.iter().filter(|c| c.role == Role::Land).count();
-    let deck_size = deck.cards.len();
+    let lands_count = deck
+        .library_cards()
+        .filter(|c| c.role == Role::Land)
+        .count();
+    let deck_size = deck.library_len();
     stats.flood_expectation = if seen_by_4.is_empty() {
         0.0
     } else {
@@ -364,6 +383,17 @@ fn commander_timing_stats(
             stats.station_p50_turn = percentile(&mut turns_vec, 0.5);
         }
     }
+
+    // Companion online: fetched to hand by turn 6.
+    if deck.companion.is_some() {
+        let online: Vec<Option<u32>> = logs.iter().map(|l| l.companion_online).collect();
+        stats.companion_online_pct =
+            online.iter().filter(|t| t.is_some_and(|t| t <= 6)).count() as f64 / n;
+        let mut turns_vec: Vec<u32> = online.iter().flatten().copied().collect();
+        if !turns_vec.is_empty() {
+            stats.companion_p50_turn = percentile(&mut turns_vec, 0.5);
+        }
+    }
 }
 
 /// Per-turn mana, velocity, board, and damage census averages.
@@ -373,11 +403,12 @@ fn velocity_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns:
         for t in 0..turns {
             stats.unused_mana[t] += (log.mana_available[t] - log.mana_spent[t]).max(0.0) / n;
             stats.cards_seen[t] += f64::from(log.cards_seen[t]) / n;
-            if t < log.bodies.len() {
-                stats.bodies_by_turn[t] += f64::from(log.bodies[t]) / n;
+            if t < log.creatures.len() {
+                stats.creatures_by_turn[t] += f64::from(log.creatures[t]) / n;
             }
-            if t < log.engines_online.len() {
-                stats.engines_by_turn[t] += f64::from(log.engines_online[t]) / n;
+            if t < log.repeatable_sources_online.len() {
+                stats.repeatable_sources_by_turn[t] +=
+                    f64::from(log.repeatable_sources_online[t]) / n;
             }
             if t < log.attack_power.len() {
                 stats.attack_power_by_turn[t] += f64::from(log.attack_power[t]) / n;
@@ -400,14 +431,15 @@ fn velocity_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns:
             if t < log.awareness.len() {
                 stats.library_awareness_by_turn[t] += log.awareness[t] / n;
             }
-            if t < log.drain_total.len() {
-                stats.drain_total_by_turn[t] += f64::from(log.drain_total[t]) / n;
+            if t < log.opponent_life_loss.len() {
+                stats.opponent_life_loss_by_turn[t] += f64::from(log.opponent_life_loss[t]) / n;
             }
             if t < log.player_damage.len() {
+                stats.player_damage_by_turn[t] += f64::from(log.player_damage[t]) / n;
                 // Player damage: combat damage to players + the drain
                 // census (burn/drain effects already carry the format
                 // multiplier for three opponents).
-                let dealt = f64::from(log.player_damage[t]) + f64::from(log.drain_total[t]);
+                let dealt = f64::from(log.player_damage[t]) + f64::from(log.opponent_life_loss[t]);
                 if dealt >= life_target {
                     stats.lethal_damage_by_turn[t] += 1.0 / n;
                 }
@@ -427,7 +459,7 @@ fn lethal_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats) {
         if let Some(t) = log
             .player_damage
             .iter()
-            .zip(log.drain_total.iter())
+            .zip(log.opponent_life_loss.iter())
             .enumerate()
             .find(|(_, (d, dr))| f64::from(*d + *dr) >= deck.format.life_target())
             .map(|(t, _)| t as u32 + 1)
@@ -589,12 +621,12 @@ fn color_screw_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, n: 
         .map(|((idx, ci), count)| PipBlock {
             name: deck.cards[idx].name.clone(),
             color: COLORS[ci],
-            pct_games: count as f64 / n,
+            game_share: count as f64 / n,
         })
         .collect();
     pip_blocks.sort_by(|a, b| {
-        b.pct_games
-            .partial_cmp(&a.pct_games)
+        b.game_share
+            .partial_cmp(&a.game_share)
             .unwrap_or(std::cmp::Ordering::Equal)
             .then(a.name.cmp(&b.name))
     });

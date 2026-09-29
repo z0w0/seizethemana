@@ -2,10 +2,12 @@
 
 /// A minimal card row for tests.
 use super::aggregate::aggregate;
-use super::findings::find_problems;
+use super::findings::analyze_findings;
 use super::game::run_game;
 use super::model::*;
-use super::oracle_parse::*;
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
+use super::oracle_parser::land::parse_tap_yield;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -14,7 +16,7 @@ fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
         name: name.to_string(),
         oracle_id: String::new(),
         mana_cost: mana_cost.to_string(),
-        cmc: super::oracle_parse::parse_oracle_cost(mana_cost).total() as f64,
+        cmc: parse_cost(mana_cost).total() as f64,
         type_line: type_line.to_string(),
         colors: "[]".into(),
         color_identity: "[]".into(),
@@ -42,7 +44,7 @@ fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
             name: "Plains".into(),
             cost: Cost::default(),
             min_cost: Cost::default(),
-            tap: Some(parse_oracle_tap_yield("{T}: Add {W}.").unwrap()),
+            tap: Some(parse_tap_yield("{T}: Add {W}.").unwrap()),
             role: Role::Land,
             ..super::model::SimCard::default()
         });
@@ -65,6 +67,7 @@ fn stub_deck(lands: usize, spells: &[(&str, u32, Role)]) -> SimDeck {
         }
     }
     SimDeck {
+        companion: None,
         cards,
         commanders: vec![],
         format: Format::Constructed,
@@ -81,14 +84,14 @@ fn aggregate_counts_land_drops_and_starvation() {
     stats.removal_count = 0;
     stats.wincon_count = 0;
     stats.draw_count = 0;
-    let problems = find_problems(&stats, &deck);
+    let problems = analyze_findings(&stats, &deck);
     // A drawless deck trips draw starvation.
-    assert!(problems.iter().any(|p| p.kind == "draw_starvation"));
+    assert!(problems.iter().any(|p| p.kind == "limited_draw_access"));
 }
 
 #[test]
 fn severity_buckets_match_shares() {
-    // Exercised through find_problems; check the color screw thresholds.
+    // Check the color screw thresholds through the finding analysis.
     let deck = stub_deck(24, &[("Bear", 2, Role::Other); 10]);
     let mut rng = ChaCha8Rng::seed_from_u64(9);
     let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
@@ -97,8 +100,8 @@ fn severity_buckets_match_shares() {
     stats.wincon_count = 0;
     // Monocolor decks never trip color screw.
     stats.color_screw = [0.0; 5];
-    let problems = find_problems(&stats, &deck);
-    assert!(!problems.iter().any(|p| p.kind == "color_screw"));
+    let problems = analyze_findings(&stats, &deck);
+    assert!(!problems.iter().any(|p| p.kind == "insufficient_color_mana"));
 }
 
 #[test]
@@ -118,7 +121,7 @@ fn reactive_spells_classify_as_removal() {
         "Creatures with power 4 or greater can't attack or block.",
     ] {
         let row = card("Test Card", "{1}{G}", "Instant", text);
-        let sim = super::oracle_parse::parse_sim_card(&row);
+        let sim = parse_sim_card(&row);
         assert_eq!(sim.role, Role::Removal, "text: {text}");
     }
 }
@@ -133,7 +136,7 @@ fn protection_spells_are_not_removal() {
         "Permanents you control gain hexproof and indestructible until end of turn.",
     ] {
         let row = card("Test Card", "{1}{G}", "Instant", text);
-        let sim = super::oracle_parse::parse_sim_card(&row);
+        let sim = parse_sim_card(&row);
         assert_ne!(sim.role, Role::Removal, "text: {text}");
         assert!(!sim.flags.is_interaction, "text: {text}");
     }
@@ -144,7 +147,7 @@ fn removal_exempt_from_dead_cards() {
     // A reactive spell with a high floor must not surface in dead_cards;
     // its castability row still exists.
     let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
-    let fog = super::oracle_parse::parse_sim_card(&card(
+    let fog = parse_sim_card(&card(
         "Spore Fog",
         "{1}{G}",
         "Instant",
@@ -157,13 +160,13 @@ fn removal_exempt_from_dead_cards() {
     stats.removal_count = 1;
     stats.wincon_count = 5;
     stats.draw_count = 5;
-    let problems = find_problems(&stats, &deck);
-    let dead = problems.iter().find(|p| p.kind == "dead_cards");
+    let problems = analyze_findings(&stats, &deck);
+    let dead = problems.iter().find(|p| p.kind == "low_castability");
     if let Some(p) = dead {
         assert!(
-            !p.detail.contains("Spore Fog"),
+            !p.explanation.contains("Spore Fog"),
             "reactive spell flagged dead: {}",
-            p.detail
+            p.explanation
         );
     }
     assert!(
@@ -177,7 +180,7 @@ fn pip_blocks_name_worst_card_color_pairs() {
     // A two-color deck with single-color lands blocks pips; the offenders
     // surface with per-card shares, top 5.
     let mut deck = stub_deck(24, &[("Bear", 2, Role::Other); 5]);
-    let hybrid = super::oracle_parse::parse_sim_card(&card(
+    let hybrid = parse_sim_card(&card(
         "Pip Test",
         "{1}{U}{G}",
         "Creature — Frog Wizard",
@@ -197,7 +200,7 @@ fn pip_blocks_name_worst_card_color_pairs() {
             stats
                 .pip_blocks
                 .iter()
-                .all(|p| p.pct_games > 0.0 && p.pct_games <= 1.0)
+                .all(|p| p.game_share > 0.0 && p.game_share <= 1.0)
         );
     }
 }
@@ -215,7 +218,7 @@ fn problems_never_suggest_card_names() {
     stats.removal_count = 2;
     stats.wincon_count = 2;
     stats.draw_count = 2;
-    let problems = find_problems(&stats, &deck);
+    let problems = analyze_findings(&stats, &deck);
     for p in problems {
         assert!(
             !p.suggestion.contains("Bear"),

@@ -31,7 +31,10 @@ fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput
                 break;
             }
             if let Some(card) = cards_by_name.get(&entry.name) {
-                rows.push((card.clone(), entry.quantity as f64));
+                rows.push((
+                    card.clone(),
+                    f64::from(i32::try_from(entry.quantity).expect("deck quantities fit i32")),
+                ));
             }
         }
     }
@@ -73,6 +76,9 @@ fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput
 }
 
 /// Run the Karsten colored-source audit for a deck.
+///
+/// # Errors
+/// Returns errors from querying card data.
 pub fn mana_audit_for(conn: &Connection, deck: &Deck) -> anyhow::Result<super::mana_audit::Audit> {
     let input = mana_audit_input(conn, deck)?;
     Ok(super::mana_audit::audit(
@@ -135,6 +141,9 @@ pub fn print_mana_audit(styles: &crate::output::Styles, audit: &super::mana_audi
 /// audit. Reads the deck census only — no simulation. `format` is
 /// accepted for CLI symmetry with `deck simulate`/`deck cuts`; the
 /// audit's commander/60-card split infers from the deck shape.
+///
+/// # Errors
+/// Returns errors from loading the deck, querying card data, or serializing the report.
 pub fn mana(
     paths: &crate::paths::Paths,
     conn: &Connection,
@@ -146,7 +155,7 @@ pub fn mana(
     let (_path, deck) = load_deck(paths, name)?;
     let audit = mana_audit_for(conn, &deck)?;
     if json {
-        let v = super::mana_audit::colored_sources_json(&audit);
+        let v = super::mana_audit::colored_sources_report(&audit);
         println!("{}", serde_json::to_string_pretty(&v)?);
         return Ok(crate::cli::codes::OK);
     }

@@ -389,56 +389,29 @@ Deck contents live in ManaBox txt files under `decks/`. The module covers:
   Output formats: plain `2x Name` lines (default), Card Kingdom CSV (name,
   full set name, foil, qty), TCGPlayer Mass Entry CSV, or JSON with per-row
   prices and the estimated market total. Nothing is moved.
-- **`simulate`** — `deck simulate <name>`: Monte Carlo goldfish
-  (`stm deck simulate`), split into the `simulator/` submodule tree
-  (`model`/`oracle_parser`/`oracle_lower`/`oracle_parse`/`deck`/`game`/
-  `aggregate`/`report`). Pure core driven by one seeded `ChaCha8Rng`
-  (`run_game`), aggregation and findings separate, so a fixed `--seed`
-  reproduces a run exactly (the simulate → deck update → re-simulate
-  workflow depends on that). Cards are modeled as data, not as rules.
-  `oracle_parse` converts oracle text into a tap yield (one tap = the
-  listed mana: "or" choices, fixed simultaneous sets like Jegantha,
-  colorless, any-color), station tiers
-  (`{N+}` striations per CR 702.184/721; only the P/T striation animates),
-  crew costs (from the Crew keyword), and abilities (activated, ETB,
-  upkeep, attack, cast-spell triggers with draw/tutor/tokens/mana/
-  counters effects). `game` plays best-case turns:
-  play an untapped land when possible (enters-tapped honored per oracle;
-  shock-dual life payments always paid),
-  cast the cheapest pip-payable spells,
-  fire ETB triggers (tokens become battlefield bodies),
-  spend leftover mana on unlocked activations,
-  then spend remaining creature taps — mana only
-  while casting still needs it, then station the highest-threshold
-  spacecraft/planet, then crew Vehicles. Station tiers unlock
-  permanently; crew animations last the turn. Commanders cast with the
-  full pip check (a 5c commander needs one of each pip) and count as a
-  draw engine when their oracle shows a repeatable draw. Cost
-  reductions: warp cuts to the cheaper cost at parse; improvise and
-  affinity start at a flat −2 and gain 1 more per 4 artifacts on the
-  battlefield, capped at the printed generic. The
-  bench (sideboard/maybeboard) never enters the library: it is not part
-  of the legal deck.
-  Reported per run: opening-hand shape, land-drop curve, commander
-  on-curve timing, unspent mana, cards seen, role access, color screw
-  (enough mana but the wrong colors), per-card castability, station
-  online metrics, and bodies/engines timelines. Findings (mana
-  screw/flood, color screw, commander late, draw starvation, dead cards,
-  starved categories) carry a category + magnitude suggestion and drive
-  exit 1. Model limits are printed in `assumptions`:
-  enters-tapped honored (shock duals untapped),
-  no opponents or interaction,
-  draw engines fire once per turn on a fixed delay,
-  no commander recast tax,
-  body power from printed power (unknowns and tokens count 2) for
-  stationing and crewing,
-  hybrid pips pay from any of their colors,
-  X-scaling spells pay the leftover pool into X,
-  and energy/converge/proliferate are not modeled.
-  Metalcraft mana gates and full extra-turn player phases
-  are modeled. Opponent-dependent mana is generic-only from turn 2. This
-  is a consistency diagnostic, not a win-rate predictor.
-  The living reference for the model, assumptions, and limits is
+- **`simulate`** — `deck simulate <name>` runs seeded Monte Carlo goldfish
+  games. The pipeline is Oracle wording → typed AST → executable `SimCard`
+  model → game execution → typed `SimReport`. Oracle parsing, lowering,
+  turn execution, aggregation, findings, and report rendering have separate
+  modules under `src/deck/simulator/`. A fixed `--seed` reproduces the
+  same run. The precombat main phase executes casts and activations; the
+  postcombat main phase is an explicit no-op. Saga lore counters are added
+  as the precombat main phase begins (CR 714.3c), but other lore placements
+  and stack timing are not modeled.
+  The report groups measures under `opening_hand`, `land_drops`,
+  `mana_base`, `commander`, `station`, `companion`, `mana`, `draw`,
+  `role_access`, `velocity`, `combat`, `win_conditions`, `interaction`,
+  `color_mana_shortage`, `graveyard`, and `milestones`. Percent fields use
+  the 0–100 scale. Typed findings use stable identities and carry
+  explanations, suggestions, and evidence. Baseline JSON uses the same
+  `SimReport` shape and reports `metrics`, `findings`, and `shape` deltas.
+  Exit 1 means findings were reported, or a baseline introduced a new
+  finding; it does not mean the simulator crashed. Interaction is
+  readiness capacity, not resolved events. Role classification is a
+  diagnostic exception to the Oracle-driven rules pipeline.
+  Unsupported wording, costs, and conditions remain inert. The simulator
+  is a consistency diagnostic, not a win-rate predictor. Its full limits
+  are listed in each report's `assumptions` array and in
   `docs/simulator.md`.
 
 Basic lands are treated as unlimited throughout: `deck show` counts them as

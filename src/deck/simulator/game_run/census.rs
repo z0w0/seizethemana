@@ -1,6 +1,6 @@
 //! Track per-turn game metrics and assemble the final game log.
 
-use super::super::game::{GameLog, GameState, HAND_LIMIT, card_of};
+use super::super::game::{GameLog, GameState, HAND_LIMIT, is_creature_permanent};
 use super::super::game_mana::usable_for_noncreature;
 use super::super::model::{CardIdx, Role, SimDeck};
 use std::collections::HashMap;
@@ -27,10 +27,12 @@ pub(in crate::deck::simulator) struct TurnCensus {
     pub(in crate::deck::simulator) commander_castable: Option<u32>,
     /// First turn the commander spacecraft was animated (station online).
     pub(in crate::deck::simulator) station_online: Option<u32>,
-    /// Bodies (creatures, crewed vehicles, animated spacecraft) per turn.
-    pub(in crate::deck::simulator) bodies: Vec<u32>,
-    /// Repeatable engines online per turn.
-    pub(in crate::deck::simulator) engines_online: Vec<u32>,
+    /// First turn the companion was fetched to hand.
+    pub(in crate::deck::simulator) companion_online: Option<u32>,
+    /// Creature permanents (including animated vehicles) per turn.
+    pub(in crate::deck::simulator) creatures: Vec<u32>,
+    /// Repeatable card sources available each turn.
+    pub(in crate::deck::simulator) repeatable_sources_online: Vec<u32>,
     /// Graveyard size at the end of each turn.
     pub(in crate::deck::simulator) graveyard_size: Vec<u32>,
     /// First turn each card index was seen in hand (combo assembly).
@@ -55,8 +57,8 @@ pub(in crate::deck::simulator) struct TurnCensus {
     /// Cards evaluated (drawn + milled + scried/surveiled) per turn,
     /// cumulative fraction of the library.
     pub(in crate::deck::simulator) awareness: Vec<f64>,
-    /// Life drained (burn, drain engines) by end of each turn.
-    pub(in crate::deck::simulator) drain_total: Vec<u32>,
+    /// Opponent life lost to life-loss effects by end of each turn.
+    pub(in crate::deck::simulator) opponent_life_loss: Vec<u32>,
     /// Player damage (combat + combat-damage triggers) per turn, cumulative.
     pub(in crate::deck::simulator) player_damage: Vec<u32>,
     /// Extra turns taken by end of each turn (0 or 1 per slot).
@@ -85,8 +87,9 @@ impl TurnCensus {
             blocked_colors: [false; 5],
             commander_castable: None,
             station_online: None,
-            bodies: vec![0u32; turns],
-            engines_online: vec![0u32; turns],
+            companion_online: None,
+            creatures: vec![0u32; turns],
+            repeatable_sources_online: vec![0u32; turns],
             graveyard_size: vec![0u32; turns],
             card_first_seen: HashMap::new(),
             pip_blocks: Vec::new(),
@@ -98,7 +101,7 @@ impl TurnCensus {
             self_milled: vec![0u32; turns],
             opp_milled: vec![0u32; turns],
             awareness: vec![0.0f64; turns],
-            drain_total: vec![0u32; turns],
+            opponent_life_loss: vec![0u32; turns],
             player_damage: vec![0u32; turns],
             extra_turns: vec![0u32; turns],
             win_threshold_turn: None,
@@ -136,10 +139,10 @@ pub(super) fn record_hand_sightings(
 /// a bucket pip is one mana of the source's chosen color, so the
 /// bucket + general-covered pips must reach the pip total (the cast
 /// gate's mixed-pip rule).
-pub(super) fn record_interaction_readiness(
+pub(in crate::deck::simulator) fn record_interaction_readiness(
     deck: &SimDeck,
     st: &GameState,
-    pool: &super::super::game::Pool,
+    pool: &super::super::game::ManaPool,
     census: &mut TurnCensus,
     turn: usize,
 ) {
@@ -160,7 +163,7 @@ pub(super) fn record_interaction_readiness(
     if general + bucket < cost.total() {
         return;
     }
-    let pip_total: u32 = cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cost.flex_pips;
+    let pip_total: u32 = cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cost.hybrid_pips;
     // Pips the general pool covers: fixed pips in place, flexible
     // filling the rest.
     let mut flexible = pool.flexible;
@@ -189,7 +192,6 @@ pub(super) fn record_combat(
     census.attack_power[turn - 1] = combat.power;
     census.attackers_turn[turn - 1] = combat.attackers;
     census.evasive_turn[turn - 1] = combat.evasive;
-    let token_bodies = combat.token_bodies;
     census.cards_seen[turn - 1] = st.seen;
     census.graveyard_size[turn - 1] = st.graveyard.len() as u32;
     census.library_size[turn - 1] = st.library.len() as u32;
@@ -205,8 +207,7 @@ pub(super) fn record_combat(
         .count()
         + st.battlefield
             .iter()
-            // Token permanents carry sentinel card indexes; only real
-            // cards can be lands.
+            // Only deck cards can be lands.
             .filter(|p| {
                 p.card
                     .deck_idx()
@@ -219,25 +220,30 @@ pub(super) fn record_combat(
             .count()) as u32;
     census.self_milled[turn - 1] = st.milled_self;
     census.opp_milled[turn - 1] = st.milled_opp;
-    census.awareness[turn - 1] = f64::from(st.awareness_cards) / (deck.cards.len() as f64).max(1.0);
-    census.drain_total[turn - 1] = st.drained;
+    census.awareness[turn - 1] =
+        f64::from(st.awareness_cards) / (deck.library_len() as f64).max(1.0);
+    census.opponent_life_loss[turn - 1] = st.opponent_life_lost;
     census.player_damage[turn - 1] = if turn > 1 {
         census.player_damage[turn - 2]
     } else {
         0
-    } + combat.power;
-    census.bodies[turn - 1] = st
+    } + combat.power
+        + st.damage_dealt_this_turn;
+    census.creatures[turn - 1] = st
         .battlefield
         .iter()
-        .filter(|p| card_of(deck, p).is_creature || p.animated)
-        .count() as u32
-        + token_bodies.min(4);
+        .filter(|p| is_creature_permanent(deck, p))
+        .count() as u32;
 }
 
 /// Record the engine count for the turn (called after the engine list
 /// settles: commander cast, cast-phase registrations).
-pub(super) fn record_engine_count(census: &mut TurnCensus, turn: usize, engines: &[(u32, u32)]) {
-    census.engines_online[turn - 1] = engines.len() as u32;
+pub(super) fn record_repeatable_source_count(
+    census: &mut TurnCensus,
+    turn: usize,
+    sources: &[(u32, u32)],
+) {
+    census.repeatable_sources_online[turn - 1] = sources.len() as u32;
 }
 
 /// Build the final `GameLog` from the census and the game state.
@@ -282,11 +288,12 @@ pub(super) fn finish_log(
         // real seen count so the expectation matches the measurement.
         // Short schedules (fewer than 4 turns) report 0: the flood
         // bucket only reads this field under a `turns >= 4` guard.
-        lands_seen_by_11: lands_seen_by_4_value,
+        lands_seen_by_turn_4: lands_seen_by_4_value,
         cards_seen_by_4: cards_seen_by_4_value,
         station_online: census.station_online,
-        bodies: census.bodies,
-        engines_online: census.engines_online,
+        companion_online: census.companion_online,
+        creatures: census.creatures,
+        repeatable_sources_online: census.repeatable_sources_online,
         pip_blocks: census
             .pip_blocks
             .into_iter()
@@ -296,6 +303,7 @@ pub(super) fn finish_log(
         card_first_seen: census.card_first_seen,
         replay_casts: st.replay_casts,
         life_paid: st.life_paid,
+        life_gained: st.life_gained,
         life_funded_draws: st.life_funded_draws,
         attack_power: census.attack_power,
         attackers: census.attackers_turn,
@@ -304,7 +312,7 @@ pub(super) fn finish_log(
         self_milled: census.self_milled,
         opp_milled: census.opp_milled,
         awareness: census.awareness,
-        drain_total: census.drain_total,
+        opponent_life_loss: census.opponent_life_loss,
         player_damage: census.player_damage,
         extra_turns: census.extra_turns,
         milestones_by_turn,
@@ -322,17 +330,33 @@ pub(super) fn finish_log(
             .into_iter()
             .map(|(idx, turn)| (idx.index(), turn))
             .collect(),
-        #[cfg(test)]
-        alternate_casts: st.alternate_casts.iter().map(|idx| idx.index()).collect(),
         infinite_mana_suspected: st.infinite_mana_suspected,
     }
 }
 
-/// 10 END: hand-limit discard from the end of the hand. The graveyard
-/// entry records THIS turn (the discard turn), not the game length.
+/// 10 END: hand-limit discard. The best-case agent keeps the cards it
+/// wants most, so it sheds the highest-mana-value cards first (CR 402.2
+/// leaves the choice to the player; the sim approximates it). A board
+/// permanent with "You have no maximum hand size" skips the discard
+/// entirely. The graveyard entry records THIS turn (the discard turn),
+/// not the game length.
 pub(super) fn end_step_discard(deck: &SimDeck, st: &mut GameState, turn: usize) {
+    if st
+        .battlefield
+        .iter()
+        .any(|p| super::super::game::card_of(deck, p).flags.no_max_hand_size)
+    {
+        return;
+    }
     while st.hand.len() > HAND_LIMIT {
-        let discarded = st.hand.remove(st.hand.len() - 1);
+        let worst = st
+            .hand
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, idx)| deck[**idx].mana_value)
+            .map(|(pos, _)| pos)
+            .unwrap_or(st.hand.len() - 1);
+        let discarded = st.hand.remove(worst);
         super::super::game_effects::move_to_graveyard(
             deck,
             st,
@@ -341,16 +365,4 @@ pub(super) fn end_step_discard(deck: &SimDeck, st: &mut GameState, turn: usize) 
             super::super::game_effects::CardZone::Hand,
         );
     }
-}
-
-/// Probe entry for the interaction-readiness census (test only).
-#[cfg(test)]
-pub(crate) fn record_interaction_readiness_probe(
-    deck: &SimDeck,
-    st: &GameState,
-    pool: &super::super::game::Pool,
-    census: &mut TurnCensus,
-    turn: usize,
-) {
-    record_interaction_readiness(deck, st, pool, census, turn);
 }

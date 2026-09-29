@@ -15,6 +15,30 @@ pub struct DedupeResult {
     pub merged_cards: Vec<(String, i64)>,
 }
 
+/// One merged card row in dedupe output.
+#[derive(Debug, serde::Serialize)]
+struct DedupeMergedCard {
+    /// Card name.
+    name: String,
+    /// Copies removed from duplicate lines.
+    copies: i64,
+}
+
+/// Typed response for `stm deck dedupe`.
+#[derive(Debug, serde::Serialize)]
+struct DedupeReport {
+    /// Deck name.
+    name: String,
+    /// Duplicate lines merged.
+    merged_lines: usize,
+    /// Copies removed while merging.
+    merged_copies: i64,
+    /// Final deck card count.
+    cards: i64,
+    /// Per-card quantity changes.
+    merged: Vec<DedupeMergedCard>,
+}
+
 /// Collapse duplicate lines within each section: entries with the same card
 /// name merge into the first line, quantities summed.
 ///
@@ -25,6 +49,9 @@ pub struct DedupeResult {
 /// summed quantities. Print info (set/cn/foil) of the first line wins.
 /// Returns `(deck, merged_line_count, merged_cards)`; the caller persists
 /// and reports.
+///
+/// # Errors
+/// Returns errors when SQLite cannot check singleton exemptions.
 pub fn dedupe_deck(conn: &rusqlite::Connection, deck: &Deck) -> anyhow::Result<DedupeResult> {
     let commander = deck.section_index("COMMANDER").is_some();
     let mut out = Deck::default();
@@ -34,16 +61,13 @@ pub fn dedupe_deck(conn: &rusqlite::Connection, deck: &Deck) -> anyhow::Result<D
         let target = out.section_entries_mut(section);
         let mut index: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for entry in entries {
-            match index.get(&entry.name) {
-                Some(&pos) => {
-                    target[pos].quantity += entry.quantity;
-                    merged_lines += 1;
-                    merged_cards.push((entry.name.clone(), entry.quantity));
-                }
-                None => {
-                    index.insert(entry.name.clone(), target.len());
-                    target.push(entry.clone());
-                }
+            if let Some(&pos) = index.get(&entry.name) {
+                target[pos].quantity += entry.quantity;
+                merged_lines += 1;
+                merged_cards.push((entry.name.clone(), entry.quantity));
+            } else {
+                index.insert(entry.name.clone(), target.len());
+                target.push(entry.clone());
             }
         }
         if commander {
@@ -75,6 +99,9 @@ pub fn dedupe_deck(conn: &rusqlite::Connection, deck: &Deck) -> anyhow::Result<D
 ///
 /// Merges same-name lines per section (first line's print info wins) and
 /// saves the deck. Exit 3 when the deck has no duplicates (nothing to do).
+///
+/// # Errors
+/// Returns errors from loading or saving the deck, SQLite queries, or JSON serialization.
 pub fn dedupe(
     paths: &crate::paths::Paths,
     conn: &rusqlite::Connection,
@@ -93,13 +120,13 @@ pub fn dedupe(
             // agents parse one contract. Exit 3 still flags "nothing done".
             println!(
                 "{}",
-                serde_json::to_string_pretty(&serde_json::json!({
-                    "name": name,
-                    "merged_lines": 0,
-                    "merged_copies": 0,
-                    "cards": deck.total(),
-                    "merged": [],
-                }))?
+                serde_json::to_string_pretty(&DedupeReport {
+                    name: name.to_string(),
+                    merged_lines: 0,
+                    merged_copies: 0,
+                    cards: deck.total(),
+                    merged: Vec::new(),
+                })?
             );
         } else {
             out.error("no duplicate lines; the deck is already one line per card");
@@ -110,16 +137,19 @@ pub fn dedupe(
     if json {
         println!(
             "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "name": name,
-                "merged_lines": merged_lines,
-                "merged_copies": merged_copies,
-                "cards": deduped.total(),
-                "merged": merged_cards
+            serde_json::to_string_pretty(&DedupeReport {
+                name: name.to_string(),
+                merged_lines,
+                merged_copies,
+                cards: deduped.total(),
+                merged: merged_cards
                     .iter()
-                    .map(|(card, qty)| serde_json::json!({"name": card, "copies": qty}))
-                    .collect::<Vec<_>>(),
-            }))?
+                    .map(|(card, copies)| DedupeMergedCard {
+                        name: card.clone(),
+                        copies: *copies,
+                    })
+                    .collect(),
+            })?
         );
     } else {
         for (card, qty) in &merged_cards {
@@ -129,15 +159,18 @@ pub fn dedupe(
         let mut size = format!("{} maindeck", deduped.maindeck_total());
         let sideboard = deduped.sideboard_total();
         if sideboard > 0 {
-            size.push_str(&format!(" + {sideboard} sideboard"));
+            use std::fmt::Write as _;
+            let _ = write!(size, " + {sideboard} sideboard");
         }
         let maybeboard = deduped.maybeboard_total();
         if maybeboard > 0 {
-            size.push_str(&format!(" + {maybeboard} maybeboard"));
+            use std::fmt::Write as _;
+            let _ = write!(size, " + {maybeboard} maybeboard");
         }
         let commander = deduped.commander_total();
         if commander > 0 {
-            size.push_str(&format!(" + {commander} commander"));
+            use std::fmt::Write as _;
+            let _ = write!(size, " + {commander} commander");
         }
         out.finish(
             "Deduped",

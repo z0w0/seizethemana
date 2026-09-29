@@ -19,6 +19,15 @@ const MDFC_SOURCE_CREDIT: f64 = 0.8;
 /// Stored table, not extrapolated (Karsten 2022).
 const COMMANDER_REQUIREMENTS: [f64; 4] = [0.0, 12.0, 17.0, 21.0];
 
+/// Convert an integral, nonnegative card quantity to a platform count.
+fn quantity_count(quantity: f64) -> usize {
+    quantity
+        .trunc()
+        .to_string()
+        .parse()
+        .expect("card quantities are finite and nonnegative")
+}
+
 /// Requirement floors for a 60-card deck at 24–25 lands, indexed by
 /// `(total pips, same-color pips)`: Karsten's main table. Entry
 /// `(total, same)` = sources needed for a cost with `total` colored pips
@@ -62,6 +71,7 @@ fn land_count_correction(lands: usize, is_commander: bool) -> f64 {
 
 /// The deck's effective land count: full lands plus MDFC partials
 /// (Karsten weights). Uses the same is-mythic rule as the sim.
+#[must_use]
 pub fn effective_lands(rows: &[(crate::db::CardRow, f64)]) -> f64 {
     rows.iter()
         .map(|(card, qty)| {
@@ -198,6 +208,7 @@ fn add(map: &mut [f64], colors: &[char], weight: f64) {
 
 /// Compute the census. `rows` pairs maindeck card rows with their copy
 /// counts; `deck_colors` is the deck's WUBRG letter set.
+#[must_use]
 pub fn census(rows: &[(crate::db::CardRow, f64)], deck_colors: &str) -> SourceCensus {
     let mut out = SourceCensus {
         sources: vec![0.0; 5],
@@ -221,7 +232,7 @@ pub fn census(rows: &[(crate::db::CardRow, f64)], deck_colors: &str) -> SourceCe
                 };
                 let enters_tapped = enters_tapped(card);
                 if enters_tapped {
-                    out.tapland_count += *qty as usize;
+                    out.tapland_count += quantity_count(*qty);
                 }
                 for c in &colors {
                     let weight = if enters_tapped { 0.0 } else { 1.0 };
@@ -252,7 +263,7 @@ pub fn census(rows: &[(crate::db::CardRow, f64)], deck_colors: &str) -> SourceCe
                 if cantrip_effects >= CANTRIP_CAP {
                     continue;
                 }
-                let credit_qty = (*qty as usize).min(CANTRIP_CAP - cantrip_effects);
+                let credit_qty = quantity_count(*qty).min(CANTRIP_CAP - cantrip_effects);
                 cantrip_effects += credit_qty;
                 // Flat 0.25 per cantrip effect to each deck color
                 // (Karsten's approximation of the producing fraction).
@@ -260,7 +271,10 @@ pub fn census(rows: &[(crate::db::CardRow, f64)], deck_colors: &str) -> SourceCe
                     add(
                         &mut out.cantrips,
                         &[letter],
-                        CANTRIP_CREDIT * credit_qty as f64,
+                        CANTRIP_CREDIT
+                            * f64::from(
+                                u32::try_from(credit_qty).expect("cantrip credit is capped"),
+                            ),
                     );
                 }
             }
@@ -325,7 +339,11 @@ fn pip_shape(cost: &str) -> (u8, u8, u8) {
     let pips = cost_pips(cost);
     let total: usize = pips.iter().map(|(_, n)| n).sum();
     let same = pips.iter().map(|(_, n)| *n).max().unwrap_or(0);
-    (generic, total.min(255) as u8, same.min(255) as u8)
+    (
+        generic,
+        u8::try_from(total.min(255)).expect("pip count is capped"),
+        u8::try_from(same.min(255)).expect("pip count is capped"),
+    )
 }
 
 /// Requirement floor for one color of one card's cost. `pips_in_color`
@@ -341,9 +359,10 @@ fn requirement_for(cost: &str, lands: f64, is_commander: bool, pips: u8) -> f64 
     // Gold cards: +1 per additional color requirement beyond the first.
     let colors_required = cost_pips(cost).len();
     if colors_required > 1 {
-        base += (colors_required - 1) as f64;
+        base +=
+            f64::from(u32::try_from(colors_required - 1).expect("color count is bounded by WUBRG"));
     }
-    base + land_count_correction(lands as usize, is_commander)
+    base + land_count_correction(quantity_count(lands), is_commander)
 }
 
 fn lookup_sixty(generic: u8, total: u8, same: u8) -> f64 {
@@ -384,6 +403,7 @@ pub struct Audit {
 }
 
 /// Run the audit: census + per-card requirements + deficits.
+#[must_use]
 pub fn audit(rows: &[(crate::db::CardRow, f64)], deck_colors: &str, is_commander: bool) -> Audit {
     let lands = effective_lands(rows);
     let c = census(rows, deck_colors);
@@ -404,7 +424,12 @@ pub fn audit(rows: &[(crate::db::CardRow, f64)], deck_colors: &str, is_commander
         let mut deficit = Vec::new();
         let mut ok = true;
         for (letter, n) in &pips {
-            let need = requirement_for(&card.mana_cost, lands, is_commander, *n as u8);
+            let need = requirement_for(
+                &card.mana_cost,
+                lands,
+                is_commander,
+                u8::try_from(*n).expect("mana pip count is bounded"),
+            );
             let have_n = source_for(&c, *letter);
             let d = (need - have_n).max(0.0);
             if d > 0.0 {
@@ -445,11 +470,11 @@ fn source_for(c: &SourceCensus, letter: char) -> f64 {
     WUBRG
         .iter()
         .position(|w| *w == letter)
-        .map(|i| c.sources[i])
-        .unwrap_or(0.0)
+        .map_or(0.0, |i| c.sources[i])
 }
 
 /// The worst deficits, formatted for display ("name: need 16 W, have 14.0").
+#[must_use]
 pub fn worst_deficits(audit: &Audit, limit: usize) -> Vec<String> {
     let mut out = Vec::new();
     for row in &audit.requirements {
@@ -459,14 +484,12 @@ pub fn worst_deficits(audit: &Audit, limit: usize) -> Vec<String> {
                     .needs
                     .iter()
                     .find(|n| n.0 == *letter)
-                    .map(|n| n.1)
-                    .unwrap_or(0.0);
+                    .map_or(0.0, |n| n.1);
                 let have = row
                     .have
                     .iter()
                     .find(|h| h.0 == *letter)
-                    .map(|h| h.1)
-                    .unwrap_or(0.0);
+                    .map_or(0.0, |h| h.1);
                 out.push(format!(
                     "{}: need {} {}, have {:.1}",
                     row.name, need, letter, have
@@ -484,54 +507,58 @@ pub fn worst_deficits(audit: &Audit, limit: usize) -> Vec<String> {
 #[path = "tests/mana_audit_tests.rs"]
 mod mana_audit_tests;
 
-/// The `colored_sources` JSON block (shared by `deck mana` and the
-/// simulate report).
-pub fn colored_sources_json(a: &Audit) -> serde_json::Value {
-    let letters = ['W', 'U', 'B', 'R', 'G'];
-    let map = |v: &Vec<f64>| -> serde_json::Map<String, serde_json::Value> {
-        let mut m = serde_json::Map::new();
-        for (i, letter) in letters.iter().enumerate() {
-            m.insert(letter.to_string(), serde_json::json!(v[i]));
-        }
-        m
+/// Typed colored-source audit shared by `deck mana` and simulator reports.
+#[must_use]
+pub fn colored_sources_report(
+    a: &Audit,
+) -> crate::deck::simulator::report_schema::ColoredSourcesReport {
+    use crate::deck::simulator::report_schema::{ColorRequirement, ColorValues};
+    let map = |v: &[f64]| ColorValues {
+        white: v[0],
+        blue: v[1],
+        black: v[2],
+        red: v[3],
+        green: v[4],
     };
-    let requirements: Vec<serde_json::Value> = a
+    let pair_values = |values: &[(char, f64)]| {
+        let mut colors = [0.0; 5];
+        for (color, value) in values {
+            if let Some(index) = WUBRG.iter().position(|candidate| candidate == color) {
+                colors[index] = *value;
+            }
+        }
+        map(&colors)
+    };
+    let requirements = a
         .requirements
         .iter()
-        .map(|row| {
-            serde_json::json!({
-                "name": row.name,
-                "mana_cost": row.mana_cost,
-                "cmc": row.cmc,
-                "needs": pairs_map(&row.needs),
-                "have": pairs_map(&row.have),
-                "deficit": pairs_map(&row.deficit),
-                "ok": row.ok,
-            })
+        .map(|row| ColorRequirement {
+            name: row.name.clone(),
+            mana_cost: row.mana_cost.clone(),
+            mana_value: row.cmc,
+            needs: pair_values(&row.needs),
+            have: pair_values(&row.have),
+            deficit: pair_values(&row.deficit),
+            ok: row.ok,
         })
         .collect();
-    serde_json::json!({
-        "format": if a.is_commander { "commander" } else { "constructed" },
-        "lands": a.lands,
-        "sources": map(&a.sources),
-        "credits": {
-            "lands": map(&a.census.lands),
-            "dorks": map(&a.census.dorks),
-            "rocks": map(&a.census.rocks),
-            "cantrips": map(&a.census.cantrips),
+    crate::deck::simulator::report_schema::ColoredSourcesReport {
+        format: if a.is_commander {
+            "commander".to_string()
+        } else {
+            "constructed".to_string()
         },
-        "requirements": requirements,
-        "worst_deficits": worst_deficits(a, 3),
-        "tapland_count": a.tapland_count,
-        "untapped_t1_sources": map(&a.untapped_t1),
-    })
-}
-
-/// A per-color `(letter, value)` list as a JSON map.
-fn pairs_map(values: &[(char, f64)]) -> serde_json::Map<String, serde_json::Value> {
-    let mut m = serde_json::Map::new();
-    for (letter, v) in values {
-        m.insert(letter.to_string(), serde_json::json!(v));
+        lands: a.lands,
+        sources: map(&a.sources),
+        credits: crate::deck::simulator::report_schema::SourceCredits {
+            lands: map(&a.census.lands),
+            creature_mana_sources: map(&a.census.dorks),
+            artifact_mana_sources: map(&a.census.rocks),
+            cantrips: map(&a.census.cantrips),
+        },
+        requirements,
+        worst_deficits: worst_deficits(a, 3),
+        tapland_count: a.tapland_count,
+        untapped_t1_sources: map(&a.untapped_t1),
     }
-    m
 }

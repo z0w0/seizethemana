@@ -7,12 +7,20 @@ pub(crate) fn draw_amount(text: &str) -> u32 {
         return 0;
     }
     for (word, n) in [
-        ("seven", 7u32),
+        ("ten", 10u32),
+        ("nine", 9),
+        ("eight", 8),
+        ("seven", 7),
         ("six", 6),
         ("five", 5),
         ("four", 4),
         ("three", 3),
         ("two", 2),
+        ("10", 10),
+        ("9", 9),
+        ("8", 8),
+        ("7", 7),
+        ("6", 6),
         ("5", 5),
         ("4", 4),
         ("3", 3),
@@ -40,12 +48,17 @@ pub(crate) fn amount_after(text: &str, needle: &str) -> u32 {
             return n;
         }
         for (word, n) in [
-            ("seven", 7u32),
+            ("ten", 10u32),
+            ("nine", 9),
+            ("eight", 8),
+            ("seven", 7),
             ("six", 6),
             ("five", 5),
             ("four", 4),
             ("three", 3),
             ("two", 2),
+            ("one", 1),
+            ("a ", 1),
         ] {
             if tail.trim_start().starts_with(word) {
                 return n;

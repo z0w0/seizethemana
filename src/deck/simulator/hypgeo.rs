@@ -75,19 +75,40 @@ pub fn flood_expectation(lands: usize, deck: usize, seen: usize) -> f64 {
     }
 }
 
+/// Exact cast-on-curve ceilings for one distinct card name.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct CastCeiling {
+    /// Card name.
+    pub name: String,
+    /// Number of copies in the library.
+    pub copies: u64,
+    /// Target cast turn.
+    pub target_turn: u32,
+    /// Exact ceiling on the real cast rate.
+    pub percent_castable_ceiling: super::report_schema::Percent,
+}
+
+/// Hypergeometric cast ceilings and their interpretation.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct HypgeoReport {
+    /// Exact-probability interpretation.
+    pub note: String,
+    /// Per-card cast-on-curve ceilings.
+    pub cards: Vec<CastCeiling>,
+}
+
 /// Per-card cast-on-curve ceilings over the whole deck (nonland, distinct
-/// names). Returns the JSON payload for the report.
-pub fn cast_ceilings(deck: &super::model::SimDeck, turns: u32) -> serde_json::Value {
+/// names).
+pub fn cast_ceilings(deck: &super::model::SimDeck, turns: u32) -> HypgeoReport {
     use std::collections::BTreeMap;
-    let library = deck.cards.len() as u64;
+    let library = deck.library_len() as u64;
     let lands_in_deck = deck
-        .cards
-        .iter()
+        .library_cards()
         .filter(|c| c.role == super::model::Role::Land)
         .count() as u64;
     // Per (name, cost, copies) census of nonland cards.
     let mut by_name: BTreeMap<&str, (u32, u64)> = BTreeMap::new();
-    for card in &deck.cards {
+    for card in deck.library_cards() {
         if card.role == super::model::Role::Land {
             continue;
         }
@@ -96,7 +117,7 @@ pub fn cast_ceilings(deck: &super::model::SimDeck, turns: u32) -> serde_json::Va
             .or_insert((card.cost.total(), 0));
         entry.1 += 1;
     }
-    let rows: Vec<serde_json::Value> = by_name
+    let rows: Vec<CastCeiling> = by_name
         .into_iter()
         .map(|(name, (cmc, copies))| {
             let target = cmc.max(1).min(turns);
@@ -110,16 +131,16 @@ pub fn cast_ceilings(deck: &super::model::SimDeck, turns: u32) -> serde_json::Va
             let land_chance = hyper_at_least(library, lands_in_deck, seen, lands_needed);
             let spell_chance = hyper_at_least(library, copies, seen, 1);
             let ceiling = land_chance * spell_chance;
-            serde_json::json!({
-                "name": name,
-                "copies": copies as i64,
-                "target_turn": target,
-                "pct_castable_ceiling": (ceiling * 10_000.0).round() / 100.0,
-            })
+            CastCeiling {
+                name: name.to_string(),
+                copies,
+                target_turn: target,
+                percent_castable_ceiling: super::report_schema::Percent::from_share(ceiling),
+            }
         })
         .collect();
-    serde_json::json!({
-        "note": "exact P(card visible AND lands on time) by cast-on-curve turn; an upper bound on the real cast rate — the sim's card_castability is draw-agnostic mana readiness and exceeds it",
-        "cards": rows,
-    })
+    HypgeoReport {
+        note: "exact probability of seeing the card and enough lands by its cast-on-curve turn; an upper bound on the real cast rate because simulated card readiness does not depend on drawing the card".to_string(),
+        cards: rows,
+    }
 }

@@ -2,31 +2,53 @@
 //! to keep files small. Pure apart from the passed RNG. `run_game` owns
 //! the game scope; each pipeline step is one helper in this file.
 
-use super::cast_phase::{cast_phase, play_land};
+use super::cast_pass::{cast_pass, play_land, upkeep_trigger_registration};
 use super::deal::{Opener, deal_opener};
 use super::game::{
-    GameLog, GameState, Permanent, Pool, card_of, fire_on_enter, fire_triggers, new_perm_with,
-    register_loyalty_token_engines, take_uid,
+    GameLog, GameState, ManaPool, Permanent, card_of, fire_on_enter, fire_triggers, new_perm_with,
+    take_uid,
 };
-use super::game_commander::{
-    CommanderProfile, commander_sentinel_slot, commander_sentinel_uid, commander_upkeep_effects,
-    is_commander_sentinel,
-};
+use super::game_commander::CommanderProfile;
 use super::game_effects::{apply_effect_at, spend_leftover, tap_budget};
-use super::game_mana::{
-    add_yield, add_yield_turns, bucket_of, cast_restrictions, effective_min_cost, pay_cost,
-    pay_restricted_cost, payable, phyrexian_life_charge, pips_ok, usable_for_classes,
-    usable_for_noncreature,
-};
-use super::model::{AbilityTiming, CardIdx, Effect, Role, Scale, SimDeck};
+use super::game_mana::{add_yield_turns, pay_cost, payable, pips_ok};
+use super::model::{CardIdx, Scale, SimDeck, SimEffect, SimTrigger};
 use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 /// Per-turn census and end-of-game log assembly.
-mod census;
+pub(in crate::deck::simulator) mod census;
+/// The commander cast phase.
+#[path = "game_run/commander.rs"]
+mod commander;
+/// Mana-pool building (taps, gates, banked mana, grants).
+#[path = "game_run/mana.rs"]
+pub(in crate::deck::simulator) mod mana;
+
+pub(in crate::deck::simulator) use commander::commander_phase;
+pub(in crate::deck::simulator) use mana::{
+    build_pool, fire_tapped_for_mana_triggers, grants_active, tap_dorks_for_mana, tap_new_rocks,
+};
+
+/// 8 THRESHOLD: station tiers unlock (permanent for animate tiers).
+fn unlock_thresholds(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, turn: usize) {
+    for perm in st.battlefield.iter_mut() {
+        let card = card_of(deck, perm);
+        if card.is_station_card
+            && let Some(at) = card.animate_at()
+            && !perm.animated
+            && perm.counters.charge >= at
+        {
+            perm.animated = true;
+            if matches!(perm.card, super::game::CardRef::Commander { .. })
+                && census.station_online.is_none()
+            {
+                census.station_online = Some(turn as u32);
+            }
+        }
+    }
+}
+
 pub(super) use census::TurnCensus;
-#[cfg(test)]
-pub(super) use census::record_interaction_readiness_probe;
 
 /// Play one goldfish game and return its log. Pure apart from the
 /// passed RNG: same deck + same seed = same game. The log carries the
@@ -50,12 +72,11 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         exile: Vec::new(),
         battlefield_seen: HashMap::new(),
         graveyard_seen: HashMap::new(),
-        #[cfg(test)]
-        alternate_casts: Vec::new(),
         treasure_bank: 0,
         milled_self: 0,
         milled_opp: 0,
-        drained: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
         life_gained: 0,
         flashback_permissions: std::collections::HashSet::new(),
         replay_casts: 0,
@@ -72,15 +93,26 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         prowess_casts: 0,
         infinite_mana_suspected: false,
         next_uid: 0,
+        player_counters: super::model::PlayerCounters::default(),
+        activated_this_turn: std::collections::HashSet::new(),
+        activated_once: std::collections::HashSet::new(),
+        triggered_this_turn: std::collections::HashSet::new(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
     };
     apply_leylines(deck, &mut st);
 
     let mut census = TurnCensus::new(turns, deck.cards.len());
     let commander = CommanderProfile::new(deck);
-    // Draw engines in play: (permanent uid, draws per turn). The uid
+    // Repeatable sources in play: (permanent uid, upkeep draw count). The uid
     // resolves to a battlefield position at fire time, so removals
     // (sacrifice outlets, saga completion) never alias another card.
-    let mut engines: Vec<(u32, u32)> = Vec::new();
+    let mut repeatable_sources: Vec<(u32, u32)> = Vec::new();
     let mut pending_extra_turns = 0u32;
     for turn in 1..=turns {
         let is_extra_turn = pending_extra_turns > 0;
@@ -90,7 +122,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
             &mut st,
             &mut census,
             &commander,
-            &mut engines,
+            &mut repeatable_sources,
             turn,
             is_extra_turn,
         );
@@ -108,17 +140,32 @@ pub(super) fn run_turn(
     st: &mut GameState,
     census: &mut TurnCensus,
     commander: &CommanderProfile,
-    engines: &mut Vec<(u32, u32)>,
+    repeatable_sources: &mut Vec<(u32, u32)>,
     turn: usize,
     is_extra_turn: bool,
 ) {
+    beginning_phase(deck, st, census, repeatable_sources, turn);
+    precombat_main_phase(deck, st, census, commander, repeatable_sources, turn);
+    combat_phase(deck, st, census, repeatable_sources, turn);
+    postcombat_main_phase();
+    ending_phase(deck, st, census, turn, is_extra_turn);
+}
+
+/// Run untap, upkeep, and draw at the start of a scheduled turn.
+fn beginning_phase(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    repeatable_sources: &mut Vec<(u32, u32)>,
+    turn: usize,
+) {
     // 1 UNTAP: everything untaps; sickness clears; once-per-turn resets.
     // Crew animations expire (Vehicles stop being bodies at end of
-    // turn). Blink flags re-fire the host's OnEnter triggers once
+    // turn). Blink flags re-fire the host's Enters triggers once
     // (Skyskipper Duo, Conjurer's Closet-style flickers).
     st.flashback_permissions.clear();
     expire_crew(st);
-    fire_blink_refires(deck, st, turn as u32);
+    fire_returned_triggers(deck, st, turn as u32);
     for perm in st.battlefield.iter_mut() {
         // "Doesn't untap during your untap step" statics stay tapped
         // (Basalt Monolith class); only an untap activation clears the
@@ -126,15 +173,20 @@ pub(super) fn run_turn(
         if !card_of(deck, perm).flags.doesnt_untap {
             perm.tapped = false;
         }
-        perm.sick = false;
+        perm.summoning_sick = false;
         perm.fired = false;
-        perm.trigger_fired = false;
     }
     st.prowess_casts = 0;
+    st.damage_dealt_this_turn = 0;
+    st.spells_cast_this_turn = 0;
+    st.extra_land_drops_this_turn = 0;
+    st.attacked_this_turn = false;
+    st.activated_this_turn.clear();
+    st.triggered_this_turn.clear();
 
-    // 2 UPKEEP: engines fire; win checks run. Saga chapters advance in
-    // the precombat main phase (turn-pipeline step 5, CR 714.3c).
-    run_upkeep(deck, st, engines, turn);
+    // Upkeep triggers fire and win checks run. Saga chapters advance in
+    // the precombat main phase (CR 714.3c).
+    run_upkeep(deck, st, repeatable_sources, turn);
     check_win_thresholds(deck, st, census, turn);
     check_ultimates(deck, st, census, turn);
 
@@ -143,19 +195,49 @@ pub(super) fn run_turn(
     if draws_on_turn {
         super::game_effects::draw_one(deck, st, turn as u32);
     }
+}
+
+/// Run Saga, land, cast, activation, station, and tap-budget work in the
+/// precombat main phase.
+#[allow(clippy::too_many_arguments)]
+fn precombat_main_phase(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    commander: &CommanderProfile,
+    repeatable_sources: &mut Vec<(u32, u32)>,
+    turn: usize,
+) {
     // Saga lore counters are added as the precombat main phase begins
     // (CR 714.3c), before the main-phase triggers and land drops; the
     // entry chapter fired at cast time.
     run_sagas(deck, st, turn);
-    fire_triggers(deck, st, AbilityTiming::PrecombatMainPhase, turn as u32);
+    fire_triggers(deck, st, SimTrigger::PrecombatMain, turn as u32);
     census::record_hand_sightings(deck, st, census, turn);
 
     // 4 LAND.
     play_land_drops(deck, st, census, turn);
 
-    // 5 POOL, commander cast, casts, 6 ACTIVATE, 7 TAP BUDGET.
+    // 5 POOL, companion fetch, commander cast, casts, 6 ACTIVATE,
+    // 7 TAP BUDGET.
     let mut pool = build_pool(deck, st, turn as u32);
-    commander_phase(deck, st, &mut pool, census, commander, turn, engines, true);
+    // PLOT (CR 702.170): exile a hand card with a plot cost when the
+    // card is otherwise unaffordable; from a later turn it casts for
+    // free. Plot spends mana from this turn's pool.
+    plot_unaffordable_cards(deck, st, &mut pool, census, turn);
+    // Free-cast plotted cards from a later turn than they were plotted.
+    cast_plotted_cards(deck, st, turn, &mut census.mana_spent, repeatable_sources);
+    fetch_companion(deck, st, &mut pool, census, turn);
+    commander_phase(
+        deck,
+        st,
+        &mut pool,
+        census,
+        commander,
+        turn,
+        repeatable_sources,
+        true,
+    );
     // Revisit casts after draw and mana actions. Cheapest legal casts run
     // first; newly cast rocks activate before the next cast sweep. The
     // shared pass cap protects the turn loop from unsupported repeatable
@@ -166,13 +248,13 @@ pub(super) fn run_turn(
         let before_hand = st.hand.clone();
         let before_board = st.battlefield.len();
         play_late_land(deck, st, census, turn);
-        cast_phase(
+        cast_pass(
             deck,
             st,
             &mut pool,
             turn,
             &mut census.mana_spent,
-            engines,
+            repeatable_sources,
             &mut census.pip_blocks,
             &mut census.blocked_colors,
         );
@@ -185,7 +267,16 @@ pub(super) fn run_turn(
             activations_done = false;
             continue;
         }
-        commander_phase(deck, st, &mut pool, census, commander, turn, engines, false);
+        commander_phase(
+            deck,
+            st,
+            &mut pool,
+            census,
+            commander,
+            turn,
+            repeatable_sources,
+            false,
+        );
         if before_mana != pool.total()
             || before_hand != st.hand
             || before_board != st.battlefield.len()
@@ -205,34 +296,219 @@ pub(super) fn run_turn(
 
     // 8 THRESHOLD: station tiers unlock (permanent for animate tiers).
     unlock_thresholds(deck, st, census, turn);
+}
+
+/// Resolve combat and record its turn metrics.
+fn combat_phase(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    repeatable_sources: &[(u32, u32)],
+    turn: usize,
+) {
     // 9 COMBAT.
     census::record_combat(deck, st, census, turn);
     // Engine count for the turn (commander + cast-phase registrations).
-    census::record_engine_count(census, turn, engines);
+    census::record_repeatable_source_count(census, turn, repeatable_sources);
+}
+
+/// Keep the postcombat main phase explicit; the action policy has no
+/// postcombat actions yet.
+fn postcombat_main_phase() {}
+
+/// Run end-step triggers and cleanup actions.
+pub(super) fn ending_phase(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    turn: usize,
+    is_extra_turn: bool,
+) {
     // 10 END: beginning-of-end-step triggers, then hand-limit discard.
     // Monarch: one extra card at the beginning of the Monarch's end
-    // step (CR 725.2), from the turn after acquisition.
-    if draws_on_turn && st.is_monarch {
+    // step (CR 725.2), including the turn the player becomes monarch.
+    if st.is_monarch {
         super::game_effects::draw_one(deck, st, turn as u32);
     }
-    fire_triggers(deck, st, AbilityTiming::OnEndStep, turn as u32);
+    fire_triggers(deck, st, SimTrigger::EndStep, turn as u32);
+    // Mobilize tokens are sacrificed at the beginning of the next end
+    // step (CR 702.181a). The sacrifice fires death triggers like any
+    // other sacrifice.
+    sacrifice_end_step_tokens(deck, st, turn);
+    // Saddle and crew both expire at end of turn (CR 702.171b).
+    expire_saddle(st);
     census::end_step_discard(deck, st, turn);
     census.extra_turns[turn - 1] = u32::from(is_extra_turn);
 }
 
-/// Play a land drawn or made accessible during the main phase when a land
-/// drop remains. Newly cast extra-land engines can add another legal drop.
-fn play_late_land(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, turn: usize) {
+/// Sacrifice permanents marked for the end step (mobilize's Warrior
+/// tokens): remove them, move deck cards to the graveyard, and fire the
+/// surviving board's death triggers. Tokens leave without a graveyard
+/// entry (tokens cease to exist), but the sacrifice still triggers.
+fn sacrifice_end_step_tokens(deck: &SimDeck, st: &mut GameState, turn: usize) {
+    while let Some(pos) = st.battlefield.iter().position(|p| p.sacrifice_at_end) {
+        let victim = st.battlefield.remove(pos);
+        if let Some(idx) = victim.card.deck_idx() {
+            super::game_effects::move_to_graveyard(
+                deck,
+                st,
+                idx,
+                turn as u32,
+                super::game_effects::CardZone::Battlefield,
+            );
+        }
+        super::game_effects::fire_death_triggers(deck, st, turn as u32, victim.uid);
+    }
+}
+
+/// Saddled is a until-end-of-turn designation (CR 702.171b).
+fn expire_saddle(st: &mut GameState) {
+    for perm in st.battlefield.iter_mut() {
+        perm.saddled = false;
+    }
+}
+
+/// Fetch the companion (CR 702.139a, 116.2g): once per game, in a main
+/// phase, pay {3} to put the companion into the hand. Best case: as soon
+/// as {3} is available. The condition is assumed met, documented in the
+/// output assumptions.
+fn fetch_companion(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut ManaPool,
+    census: &mut TurnCensus,
+    turn: usize,
+) {
+    if st.companion_fetched {
+        return;
+    }
+    let Some(companion) = deck.companion else {
+        return;
+    };
+    let cost = super::model::Cost {
+        generic: 3,
+        ..super::model::Cost::default()
+    };
+    if !super::game_mana::payable(&cost, pool) {
+        return;
+    }
+    super::game_mana::pay_cost(&cost, pool);
+    census.mana_spent[turn - 1] += 3.0;
+    st.companion_fetched = true;
+    st.hand.push(companion);
+    census.companion_online = census.companion_online.or(Some(turn as u32));
+}
+
+/// Play a land made accessible during the main phase when the turn's land
+/// play allowance has not been used. Cast effects can add to that allowance.
+pub(super) fn play_late_land(
+    deck: &SimDeck,
+    st: &mut GameState,
+    census: &mut TurnCensus,
+    turn: usize,
+) {
     let extra = st.battlefield.iter().any(|perm| {
         perm.card
             .deck_idx()
             .is_some_and(|idx| deck[idx].flags.extra_land_drops)
     });
-    let limit = 1 + usize::from(extra);
-    while usize::from(census.land_drops[turn - 1]) < limit
-        && super::cast_phase::play_land(deck, st, turn as u32)
+    let limit = 1 + u32::from(extra) + st.extra_land_drops_this_turn;
+    while u32::from(census.land_drops[turn - 1]) < limit
+        && super::cast_pass::play_land(deck, st, turn as u32)
     {
         census.land_drops[turn - 1] += 1;
+    }
+}
+
+/// Plot an unaffordable hand card (CR 702.170): pay the plot cost and
+/// exile it face up. From a later turn the card casts for free. Best
+/// case: plot when the plot cost is payable so the card is not stranded.
+fn plot_unaffordable_cards(
+    deck: &SimDeck,
+    st: &mut GameState,
+    pool: &mut ManaPool,
+    census: &mut TurnCensus,
+    turn: usize,
+) {
+    let candidates: Vec<CardIdx> = st
+        .hand
+        .iter()
+        .copied()
+        .filter(|idx| {
+            let card = &deck[*idx];
+            card.keyword_abilities.plot.is_some()
+                && !payable(&card.min_cost, pool)
+                && card
+                    .keyword_abilities
+                    .plot
+                    .as_ref()
+                    .is_some_and(|plot| payable(plot, pool) && pips_ok(plot, pool))
+        })
+        .collect();
+    for idx in candidates {
+        let Some(plot) = deck[idx].keyword_abilities.plot else {
+            continue;
+        };
+        if !payable(&plot, pool) || !pips_ok(&plot, pool) {
+            continue;
+        }
+        pay_cost(&plot, pool);
+        census.mana_spent[turn - 1] += plot.total() as f64;
+        if let Some(pos) = st.hand.iter().position(|held| *held == idx) {
+            st.hand.remove(pos);
+        }
+        st.plotted.push((idx, turn as u32));
+    }
+}
+
+/// Cast plotted cards (CR 702.170d): a card plotted on an earlier turn
+/// casts from exile without paying its mana cost.
+fn cast_plotted_cards(
+    deck: &SimDeck,
+    st: &mut GameState,
+    turn: usize,
+    mana_spent: &mut [f64],
+    repeatable_sources: &mut Vec<(u32, u32)>,
+) {
+    let ready: Vec<CardIdx> = st
+        .plotted
+        .iter()
+        .filter(|(_, plotted_turn)| (*plotted_turn as usize) < turn)
+        .map(|(idx, _)| *idx)
+        .collect();
+    for idx in ready {
+        let card = &deck[idx];
+        // The free cast creates the same battlefield presence a paid
+        // cast would: the card is removed from the plotted list and
+        // pushed with its enter counters; no mana changes hands.
+        st.plotted.retain(|(plotted, _)| *plotted != idx);
+        let uid = take_uid(st);
+        if card.is_instant_or_sorcery {
+            st.graveyard_seen.entry(idx).or_insert(turn as u32);
+            st.graveyard.push(idx);
+            super::game_effects::apply_effect_at(
+                deck,
+                &SimEffect::Draw(card.spell_data.draws_on_cast),
+                st,
+                turn as u32,
+                false,
+                Some(idx),
+            );
+        } else {
+            st.battlefield_seen.entry(idx).or_insert(turn as u32);
+            let mut entry = new_perm_with(uid, deck, idx, turn as u32, false);
+            entry.summoning_sick =
+                (card.is_creature || card.keyword_abilities.living_metal) && !card.flags.has_haste;
+            entry.counters = card.enter_counters.fixed();
+            st.battlefield.push(entry);
+            fire_on_enter(deck, st, st.battlefield.len() - 1, turn as u32, false);
+            for ability in card.unlocked_abilities(0) {
+                if let Some(draws) = upkeep_trigger_registration(ability) {
+                    super::game::register_repeatable_source(repeatable_sources, uid, draws);
+                }
+            }
+        }
+        let _ = mana_spent;
     }
 }
 
@@ -242,8 +518,8 @@ pub(super) fn add_nonland_mana(
     deck: &SimDeck,
     st: &GameState,
     source: &Permanent,
-    yield_: &super::model::TapYield,
-    pool: &mut Pool,
+    yield_: &super::model::ManaYield,
+    pool: &mut ManaPool,
     turn: u32,
 ) -> bool {
     // A static grant ("creatures/lands you control have '{T}: Add one
@@ -252,19 +528,29 @@ pub(super) fn add_nonland_mana(
     // tap, one mana).
     let grants = grants_active(deck, st);
     let card = card_of(deck, source);
-    let grant_conversion =
-        (card.role == Role::Land && grants.lands) || (card.is_creature && grants.creatures);
+    let grant_conversion = (card.is_land && grants.lands) || (card.is_creature && grants.creatures);
     let mana_before = pool.total();
     if grant_conversion {
         pool.flexible += 1;
     } else {
-        add_yield_turns(deck, yield_, pool, turn, &st.battlefield);
+        // Counter-scaled taps resolve against the source's own counters
+        // (Crystalline Crawler class): one any-color pip per charge
+        // counter when the yield scales per counter.
+        let yield_ = if matches!(yield_.scaling, Some(Scale::PerChargeCounter)) {
+            super::model::ManaYield {
+                any_pips: source.counters.charge,
+                ..super::model::ManaYield::default()
+            }
+        } else {
+            yield_.clone()
+        };
+        add_yield_turns(deck, &yield_, pool, turn, &st.battlefield);
     }
     let produced = pool.total() > mana_before;
     if !produced {
         return false;
     }
-    if card_of(deck, source).role == Role::Land {
+    if card_of(deck, source).is_land {
         return true;
     }
     let bonus_triggers = st
@@ -326,104 +612,90 @@ pub(super) fn expire_crew(st: &mut GameState) {
     }
 }
 
-/// Re-fire the OnEnter triggers of every blink-armed permanent once
+/// Re-fire the Enters triggers of each returned permanent once
 /// (the deferred firing never re-arms: one re-fire per entry).
-fn fire_blink_refires(deck: &SimDeck, st: &mut GameState, turn: u32) {
-    let blink_positions: Vec<usize> = st
+fn fire_returned_triggers(deck: &SimDeck, st: &mut GameState, turn: u32) {
+    let returned_positions: Vec<usize> = st
         .battlefield
         .iter()
         .enumerate()
-        .filter(|(_, p)| p.blink_pending && p.card.deck_idx().is_some())
+        .filter(|(_, p)| p.returned_trigger_pending && p.card.deck_idx().is_some())
         .map(|(i, _)| i)
         .collect();
-    for i in blink_positions {
-        st.battlefield[i].blink_pending = false;
+    for i in returned_positions {
+        st.battlefield[i].returned_trigger_pending = false;
         fire_on_enter(deck, st, i, turn, true);
     }
 }
 
-/// Upkeep engines fire; entries whose permanent left the battlefield
+/// Upkeep triggers fire; entries whose permanent left the battlefield
 /// drop out through the live-uid set (dead entries never fire again).
 /// The turn loop untapped the board before upkeep, so tap state does
 /// not filter here.
-fn run_upkeep(deck: &SimDeck, st: &mut GameState, engines: &mut Vec<(u32, u32)>, turn: usize) {
+fn run_upkeep(
+    deck: &SimDeck,
+    st: &mut GameState,
+    repeatable_sources: &mut Vec<(u32, u32)>,
+    turn: usize,
+) {
     let live_uids: std::collections::HashSet<u32> = st.battlefield.iter().map(|p| p.uid).collect();
-    engines.retain(|(uid, _)| is_commander_sentinel(*uid) || live_uids.contains(uid));
-    let live: Vec<u32> = engines.iter().map(|(uid, _)| *uid).collect();
+    repeatable_sources.retain(|(uid, _)| live_uids.contains(uid));
+    let mut seen_uids = std::collections::HashSet::new();
+    let live: Vec<u32> = repeatable_sources
+        .iter()
+        .filter_map(|(uid, _)| seen_uids.insert(*uid).then_some(*uid))
+        .collect();
     for uid in live {
-        fire_upkeep_engine(deck, st, uid, turn);
+        fire_upkeep_triggers_for_source(deck, st, uid, turn);
     }
 }
 
-/// One engine's upkeep firing: the commander sentinel reads its own
-/// commander's abilities; a battlefield engine reads its host card's.
-fn fire_upkeep_engine(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize) {
-    let is_cmd = is_commander_sentinel(uid);
-    // Commanders fire from the command zone; battlefield engines need a
-    // live host, and a permanent that left between the retain and the
-    // firing has nothing to fire.
-    let host_idx: Option<CardIdx> = if is_cmd {
-        None
-    } else {
-        st.battlefield
-            .iter()
-            .find(|p| p.uid == uid)
-            .and_then(|p| p.card.deck_idx())
-    };
-    if !is_cmd && host_idx.is_none() {
+/// Fire every supported upkeep ability owned by one live permanent.
+fn fire_upkeep_triggers_for_source(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize) {
+    let Some(source) = st.battlefield.iter().find(|perm| perm.uid == uid).cloned() else {
         return;
-    }
-    let upkeep_effects: Vec<Effect> = match host_idx {
-        None => {
-            // One sentinel per cast commander; the firing reads only that
-            // commander's own abilities, so two partners each fire once
-            // per turn instead of every upkeep effect firing per sentinel.
-            commander_upkeep_effects(deck, commander_sentinel_slot(uid))
-        }
-        Some(idx) => deck[idx]
-            .abilities()
-            .filter(|a| a.trigger == AbilityTiming::OnUpkeep)
-            .map(|a| a.effect.clone())
-            .collect(),
     };
-    for effect in &upkeep_effects {
-        match effect {
-            Effect::Draw(n) => run_scaling_draw(deck, st, host_idx, *n, turn as u32),
-            Effect::Counters(n) => {
-                // An upkeep counter pump ("At the beginning of your
-                // upkeep, put a charge counter on this artifact") grows
-                // its own host by uid (Darksteel Reactor class).
-                if let Some(perm) = st.battlefield.iter_mut().find(|p| p.uid == uid) {
-                    perm.counters += *n;
-                }
-            }
-            Effect::Mill(_)
-            | Effect::ReturnFromGraveyard { .. }
-            | Effect::Drain(_)
-            | Effect::Tokens(_)
-            | Effect::Wheel
-            | Effect::Loot(_) => {
-                // Mill direction comes from the firing card itself. The
-                // commander override applies only when the sentinel is
-                // the firing source; a battlefield host keeps its own
-                // flag (a self-mill engine must not reroute because the
-                // commander mills opponents).
-                let mill_opp = match host_idx {
-                    None => {
-                        let slot = commander_sentinel_slot(uid);
-                        deck.commanders.get(slot).is_some_and(|c| c.mills_opponent)
+    let host = card_of(deck, &source);
+    let host_idx = source.card.deck_idx();
+    let abilities: Vec<_> = super::game::permanent_abilities(deck, &source)
+        .filter(|ability| ability.kind.is_triggered() && ability.trigger == SimTrigger::Upkeep)
+        .filter(|ability| {
+            ability
+                .condition
+                .is_none_or(|condition| super::game::condition_met(deck, st, &condition))
+        })
+        .cloned()
+        .collect();
+    for ability in abilities {
+        let key = (uid, ability.id);
+        if ability.once_per_turn && st.triggered_this_turn.contains(&key) {
+            continue;
+        }
+        if ability
+            .condition
+            .is_some_and(|condition| !super::game::condition_met(deck, st, &condition))
+        {
+            continue;
+        }
+        for effect in ability.effect_sequence() {
+            match effect {
+                SimEffect::Draw(count) => run_scaling_draw(deck, st, host_idx, *count, turn as u32),
+                SimEffect::Counters(count) => {
+                    if let Some(perm) = st.battlefield.iter_mut().find(|perm| perm.uid == uid) {
+                        perm.counters.charge += count;
                     }
-                    Some(idx) => deck[idx].mills_opponent,
-                };
-                apply_effect_at(deck, effect, st, turn as u32, mill_opp, None);
+                }
+                _ => apply_effect_at(deck, effect, st, turn as u32, host.mills_opponent, host_idx),
             }
-            _ => {}
+        }
+        if ability.once_per_turn {
+            st.triggered_this_turn.insert(key);
         }
     }
 }
 
-/// Scaling draw engines ("draw a card for each enchantment you control")
-/// draw the matching permanent count, capped at 8; plain engines draw N.
+/// Scaling draw triggers ("draw a card for each enchantment you control")
+/// draw the matching permanent count, capped at 8; plain triggers draw N.
 pub(super) fn run_scaling_draw(
     deck: &SimDeck,
     st: &mut GameState,
@@ -438,7 +710,7 @@ pub(super) fn run_scaling_draw(
             let matches = |card: &super::model::SimCard| match kind {
                 super::model::DrawMatch::Enchantments => card.is_enchantment,
                 super::model::DrawMatch::Artifacts => card.is_artifact,
-                super::model::DrawMatch::Lands => card.role == Role::Land,
+                super::model::DrawMatch::Lands => card.is_land,
                 super::model::DrawMatch::Creatures => card.is_creature,
             };
             st.battlefield
@@ -456,9 +728,9 @@ pub(super) fn run_scaling_draw(
 
 /// Saga chapters advance one per turn after their entry chapter. The
 /// sim adds lore counters in the precombat main phase (CR 714.3c);
-/// `run_turn` calls this at the start of phase 5.
+/// `run_turn` calls this as the precombat main phase begins.
 pub(super) fn run_sagas(deck: &SimDeck, st: &mut GameState, turn: usize) {
-    let saga_firings: Vec<(usize, Effect, bool)> = st
+    let saga_firings: Vec<(usize, Vec<SimEffect>, bool, Option<CardIdx>)> = st
         .battlefield
         .iter()
         .enumerate()
@@ -472,21 +744,18 @@ pub(super) fn run_sagas(deck: &SimDeck, st: &mut GameState, turn: usize) {
                 return None;
             }
             let step = perm.saga_step as usize;
-            let effect = card
-                .saga
-                .chapters
-                .get(step)
-                .cloned()
-                .unwrap_or(Effect::None);
-            Some((pos, effect, card.mills_opponent))
+            let effects = card.saga.chapters.get(step).cloned().unwrap_or_default();
+            Some((pos, effects, card.mills_opponent, perm.card.deck_idx()))
         })
         .collect();
-    for (pos, effect, mill_opp) in saga_firings {
+    for (pos, effects, mill_opp, source) in saga_firings {
         if let Some(perm) = st.battlefield.get_mut(pos) {
             perm.saga_step += 1;
         }
-        if !matches!(effect, Effect::None) {
-            apply_effect_at(deck, &effect, st, turn as u32, mill_opp, None);
+        for effect in &effects {
+            if !matches!(effect, SimEffect::None) {
+                apply_effect_at(deck, effect, st, turn as u32, mill_opp, source);
+            }
         }
     }
     // Sagas that resolved their final chapter leave the battlefield
@@ -520,10 +789,9 @@ pub(super) fn run_sagas(deck: &SimDeck, st: &mut GameState, turn: usize) {
 /// Win-threshold engines: enough counters at upkeep wins.
 fn check_win_thresholds(deck: &SimDeck, st: &GameState, census: &mut TurnCensus, turn: usize) {
     for perm in &st.battlefield {
-        let card = card_of(deck, perm);
-        for ability in card.abilities() {
-            if let Effect::WinThreshold { counters } = ability.effect
-                && perm.counters >= counters
+        for ability in super::game::permanent_abilities(deck, perm) {
+            if let Some(SimEffect::WinThreshold { counters }) = ability.effect_sequence().first()
+                && perm.counters.charge >= *counters
                 && census.win_threshold_turn.is_none()
             {
                 census.win_threshold_turn = Some(turn as u32);
@@ -536,9 +804,14 @@ fn check_win_thresholds(deck: &SimDeck, st: &GameState, census: &mut TurnCensus,
 /// (the sim does not resolve the ultimate).
 fn check_ultimates(deck: &SimDeck, st: &GameState, census: &mut TurnCensus, turn: usize) {
     for perm in &st.battlefield {
-        for ability in card_of(deck, perm).abilities() {
-            if ability.loyalty_cost >= 6
-                && perm.loyalty >= ability.loyalty_cost
+        for ability in super::game::permanent_abilities(deck, perm) {
+            let loyalty_cost = ability
+                .activation
+                .as_ref()
+                .map(|activation| activation.loyalty_change().unsigned_abs())
+                .unwrap_or(0);
+            if loyalty_cost >= 6
+                && perm.counters.loyalty >= loyalty_cost
                 && census.ultimate_online.is_none()
             {
                 census.ultimate_online = Some(turn as u32);
@@ -550,480 +823,21 @@ fn check_ultimates(deck: &SimDeck, st: &GameState, census: &mut TurnCensus, turn
 /// 4 LAND: play an untapped land when one is in hand (the best-case
 /// agent keeps tapped lands for later); any land plays otherwise.
 /// "You may play an additional land" boards (Aesi, Wayward Swordtooth
-/// class) play a second land the same turn.
+/// class) play a second land the same turn; one-shot effects ("You may
+/// play an additional land this turn" — Explore class) grant extra
+/// drops through `extra_land_drops_this_turn`.
 fn play_land_drops(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, turn: usize) {
-    if play_land(deck, st, turn as u32) {
-        census.land_drops[turn - 1] = 1;
-        let extra_lands = st.battlefield.iter().any(|p| {
-            p.card
-                .deck_idx()
-                .is_some_and(|idx| deck[idx].flags.extra_land_drops)
-        });
-        if extra_lands && play_land(deck, st, turn as u32) {
-            census.land_drops[turn - 1] += 1;
-        }
+    if !play_land(deck, st, turn as u32) {
+        return;
     }
-}
-
-/// Build the turn's spendable pool from untapped permanents: taps,
-/// verge gates, banked-mana releases, counter-scaled taps, static
-/// grants, and the Treasure bank.
-pub(super) fn build_pool(deck: &SimDeck, st: &mut GameState, turn: u32) -> Pool {
-    let mut pool = Pool::default();
-    release_banked_mana(deck, st, &mut pool, turn);
-    let uids: Vec<u32> = st
-        .battlefield
-        .iter()
-        .map(|permanent| permanent.uid)
-        .collect();
-    for uid in uids {
-        let Some(pos) = st
-            .battlefield
-            .iter()
-            .position(|permanent| permanent.uid == uid)
-        else {
-            continue;
-        };
-        let perm = st.battlefield[pos].clone();
-        if perm.tapped {
-            continue;
-        }
-        let card = card_of(deck, &perm);
-        if !mana_condition_met(deck, st, card) {
-            continue;
-        }
-        // Land and noncreature mana sources are reserved when their mana
-        // joins the pool. This prevents the same permanent from stationing
-        // or crewing after it paid for a cast.
-        if card.is_creature && perm.card.deck_idx().is_some() {
-            continue;
-        }
-        let Some(y) = &card.tap else {
-            continue;
-        };
-        if let Some(Scale::PerChargeCounter) = y.scaling {
-            // Counter-scaled taps resolve at the tap: one any-color pip
-            // per charge counter on the source (Astral Cornucopia
-            // class).
-            let yield_ = super::model::TapYield {
-                any_pips: perm.counters,
-                ..super::model::TapYield::default()
-            };
-            add_nonland_mana(deck, st, &perm, &yield_, &mut pool, turn);
-            st.battlefield[pos].tapped = true;
-            continue;
-        }
-        if card.gate_types.is_empty() {
-            if !add_nonland_mana(deck, st, &perm, y, &mut pool, turn) {
-                continue;
-            }
-            if card.sacrifices_for_mana {
-                st.battlefield.remove(pos);
-                let Some(idx) = perm.card.deck_idx() else {
-                    continue;
-                };
-                super::game_effects::move_to_graveyard(
-                    deck,
-                    st,
-                    idx,
-                    turn,
-                    super::game_effects::CardZone::Battlefield,
-                );
-            } else {
-                st.battlefield[pos].tapped = true;
-            }
-            continue;
-        }
-        add_gated_yield(deck, st, &perm, y, &mut pool, turn);
-        if card.sacrifices_for_mana {
-            st.battlefield.remove(pos);
-            let Some(idx) = perm.card.deck_idx() else {
-                continue;
-            };
-            super::game_effects::move_to_graveyard(
-                deck,
-                st,
-                idx,
-                turn,
-                super::game_effects::CardZone::Battlefield,
-            );
-        } else {
-            st.battlefield[pos].tapped = true;
-        }
-    }
-    // Treasure bank: spend up to the full bank as flexible pips (the
-    // player would sacrifice them when needed; best-case the whole bank
-    // converts this turn). Treasures are consumed on use, so the bank
-    // empties here — new Treasure this turn restocks it for next turn.
-    if st.treasure_bank > 0 {
-        pool.flexible += st.treasure_bank;
-        st.treasure_bank = 0;
-    }
-    pool
-}
-
-/// Tap legal creature mana sources only when the current pool cannot pay
-/// the cheapest spell still in hand. Tapped dorks cannot also station or crew.
-pub(super) fn tap_dorks_for_mana(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) {
-    let need = st
-        .hand
-        .iter()
-        .filter(|idx| deck[**idx].role != Role::Land)
-        .map(|idx| effective_min_cost(deck, &deck[*idx], &st.battlefield).total())
-        .min();
-    let Some(need) = need else { return };
-    for pos in 0..st.battlefield.len() {
-        if pool.total() >= need {
-            break;
-        }
-        let perm = &st.battlefield[pos];
-        let card = card_of(deck, perm);
-        if perm.tapped || perm.sick || !card.is_creature || !mana_condition_met(deck, st, card) {
-            continue;
-        }
-        let Some(yield_) = card.tap.clone() else {
-            continue;
-        };
-        if !add_nonland_mana(deck, st, perm, &yield_, pool, turn) {
-            continue;
-        }
-        st.battlefield[pos].tapped = true;
-    }
-}
-
-/// Activate a noncreature rock after it enters, then revisit the cast
-/// choices. Its mana source is tapped exactly once for the turn.
-pub(super) fn tap_new_rocks(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) {
-    let uids: Vec<u32> = st
-        .battlefield
-        .iter()
-        .filter(|permanent| permanent.entered_turn == turn as usize)
-        .map(|permanent| permanent.uid)
-        .collect();
-    for uid in uids {
-        let Some(pos) = st
-            .battlefield
-            .iter()
-            .position(|permanent| permanent.uid == uid)
-        else {
-            continue;
-        };
-        let perm = st.battlefield[pos].clone();
-        let card = card_of(deck, &perm);
-        if perm.tapped
-            || perm.entered_turn != turn as usize
-            || card.is_creature
-            || !mana_condition_met(deck, st, card)
-        {
-            continue;
-        }
-        let Some(yield_) = card.tap.clone() else {
-            continue;
-        };
-        if !add_nonland_mana(deck, st, &perm, &yield_, pool, turn) {
-            continue;
-        }
-        if card.sacrifices_for_mana {
-            st.battlefield.remove(pos);
-            let Some(idx) = perm.card.deck_idx() else {
-                continue;
-            };
-            super::game_effects::move_to_graveyard(
-                deck,
-                st,
-                idx,
-                turn,
-                super::game_effects::CardZone::Battlefield,
-            );
-        } else {
-            st.battlefield[pos].tapped = true;
-        }
-    }
-}
-
-/// Check player-controlled conditions that gate a card's mana ability.
-fn mana_condition_met(deck: &SimDeck, st: &GameState, card: &super::model::SimCard) -> bool {
-    !card.flags.requires_metalcraft
-        || st
-            .battlefield
-            .iter()
-            .filter(|permanent| card_of(deck, permanent).is_artifact)
-            .count()
-            >= 3
-}
-
-/// Banked-mana engines release in the first main phase (Coalition Relic):
-/// counters × N mana joins the pool, counters clear.
-fn release_banked_mana(deck: &SimDeck, st: &mut GameState, pool: &mut Pool, turn: u32) {
-    let releases: Vec<(u32, super::model::TapYield, u32)> = st
-        .battlefield
-        .iter()
-        .filter_map(|perm| {
-            let card = card_of(deck, perm);
-            let release = card
-                .station_tiers
-                .iter()
-                .flat_map(|t| t.abilities.iter())
-                .find(|a| {
-                    a.trigger == AbilityTiming::PrecombatMainPhase
-                        && matches!(a.effect, Effect::ManaPerCounter(_))
-                })?;
-            let y = match &release.effect {
-                Effect::ManaPerCounter(y) => y.clone(),
-                _ => return None,
-            };
-            Some((perm.uid, y, perm.counters))
-        })
-        .collect();
-    for (uid, y, counters) in releases {
-        for _ in 0..counters {
-            add_yield_turns(deck, &y, pool, turn, &st.battlefield);
-        }
-        // The contributing permanent clears its own bank; a second
-        // copy of the card keeps its counters for its own upkeep.
-        if let Some(perm) = st.battlefield.iter_mut().find(|p| p.uid == uid) {
-            perm.counters = 0;
-        }
-    }
-}
-
-/// Verge-gate lands: the gated tap mode unlocks when another land of a
-/// gated type is in play; locked lands yield only the ungated first
-/// mode (the first fixed pip, or the first choice color).
-fn add_gated_yield(
-    deck: &SimDeck,
-    st: &GameState,
-    perm: &Permanent,
-    y: &super::model::TapYield,
-    pool: &mut Pool,
-    turn: u32,
-) {
-    let gates_open = card_of(deck, perm).gate_types.iter().any(|want| {
-        let Some(type_index) = ["Plains", "Island", "Swamp", "Mountain", "Forest"]
-            .iter()
-            .position(|kind| kind == want)
-        else {
-            return false;
-        };
-        st.battlefield.iter().any(|p| {
-            p.card != perm.card
-                && card_of(deck, p).role == Role::Land
-                && card_of(deck, p).land_types[type_index]
-        })
+    census.land_drops[turn - 1] = 1;
+    let battlefield_extra = st.battlefield.iter().any(|p| {
+        p.card
+            .deck_idx()
+            .is_some_and(|idx| deck[idx].flags.extra_land_drops)
     });
-    if gates_open {
-        add_yield_turns(deck, y, pool, turn, &st.battlefield);
-        return;
+    let limit = 1 + u32::from(battlefield_extra) + st.extra_land_drops_this_turn;
+    while u32::from(census.land_drops[turn - 1]) < limit && play_land(deck, st, turn as u32) {
+        census.land_drops[turn - 1] += 1;
     }
-    let ungated_color = y
-        .fixed
-        .iter()
-        .position(|p| *p > 0)
-        .or_else(|| y.choice.iter().position(|c| *c));
-    let Some(ci) = ungated_color else {
-        if y.colorless > 0 {
-            pool.colorless += 1;
-        }
-        return;
-    };
-    let mut ungated = super::model::TapYield {
-        fixed: [0; 5],
-        choice: [false; 5],
-        any_pips: 0,
-        opponent_any: false,
-        scaling: None,
-        colorless: 0,
-        alternatives: false,
-        restriction: None,
-    };
-    ungated.fixed[ci] = 1;
-    add_yield(&ungated, pool);
-}
-
-/// The static mana grants live on the battlefield (Enduring Vitality,
-/// Chromatic Lantern): each grant converts every matching permanent's
-/// tap to one any-color pip.
-fn grants_active(deck: &SimDeck, st: &GameState) -> super::model::Grants {
-    let mut grants = super::model::Grants::default();
-    for perm in &st.battlefield {
-        match card_of(deck, perm).flags.grant {
-            Some(super::model::Grant::Creatures) => grants.creatures = true,
-            Some(super::model::Grant::Lands) => grants.lands = true,
-            None => {}
-        }
-    }
-    grants
-}
-
-/// Commander cast: full pip check against the general pool, cost
-/// deducted, joins the board. Partner decks cast EACH payable commander
-/// (each once per game); an unpayable commander is skipped and the next
-/// one still gets its try. The log's cast turn is the first one.
-#[allow(clippy::too_many_arguments)]
-fn commander_phase(
-    deck: &SimDeck,
-    st: &mut GameState,
-    pool: &mut Pool,
-    census: &mut TurnCensus,
-    commander: &CommanderProfile,
-    turn: usize,
-    engines: &mut Vec<(u32, u32)>,
-    record_readiness: bool,
-) {
-    // Snapshot the pool first: the mana-readiness check below must see
-    // the pre-cast pool, or a same-turn commander cast pushes every
-    // other card's readiness a turn later.
-    let pool_before_commander = pool.clone();
-    for (cmd_i, cmd) in deck.commanders.iter().enumerate() {
-        if st
-            .battlefield
-            .iter()
-            .any(|p| matches!(p.card, super::game::CardRef::Commander { slot } if slot == cmd_i))
-        {
-            continue;
-        }
-        // Gate on the general pool plus every matching restricted
-        // bucket: creature/legendary/artifact/instant-sorcery mana pays
-        // only its own cast class, so unrelated buckets must not count
-        // (or the cast would spend mana never deducted). Phyrexian pips
-        // pay with 2 life each (CR 118.3b), so the pool owes only the
-        // mana part and life must cover the charge.
-        let charge = phyrexian_life_charge(&cmd.cost);
-        let mana_total = cmd.cost.total() - charge / 2;
-        let classes = cast_restrictions(cmd);
-        let mana_ok = if classes.is_empty() {
-            usable_for_noncreature(pool) >= mana_total && pips_ok(&cmd.cost, pool)
-        } else {
-            let pip_total =
-                cmd.cost.pips.iter().map(|p| u32::from(*p)).sum::<u32>() + cmd.cost.flex_pips;
-            let bucket = classes.iter().map(|c| bucket_of(pool, *c)).sum::<u32>();
-            usable_for_classes(pool, &classes) >= mana_total
-                && (pips_ok(&cmd.cost, pool) || bucket + pool.flexible >= pip_total)
-        };
-        if !mana_ok || st.life <= charge as i32 {
-            // Skip this commander; the next partner still gets its try
-            // this turn.
-            continue;
-        }
-        // Deduct mirroring the gate.
-        st.life -= charge as i32;
-        st.life_paid += charge;
-        if classes.is_empty() {
-            pay_cost(&cmd.cost, pool);
-        } else {
-            pay_restricted_cost(&cmd.cost, pool, &classes);
-        }
-        census.mana_spent[turn - 1] += (cmd.cost.total() - charge / 2) as f64;
-        if census.commander_castable.is_none() {
-            census.commander_castable = Some(turn as u32);
-        }
-        // The commander is a permanent with no library entry.
-        let cmd_uid = take_uid(st);
-        st.battlefield.push(super::game::new_commander_perm(
-            cmd_uid,
-            cmd_i,
-            cmd.starting_loyalty.unwrap_or(0),
-            turn,
-        ));
-        if commander.station_at.is_none() {
-            // Not a station card: online the moment it is cast.
-            census.station_online = Some(turn as u32);
-        }
-        if commander.engine_draws[cmd_i].is_some_and(|n| n > 0) || commander.engine_other[cmd_i] {
-            // Sentinel uid encodes the commander slot: the upkeep loop
-            // fires that commander's abilities only.
-            engines.push((
-                commander_sentinel_uid(cmd_i),
-                commander.engine_draws[cmd_i].unwrap_or(0),
-            ));
-        }
-        // Planeswalker +1 token engines register at first cast: a
-        // loyalty-gain activation that creates tokens is a repeatable
-        // once-per-turn engine (Liliana-class token fuel).
-        let cmd_pw_pos = st.battlefield.len() - 1;
-        register_loyalty_token_engines(deck, st, cmd_pw_pos, engines);
-        // The commander's ETB triggers fire (IGS creates station fuel
-        // tokens for each multicolored permanent).
-        let cmd_pos = st.battlefield.len() - 1;
-        fire_on_enter(deck, st, cmd_pos, turn as u32, false);
-    }
-
-    // Mana available is recorded from the pre-cast snapshot: the
-    // cast/activation passes spend from the same pool and `mana_spent`
-    // re-adds those costs, so recording post-payment availability would
-    // double-subtract in the unused-mana metric.
-    if record_readiness {
-        census.mana_available[turn - 1] = pool_before_commander.total() as f64;
-    }
-
-    // Mana-readiness: the first turn the board could pay each card's
-    // cost, independent of drawing it (the castability curve). The
-    // check uses the pre-cast pool: a same-turn commander cast must not
-    // push every other card's readiness a turn later.
-    if record_readiness {
-        for (idx, card) in deck.cards.iter().enumerate() {
-            if card.role != Role::Land && census.mana_ready[idx].is_none() {
-                let eff = effective_min_cost(deck, card, &st.battlefield);
-                if payable(&eff, &pool_before_commander) && pips_ok(&eff, &pool_before_commander) {
-                    census.mana_ready[idx] = Some(turn as u32);
-                }
-            }
-        }
-    }
-}
-
-/// 8 THRESHOLD: station tiers unlock (permanent for animate tiers).
-fn unlock_thresholds(deck: &SimDeck, st: &mut GameState, census: &mut TurnCensus, turn: usize) {
-    for perm in st.battlefield.iter_mut() {
-        let card = card_of(deck, perm);
-        if card.is_station_card
-            && let Some(at) = card.animate_at()
-            && !perm.animated
-            && perm.counters >= at
-        {
-            perm.animated = true;
-            if matches!(perm.card, super::game::CardRef::Commander { .. })
-                && census.station_online.is_none()
-            {
-                census.station_online = Some(turn as u32);
-            }
-        }
-    }
-}
-
-/// Probe entry for the upkeep engine firing (test only).
-#[cfg(test)]
-pub(super) fn fire_upkeep_engine_probe(deck: &SimDeck, st: &mut GameState, uid: u32, turn: usize) {
-    fire_upkeep_engine(deck, st, uid, turn);
-}
-
-/// Probe entry for the win-threshold check (test only).
-#[cfg(test)]
-pub(super) fn check_win_thresholds_probe(
-    deck: &SimDeck,
-    st: &mut GameState,
-    census: &mut TurnCensus,
-    turn: usize,
-) {
-    check_win_thresholds(deck, st, census, turn);
-}
-
-/// Probe entry for the mana-pool build (test only).
-#[cfg(test)]
-pub(crate) fn build_pool_probe(deck: &SimDeck, st: &mut GameState, turn: u32) -> Pool {
-    build_pool(deck, st, turn)
-}
-
-/// Probe entry for the commander cast phase (test only).
-#[cfg(test)]
-pub(super) fn commander_phase_probe(
-    deck: &SimDeck,
-    st: &mut GameState,
-    pool: &mut Pool,
-    census: &mut TurnCensus,
-    commander: &CommanderProfile,
-    turn: usize,
-    engines: &mut Vec<(u32, u32)>,
-) {
-    commander_phase(deck, st, pool, census, commander, turn, engines, false);
 }
