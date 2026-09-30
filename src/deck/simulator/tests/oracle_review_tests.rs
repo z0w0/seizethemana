@@ -1,3 +1,4 @@
+//! Review tests for parsed Oracle syntax and semantics.
 use super::*;
 
 /// Damage and direct life loss remain distinct in parsed syntax.

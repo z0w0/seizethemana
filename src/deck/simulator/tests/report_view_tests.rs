@@ -1,3 +1,4 @@
+//! Tests for rendering and diffing simulator reports.
 use super::report_schema::{CommanderReport, Finding, Percent, SimReport};
 use super::report_view::diff_reports;
 

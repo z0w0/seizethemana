@@ -1,3 +1,4 @@
+//! Tests for Oracle cost parsing.
 use super::oracle_parser::cost::{parse_activation_cost, parse_cost, parse_cost_faces};
 use super::oracle_parser::land::parse_tap_yield;
 
@@ -57,6 +58,17 @@ fn colorless_only_cost_has_no_pips() {
     assert_eq!(cost.generic, 3);
     assert_eq!(cost.pips, [0; 5]);
     assert_eq!(cost.hybrid_pips, 0);
+}
+
+#[test]
+fn colorless_pip_keeps_its_lane() {
+    // {C} must be paid with colorless mana (CR 107.4a), never a color.
+    let cost = parse_cost("{3}{C}{C}");
+    assert_eq!(cost.generic, 3);
+    assert_eq!(cost.colorless, 2);
+    assert_eq!(cost.pips, [0; 5]);
+    assert_eq!(cost.total(), 5);
+    assert_eq!(parse_cost("{C}").colorless, 1);
 }
 
 #[test]

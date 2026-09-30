@@ -1,3 +1,7 @@
+//! On-disk data locations and the `status.json` state file. [`Paths`] maps
+//! one data root to every file the CLI reads or writes; [`Status`] records
+//! setup state and vector-index metadata.
+
 use anyhow::Context;
 use std::path::PathBuf;
 

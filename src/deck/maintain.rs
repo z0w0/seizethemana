@@ -1,5 +1,5 @@
-// Deck dedupe: collapse duplicate same-name lines, with the commander
-// singleton cap. Split from `update.rs` to keep each file small.
+//! Deck dedupe: collapse duplicate same-name lines, with the commander
+//! singleton cap. Split from `update.rs` to keep each file small.
 
 use super::grammar::Deck;
 use super::store::{load_deck, save_deck};

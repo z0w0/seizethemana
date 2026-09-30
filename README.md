@@ -140,32 +140,33 @@ if you want to see exactly what the assistant will be told.
 
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| `stm setup [--force]` | First-time setup: download data, build the index |
-| `stm sync [--force]` | Refresh card data, prices, tags, and combos |
-| `stm card <name> [--json]` | Full detail for one card: rules text, price, format legality, community role labels |
-| `stm card similar <name> [--owned]` | Cards that play like a given card (see [Finding cards](#finding-cards)) |
-| `stm card combos <name> [--format FMT]` | Known combos with a card, from Commander Spellbook |
-| `stm query <text> [filters]` | Hybrid search (keywords + meaning) over every card |
-| `stm collection [--json]` | What you own: counts, value, colors, mana curve |
-| `stm collection conflicts` | Cards assigned to more than one deck (or over-assigned) |
-| `stm collection import <csv> [--add]` | Import a ManaBox export |
-| `stm collection query <text> [filters]` | Hybrid search over only the cards you own |
-| `stm deck create / list / show / delete / copy / dedupe` | Manage deck files |
-| `stm deck update <name> --add/--remove/--set` | Edit a deck (see [Building decks](#building-decks)) |
-| `stm deck hand <name>` | Sample opening hands with a mulligan verdict |
-| `stm deck mana <name>` | Mana-base audit against the bracket band |
-| `stm deck legal <name> [--format FMT] [--bracket N]` | Check deck legality and Commander brackets |
-| `stm deck import <name> [file] [--url URL]` | Import a deck file or an Archidekt deck URL |
-| `stm deck suggest <name> [query]` | Suggest role fills, theme cards, or combo completions, owned first; works in any format |
-| `stm deck simulate <name> [--seed N]` | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation)) |
-| `stm deck combos <name> [--bracket B]` | Spellbook combo audit, split by section; flags bracket-breaking combos |
-| `stm deck cuts <name> [--for ROLE] [--bracket N]` | Rank the deck's cards by expendability, with cut/fill pairing; pass `--bracket` so Game Changers over the cap pin to the top |
-| `stm deck diff <A> <B> --markdown` | Exact change instructions between two lists (either side a deck name or a file) |
-| `stm deck buylist <name>` | Missing copies priced at their print, plain/CSV/JSON |
-| `stm deck export <name> <file> --format names` | Plain `qty Name` export (no set decorations) |
-| `stm deck primer <name> [--set <file>]` | Read or write a deck's strategy notes |
+| Command                                                                                                                                  | What it does                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `stm setup [--force]`                                                                                                                    | First-time setup: download data, build the index                                                                             |
+| `stm sync [--force]`                                                                                                                     | Refresh card data, prices, tags, and combos                                                                                  |
+| `stm card <name> [--json]`                                                                                                               | Full detail for one card: rules text, price, format legality, community role labels                                          |
+| `stm card similar <name> [--owned]`                                                                                                      | Cards that play like a given card (see [Finding cards](#finding-cards))                                                      |
+| `stm card combos <name> [--format FMT]`                                                                                                  | Known combos with a card, from Commander Spellbook                                                                           |
+| `stm query <text> [filters]`                                                                                                             | Hybrid search (keywords + meaning) over every card                                                                           |
+| `stm collection [--json]`                                                                                                                | What you own: counts, value, colors, mana curve                                                                              |
+| `stm collection conflicts`                                                                                                               | Cards assigned to more than one deck (or over-assigned)                                                                      |
+| `stm collection import <csv> [--add]`                                                                                                    | Import a ManaBox export                                                                                                      |
+| `stm collection query <text> [filters]`                                                                                                  | Hybrid search over only the cards you own                                                                                    |
+| `stm collection sell [--min-price USD] [--max-price USD] [--rarity R] [--format F] [--rank-floor N] [--target USD] [--limit N] [--json]` | Suggest binder cards to sell: idle value no deck wants (see [Selling cards](#selling-cards))                                 |
+| `stm deck create / list / show / delete / copy / dedupe`                                                                                 | Manage deck files                                                                                                            |
+| `stm deck update <name> --add/--remove/--set`                                                                                            | Edit a deck (see [Building decks](#building-decks))                                                                          |
+| `stm deck hand <name>`                                                                                                                   | Sample opening hands with a mulligan verdict                                                                                 |
+| `stm deck mana <name>`                                                                                                                   | Mana-base audit against the bracket band                                                                                     |
+| `stm deck legal <name> [--format FMT] [--bracket N]`                                                                                     | Check deck legality and Commander brackets                                                                                   |
+| `stm deck import <name> [file] [--url URL]`                                                                                              | Import a deck file or an Archidekt deck URL                                                                                  |
+| `stm deck suggest <name> [query]`                                                                                                        | Suggest role fills, theme cards, or combo completions, owned first; works in any format                                      |
+| `stm deck simulate <name> [--seed N]`                                                                                                    | Play thousands of solitaire games to find consistency problems (see [Deck simulation](#deck-simulation))                     |
+| `stm deck combos <name> [--bracket B]`                                                                                                   | Spellbook combo audit, split by section; flags bracket-breaking combos                                                       |
+| `stm deck cuts <name> [--for ROLE] [--bracket N]`                                                                                        | Rank the deck's cards by expendability, with cut/fill pairing; pass `--bracket` so Game Changers over the cap pin to the top |
+| `stm deck diff <A> <B> --markdown`                                                                                                       | Exact change instructions between two lists (either side a deck name or a file)                                              |
+| `stm deck buylist <name>`                                                                                                                | Missing copies priced at their print, plain/CSV/JSON                                                                         |
+| `stm deck export <name> <file> --format names`                                                                                           | Plain `qty Name` export (no set decorations)                                                                                 |
+| `stm deck primer <name> [--set <file>]`                                                                                                  | Read or write a deck's strategy notes                                                                                        |
 
 The table is the common surface; `--help` on any command shows every
 flag (including `deck suggest --role/--exclude`, `deck update --dry-run`,
@@ -194,6 +195,32 @@ stm collection query "board wipe" --color BR --json   # search only what you own
 ```
 
 Prices update daily from Scryfall, so the value figures track the market.
+
+## Selling cards
+
+`stm collection sell` ranks the cards in your binders by "dead money" —
+value sitting idle because no decklist wants the card and it sees little or
+no play. It never suggests a card assigned to a deck, and it never suggests a
+binder copy of a card a decklist runs. Each row carries reasons to sell
+(`not_in_deck`, `rarely_played`, `reprint_risk`, `format_unplayed`) and hold
+warnings (`reserved_list`, `game_changer`), with the owned printings and their
+prices listed per row.
+
+```sh
+stm collection sell                        # dead money + bulk cull
+stm collection sell --min-price 2          # only cards worth listing
+stm collection sell --rarity common --max-price 0.25   # the bulk cull
+stm collection sell --target 38            # what to sell to fund $38
+stm collection sell --format modern --json # flag cards with no Modern play
+```
+
+Value is **per printing**: a Beta Sol Ring counts at its own price, not a
+cheap reprint's. Play demand is **per card**: `edhrec_rank` (Commander) and
+`penny_rank` (Penny Dreadful). Since only EDHREC is Commander, `--format`
+catches cards that see play only in the format you care about. Reserved List
+cards are never hidden, only flagged: they cannot be reprinted, so a high
+price may be a reason to keep, not sell. `--rank-floor` (default 15000) sets
+the unplayed EDHREC cutoff; `--limit` (default 50, max 500) caps the rows.
 
 ## Building decks
 
@@ -262,7 +289,7 @@ stm deck simulate Froggy --bracket 3      # sets the mana-base target band
 
 The report includes a `mana_base` verdict: the deck's lands/rocks/ramp
 counts against research-derived target bands for the bracket ("trim 3
-lands", "add 2 ramp", "on target"). Flood counts lands *seen* (opener +
+lands", "add 2 ramp", "on target"). Flood counts lands _seen_ (opener +
 draws) against the exact hypergeometric expectation, so a land-heavy deck
 gets told to trim where a drops-made check would say nothing.
 
@@ -335,7 +362,7 @@ being true.
 Three ways to search, depending on what you know:
 
 - **`stm query`** describes what you want: `stm query "graveyard
-  recursion" --color BG`.
+recursion" --color BG`.
 - **`stm collection query`** does the same but only over cards you own.
 - **`stm card similar`** starts from a card you like and finds cards that
   share its community-assigned role labels and read like it (both signals
@@ -343,7 +370,7 @@ Three ways to search, depending on what you know:
   Cyclonic Rift?" or for finding cheaper versions of an expensive card.
   Add `--owned` to stay inside your collection.
 - **`stm card combos`** lists known combos with a card: `stm card combos
-  "Demonic Consultation"` names the pieces, what each combo does, and
+"Demonic Consultation"` names the pieces, what each combo does, and
   where it's legal. Pass `--format modern` to keep only combos that work
   in that format; combos that need a commander are left out of 60-card
   results automatically.
@@ -364,7 +391,7 @@ it.
    collection.
 2. **A search index** with two halves. A keyword index scores exact word
    matches against rules text, type lines, and tags. A semantic index
-      embeds every card's text with a small on-device model into a vector
+   embeds every card's text with a small on-device model into a vector
    table — this is the 2–3 minutes of first-run CPU.
 3. **Deck files** on disk, plain ManaBox txt you can also edit by hand.
 
@@ -380,11 +407,11 @@ picture: schema, index layout, and the sync pipeline.
 
 ## Docs
 
-| Document | What it covers |
-| --- | --- |
-| [`docs/architecture.md`](docs/architecture.md) | Data schema, search index, sync pipeline, deck module |
-| [`docs/simulator.md`](docs/simulator.md) | The goldfish simulator: card model, turn pipeline, metrics, limits |
-| [`docs/design.md`](docs/design.md) | CLI design: output style, human vs agent-friendly modes |
+| Document                                       | What it covers                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------ |
+| [`docs/architecture.md`](docs/architecture.md) | Data schema, search index, sync pipeline, deck module              |
+| [`docs/simulator.md`](docs/simulator.md)       | The goldfish simulator: card model, turn pipeline, metrics, limits |
+| [`docs/design.md`](docs/design.md)             | CLI design: output style, human vs agent-friendly modes            |
 
 ## Data sources
 

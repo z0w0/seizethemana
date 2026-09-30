@@ -1,11 +1,11 @@
-// `stm deck diff`: exact change instructions between two decks.
-//
-// The base operand is a deck name (the original list); the target is a deck
-// name or a ManaBox deck txt file (the optimized list). Per section, cards
-// are multisets keyed by name (any printing fills a slot; `--exact` keys on
-// the full print identity). Basics and quantity changes render as qty
-// deltas ("Forest: 16 → 12"); non-basics as remove/add rows. `--markdown`
-// renders the change-log instruction table for `decks/<name>.changes.md`.
+//! `stm deck diff`: exact change instructions between two decks.
+//!
+//! The base operand is a deck name (the original list); the target is a deck
+//! name or a ManaBox deck txt file (the optimized list). Per section, cards
+//! are multisets keyed by name (any printing fills a slot; `--exact` keys on
+//! the full print identity). Basics and quantity changes render as qty
+//! deltas ("Forest: 16 → 12"); non-basics as remove/add rows. `--markdown`
+//! renders the change-log instruction table for `decks/<name>.changes.md`.
 
 use super::grammar::{Deck, DeckEntry};
 use anyhow::Context;
@@ -271,7 +271,7 @@ pub fn markdown(diff: &[SectionDiff]) -> String {
 /// names outside `--exact`). Wastes and snow basics are tracked like any
 /// other card.
 fn is_basic_display(name: &str) -> bool {
-    matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
+    crate::collection::is_basic_name(name)
 }
 
 /// Output formats for `deck diff`.
@@ -297,12 +297,14 @@ pub fn diff(
     format: DiffFormat,
 ) -> anyhow::Result<i32> {
     // Both operands accept a deck name or a ManaBox txt file; deck names
-    // win when both resolve.
+    // win when both resolve. A name that is not a valid deck name is
+    // never a deck: it goes straight to the file path.
     let load_operand = |s: &str| -> anyhow::Result<(String, Deck)> {
-        match super::store::load_deck(paths, s) {
-            Ok((_p, deck)) => Ok((format!("deck {s:?}"), deck)),
-            Err(err) if !super::store::is_deck_not_found(&err) => Err(err),
-            Err(_) => {
+        let as_deck = super::store::valid_deck_name(s).then(|| super::store::load_deck(paths, s));
+        match as_deck {
+            Some(Ok((_p, deck))) => Ok((format!("deck {s:?}"), deck)),
+            Some(Err(err)) if !super::store::is_deck_not_found(&err) => Err(err),
+            _ => {
                 let text = std::fs::read_to_string(s)
                     .with_context(|| format!("reading {s} (not a deck name or file)"))?;
                 let deck = Deck::parse(&text).with_context(|| format!("parsing {s}"))?;

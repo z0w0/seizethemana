@@ -1,8 +1,8 @@
-// Deck file storage and read commands (`create`, `list`, `show`).
-//
-// Deck txt files under `decks/` are the single source of truth for deck
-// contents; ownership comes from the collection (`binder_type = 'deck'`
-// rows); primers are sibling markdown files the deckbuilding agent edits.
+//! Deck file storage and read commands (`create`, `list`, `show`).
+//!
+//! Deck txt files under `decks/` are the single source of truth for deck
+//! contents; ownership comes from the collection (`binder_type = 'deck'`
+//! rows); primers are sibling markdown files the deckbuilding agent edits.
 
 use rusqlite::Connection;
 
@@ -59,6 +59,11 @@ pub(crate) fn load_deck(
     paths: &crate::paths::Paths,
     name: &str,
 ) -> anyhow::Result<(std::path::PathBuf, Deck)> {
+    // A read command takes a raw user string: reject separators and
+    // parent segments so a name cannot escape the decks directory.
+    if !valid_deck_name(name) {
+        anyhow::bail!("invalid deck name {name:?}");
+    }
     let path = paths.deck_file(name);
     if !path.exists() {
         // Distinguish a missing deck so callers can hint consistently.
@@ -76,6 +81,7 @@ pub(crate) fn load_deck(
 #[derive(Debug, thiserror::Error)]
 #[error("deck {name:?} not found")]
 pub struct DeckNotFound {
+    /// Name of the missing deck.
     pub name: String,
 }
 
@@ -201,11 +207,17 @@ pub(crate) fn ensure_valid_name(out: &mut crate::output::Output, name: &str) -> 
 /// report the bench sections separately (not legal-deck zones).
 #[derive(Debug, Clone)]
 pub struct DeckSummary {
+    /// Deck name.
     pub name: String,
+    /// Maindeck card count.
     pub cards: i64,
+    /// Sideboard card count.
     pub sideboard_cards: i64,
+    /// Maybeboard card count.
     pub maybeboard_cards: i64,
+    /// Copies the collection owns.
     pub owned: i64,
+    /// Whether the deck has a primer.
     pub has_primer: bool,
 }
 

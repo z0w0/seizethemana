@@ -1,10 +1,10 @@
+//! SQLite layer: connection bootstrap, schema migrations, and the card row
+//! type shared by every module. Collection access lives in `collection.rs`,
+//! price access in `prints.rs`; both use this module's connection helpers.
+
 use anyhow::Context;
 use rusqlite::Connection;
-use rusqlite_migration::{M, Migrations};
-
-// SQLite layer: connection bootstrap, schema migrations, and the card row
-// type shared by every module. Collection access lives in `collection.rs`,
-// price access in `prints.rs`; both use this module's connection helpers.
+use rusqlite_migration::{Migrations, M};
 
 /// One stored card, deserialized from the `cards` table.
 ///
@@ -13,23 +13,45 @@ use rusqlite_migration::{M, Migrations};
 /// (`src/prints.rs`), keyed by `scryfall_id`.
 #[derive(Debug, Clone)]
 pub struct CardRow {
+    /// Oracle card name; the primary key callers resolve against.
     pub name: String,
     /// Scryfall oracle ID; join key for `card_tags` (tag associations).
     pub oracle_id: String,
+    /// Mana cost in Scryfall notation, e.g. `{2}{R}`.
     pub mana_cost: String,
+    /// Converted mana cost.
     pub cmc: f64,
+    /// Type line, e.g. `Legendary Creature — Human`.
     pub type_line: String,
+    /// Card colors as a JSON array, e.g. `["R"]`.
     pub colors: String,
+    /// Color identity as a JSON array; Commander legality reads this.
     pub color_identity: String,
+    /// Keyword abilities as a JSON array.
     pub keywords: String,
+    /// Power, when the card has one; `*`-style values stay as text.
     pub power: Option<String>,
+    /// Toughness, when the card has one.
     pub toughness: Option<String>,
+    /// Starting loyalty for planeswalkers.
     pub loyalty: Option<String>,
+    /// Rules text.
     pub oracle_text: String,
+    /// Rarity: `common`, `uncommon`, `rare`, or `mythic`.
     pub rarity: String,
+    /// EDHREC popularity rank (lower is more popular); `None` when unknown.
     pub edhrec_rank: Option<i64>,
+    /// Penny Dreadful popularity rank (lower is more popular); `None` when
+    /// unknown.
+    pub penny_rank: Option<i64>,
+    /// True when the card is on the Reserved List (never reprinted). Null
+    /// when the bulk did not say.
+    pub reserved: Option<bool>,
+    /// Format legalities as a JSON object of format → status.
     pub legalities: String,
+    /// Set code of the stored representative print (lowercase).
     pub set_code: String,
+    /// Collector number of the stored representative print.
     pub collector_number: String,
     /// Scryfall print ID of the stored representative print; join key for
     /// `prices`.
@@ -42,6 +64,18 @@ pub struct CardRow {
     /// signal for `deck legal`). Null when the bulk did not say.
     pub game_changer: Option<bool>,
 }
+
+/// The `cards` column list every card query selects, without `SELECT` or
+/// `FROM`.
+///
+/// The order must match [`map_card`]'s positional `row.get` calls. Every
+/// query that maps a full card row builds its `SELECT` from this constant so
+/// the list and the mapper cannot drift apart.
+pub const CARD_COLUMNS: &str =
+    "name, oracle_id, mana_cost, cmc, type_line, colors, color_identity, keywords,
+        power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
+        legalities, set_code, collector_number, scryfall_id, released_at,
+        game_changer, penny_rank, reserved";
 
 /// All card ids in insertion (bulk) order, aligned with [`load_all_cards`].
 ///
@@ -64,39 +98,9 @@ pub fn card_ids(conn: &Connection) -> anyhow::Result<Vec<i64>> {
 /// # Errors
 /// Propagates SQLite failures.
 pub fn load_all_cards(conn: &Connection) -> anyhow::Result<Vec<CardRow>> {
-    let mut stmt = conn
-        .prepare(
-            "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity, keywords,
-                    power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-                    legalities, set_code, collector_number, scryfall_id, released_at,
-                    game_changer
-             FROM cards ORDER BY id",
-        )
-        .context("prepare card query")?;
-    let rows = stmt.query_map([], |row| {
-        Ok(CardRow {
-            name: row.get(0)?,
-            oracle_id: row.get(1)?,
-            mana_cost: row.get(2)?,
-            cmc: row.get(3)?,
-            type_line: row.get(4)?,
-            colors: row.get(5)?,
-            color_identity: row.get(6)?,
-            keywords: row.get(7)?,
-            power: row.get(8)?,
-            toughness: row.get(9)?,
-            loyalty: row.get(10)?,
-            oracle_text: row.get(11)?,
-            rarity: row.get(12)?,
-            edhrec_rank: row.get(13)?,
-            legalities: row.get(14)?,
-            set_code: row.get(15)?,
-            collector_number: row.get(16)?,
-            scryfall_id: row.get(17)?,
-            released_at: row.get(18)?,
-            game_changer: row.get(19)?,
-        })
-    })?;
+    let sql = format!("SELECT {CARD_COLUMNS} FROM cards ORDER BY id");
+    let mut stmt = conn.prepare(&sql).context("prepare card query")?;
+    let rows = stmt.query_map([], map_card)?;
     rows.collect::<Result<Vec<_>, _>>().context("reading cards")
 }
 
@@ -105,7 +109,7 @@ pub fn load_all_cards(conn: &Connection) -> anyhow::Result<Vec<CardRow>> {
 /// # Errors
 /// Propagates SQLite failures.
 pub fn get_card(conn: &Connection, name: &str) -> anyhow::Result<Option<CardRow>> {
-    let mut stmt = conn.prepare(card_select())?;
+    let mut stmt = conn.prepare(&card_select())?;
     let mut rows = stmt.query_map([name], map_card)?;
     match rows.next() {
         Some(row) => Ok(Some(row.context("reading card")?)),
@@ -134,7 +138,9 @@ pub enum NameMatch {
     /// card names; `total` is the full match count (oracle names plus
     /// flavor-name aliases).
     Ambiguous {
+        /// Sample of real card names that matched the prefix.
         candidates: Vec<String>,
+        /// Full match count (oracle names plus flavor-name aliases).
         total: usize,
     },
     /// Nothing matched.
@@ -297,17 +303,16 @@ fn resolve_candidate(conn: &Connection, name: &str) -> anyhow::Result<NameMatch>
     }
 }
 
-/// SQL column list for one `cards` row; `map_card` reads in this order.
-fn card_select() -> &'static str {
-    "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity, keywords,
-            power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-            legalities, set_code, collector_number, scryfall_id, released_at,
-            game_changer
-     FROM cards WHERE name = ?1"
+/// SQL for one card row by exact name; columns come from [`CARD_COLUMNS`].
+fn card_select() -> String {
+    format!("SELECT {CARD_COLUMNS} FROM cards WHERE name = ?1")
 }
 
-/// Map one `cards` row in `card_select` column order.
-fn map_card(row: &rusqlite::Row<'_>) -> rusqlite::Result<CardRow> {
+/// Map one `cards` row into a [`CardRow`].
+///
+/// Reads columns positionally, in [`CARD_COLUMNS`] order; the two must stay
+/// aligned.
+pub fn map_card(row: &rusqlite::Row<'_>) -> rusqlite::Result<CardRow> {
     Ok(CardRow {
         name: row.get(0)?,
         oracle_id: row.get(1)?,
@@ -329,6 +334,8 @@ fn map_card(row: &rusqlite::Row<'_>) -> rusqlite::Result<CardRow> {
         scryfall_id: row.get(17)?,
         released_at: row.get(18)?,
         game_changer: row.get(19)?,
+        penny_rank: row.get(20)?,
+        reserved: row.get(21)?,
     })
 }
 
@@ -539,6 +546,7 @@ fn migrations() -> Migrations<'static> {
     Migrations::new(vec![
         M::up(include_str!("../migrations/0001_initial_schema.sql")),
         M::up(include_str!("../migrations/0002_universe.sql")),
+        M::up(include_str!("../migrations/0003_sell_signals.sql")),
     ])
 }
 
@@ -647,7 +655,10 @@ mod tests {
         let version: i64 = conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .expect("version");
-        assert_eq!(version, 2, "flattened schema plus the universe migration");
+        assert_eq!(
+            version, 3,
+            "flattened schema plus universe and sell signals"
+        );
         // The game_changer column must exist on the cards table.
         let gc: i64 = conn
             .query_row(
@@ -675,6 +686,16 @@ mod tests {
             )
             .expect("pragma");
         assert_eq!(franchise, 1);
+        // The sell-signal migration columns must exist.
+        let signals: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_table_info('cards')
+                 WHERE name IN ('penny_rank', 'reserved')",
+                [],
+                |r| r.get(0),
+            )
+            .expect("pragma");
+        assert_eq!(signals, 2);
         drop(conn);
 
         // Reopening must not fail on existing schema.
@@ -695,13 +716,12 @@ mod tests {
             [],
         )
         .expect("insert");
-        assert!(
-            conn.execute(
+        assert!(conn
+            .execute(
                 "INSERT INTO cards (name, oracle_id) VALUES ('Bolt', 'x2')",
                 []
             )
-            .is_err()
-        );
+            .is_err());
     }
 
     #[test]

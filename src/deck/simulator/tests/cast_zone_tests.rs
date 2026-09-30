@@ -1,3 +1,4 @@
+//! Tests for casting from the hand and other zones.
 use super::cast_pass::{cast_pass, play_land};
 use super::game::{GameState, ManaPool};
 use super::model::{Cost, Format, SimDeck};
@@ -28,6 +29,8 @@ fn row(name: &str, cost: &str, type_line: &str, text: &str) -> CardRow {
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 
@@ -262,6 +265,8 @@ fn life_cost_must_leave_the_player_alive_and_is_paid_on_cast() {
         "Sorcery",
         "As an additional cost to cast this spell, pay 5 life. Draw a card.",
     )]);
+    // CR 119.4: exactly 5 life may pay a 5-life cost (down to 0), so the
+    // spell resolves and the player survives at 0.
     let mut state_at_five = state(vec![0], vec![]);
     state_at_five.life = 5;
     let mut pool = ManaPool {
@@ -269,13 +274,25 @@ fn life_cost_must_leave_the_player_alive_and_is_paid_on_cast() {
         ..ManaPool::default()
     };
     cast_once(&cards, &mut state_at_five, &mut pool);
+    assert!(state_at_five.hand.is_empty());
+    assert_eq!(state_at_five.life, 0);
+    assert_eq!(state_at_five.life_paid, 5);
+
+    // One life short of the cost: the cast stays in hand.
+    let mut state_at_four = state(vec![0], vec![]);
+    state_at_four.life = 4;
+    let mut pool = ManaPool {
+        flexible: 1,
+        ..ManaPool::default()
+    };
+    cast_once(&cards, &mut state_at_four, &mut pool);
     assert_eq!(
-        state_at_five.hand,
+        state_at_four.hand,
         [0].iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
             .collect::<Vec<_>>()
     );
-    assert_eq!(state_at_five.life, 5);
+    assert_eq!(state_at_four.life, 4);
     assert_eq!(pool.flexible, 1);
 
     let mut state_at_six = state(vec![0], vec![]);
@@ -393,15 +410,13 @@ fn sacrifice_mana_activation_requires_and_consumes_a_creature() {
         0,
         false,
     ));
-    assert!(
-        super::game_effects::activation::pick_best_activation(
-            &cards,
-            &without_body,
-            &ManaPool::default(),
-            1,
-        )
-        .is_none()
-    );
+    assert!(super::game_effects::activation::pick_best_activation(
+        &cards,
+        &without_body,
+        &ManaPool::default(),
+        1,
+    )
+    .is_none());
 
     let mut with_body = state(Vec::new(), Vec::new());
     with_body.battlefield.push(super::game::new_perm_with(
@@ -456,10 +471,18 @@ fn shock_land_pays_life_to_enter_untapped() {
     assert_eq!(paid.life_paid, 2);
     assert!(!paid.battlefield[0].tapped);
 
+    // CR 119.4: a player may pay life equal to their total, so at exactly
+    // 2 life the shock can still enter untapped.
+    let mut exact = state(vec![0], vec![]);
+    exact.life = 2;
+    assert!(play_land(&cards, &mut exact, 1));
+    assert_eq!(exact.life, 0);
+    assert!(!exact.battlefield[0].tapped);
+
     let mut cannot_pay = state(vec![0], vec![]);
-    cannot_pay.life = 2;
+    cannot_pay.life = 1;
     assert!(play_land(&cards, &mut cannot_pay, 1));
-    assert_eq!(cannot_pay.life, 2);
+    assert_eq!(cannot_pay.life, 1);
     assert!(cannot_pay.battlefield[0].tapped);
 }
 
@@ -597,10 +620,9 @@ fn flashback_grants_only_the_graveyard_instances_present_at_resolution() {
     st.graveyard.push(crate::deck::simulator::model::CardIdx(2));
     cast_once(&cards, &mut st, &mut ManaPool::default());
     assert_eq!(st.replay_casts, 1);
-    assert!(
-        st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(2))
-    );
+    assert!(st
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(2)));
 }
 
 #[test]
@@ -640,14 +662,12 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
     assert_eq!(pool.fixed[3], 0);
     assert_eq!(st.replay_casts, 2);
     assert_eq!(st.milestones_by_turn[&1].graveyard_casts, 2);
-    assert!(
-        st.exile
-            .contains(&crate::deck::simulator::model::CardIdx(1))
-    );
-    assert!(
-        st.exile
-            .contains(&crate::deck::simulator::model::CardIdx(2))
-    );
+    assert!(st
+        .exile
+        .contains(&crate::deck::simulator::model::CardIdx(1)));
+    assert!(st
+        .exile
+        .contains(&crate::deck::simulator::model::CardIdx(2)));
     assert_eq!(st.exile.len(), 8);
     assert!(st.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(0))));
@@ -666,11 +686,9 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
             .map(|i| crate::deck::simulator::model::CardIdx(*i)),
     );
     cast_once(&cards, &mut no_fuel, &mut ManaPool::default());
-    assert!(
-        no_fuel
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(1))
-    );
+    assert!(no_fuel
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(1)));
     assert!(no_fuel.exile.is_empty());
     assert_eq!(no_fuel.replay_casts, 0);
 }
@@ -752,20 +770,17 @@ fn sacrificed_escape_artifact_can_be_escaped_again_with_remaining_fuel() {
             .is_some_and(|activation| activation.sacrifices_source())
     }));
     assert!(parsed_artifact.gate_types.is_empty());
-    assert!(
-        parsed_artifact
-            .tap
-            .as_ref()
-            .is_some_and(|yield_| yield_.scaling.is_none())
-    );
+    assert!(parsed_artifact
+        .tap
+        .as_ref()
+        .is_some_and(|yield_| yield_.scaling.is_none()));
     assert!(!permanent.tapped);
     pool = super::game_run::build_pool(&cards, &mut st, 2);
     assert!(!st.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(1))));
-    assert!(
-        st.graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(1))
-    );
+    assert!(st
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(1)));
     assert_eq!(pool.total(), 1);
 
     cast_once(&cards, &mut st, &mut pool);
@@ -798,6 +813,7 @@ fn ad_nauseam_reveals_in_order_and_can_cause_a_lethal_reveal() {
         row("Seven", "{7}", "Sorcery", ""),
     ]);
     assert!(cards.cards[0].spell_data.reveal_rule.is_some());
+    // Library order is the draw order; pop() reveals from the end.
     let mut st = state(vec![0], vec![1, 2, 3]);
     st.life = 5;
     let mut pool = ManaPool {
@@ -808,23 +824,45 @@ fn ad_nauseam_reveals_in_order_and_can_cause_a_lethal_reveal() {
 
     cast_once(&cards, &mut st, &mut pool);
 
-    assert_eq!(
-        st.hand,
-        [3].iter()
-            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
-            .collect::<Vec<_>>()
-    );
-    assert_eq!(st.seen, 1);
-    assert_eq!(st.life, -2);
+    // CR 119.4: the top card (Seven, mana value 7) would drive life below
+    // zero, so the loop stops before revealing it.
+    assert!(st.hand.is_empty(), "no card is revealed: {:?}", st.hand);
+    assert_eq!(st.seen, 0);
+    assert_eq!(st.life, 5);
     assert_eq!(
         st.library,
-        [1, 2]
+        [1, 2, 3]
             .iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
             .collect::<Vec<_>>()
     );
-    assert_eq!(st.life_funded_draws, 1);
-    assert_eq!(st.milestones_by_turn[&1].life_funded_draws, 1);
+    assert_eq!(st.life_funded_draws, 0);
+    assert_eq!(
+        st.milestones_by_turn
+            .get(&1)
+            .map_or(0, |m| m.life_funded_draws),
+        0
+    );
+
+    // At life 7 the reveal is legal: Seven is drawn, life hits 0, and the
+    // next card would go below zero, so the loop stops.
+    let mut st_ok = state(vec![0], vec![1, 2, 3]);
+    st_ok.life = 7;
+    let mut pool = ManaPool {
+        fixed: [0, 0, 2, 0, 0],
+        flexible: 3,
+        ..ManaPool::default()
+    };
+    cast_once(&cards, &mut st_ok, &mut pool);
+    assert_eq!(
+        st_ok.hand,
+        [3].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(st_ok.life, 0);
+    assert_eq!(st_ok.life_funded_draws, 1);
+    assert_eq!(st_ok.milestones_by_turn[&1].life_funded_draws, 1);
 }
 
 #[test]

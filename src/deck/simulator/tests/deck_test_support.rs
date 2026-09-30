@@ -9,9 +9,9 @@
 // sources, with oracle text. Loaded with include_str! and parsed per test.
 // ---------------------------------------------------------------------------
 
-pub(super) use super::aggregate::CardCast;
 /// One card in a fixture file.
 use super::aggregate::aggregate;
+pub(super) use super::aggregate::CardCast;
 pub(super) use super::deck::build_sim_deck;
 pub(super) use super::game::run_game;
 
@@ -24,6 +24,7 @@ use rand_chacha::ChaCha8Rng;
 use std::collections::HashMap;
 
 #[derive(serde::Deserialize)]
+/// One card in a JSON deck fixture.
 pub(super) struct FixtureCard {
     name: String,
     cost: String,
@@ -76,6 +77,7 @@ pub(super) const STANDARD_FIXTURES: &[&str] = &[
     "selesnya-landfall",
 ];
 
+/// Every Modern fixture id. The sweep tests iterate these.
 pub(super) const MODERN_FIXTURES: &[&str] = &[
     "affinity modern",
     "dimir murktide topdeck",
@@ -117,6 +119,7 @@ pub(super) const MODERN_FIXTURES: &[&str] = &[
     "oculus manifest modern",
 ];
 
+/// Every Commander fixture id. The sweep tests iterate these.
 pub(super) const COMMANDER_FIXTURES: &[&str] = &[
     "aesi extra lands landfall",
     "satya aetherflux energy",
@@ -529,6 +532,34 @@ pub(super) fn assert_castability_not_before_cost(
     }
 }
 
+/// A minimal card row for simulator unit tests.
+pub(super) fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
+    CardRow {
+        name: name.to_string(),
+        oracle_id: String::new(),
+        mana_cost: mana_cost.to_string(),
+        cmc: parse_cost(mana_cost).total() as f64,
+        type_line: type_line.to_string(),
+        colors: "[]".into(),
+        color_identity: "[]".into(),
+        keywords: "[]".into(),
+        power: None,
+        toughness: None,
+        loyalty: None,
+        oracle_text: text.to_string(),
+        rarity: "common".into(),
+        edhrec_rank: None,
+        legalities: "{}".into(),
+        set_code: String::new(),
+        collector_number: String::new(),
+        scryfall_id: String::new(),
+        released_at: String::new(),
+        game_changer: None,
+        penny_rank: None,
+        reserved: None,
+    }
+}
+
 /// A real card's metadata, with oracle text from the fixture file.
 pub(super) fn real_card(
     name: &str,
@@ -558,5 +589,7 @@ pub(super) fn real_card(
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }

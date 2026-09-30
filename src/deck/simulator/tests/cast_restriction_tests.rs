@@ -1,3 +1,4 @@
+//! Tests for mana cast restrictions.
 use super::game::ManaPool;
 use super::game_mana::{
     cast_restrictions, pay_restricted_cost, usable_for_classes, usable_for_noncreature,
@@ -112,6 +113,28 @@ fn restricted_payment_ignores_life_paid_phyrexian_pips() {
     );
     assert_eq!(pool.artifact_only, 1);
     assert_eq!(pool.total(), 1);
+}
+
+#[test]
+fn restricted_bucket_mana_cannot_pay_colorless_pips() {
+    // Bucket mana is colored ("one color of the source's choice"), so it
+    // cannot pay a colorless pip (CR 107.4c). The bucket pays the green
+    // pip; the general colorless pool pays the colorless pip.
+    let mut pool = pool_general(0, 0, 1);
+    pool.creature_only = 2;
+    pay_restricted_cost(
+        &parse_cost("{C}{G}"),
+        &mut pool,
+        &[SpendRestriction::Creature],
+    );
+    assert_eq!(
+        pool.creature_only, 1,
+        "colored bucket mana pays the green pip, not the colorless pip"
+    );
+    assert_eq!(
+        pool.colorless, 0,
+        "the colorless pip drained the colorless pool"
+    );
 }
 
 #[test]

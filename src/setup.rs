@@ -1,3 +1,6 @@
+//! `stm setup`: download the Scryfall bulk files, ingest cards and tags,
+//! refresh combos, and embed every card into the vector index.
+
 use rusqlite::Connection;
 
 use crate::cli;

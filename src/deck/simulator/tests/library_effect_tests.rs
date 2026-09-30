@@ -1,3 +1,4 @@
+//! Tests for library-touching effects during a game.
 use super::cast_pass::cast_pass;
 use super::game::{GameState, ManaPool};
 use super::model::{Format, SimDeck};
@@ -28,6 +29,8 @@ fn row(name: &str, cost: &str, type_line: &str, colors: &str, text: &str) -> Car
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 
@@ -302,21 +305,15 @@ fn rider_alternate_cost_and_sacrifice_search_put_a_countered_target_into_play() 
             .map(|card| (card.name.as_str(), card.colors, card.mana_value))
             .collect::<Vec<_>>()
     );
-    assert!(
-        state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(0))
-    );
-    assert!(
-        state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(1))
-    );
-    assert!(
-        state
-            .hand
-            .contains(&crate::deck::simulator::model::CardIdx(5))
-    );
+    assert!(state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(0)));
+    assert!(state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(1)));
+    assert!(state
+        .hand
+        .contains(&crate::deck::simulator::model::CardIdx(5)));
     let target = state
         .battlefield
         .iter()
@@ -392,16 +389,12 @@ fn sacrifice_search_casts_even_when_no_creature_has_the_required_mana_value() {
         },
     );
 
-    assert!(
-        state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(0))
-    );
-    assert!(
-        state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(1))
-    );
+    assert!(state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(0)));
+    assert!(state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(1)));
     assert!(!state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
     assert_eq!(
@@ -493,21 +486,15 @@ fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
         attacking_this_turn: false,
     });
     cast(&cards, &mut state, &mut pool);
-    assert!(
-        state
-            .exile
-            .contains(&crate::deck::simulator::model::CardIdx(4))
-    );
-    assert!(
-        state
-            .exile
-            .contains(&crate::deck::simulator::model::CardIdx(5))
-    );
-    assert!(
-        state
-            .exile
-            .contains(&crate::deck::simulator::model::CardIdx(6))
-    );
+    assert!(state
+        .exile
+        .contains(&crate::deck::simulator::model::CardIdx(4)));
+    assert!(state
+        .exile
+        .contains(&crate::deck::simulator::model::CardIdx(5)));
+    assert!(state
+        .exile
+        .contains(&crate::deck::simulator::model::CardIdx(6)));
     assert!(state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
     assert!(state.battlefield.iter().any(|permanent| permanent.card
@@ -556,16 +543,13 @@ fn cascade_free_cast_resolves_a_permanent_etb_and_no_cost_spell_stays_uncastable
     );
     assert!(game_state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(1))));
-    assert!(
-        game_state
-            .hand
-            .contains(&crate::deck::simulator::model::CardIdx(2))
-    );
+    assert!(game_state
+        .hand
+        .contains(&crate::deck::simulator::model::CardIdx(2)));
     assert_eq!(
         game_state.milestones_by_turn[&1].free_cast_permanents_entered,
         1
     );
-
     let mut hand_state = state(vec![3], Vec::new());
     cast(&cards, &mut hand_state, &mut ManaPool::default());
     assert_eq!(
@@ -573,6 +557,37 @@ fn cascade_free_cast_resolves_a_permanent_etb_and_no_cost_spell_stays_uncastable
         [3].iter()
             .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
             .collect::<Vec<_>>()
+    );
+}
+
+/// CR 107.3b: a spell cast off cascade pays no mana, so its X is 0. The
+/// pool must keep every flexible pip for later casts.
+#[test]
+fn cascade_free_cast_sets_x_to_zero_and_keeps_the_pool() {
+    let cards = deck(&[
+        row("Cascade spell", "{2}{U}", "Sorcery", "[\"U\"]", "Cascade."),
+        row(
+            "X drain",
+            "{X}{B}",
+            "Sorcery",
+            "[\"B\"]",
+            "Each opponent loses X life.",
+        ),
+    ]);
+    // Hand holds the cascade spell; the X spell is the only library card,
+    // so cascade free-casts it. Four flexible pips stand in for a pool a
+    // paid X cast would drain.
+    let mut game_state = state(vec![0], vec![1]);
+    let mut pool = ManaPool {
+        flexible: 4,
+        ..ManaPool::default()
+    };
+    cast(&cards, &mut game_state, &mut pool);
+    // The cascade spell itself costs {2}{U} (3 flexible). The free X cast
+    // below it must not drain the one remaining pip into X.
+    assert_eq!(
+        pool.flexible, 1,
+        "a free X cast must not drain the pool further"
     );
 }
 
@@ -842,21 +857,15 @@ fn discard_cost_draws_resolve_individually_and_recheck_dredge() {
     );
     assert_eq!(game_state.seen, 9);
     assert_eq!(game_state.awareness_cards, 9);
-    assert!(
-        game_state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(3))
-    );
-    assert!(
-        game_state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(4))
-    );
-    assert!(
-        game_state
-            .graveyard
-            .contains(&crate::deck::simulator::model::CardIdx(0))
-    );
+    assert!(game_state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(3)));
+    assert!(game_state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(4)));
+    assert!(game_state
+        .graveyard
+        .contains(&crate::deck::simulator::model::CardIdx(0)));
 }
 
 #[test]
@@ -996,4 +1005,37 @@ fn cycling_phyrexian_pip_pays_life() {
         pool.fixed[1] == 2,
         "the goldfish preserves the mana the pip would have cost"
     );
+}
+
+/// CR 119.4: the reveal-and-pay-life loop stops before a card whose mana
+/// value exceeds remaining life could drive life below zero.
+#[test]
+fn reveal_life_rule_stops_at_remaining_life() {
+    use super::cast_pass::resolve_reveal_rule;
+    use super::model::{RevealDestination, RevealLifeLoss, RevealRule};
+    // Library order is the draw order; the loop pops from the end.
+    let cards = deck(&[
+        row("Big", "{6}", "Sorcery", "[]", ""),
+        row("Small", "{1}", "Sorcery", "[]", ""),
+    ]);
+    let rule = RevealRule {
+        destination: RevealDestination::Hand,
+        life_loss: RevealLifeLoss::ManaValue,
+    };
+    let mut game_state = state(Vec::new(), vec![1, 0]);
+    game_state.life = 5;
+    resolve_reveal_rule(&cards, &mut game_state, rule, 1);
+    // Top of library (Big, mana value 6) would go below 0, so nothing is
+    // revealed.
+    assert_eq!(game_state.life, 5);
+    assert!(game_state.hand.is_empty());
+
+    let mut game_state = state(Vec::new(), vec![1, 0]);
+    game_state.life = 6;
+    resolve_reveal_rule(&cards, &mut game_state, rule, 1);
+    // Exactly 6 pays for the mana-value-6 card (down to 0); the next card
+    // (mana value 1) stops the loop.
+    assert_eq!(game_state.life, 0);
+    assert_eq!(game_state.life_funded_draws, 1);
+    assert_eq!(game_state.hand.len(), 1);
 }

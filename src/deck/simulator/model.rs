@@ -82,6 +82,9 @@ pub struct Cost {
     /// Phyrexian pips per WUBRG letter (`{W/P}`): each payable by its
     /// color or 2 life (CR 107.4f). The best-case agent pays life.
     pub phyrexian: [u8; 5],
+    /// Colorless pips (`{C}`): each must be paid with colorless mana
+    /// (CR 107.4a), never a colored source.
+    pub colorless: u8,
 }
 
 impl Cost {
@@ -91,6 +94,7 @@ impl Cost {
             + self.pips.iter().map(|p| u32::from(*p)).sum::<u32>()
             + self.hybrid_pips
             + self.phyrexian.iter().map(|p| u32::from(*p)).sum::<u32>()
+            + u32::from(self.colorless)
     }
 }
 
@@ -215,17 +219,27 @@ pub enum LifeLossScope {
     TargetPlayer,
     /// "Each player loses N": every opponent and the player lose N.
     EachPlayer,
+    /// Unqualified "you lose N life": a self-cost. The goldfish pays N
+    /// and no opponent loses life (CR 119.3).
+    SelfOnly,
 }
 
 impl LifeLossScope {
     /// Total life lost off the table when this scope resolves: the
     /// per-player amount times the affected opponents. "Each player"
-    /// also costs the goldfish N, so the caller charges life separately.
+    /// and "you lose" also cost the goldfish N, so the caller charges
+    /// life separately.
     pub fn table_multiplier(self, format: Format) -> u32 {
         match self {
             Self::EachOpponent | Self::EachPlayer => format.life_loss_mult(),
             Self::TargetPlayer => 1,
+            Self::SelfOnly => 0,
         }
+    }
+
+    /// Whether the goldfish player pays this life loss itself.
+    pub fn charges_player(self) -> bool {
+        matches!(self, Self::EachPlayer | Self::SelfOnly)
     }
 }
 
@@ -860,14 +874,6 @@ impl Format {
         match self {
             Self::Commander => 3,
             Self::Constructed => 1,
-        }
-    }
-
-    /// Starting life total the goldfish races to zero.
-    pub fn life_target(self) -> f64 {
-        match self {
-            Self::Commander => 120.0,
-            Self::Constructed => 20.0,
         }
     }
 }

@@ -1,23 +1,24 @@
+//! `stm sync`: keep card data, prices, and oracle tags fresh from one
+//! download pass.
+//!
+//! Scryfall's oracle bulk already carries prices on every card object, so one
+//! download serves both: stream the bulk once, diff cards against the stored
+//! table, harvest prices for every print seen, then embed only new/changed
+//! cards. The separate oracle-tags bulk refreshes the tag tables but never
+//! triggers re-embedding. Setup runs the identical pipeline where the diff
+//! finds everything.
+//!
+//! Read commands trigger this stale-while-revalidate when older than 24h,
+//! unless `--offline`. Bulk files re-download when their mtime is older than
+//! the staleness window, so a daily refresh actually sees new data.
+
 use anyhow::Context;
 use rusqlite::Connection;
 
+/// Status-file and vector-store bookkeeping for the sync pass.
 mod status;
 use status::{doc_version_current, embed_targets, tick_embed_progress};
 pub use status::{is_stale, stamp_combos_synced, stamp_synced, upsert_vector, write_status};
-
-// `stm sync`: keep card data, prices, and oracle tags fresh from one
-// download pass.
-//
-// Scryfall's oracle bulk already carries prices on every card object, so one
-// download serves both: stream the bulk once, diff cards against the stored
-// table, harvest prices for every print seen, then embed only new/changed
-// cards. The separate oracle-tags bulk refreshes the tag tables but never
-// triggers re-embedding. Setup runs the identical pipeline where the diff
-// finds everything.
-//
-// Read commands trigger this stale-while-revalidate when older than 24h,
-// unless `--offline`. Bulk files re-download when their mtime is older than
-// the staleness window, so a daily refresh actually sees new data.
 
 /// Refresh window for the stale-while-revalidate trigger.
 pub const STALE_AFTER: chrono::Duration = chrono::Duration::hours(24);
@@ -195,8 +196,8 @@ pub struct SyncDelta {
     pub added: usize,
     /// Names whose stored content changed.
     pub changed: usize,
-    /// Names whose only change was the EDHREC rank (updated in place,
-    /// never re-embedded).
+    /// Names whose only change was a churny signal column (EDHREC rank,
+    /// Penny rank, or Reserved List); updated in place, never re-embedded.
     pub rank_only: usize,
     /// Print rows upserted from the same bulk.
     pub priced: usize,
@@ -219,11 +220,11 @@ fn changed_tag_documents(
 
 /// Content signature of a stored row (what re-ingest can change).
 ///
-/// Includes every column the ingest can update *except* `edhrec_rank`:
-/// the rank churns broadly on every bulk refresh (EDHREC recomputes
-/// daily), it never enters the embedding document, and a rank-only diff
-/// must not pay a full re-embed. Rank-only changes take the cheap
-/// rank-update pass below.
+/// Includes every column the ingest can update *except* the churny signal
+/// columns `edhrec_rank`, `penny_rank`, and `reserved`: those churn on bulk
+/// refresh, none enters the embedding document, and a signal-only diff must
+/// not pay a full re-embed. Signal-only changes take the cheap update pass
+/// below (`ingest_signature` omits them; `signal_signature` compares them).
 fn ingest_signature(card: &crate::db::CardRow) -> String {
     format!(
         "{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}\u{1}{}",
@@ -245,9 +246,25 @@ fn ingest_signature(card: &crate::db::CardRow) -> String {
     )
 }
 
-/// The EDHREC rank alone, for the rank-only update pass.
-fn rank_signature(card: &crate::db::CardRow) -> i64 {
-    card.edhrec_rank.unwrap_or(-1)
+/// The churny signal columns alone (EDHREC rank, Penny rank, Reserved List),
+/// for the cheap signal-only update pass. A tuple of `(edhrec, penny,
+/// reserved)` with `-1` standing in for NULL.
+fn signal_signature(card: &crate::db::CardRow) -> (i64, i64, i64) {
+    (
+        card.edhrec_rank.unwrap_or(-1),
+        card.penny_rank.unwrap_or(-1),
+        card.reserved.map(|r| r as i64).unwrap_or(-1),
+    )
+}
+
+/// The same signal tuple computed from a bulk card, so the diff compares two
+/// sides built by one convention (`-1` for NULL). Mirrors [`signal_signature`].
+fn card_signals(card: &crate::scryfall::ScryfallCard) -> (i64, i64, i64) {
+    (
+        card.edhrec_rank.unwrap_or(-1),
+        card.penny_rank.unwrap_or(-1),
+        card.reserved.map(|r| r as i64).unwrap_or(-1),
+    )
 }
 
 /// Content signature of a bulk card, computed the same way.
@@ -278,7 +295,22 @@ fn signature_of(card: &crate::scryfall::ScryfallCard) -> String {
         scryfall_id: card.id.clone().unwrap_or_default(),
         released_at: card.released_at.clone().unwrap_or_default(),
         game_changer: card.game_changer,
+        penny_rank: card.penny_rank,
+        reserved: card.reserved,
     })
+}
+
+/// A stored card's churny signals, queued for the cheap in-place update pass:
+/// name plus EDHREC rank, Penny rank, and Reserved List flag.
+struct SignalUpdate {
+    /// Card name (the update key).
+    name: String,
+    /// New EDHREC rank, or None to clear.
+    edhrec_rank: Option<i64>,
+    /// New Penny Dreadful rank, or None to clear.
+    penny_rank: Option<i64>,
+    /// New Reserved List flag, or None to clear.
+    reserved: Option<bool>,
 }
 
 /// Stream the bulk file once; diff cards and harvest prints in one sweep.
@@ -306,7 +338,7 @@ pub fn sync_cards(
 
     let mut added: Vec<crate::scryfall::ScryfallCard> = Vec::new();
     let mut changed: Vec<(String, crate::scryfall::ScryfallCard)> = Vec::new();
-    let mut rank_only: Vec<(String, Option<i64>)> = Vec::new();
+    let mut signal_only: Vec<SignalUpdate> = Vec::new();
 
     // Bulk rows repeat one name across many sets; keep the "best" print.
     // Non-card rows (tokens, art series) are recorded by name so imports can
@@ -376,9 +408,9 @@ pub fn sync_cards(
             &best,
             &mut added,
             &mut changed,
-            &mut rank_only,
+            &mut signal_only,
         );
-        apply_rank_updates(conn, &rank_only)?;
+        apply_signal_updates(conn, &signal_only)?;
         apply_card_updates(conn, &changed, &added, &token_names)?;
         Ok(())
     })();
@@ -404,19 +436,20 @@ pub fn sync_cards(
         to_embed,
         added: added.len(),
         changed: changed.len(),
-        rank_only: rank_only.len(),
+        rank_only: signal_only.len(),
         priced,
     })
 }
 
 /// Classify each bulk winner against the stored rows: added, changed, or
-/// rank-only. Pure bookkeeping over the two maps; no database access.
+/// signal-only (EDHREC rank / Penny rank / Reserved List). Pure bookkeeping
+/// over the two maps; no database access.
 fn diff_against_stored<'a>(
     by_name: &mut std::collections::HashMap<&'a str, &'a crate::db::CardRow>,
     best: &std::collections::HashMap<String, crate::scryfall::ScryfallCard>,
     added: &mut Vec<crate::scryfall::ScryfallCard>,
     changed: &mut Vec<(String, crate::scryfall::ScryfallCard)>,
-    rank_only: &mut Vec<(String, Option<i64>)>,
+    signal_only: &mut Vec<SignalUpdate>,
 ) {
     for (name, card) in best {
         match by_name.remove(name.as_str()) {
@@ -424,29 +457,38 @@ fn diff_against_stored<'a>(
             Some(stored) => {
                 if ingest_signature(stored) != signature_of(card) {
                     changed.push((stored.name.clone(), card.clone()));
-                } else if rank_signature(stored) != card.edhrec_rank.unwrap_or(-1) {
-                    rank_only.push((stored.name.clone(), card.edhrec_rank));
+                } else if signal_signature(stored) != card_signals(card) {
+                    signal_only.push(SignalUpdate {
+                        name: stored.name.clone(),
+                        edhrec_rank: card.edhrec_rank,
+                        penny_rank: card.penny_rank,
+                        reserved: card.reserved,
+                    });
                 }
             }
         }
     }
 }
 
-/// Apply rank-only updates in one prepared statement. Caller owns the
-/// transaction.
+/// Apply signal-only updates (rank + Reserved List) in one prepared
+/// statement. Caller owns the transaction.
 ///
 /// # Errors
 /// Propagates SQLite failures.
-fn apply_rank_updates(
-    conn: &Connection,
-    rank_only: &[(String, Option<i64>)],
-) -> anyhow::Result<()> {
-    if rank_only.is_empty() {
+fn apply_signal_updates(conn: &Connection, signal_only: &[SignalUpdate]) -> anyhow::Result<()> {
+    if signal_only.is_empty() {
         return Ok(());
     }
-    let mut stmt = conn.prepare("UPDATE cards SET edhrec_rank = ?2 WHERE name = ?1")?;
-    for (name, rank) in rank_only {
-        stmt.execute(rusqlite::params![name, rank])?;
+    let mut stmt = conn.prepare(
+        "UPDATE cards SET edhrec_rank = ?2, penny_rank = ?3, reserved = ?4 WHERE name = ?1",
+    )?;
+    for update in signal_only {
+        stmt.execute(rusqlite::params![
+            update.name,
+            update.edhrec_rank,
+            update.penny_rank,
+            update.reserved
+        ])?;
     }
     Ok(())
 }
@@ -546,16 +588,22 @@ mod tests {
 
     #[test]
     fn embed_progress_reports_deciles_and_last_card() {
-        let mut out = crate::output::Output::new(true, false, false);
+        use status::should_report_embed_progress as reports;
         // Small batches stay silent (below the 20-card floor, decile
         // steps of 1 would report every card).
-        tick_embed_progress(&mut out, 5, 5);
-        tick_embed_progress(&mut out, 15, 1);
-        tick_embed_progress(&mut out, 15, 15);
-        // At 100 the step is 10: positions 90 and 100 both report, and
-        // position 91 does not (a non-multiple inside the window).
-        tick_embed_progress(&mut out, 100, 90);
-        tick_embed_progress(&mut out, 100, 100);
+        assert!(!reports(5, 5));
+        assert!(!reports(15, 1));
+        assert!(!reports(15, 15));
+        // At 100 the step is 10: positions 90 and 100 report, position 91
+        // does not (a non-multiple inside the window), and 99 does not.
+        assert!(reports(100, 90));
+        assert!(reports(100, 100));
+        assert!(!reports(100, 91));
+        assert!(!reports(100, 99));
+        // A 45-card batch has step 4: 44 is a multiple, 45 is the tail.
+        assert!(reports(45, 44));
+        assert!(reports(45, 45));
+        assert!(!reports(45, 43));
     }
 
     #[test]
@@ -654,7 +702,7 @@ mod tests {
         let mut rank_card = bulk_card("Same", "Text");
         rank_card.edhrec_rank = Some(5);
         assert_eq!(ingest_signature(stored), signature_of(&rank_card));
-        assert_ne!(rank_signature(stored), rank_card.edhrec_rank.unwrap_or(-1));
+        assert_ne!(signal_signature(stored), card_signals(&rank_card));
     }
 
     #[test]
@@ -820,7 +868,7 @@ mod tests {
         let mut enc = enc;
         writeln!(
             enc,
-            r#"{{"name":"Ranked","layout":"normal","games":["paper"],"id":"sid-Ranked","oracle_id":"oid-Ranked","released_at":"2020-01-01","mana_cost":"{{R}}","cmc":1.0,"type_line":"Instant","colors":["R"],"color_identity":["R"],"keywords":[],"oracle_text":"text","rarity":"common","set":"tst","collector_number":"1","prices":{{"usd":"1.00"}},"edhrec_rank":42}}"#
+            r#"{{"name":"Ranked","layout":"normal","games":["paper"],"id":"sid-Ranked","oracle_id":"oid-Ranked","released_at":"2020-01-01","mana_cost":"{{R}}","cmc":1.0,"type_line":"Instant","colors":["R"],"color_identity":["R"],"keywords":[],"oracle_text":"text","rarity":"common","set":"tst","collector_number":"1","prices":{{"usd":"1.00"}},"edhrec_rank":42,"penny_rank":7,"reserved":true}}"#
         )
         .unwrap();
         drop(enc);
@@ -830,15 +878,18 @@ mod tests {
         assert_eq!(delta.rank_only, 1, "a rank change alone lands as rank_only");
         assert_eq!(delta.changed, 0);
         assert_eq!(delta.added, 0);
-        // Rank updated in place; nothing queued for re-embed.
-        let rank: Option<i64> = conn
+        // Ranks and Reserved List update in place; nothing queued for
+        // re-embed.
+        let (rank, penny, reserved): (Option<i64>, Option<i64>, Option<bool>) = conn
             .query_row(
-                "SELECT edhrec_rank FROM cards WHERE name = 'Ranked'",
+                "SELECT edhrec_rank, penny_rank, reserved FROM cards WHERE name = 'Ranked'",
                 [],
-                |r| r.get(0),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
             )
             .unwrap();
         assert_eq!(rank, Some(42));
+        assert_eq!(penny, Some(7));
+        assert_eq!(reserved, Some(true));
         assert!(delta.to_embed.is_empty(), "rank-only must not re-embed");
     }
 

@@ -1,3 +1,4 @@
+//! Tests for opening hands and the mulligan policy.
 use super::aggregate::aggregate;
 use super::deal::{bottom_position, count_lands_in, london_mulligan, take_n};
 use super::format::rules_for;

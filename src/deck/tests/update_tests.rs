@@ -14,12 +14,9 @@ fn seeded_conn() -> (tempfile::TempDir, rusqlite::Connection) {
 }
 
 /// Connection with an empty oracle: singleton checks treat every test
-/// name as a regular limited card.
+/// name as a regular limited card. In-memory, so no tempdir is leaked.
 fn empty_conn() -> rusqlite::Connection {
-    let tmp = tempfile::tempdir().unwrap();
-    let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
-    std::mem::forget(tmp);
-    conn
+    crate::db::open(std::path::Path::new(":memory:")).unwrap()
 }
 
 /// Silent output for tests that call the reporting helpers.

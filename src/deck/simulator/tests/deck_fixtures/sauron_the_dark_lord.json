@@ -1,594 +1,438 @@
 {
- "commanders": [
-  {
-   "name": "Sauron, the Dark Lord",
-   "cost": "{3}{U}{B}{R}",
-   "type_line": "Legendary Creature \u2014 Avatar Horror",
-   "keywords": "[\"Amass\", \"Ward\"]",
-   "text": "Ward\u2014Sacrifice a legendary artifact or legendary creature.\nWhenever an opponent casts a spell, amass Orcs 1.\nWhenever an Army you control deals combat damage to a player, the Ring tempts you.\nWhenever the Ring tempts you, you may discard your hand. If you do, draw four cards."
-  }
- ],
- "cards": [
-  {
-   "name": "Sauron, the Dark Lord",
-   "cost": "{3}{U}{B}{R}",
-   "type_line": "Legendary Creature \u2014 Avatar Horror",
-   "keywords": "[\"Amass\", \"Ward\"]",
-   "text": "Ward\u2014Sacrifice a legendary artifact or legendary creature.\nWhenever an opponent casts a spell, amass Orcs 1.\nWhenever an Army you control deals combat damage to a player, the Ring tempts you.\nWhenever the Ring tempts you, you may discard your hand. If you do, draw four cards."
-  },
-  {
-   "name": "Sol Ring",
-   "cost": "{1}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add {C}{C}."
-  },
-  {
-   "name": "Arcane Signet",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color in your commander's color identity."
-  },
-  {
-   "name": "Fellwar Stone",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
-  },
-  {
-   "name": "Dimir Signet",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{1}, {T}: Add {U}{B}."
-  },
-  {
-   "name": "Rakdos Signet",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{1}, {T}: Add {B}{R}."
-  },
-  {
-   "name": "Talisman of Creativity",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This artifact deals 1 damage to you."
-  },
-  {
-   "name": "Talisman of Dominance",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This artifact deals 1 damage to you."
-  },
-  {
-   "name": "Talisman of Indulgence",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add {C}.\n{T}: Add {B} or {R}. This artifact deals 1 damage to you."
-  },
-  {
-   "name": "The One Ring",
-   "cost": "{4}",
-   "type_line": "Legendary Artifact",
-   "keywords": "[\"Indestructible\"]",
-   "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
-  },
-  {
-   "name": "Relic of Sauron",
-   "cost": "{4}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add two mana in any combination of {U}, {B}, and/or {R}.\n{3}, {T}: Draw two cards, then discard a card."
-  },
-  {
-   "name": "Orcish Bowmasters",
-   "cost": "{1}{B}",
-   "type_line": "Creature \u2014 Orc Archer",
-   "keywords": "[\"Amass\", \"Flash\"]",
-   "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1."
-  },
-  {
-   "name": "Nazg\u00fbl",
-   "cost": "{2}{B}",
-   "type_line": "Creature \u2014 Wraith Knight",
-   "keywords": "[\"Deathtouch\"]",
-   "text": "Deathtouch\nWhen this creature enters, the Ring tempts you.\nWhenever the Ring tempts you, put a +1/+1 counter on each Wraith you control.\nA deck can have up to nine cards named Nazg\u00fbl."
-  },
-  {
-   "name": "Gothmog, Morgul Lieutenant",
-   "cost": "{3}{B}",
-   "type_line": "Legendary Creature \u2014 Human Soldier",
-   "keywords": "[\"Amass\"]",
-   "text": "When Gothmog enters, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)\nCreature tokens you control have deathtouch."
-  },
-  {
-   "name": "Mauh\u00far, Uruk-hai Captain",
-   "cost": "{B}{R}",
-   "type_line": "Legendary Creature \u2014 Orc Soldier",
-   "keywords": "[\"Menace\"]",
-   "text": "Menace\nIf one or more +1/+1 counters would be put on an Army, Goblin, or Orc you control, that many plus one +1/+1 counters are put on it instead."
-  },
-  {
-   "name": "Grishn\u00e1kh, Brash Instigator",
-   "cost": "{2}{R}",
-   "type_line": "Legendary Creature \u2014 Goblin Soldier",
-   "keywords": "[\"Amass\"]",
-   "text": "When Grishn\u00e1kh enters, amass Orcs 2. When you do, until end of turn, gain control of target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power. Untap that creature. It gains haste until end of turn."
-  },
-  {
-   "name": "Moria Scavenger",
-   "cost": "{1}{B}{R}",
-   "type_line": "Creature \u2014 Orc Rogue",
-   "keywords": "[\"Amass\", \"Haste\", \"Deathtouch\"]",
-   "text": "Deathtouch, haste\n{T}, Discard a card: Draw a card. If the discarded card was a creature card, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
-  },
-  {
-   "name": "The Mouth of Sauron",
-   "cost": "{3}{U}{B}",
-   "type_line": "Legendary Creature \u2014 Human Advisor",
-   "keywords": "[\"Amass\", \"Mill\"]",
-   "text": "When The Mouth of Sauron enters, target player mills three cards. Then amass Orcs X, where X is the number of instant and sorcery cards in that player's graveyard. (Put X +1/+1 counters on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
-  },
-  {
-   "name": "Sauron, Lord of the Rings",
-   "cost": "{5}{U}{B}{R}",
-   "type_line": "Legendary Creature \u2014 Avatar Horror",
-   "keywords": "[\"Amass\", \"Trample\", \"Mill\"]",
-   "text": "When you cast this spell, amass Orcs 5, mill five cards, then return a creature card from your graveyard to the battlefield.\nTrample\nWhenever a commander an opponent controls dies, the Ring tempts you."
-  },
-  {
-   "name": "Saruman, the White Hand",
-   "cost": "{1}{U}{B}{R}",
-   "type_line": "Legendary Creature \u2014 Avatar Wizard",
-   "keywords": "[\"Amass\"]",
-   "text": "Whenever you cast a noncreature spell, amass Orcs X, where X is that spell's mana value. (Put X +1/+1 counters on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)\nGoblins and Orcs you control have ward {2}."
-  },
-  {
-   "name": "Lord of the Nazg\u00fbl",
-   "cost": "{3}{U}{B}",
-   "type_line": "Legendary Creature \u2014 Wraith Noble",
-   "keywords": "[\"Flying\"]",
-   "text": "Flying\nWraiths you control have protection from Ring-bearers.\nWhenever you cast an instant or sorcery spell, create a 3/3 black Wraith creature token with menace. Then if you control nine or more Wraiths, Wraiths you control have base power and toughness 9/9 until end of turn."
-  },
-  {
-   "name": "Witch-king of Angmar",
-   "cost": "{3}{B}{B}",
-   "type_line": "Legendary Creature \u2014 Wraith Noble",
-   "keywords": "[\"Flying\"]",
-   "text": "Flying\nWhenever one or more creatures deal combat damage to you, each opponent sacrifices a creature of their choice that dealt combat damage to you this turn. The Ring tempts you.\nDiscard a card: Witch-king of Angmar gains indestructible until end of turn. Tap him."
-  },
-  {
-   "name": "Call of the Ring",
-   "cost": "{1}{B}",
-   "type_line": "Enchantment",
-   "keywords": "[]",
-   "text": "At the beginning of your upkeep, the Ring tempts you.\nWhenever you choose a creature as your Ring-bearer, you may pay 2 life. If you do, draw a card."
-  },
-  {
-   "name": "In the Darkness Bind Them",
-   "cost": "{2}{U}{B}{R}",
-   "type_line": "Enchantment \u2014 Saga",
-   "keywords": "[]",
-   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI, II, III \u2014 Create a 3/3 black Wraith creature token with menace. The Ring tempts you.\nIV \u2014 For each opponent, gain control of up to one target creature that player controls until end of turn. Untap those creatures. They gain haste until end of turn. The Ring tempts you."
-  },
-  {
-   "name": "One Ring to Rule Them All",
-   "cost": "{2}{B}{B}",
-   "type_line": "Enchantment \u2014 Saga",
-   "keywords": "[\"Mill\"]",
-   "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 The Ring tempts you, then each player mills cards equal to your Ring-bearer's power.\nII \u2014 Destroy all nonlegendary creatures.\nIII \u2014 Each opponent loses 1 life for each creature card in that player's graveyard."
-  },
-  {
-   "name": "Dreadhorde Invasion",
-   "cost": "{1}{B}",
-   "type_line": "Enchantment",
-   "keywords": "[\"Amass\"]",
-   "text": "At the beginning of your upkeep, you lose 1 life and amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nWhenever a Zombie token you control with power 6 or greater attacks, it gains lifelink until end of turn."
-  },
-  {
-   "name": "Fiery Inscription",
-   "cost": "{2}{R}",
-   "type_line": "Enchantment",
-   "keywords": "[]",
-   "text": "When this enchantment enters, the Ring tempts you.\nWhenever you cast an instant or sorcery spell, this enchantment deals 2 damage to each opponent."
-  },
-  {
-   "name": "March from the Black Gate",
-   "cost": "{1}{B}",
-   "type_line": "Enchantment",
-   "keywords": "[\"Amass\"]",
-   "text": "When this enchantment enters and whenever an Army you control attacks, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
-  },
-  {
-   "name": "Counterspell",
-   "cost": "{U}{U}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Counter target spell."
-  },
-  {
-   "name": "Arcane Denial",
-   "cost": "{1}{U}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep."
-  },
-  {
-   "name": "Swan Song",
-   "cost": "{U}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
-  },
-  {
-   "name": "An Offer You Can't Refuse",
-   "cost": "{U}",
-   "type_line": "Instant",
-   "keywords": "[\"Treasure\"]",
-   "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
-  },
-  {
-   "name": "Dark Ritual",
-   "cost": "{B}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Add {B}{B}{B}."
-  },
-  {
-   "name": "Feed the Swarm",
-   "cost": "{1}{B}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Destroy target creature or enchantment an opponent controls. You lose life equal to that permanent's mana value."
-  },
-  {
-   "name": "Anguished Unmaking",
-   "cost": "{1}{W}{B}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Exile target nonland permanent. You lose 3 life."
-  },
-  {
-   "name": "Terminate",
-   "cost": "{B}{R}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Destroy target creature. It can't be regenerated."
-  },
-  {
-   "name": "Blasphemous Act",
-   "cost": "{8}{R}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
-  },
-  {
-   "name": "Toxic Deluge",
-   "cost": "{2}{B}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn."
-  },
-  {
-   "name": "Decree of Pain",
-   "cost": "{6}{B}{B}",
-   "type_line": "Sorcery",
-   "keywords": "[\"Cycling\"]",
-   "text": "Destroy all creatures. They can't be regenerated. Draw a card for each creature destroyed this way.\nCycling {3}{B}{B} ({3}{B}{B}, Discard this card: Draw a card.)\nWhen you cycle this card, all creatures get -2/-2 until end of turn."
-  },
-  {
-   "name": "Reanimate",
-   "cost": "{B}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
-  },
-  {
-   "name": "Animate Dead",
-   "cost": "{1}{B}",
-   "type_line": "Enchantment \u2014 Aura",
-   "keywords": "[\"Enchant\"]",
-   "text": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0."
-  },
-  {
-   "name": "Lazotep Plating",
-   "cost": "{1}{U}",
-   "type_line": "Instant",
-   "keywords": "[\"Amass\"]",
-   "text": "Amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nYou and permanents you control gain hexproof until end of turn. (You and they can't be the targets of spells or abilities your opponents control.)"
-  },
-  {
-   "name": "Island",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Island",
-   "keywords": "[]",
-   "text": "({T}: Add {U}.)"
-  },
-  {
-   "name": "Swamp",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Swamp",
-   "keywords": "[]",
-   "text": "({T}: Add {B}.)"
-  },
-  {
-   "name": "Mountain",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Mountain",
-   "keywords": "[]",
-   "text": "({T}: Add {R}.)"
-  },
-  {
-   "name": "Command Tower",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color in your commander's color identity."
-  },
-  {
-   "name": "Watery Grave",
-   "cost": "",
-   "type_line": "Land \u2014 Island Swamp",
-   "keywords": "[]",
-   "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
-  },
-  {
-   "name": "Blood Crypt",
-   "cost": "",
-   "type_line": "Land \u2014 Swamp Mountain",
-   "keywords": "[]",
-   "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
-  },
-  {
-   "name": "Steam Vents",
-   "cost": "",
-   "type_line": "Land \u2014 Island Mountain",
-   "keywords": "[]",
-   "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
-  },
-  {
-   "name": "Drowned Catacomb",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "This land enters tapped unless you control an Island or a Swamp.\n{T}: Add {U} or {B}."
-  },
-  {
-   "name": "Dragonskull Summit",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
-  },
-  {
-   "name": "Sulfur Falls",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}."
-  },
-  {
-   "name": "Barad-d\u00fbr",
-   "cost": "",
-   "type_line": "Legendary Land",
-   "keywords": "[\"Amass\"]",
-   "text": "Barad-d\u00fbr enters tapped unless you control a legendary creature.\n{T}: Add {B}.\n{X}{X}{B}, {T}: Amass Orcs X. Activate only if a creature died this turn."
-  }
- ],
- "list": [
-  [
-   "Sol Ring",
-   1
+  "commanders": [
+    {
+      "name": "Sauron, the Dark Lord",
+      "cost": "{3}{U}{B}{R}",
+      "type_line": "Legendary Creature \u2014 Avatar Horror",
+      "keywords": "[\"Amass\", \"Ward\"]",
+      "text": "Ward\u2014Sacrifice a legendary artifact or legendary creature.\nWhenever an opponent casts a spell, amass Orcs 1.\nWhenever an Army you control deals combat damage to a player, the Ring tempts you.\nWhenever the Ring tempts you, you may discard your hand. If you do, draw four cards."
+    }
   ],
-  [
-   "Arcane Signet",
-   1
+  "cards": [
+    {
+      "name": "Sauron, the Dark Lord",
+      "cost": "{3}{U}{B}{R}",
+      "type_line": "Legendary Creature \u2014 Avatar Horror",
+      "keywords": "[\"Amass\", \"Ward\"]",
+      "text": "Ward\u2014Sacrifice a legendary artifact or legendary creature.\nWhenever an opponent casts a spell, amass Orcs 1.\nWhenever an Army you control deals combat damage to a player, the Ring tempts you.\nWhenever the Ring tempts you, you may discard your hand. If you do, draw four cards."
+    },
+    {
+      "name": "Sol Ring",
+      "cost": "{1}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add {C}{C}."
+    },
+    {
+      "name": "Arcane Signet",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color in your commander's color identity."
+    },
+    {
+      "name": "Fellwar Stone",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+    },
+    {
+      "name": "Dimir Signet",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{1}, {T}: Add {U}{B}."
+    },
+    {
+      "name": "Rakdos Signet",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{1}, {T}: Add {B}{R}."
+    },
+    {
+      "name": "Talisman of Creativity",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add {C}.\n{T}: Add {U} or {R}. This artifact deals 1 damage to you."
+    },
+    {
+      "name": "Talisman of Dominance",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add {C}.\n{T}: Add {U} or {B}. This artifact deals 1 damage to you."
+    },
+    {
+      "name": "Talisman of Indulgence",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add {C}.\n{T}: Add {B} or {R}. This artifact deals 1 damage to you."
+    },
+    {
+      "name": "The One Ring",
+      "cost": "{4}",
+      "type_line": "Legendary Artifact",
+      "keywords": "[\"Indestructible\"]",
+      "text": "Indestructible\nWhen The One Ring enters, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on The One Ring."
+    },
+    {
+      "name": "Relic of Sauron",
+      "cost": "{4}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add two mana in any combination of {U}, {B}, and/or {R}.\n{3}, {T}: Draw two cards, then discard a card."
+    },
+    {
+      "name": "Orcish Bowmasters",
+      "cost": "{1}{B}",
+      "type_line": "Creature \u2014 Orc Archer",
+      "keywords": "[\"Amass\", \"Flash\"]",
+      "text": "Flash\nWhen this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1."
+    },
+    {
+      "name": "Nazg\u00fbl",
+      "cost": "{2}{B}",
+      "type_line": "Creature \u2014 Wraith Knight",
+      "keywords": "[\"Deathtouch\"]",
+      "text": "Deathtouch\nWhen this creature enters, the Ring tempts you.\nWhenever the Ring tempts you, put a +1/+1 counter on each Wraith you control.\nA deck can have up to nine cards named Nazg\u00fbl."
+    },
+    {
+      "name": "Gothmog, Morgul Lieutenant",
+      "cost": "{3}{B}",
+      "type_line": "Legendary Creature \u2014 Human Soldier",
+      "keywords": "[\"Amass\"]",
+      "text": "When Gothmog enters, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)\nCreature tokens you control have deathtouch."
+    },
+    {
+      "name": "Mauh\u00far, Uruk-hai Captain",
+      "cost": "{B}{R}",
+      "type_line": "Legendary Creature \u2014 Orc Soldier",
+      "keywords": "[\"Menace\"]",
+      "text": "Menace\nIf one or more +1/+1 counters would be put on an Army, Goblin, or Orc you control, that many plus one +1/+1 counters are put on it instead."
+    },
+    {
+      "name": "Grishn\u00e1kh, Brash Instigator",
+      "cost": "{2}{R}",
+      "type_line": "Legendary Creature \u2014 Goblin Soldier",
+      "keywords": "[\"Amass\"]",
+      "text": "When Grishn\u00e1kh enters, amass Orcs 2. When you do, until end of turn, gain control of target nonlegendary creature an opponent controls with power less than or equal to the amassed Army's power. Untap that creature. It gains haste until end of turn."
+    },
+    {
+      "name": "Moria Scavenger",
+      "cost": "{1}{B}{R}",
+      "type_line": "Creature \u2014 Orc Rogue",
+      "keywords": "[\"Amass\", \"Haste\", \"Deathtouch\"]",
+      "text": "Deathtouch, haste\n{T}, Discard a card: Draw a card. If the discarded card was a creature card, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
+    },
+    {
+      "name": "The Mouth of Sauron",
+      "cost": "{3}{U}{B}",
+      "type_line": "Legendary Creature \u2014 Human Advisor",
+      "keywords": "[\"Amass\", \"Mill\"]",
+      "text": "When The Mouth of Sauron enters, target player mills three cards. Then amass Orcs X, where X is the number of instant and sorcery cards in that player's graveyard. (Put X +1/+1 counters on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
+    },
+    {
+      "name": "Sauron, Lord of the Rings",
+      "cost": "{5}{U}{B}{R}",
+      "type_line": "Legendary Creature \u2014 Avatar Horror",
+      "keywords": "[\"Amass\", \"Trample\", \"Mill\"]",
+      "text": "When you cast this spell, amass Orcs 5, mill five cards, then return a creature card from your graveyard to the battlefield.\nTrample\nWhenever a commander an opponent controls dies, the Ring tempts you."
+    },
+    {
+      "name": "Saruman, the White Hand",
+      "cost": "{1}{U}{B}{R}",
+      "type_line": "Legendary Creature \u2014 Avatar Wizard",
+      "keywords": "[\"Amass\"]",
+      "text": "Whenever you cast a noncreature spell, amass Orcs X, where X is that spell's mana value. (Put X +1/+1 counters on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)\nGoblins and Orcs you control have ward {2}."
+    },
+    {
+      "name": "Lord of the Nazg\u00fbl",
+      "cost": "{3}{U}{B}",
+      "type_line": "Legendary Creature \u2014 Wraith Noble",
+      "keywords": "[\"Flying\"]",
+      "text": "Flying\nWraiths you control have protection from Ring-bearers.\nWhenever you cast an instant or sorcery spell, create a 3/3 black Wraith creature token with menace. Then if you control nine or more Wraiths, Wraiths you control have base power and toughness 9/9 until end of turn."
+    },
+    {
+      "name": "Witch-king of Angmar",
+      "cost": "{3}{B}{B}",
+      "type_line": "Legendary Creature \u2014 Wraith Noble",
+      "keywords": "[\"Flying\"]",
+      "text": "Flying\nWhenever one or more creatures deal combat damage to you, each opponent sacrifices a creature of their choice that dealt combat damage to you this turn. The Ring tempts you.\nDiscard a card: Witch-king of Angmar gains indestructible until end of turn. Tap him."
+    },
+    {
+      "name": "Call of the Ring",
+      "cost": "{1}{B}",
+      "type_line": "Enchantment",
+      "keywords": "[]",
+      "text": "At the beginning of your upkeep, the Ring tempts you.\nWhenever you choose a creature as your Ring-bearer, you may pay 2 life. If you do, draw a card."
+    },
+    {
+      "name": "In the Darkness Bind Them",
+      "cost": "{2}{U}{B}{R}",
+      "type_line": "Enchantment \u2014 Saga",
+      "keywords": "[]",
+      "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI, II, III \u2014 Create a 3/3 black Wraith creature token with menace. The Ring tempts you.\nIV \u2014 For each opponent, gain control of up to one target creature that player controls until end of turn. Untap those creatures. They gain haste until end of turn. The Ring tempts you."
+    },
+    {
+      "name": "One Ring to Rule Them All",
+      "cost": "{2}{B}{B}",
+      "type_line": "Enchantment \u2014 Saga",
+      "keywords": "[\"Mill\"]",
+      "text": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after III.)\nI \u2014 The Ring tempts you, then each player mills cards equal to your Ring-bearer's power.\nII \u2014 Destroy all nonlegendary creatures.\nIII \u2014 Each opponent loses 1 life for each creature card in that player's graveyard."
+    },
+    {
+      "name": "Dreadhorde Invasion",
+      "cost": "{1}{B}",
+      "type_line": "Enchantment",
+      "keywords": "[\"Amass\"]",
+      "text": "At the beginning of your upkeep, you lose 1 life and amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nWhenever a Zombie token you control with power 6 or greater attacks, it gains lifelink until end of turn."
+    },
+    {
+      "name": "Fiery Inscription",
+      "cost": "{2}{R}",
+      "type_line": "Enchantment",
+      "keywords": "[]",
+      "text": "When this enchantment enters, the Ring tempts you.\nWhenever you cast an instant or sorcery spell, this enchantment deals 2 damage to each opponent."
+    },
+    {
+      "name": "March from the Black Gate",
+      "cost": "{1}{B}",
+      "type_line": "Enchantment",
+      "keywords": "[\"Amass\"]",
+      "text": "When this enchantment enters and whenever an Army you control attacks, amass Orcs 1. (Put a +1/+1 counter on an Army you control. It's also an Orc. If you don't control an Army, create a 0/0 black Orc Army creature token first.)"
+    },
+    {
+      "name": "Counterspell",
+      "cost": "{U}{U}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Counter target spell."
+    },
+    {
+      "name": "Arcane Denial",
+      "cost": "{1}{U}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Counter target spell. Its controller may draw up to two cards at the beginning of the next turn's upkeep.\nYou draw a card at the beginning of the next turn's upkeep."
+    },
+    {
+      "name": "Swan Song",
+      "cost": "{U}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+    },
+    {
+      "name": "An Offer You Can't Refuse",
+      "cost": "{U}",
+      "type_line": "Instant",
+      "keywords": "[\"Treasure\"]",
+      "text": "Counter target noncreature spell. Its controller creates two Treasure tokens. (They're artifacts with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+    },
+    {
+      "name": "Dark Ritual",
+      "cost": "{B}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Add {B}{B}{B}."
+    },
+    {
+      "name": "Feed the Swarm",
+      "cost": "{1}{B}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Destroy target creature or enchantment an opponent controls. You lose life equal to that permanent's mana value."
+    },
+    {
+      "name": "Anguished Unmaking",
+      "cost": "{1}{W}{B}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Exile target nonland permanent. You lose 3 life."
+    },
+    {
+      "name": "Terminate",
+      "cost": "{B}{R}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Destroy target creature. It can't be regenerated."
+    },
+    {
+      "name": "Blasphemous Act",
+      "cost": "{8}{R}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "This spell costs {1} less to cast for each creature on the battlefield.\nBlasphemous Act deals 13 damage to each creature."
+    },
+    {
+      "name": "Toxic Deluge",
+      "cost": "{2}{B}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "As an additional cost to cast this spell, pay X life.\nAll creatures get -X/-X until end of turn."
+    },
+    {
+      "name": "Decree of Pain",
+      "cost": "{6}{B}{B}",
+      "type_line": "Sorcery",
+      "keywords": "[\"Cycling\"]",
+      "text": "Destroy all creatures. They can't be regenerated. Draw a card for each creature destroyed this way.\nCycling {3}{B}{B} ({3}{B}{B}, Discard this card: Draw a card.)\nWhen you cycle this card, all creatures get -2/-2 until end of turn."
+    },
+    {
+      "name": "Reanimate",
+      "cost": "{B}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value."
+    },
+    {
+      "name": "Animate Dead",
+      "cost": "{1}{B}",
+      "type_line": "Enchantment \u2014 Aura",
+      "keywords": "[\"Enchant\"]",
+      "text": "Enchant creature card in a graveyard\nWhen this Aura enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\" Return enchanted creature card to the battlefield under your control and attach this Aura to it. When this Aura leaves the battlefield, that creature's controller sacrifices it.\nEnchanted creature gets -1/-0."
+    },
+    {
+      "name": "Lazotep Plating",
+      "cost": "{1}{U}",
+      "type_line": "Instant",
+      "keywords": "[\"Amass\"]",
+      "text": "Amass Zombies 1. (Put a +1/+1 counter on an Army you control. It's also a Zombie. If you don't control an Army, create a 0/0 black Zombie Army creature token first.)\nYou and permanents you control gain hexproof until end of turn. (You and they can't be the targets of spells or abilities your opponents control.)"
+    },
+    {
+      "name": "Island",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Island",
+      "keywords": "[]",
+      "text": "({T}: Add {U}.)"
+    },
+    {
+      "name": "Swamp",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Swamp",
+      "keywords": "[]",
+      "text": "({T}: Add {B}.)"
+    },
+    {
+      "name": "Mountain",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Mountain",
+      "keywords": "[]",
+      "text": "({T}: Add {R}.)"
+    },
+    {
+      "name": "Command Tower",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color in your commander's color identity."
+    },
+    {
+      "name": "Watery Grave",
+      "cost": "",
+      "type_line": "Land \u2014 Island Swamp",
+      "keywords": "[]",
+      "text": "({T}: Add {U} or {B}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+    },
+    {
+      "name": "Blood Crypt",
+      "cost": "",
+      "type_line": "Land \u2014 Swamp Mountain",
+      "keywords": "[]",
+      "text": "({T}: Add {B} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+    },
+    {
+      "name": "Steam Vents",
+      "cost": "",
+      "type_line": "Land \u2014 Island Mountain",
+      "keywords": "[]",
+      "text": "({T}: Add {U} or {R}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+    },
+    {
+      "name": "Drowned Catacomb",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "This land enters tapped unless you control an Island or a Swamp.\n{T}: Add {U} or {B}."
+    },
+    {
+      "name": "Dragonskull Summit",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {B} or {R}."
+    },
+    {
+      "name": "Sulfur Falls",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "This land enters tapped unless you control an Island or a Mountain.\n{T}: Add {U} or {R}."
+    },
+    {
+      "name": "Barad-d\u00fbr",
+      "cost": "",
+      "type_line": "Legendary Land",
+      "keywords": "[\"Amass\"]",
+      "text": "Barad-d\u00fbr enters tapped unless you control a legendary creature.\n{T}: Add {B}.\n{X}{X}{B}, {T}: Amass Orcs X. Activate only if a creature died this turn."
+    }
   ],
-  [
-   "Fellwar Stone",
-   1
-  ],
-  [
-   "Dimir Signet",
-   1
-  ],
-  [
-   "Rakdos Signet",
-   1
-  ],
-  [
-   "Talisman of Creativity",
-   1
-  ],
-  [
-   "Talisman of Dominance",
-   1
-  ],
-  [
-   "Talisman of Indulgence",
-   1
-  ],
-  [
-   "The One Ring",
-   1
-  ],
-  [
-   "Relic of Sauron",
-   1
-  ],
-  [
-   "Orcish Bowmasters",
-   1
-  ],
-  [
-   "Nazg\u00fbl",
-   3
-  ],
-  [
-   "Gothmog, Morgul Lieutenant",
-   1
-  ],
-  [
-   "Mauh\u00far, Uruk-hai Captain",
-   1
-  ],
-  [
-   "Grishn\u00e1kh, Brash Instigator",
-   1
-  ],
-  [
-   "Moria Scavenger",
-   1
-  ],
-  [
-   "The Mouth of Sauron",
-   1
-  ],
-  [
-   "Sauron, Lord of the Rings",
-   1
-  ],
-  [
-   "Saruman, the White Hand",
-   1
-  ],
-  [
-   "Lord of the Nazg\u00fbl",
-   1
-  ],
-  [
-   "Witch-king of Angmar",
-   1
-  ],
-  [
-   "Call of the Ring",
-   1
-  ],
-  [
-   "In the Darkness Bind Them",
-   1
-  ],
-  [
-   "One Ring to Rule Them All",
-   1
-  ],
-  [
-   "Dreadhorde Invasion",
-   1
-  ],
-  [
-   "Fiery Inscription",
-   1
-  ],
-  [
-   "March from the Black Gate",
-   1
-  ],
-  [
-   "Counterspell",
-   1
-  ],
-  [
-   "Arcane Denial",
-   1
-  ],
-  [
-   "Swan Song",
-   1
-  ],
-  [
-   "An Offer You Can't Refuse",
-   1
-  ],
-  [
-   "Dark Ritual",
-   1
-  ],
-  [
-   "Feed the Swarm",
-   1
-  ],
-  [
-   "Anguished Unmaking",
-   1
-  ],
-  [
-   "Terminate",
-   1
-  ],
-  [
-   "Blasphemous Act",
-   1
-  ],
-  [
-   "Toxic Deluge",
-   1
-  ],
-  [
-   "Decree of Pain",
-   1
-  ],
-  [
-   "Reanimate",
-   1
-  ],
-  [
-   "Animate Dead",
-   1
-  ],
-  [
-   "Lazotep Plating",
-   1
-  ],
-  [
-   "Island",
-   14
-  ],
-  [
-   "Swamp",
-   18
-  ],
-  [
-   "Mountain",
-   16
-  ],
-  [
-   "Command Tower",
-   1
-  ],
-  [
-   "Watery Grave",
-   1
-  ],
-  [
-   "Blood Crypt",
-   1
-  ],
-  [
-   "Steam Vents",
-   1
-  ],
-  [
-   "Drowned Catacomb",
-   1
-  ],
-  [
-   "Dragonskull Summit",
-   1
-  ],
-  [
-   "Sulfur Falls",
-   1
-  ],
-  [
-   "Barad-d\u00fbr",
-   1
+  "list": [
+    ["Sol Ring", 1],
+    ["Arcane Signet", 1],
+    ["Fellwar Stone", 1],
+    ["Dimir Signet", 1],
+    ["Rakdos Signet", 1],
+    ["Talisman of Creativity", 1],
+    ["Talisman of Dominance", 1],
+    ["Talisman of Indulgence", 1],
+    ["The One Ring", 1],
+    ["Relic of Sauron", 1],
+    ["Orcish Bowmasters", 1],
+    ["Nazg\u00fbl", 3],
+    ["Gothmog, Morgul Lieutenant", 1],
+    ["Mauh\u00far, Uruk-hai Captain", 1],
+    ["Grishn\u00e1kh, Brash Instigator", 1],
+    ["Moria Scavenger", 1],
+    ["The Mouth of Sauron", 1],
+    ["Sauron, Lord of the Rings", 1],
+    ["Saruman, the White Hand", 1],
+    ["Lord of the Nazg\u00fbl", 1],
+    ["Witch-king of Angmar", 1],
+    ["Call of the Ring", 1],
+    ["In the Darkness Bind Them", 1],
+    ["One Ring to Rule Them All", 1],
+    ["Dreadhorde Invasion", 1],
+    ["Fiery Inscription", 1],
+    ["March from the Black Gate", 1],
+    ["Counterspell", 1],
+    ["Arcane Denial", 1],
+    ["Swan Song", 1],
+    ["An Offer You Can't Refuse", 1],
+    ["Dark Ritual", 1],
+    ["Feed the Swarm", 1],
+    ["Anguished Unmaking", 1],
+    ["Terminate", 1],
+    ["Blasphemous Act", 1],
+    ["Toxic Deluge", 1],
+    ["Decree of Pain", 1],
+    ["Reanimate", 1],
+    ["Animate Dead", 1],
+    ["Lazotep Plating", 1],
+    ["Island", 14],
+    ["Swamp", 18],
+    ["Mountain", 16],
+    ["Command Tower", 1],
+    ["Watery Grave", 1],
+    ["Blood Crypt", 1],
+    ["Steam Vents", 1],
+    ["Drowned Catacomb", 1],
+    ["Dragonskull Summit", 1],
+    ["Sulfur Falls", 1],
+    ["Barad-d\u00fbr", 1]
   ]
- ]
 }

@@ -1,11 +1,11 @@
+//! Scryfall bulk-data download plus streaming ingest into the `cards` table.
+//!
+//! The oracle bulk is JSON Lines (one card object per line) inside gzip; we
+//! parse line-by-line so peak memory stays small regardless of file size.
+
 use anyhow::Context;
 use serde::Deserialize;
 use std::io::{BufRead, BufReader, IsTerminal, Read, Write};
-
-// Scryfall bulk-data download plus streaming ingest into the `cards` table.
-//
-// The oracle bulk is JSON Lines (one card object per line) inside gzip; we
-// parse line-by-line so peak memory stays small regardless of file size.
 
 /// `GET /bulk-data` response items, subset of fields we use.
 #[derive(Debug, Deserialize, Clone)]
@@ -30,7 +30,9 @@ struct BulkIndex {
 /// rewrote it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BulkFile {
+    /// Download URL of the bulk file.
     pub uri: String,
+    /// Compressed size in bytes, when the index reports one.
     pub compressed_size: Option<u64>,
     /// Scryfall's own timestamp for the file's content (RFC 3339), when the
     /// index provided one.
@@ -41,61 +43,93 @@ pub struct BulkFile {
 /// serde ignores the rest, which keeps parsing fast and forward-compatible.
 #[derive(Debug, Deserialize, Clone)]
 pub struct ScryfallCard {
+    /// Oracle card name.
     pub name: String,
     /// Print ID of this exact printing.
     #[serde(default)]
     pub id: Option<String>,
+    /// Scryfall oracle ID.
     #[serde(default)]
     pub oracle_id: String,
+    /// Mana cost in Scryfall notation.
     #[serde(default)]
     pub mana_cost: Option<String>,
+    /// Converted mana cost.
     #[serde(default)]
     pub cmc: Option<f64>,
+    /// Type line.
     #[serde(default)]
     pub type_line: Option<String>,
+    /// Card colors.
     #[serde(default)]
     pub colors: Option<Vec<String>>,
+    /// Color identity.
     #[serde(default)]
     pub color_identity: Option<Vec<String>>,
+    /// Keyword abilities.
     #[serde(default)]
     pub keywords: Option<Vec<String>>,
+    /// Power, when the card has one.
     #[serde(default)]
     pub power: Option<String>,
+    /// Toughness, when the card has one.
     #[serde(default)]
     pub toughness: Option<String>,
+    /// Starting loyalty for planeswalkers.
     #[serde(default)]
     pub loyalty: Option<String>,
+    /// Rules text.
     #[serde(default)]
     pub oracle_text: Option<String>,
+    /// Rarity name.
     #[serde(default)]
     pub rarity: Option<String>,
+    /// EDHREC popularity rank (lower is more popular).
     #[serde(default)]
     pub edhrec_rank: Option<i64>,
+    /// Penny Dreadful popularity rank (lower is more popular); a second
+    /// play-demand signal beside `edhrec_rank`.
+    #[serde(default)]
+    pub penny_rank: Option<i64>,
+    /// Reserved List membership: true when the card will never be
+    /// reprinted. Drives the reprint-risk signal in `collection sell`.
+    #[serde(default)]
+    pub reserved: Option<bool>,
     /// Commander Game Changer list flag (bracket signal).
     #[serde(default)]
     pub game_changer: Option<bool>,
+    /// Format name → status.
     #[serde(default)]
     pub legalities: Option<std::collections::BTreeMap<String, String>>,
+    /// Set code.
     #[serde(rename = "set", default)]
     pub set_code: Option<String>,
+    /// Full set name.
     #[serde(default)]
     pub set_name: Option<String>,
+    /// Printing language.
     #[serde(default)]
     pub lang: Option<String>,
     /// Just-for-fun printed name (Godzilla series, Secret Lair crossovers).
     /// A print-level alias for the oracle name; indexed for name resolution.
     #[serde(default)]
     pub flavor_name: Option<String>,
+    /// Collector number within the set.
     #[serde(default)]
     pub collector_number: Option<String>,
+    /// Available finishes.
     #[serde(default)]
     pub finishes: Option<Vec<String>>,
+    /// Release date (YYYY-MM-DD).
     #[serde(default)]
     pub released_at: Option<String>,
+    /// Per-finish USD prices.
     #[serde(default)]
     pub prices: Option<Prices>,
+    /// Game platforms the print appears in (paper, mtgo, arena).
     #[serde(default)]
     pub games: Option<Vec<String>>,
+    /// Card layout (normal, transform, token, ...).
     pub layout: String,
     /// Set type of the print's set ("expansion", "commander", …).
     #[serde(rename = "set_type", default)]
@@ -107,6 +141,7 @@ pub struct ScryfallCard {
     /// print.
     #[serde(default)]
     pub promo_types: Option<Vec<String>>,
+    /// Faces of a multi-faced card; absent on single-faced cards.
     #[serde(default)]
     pub card_faces: Option<Vec<CardFace>>,
 }
@@ -114,28 +149,39 @@ pub struct ScryfallCard {
 /// Price sub-object (USD strings).
 #[derive(Debug, Deserialize, Clone)]
 pub struct Prices {
+    /// Non-foil USD price string.
     pub usd: Option<String>,
+    /// Foil USD price string.
     pub usd_foil: Option<String>,
+    /// Etched-foil USD price string.
     pub usd_etched: Option<String>,
 }
 
 /// Card face sub-object; only needed for multi-faced cards.
 #[derive(Debug, Deserialize, Clone)]
 pub struct CardFace {
+    /// Face name.
     #[serde(default)]
     pub name: Option<String>,
+    /// Face mana cost.
     #[serde(default)]
     pub mana_cost: Option<String>,
+    /// Face type line.
     #[serde(default)]
     pub type_line: Option<String>,
+    /// Face rules text.
     #[serde(default)]
     pub oracle_text: Option<String>,
+    /// Face power.
     #[serde(default)]
     pub power: Option<String>,
+    /// Face toughness.
     #[serde(default)]
     pub toughness: Option<String>,
+    /// Face colors.
     #[serde(default)]
     pub colors: Option<Vec<String>>,
+    /// Face starting loyalty.
     #[serde(default)]
     pub loyalty: Option<String>,
 }
@@ -527,6 +573,8 @@ mod tests {
             oracle_text: Some("Flying".into()),
             rarity: Some("common".into()),
             edhrec_rank: Some(1000),
+            penny_rank: None,
+            reserved: None,
             game_changer: None,
             legalities: Some([("modern".to_string(), "legal".to_string())].into()),
             set_code: Some("tst".into()),
@@ -670,6 +718,38 @@ mod tests {
             .unwrap();
         assert_eq!(n, 1);
         assert_eq!(name, "Test Card");
+    }
+
+    #[test]
+    fn insert_and_update_card_carry_sell_signals() {
+        let tmp = tempfile::tempdir().unwrap();
+        let conn = crate::db::open(&tmp.path().join("t.db")).unwrap();
+        let mut c = card("Signal Card", "normal", &["paper"]);
+        c.penny_rank = Some(11);
+        c.reserved = Some(true);
+        insert_card(&conn, &c).unwrap();
+        let (penny, reserved): (Option<i64>, Option<bool>) = conn
+            .query_row(
+                "SELECT penny_rank, reserved FROM cards WHERE name = 'Signal Card'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(penny, Some(11));
+        assert_eq!(reserved, Some(true));
+        // Update overwrites both signals in place.
+        c.penny_rank = None;
+        c.reserved = Some(false);
+        update_card(&conn, "Signal Card", &c).unwrap();
+        let (penny, reserved): (Option<i64>, Option<bool>) = conn
+            .query_row(
+                "SELECT penny_rank, reserved FROM cards WHERE name = 'Signal Card'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(penny, None);
+        assert_eq!(reserved, Some(false));
     }
 
     #[test]

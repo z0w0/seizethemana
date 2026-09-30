@@ -4,40 +4,14 @@
 //! ahead, and the intervening-if conditions.
 
 use super::aggregate::aggregate;
+use super::deck_test_support::card;
 use super::game::run_game;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
-use super::oracle_parser::cost::parse_cost;
 use super::oracle_parser::land::parse_tap_yield;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-
-/// A minimal card row for tests.
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// A deck from raw card rows: `lands` copies of any-color lands plus one
 /// copy of each card row.

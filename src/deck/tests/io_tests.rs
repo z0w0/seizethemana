@@ -233,6 +233,19 @@ fn import_validates_deck_names() {
 }
 
 #[test]
+fn read_commands_reject_path_traversal_names() {
+    // A read command takes a raw name: a parent segment must not escape
+    // the decks directory.
+    let (_tmp, paths, _conn) = setup();
+    std::fs::create_dir_all(paths.decks_dir()).unwrap();
+    let outside = paths.root().join("secret.txt");
+    std::fs::write(&outside, "1 Island\n").unwrap();
+    assert!(crate::deck::store::load_deck(&paths, "../secret").is_err());
+    assert!(crate::deck::store::load_deck(&paths, "../../secret").is_err());
+    assert!(crate::deck::store::load_deck(&paths, "sub/deck").is_err());
+}
+
+#[test]
 fn offline_import_rejects_url() {
     // `--url` under `--offline` is a usage error with a file fallback
     // hint; no network is touched.

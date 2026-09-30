@@ -1,8 +1,12 @@
-use super::ambiguous_error;
-use anyhow::Context;
+//! `stm card combos`: Spellbook combos that include one card.
+
+use super::resolve_card_or_report;
+
 /// One Spellbook combo variant the card takes part in, pieces joined.
 pub struct CardCombo {
+    /// The Spellbook combo variant.
     pub variant: crate::spellbook::ComboVariant,
+    /// Cards that make up the combo.
     pub pieces: Vec<crate::spellbook::ComboPieceRow>,
     /// True when any piece must be the commander.
     pub requires_commander: bool,
@@ -60,16 +64,8 @@ pub fn run_combos(
         out.hint("run 'stm setup' first");
         return Ok(crate::cli::codes::ERROR);
     }
-    let seed = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
-        crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous { candidates, total } => {
-            return ambiguous_error(out, typed, &candidates, total);
-        }
-        crate::db::NameMatch::NotFound => {
-            out.error(&format!("no card named {typed:?}"));
-            out.hint("names resolve by exact match, case, or unique prefix");
-            return Ok(crate::cli::codes::NO_RESULTS);
-        }
+    let Some(seed) = resolve_card_or_report(out, conn, typed)? else {
+        return Ok(crate::cli::codes::NO_RESULTS);
     };
     let mut names = std::collections::HashSet::new();
     names.insert(seed.name.clone());
@@ -102,12 +98,7 @@ pub fn run_combos(
         return Ok(crate::cli::codes::NO_RESULTS);
     }
     let mut sorted = combos;
-    sorted.sort_by(|a, b| {
-        b.0.popularity
-            .unwrap_or(0)
-            .cmp(&a.0.popularity.unwrap_or(0))
-            .then_with(|| a.0.id.cmp(&b.0.id))
-    });
+    sort_by_popularity(&mut sorted);
     sorted.truncate(limit as usize);
     let rows: Vec<CardCombo> = sorted
         .into_iter()
@@ -157,6 +148,67 @@ fn print_combos_json(rows: &[CardCombo]) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Sort combo variants by popularity then id: the most popular first, and
+/// ties broken by variant id so the order is stable.
+fn sort_by_popularity(
+    combos: &mut [(
+        crate::spellbook::ComboVariant,
+        Vec<crate::spellbook::ComboPieceRow>,
+    )],
+) {
+    combos.sort_by(|a, b| {
+        b.0.popularity
+            .unwrap_or(0)
+            .cmp(&a.0.popularity.unwrap_or(0))
+            .then_with(|| a.0.id.cmp(&b.0.id))
+    });
+}
+
+/// One line of the human combo table. Piece names keep the card-name style;
+/// the rest is dimmed metadata.
+fn combo_line(index: usize, combo: &CardCombo, styles: &crate::output::Styles) -> String {
+    let mut names: Vec<String> = combo.pieces.iter().map(|p| p.name.clone()).collect();
+    names.sort();
+    names.dedup();
+    let pieces = names.join(" + ");
+    let cmdr = if combo.requires_commander {
+        " (commander)"
+    } else {
+        ""
+    };
+    let produces = combo.variant.produces.first().cloned().unwrap_or_default();
+    let bracket = combo
+        .variant
+        .bracket_tag
+        .as_deref()
+        .map(|t| format!(" [{t}]"))
+        .unwrap_or_default();
+    let pop = match combo.variant.popularity {
+        Some(n) => format!(" pop {}", styles.thousands(n)),
+        None => String::new(),
+    };
+    let legal: Vec<&str> = COMBO_NOTE_FORMATS
+        .iter()
+        .copied()
+        .filter(|f| combo.variant.legalities.get(*f).copied().unwrap_or(false))
+        .collect();
+    let legal_note = if legal.is_empty() {
+        String::new()
+    } else {
+        format!("  legal: {}", legal.join(", "))
+    };
+    format!(
+        "{:>2}. {}{} → {}{}{}{}",
+        index + 1,
+        styles.card_name(&pieces),
+        styles.dim(cmdr),
+        styles.dim(&produces),
+        styles.dim(&bracket),
+        styles.dim(&pop),
+        styles.dim(&legal_note),
+    )
+}
+
 /// Human table for `card combos`, popularity first.
 fn print_combos_text(out: &crate::output::Output, seed_name: &str, rows: &[CardCombo]) {
     let styles = out.styles();
@@ -166,46 +218,7 @@ fn print_combos_text(out: &crate::output::Output, seed_name: &str, rows: &[CardC
         styles.card_name(seed_name)
     );
     for (i, combo) in rows.iter().enumerate() {
-        let mut names: Vec<String> = combo.pieces.iter().map(|p| p.name.clone()).collect();
-        names.sort();
-        names.dedup();
-        let pieces = names.join(" + ");
-        let cmdr = if combo.requires_commander {
-            " (commander)"
-        } else {
-            ""
-        };
-        let produces = combo.variant.produces.first().cloned().unwrap_or_default();
-        let bracket = combo
-            .variant
-            .bracket_tag
-            .as_deref()
-            .map(|t| format!(" [{t}]"))
-            .unwrap_or_default();
-        let pop = match combo.variant.popularity {
-            Some(n) => format!(" pop {}", styles.thousands(n)),
-            None => String::new(),
-        };
-        let legal: Vec<&str> = COMBO_NOTE_FORMATS
-            .iter()
-            .copied()
-            .filter(|f| combo.variant.legalities.get(*f).copied().unwrap_or(false))
-            .collect();
-        let legal_note = if legal.is_empty() {
-            String::new()
-        } else {
-            format!("  legal: {}", legal.join(", "))
-        };
-        println!(
-            "{:>2}. {}{} → {}{}{}{}",
-            i + 1,
-            styles.card_name(&pieces),
-            styles.dim(cmdr),
-            styles.dim(&produces),
-            styles.dim(&bracket),
-            styles.dim(&pop),
-            styles.dim(&legal_note),
-        );
+        println!("{}", combo_line(i, combo, &styles));
     }
 }
 

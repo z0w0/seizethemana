@@ -1,7 +1,7 @@
-// Combo completions for `deck suggest`: rank cards that complete near-miss
-// combo variants in the store. This is the answer a bare
-// `stm deck suggest <name>` gives (no query, no role). Kept as its own
-// module; it shares the deck/identity helpers via `super::suggest`.
+//! Combo completions for `deck suggest`: rank cards that complete near-miss
+//! combo variants in the store. This is the answer a bare
+//! `stm deck suggest <name>` gives (no query, no role). Kept as its own
+//! module; it shares the deck/identity helpers via `super::suggest`.
 
 use rusqlite::Connection;
 
@@ -290,7 +290,7 @@ fn completion(
     bracket: Option<u8>,
 ) -> Option<Completion> {
     let card = crate::db::get_card(conn, name).ok().flatten()?;
-    if is_commander && !super::suggest::identity_ok(&card, identity) {
+    if is_commander && !super::legal::identity_ok(&card, identity) {
         return None;
     }
     if is_commander && !super::suggest::card_is_commander_legal(&card) {

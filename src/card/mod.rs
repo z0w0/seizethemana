@@ -1,9 +1,11 @@
+//! `stm card`: full detail for one card by (fuzzy) name, plus tag-overlap
+//! neighbors (`stm card similar`) and Spellbook combos (`stm card combos`).
+
 use anyhow::Context;
 
-// `stm card`: full detail for one card by (fuzzy) name, plus tag-overlap
-// neighbors (`stm card similar`) and Spellbook combos (`stm card combos`).
-
+/// Spellbook combos for one card.
 pub mod combos;
+/// Tag-overlap neighbors for one card.
 pub mod similar;
 
 /// Report an ambiguous name: sample candidates plus the real match count.
@@ -26,6 +28,33 @@ pub(crate) fn ambiguous_error(
     Ok(crate::cli::codes::NO_RESULTS)
 }
 
+/// Resolve a typed card name for the `card` subcommands.
+///
+/// Returns `Ok(Some(card))` when the name resolves. When it does not, this
+/// prints the ambiguous-name or unknown-name report to `out` and returns
+/// `Ok(None)`; callers then exit 3.
+///
+/// # Errors
+/// Propagates SQLite failures from the name lookup.
+pub(crate) fn resolve_card_or_report(
+    out: &mut crate::output::Output,
+    conn: &rusqlite::Connection,
+    typed: &str,
+) -> anyhow::Result<Option<crate::db::CardRow>> {
+    match crate::db::resolve_name(conn, typed).context("resolving card name")? {
+        crate::db::NameMatch::Found(card) => Ok(Some(*card)),
+        crate::db::NameMatch::Ambiguous { candidates, total } => {
+            ambiguous_error(out, typed, &candidates, total)?;
+            Ok(None)
+        }
+        crate::db::NameMatch::NotFound => {
+            out.error(&format!("no card named {typed:?}"));
+            out.hint("names resolve by exact match, case, or unique prefix");
+            Ok(None)
+        }
+    }
+}
+
 /// Entry point for `stm card <name>`.
 ///
 /// Resolution is exact → case-insensitive → unique prefix; ambiguous prefixes
@@ -42,16 +71,8 @@ pub fn run_card(
         out.hint("run 'stm setup' first");
         return Ok(crate::cli::codes::ERROR);
     }
-    let card = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
-        crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous { candidates, total } => {
-            return ambiguous_error(out, typed, &candidates, total);
-        }
-        crate::db::NameMatch::NotFound => {
-            out.error(&format!("no card named {typed:?}"));
-            out.hint("names resolve by exact match, case, or unique prefix");
-            return Ok(crate::cli::codes::NO_RESULTS);
-        }
+    let Some(card) = resolve_card_or_report(out, conn, typed)? else {
+        return Ok(crate::cli::codes::NO_RESULTS);
     };
 
     if json {
@@ -475,6 +496,8 @@ mod tests {
             scryfall_id: "sid".into(),
             released_at: "2020-01-01".into(),
             game_changer: None,
+            penny_rank: None,
+            reserved: None,
         }
     }
 

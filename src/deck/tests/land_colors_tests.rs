@@ -26,6 +26,8 @@ fn land(name: &str, type_line: &str, text: &str) -> CardRow {
         scryfall_id: format!("sid-{name}"),
         released_at: "2020-01-01".into(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 

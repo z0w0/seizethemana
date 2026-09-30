@@ -1,13 +1,13 @@
-// Scryfall oracle tags: download parsing, SQLite ingest, and lookup.
-//
-// Tags come from the Tagger project via the daily `oracle_tags` bulk file
-// (JSONL, one tag object per line). Each tag carries `taggings`: card
-// associations keyed by oracle_id. Tags describe functional roles ("removal",
-// "ramp", "sacrifice outlet") rather than card text, so they sharpen both
-// display (`stm card`) and the embedding documents.
-//
-// Only the tag `id` (a stable UUID) is treated as an identity; slugs and
-// labels can change between daily files per Scryfall's guidance.
+//! Scryfall oracle tags: download parsing, SQLite ingest, and lookup.
+//!
+//! Tags come from the Tagger project via the daily `oracle_tags` bulk file
+//! (JSONL, one tag object per line). Each tag carries `taggings`: card
+//! associations keyed by oracle_id. Tags describe functional roles ("removal",
+//! "ramp", "sacrifice outlet") rather than card text, so they sharpen both
+//! display (`stm card`) and the embedding documents.
+//!
+//! Only the tag `id` (a stable UUID) is treated as an identity; slugs and
+//! labels can change between daily files per Scryfall's guidance.
 
 use anyhow::Context;
 use rusqlite::Connection;
@@ -18,8 +18,10 @@ use serde::Deserialize;
 pub struct TagRecord {
     /// Stable tag UUID (Scryfall guidance: the only permanent identifier).
     pub id: String,
+    /// Machine-readable tag slug; can change between files.
     #[serde(default)]
     pub slug: String,
+    /// Human-readable tag label; can change between files.
     #[serde(default)]
     pub label: String,
     /// Card associations; oracle tags key by `oracle_id`.
@@ -41,16 +43,20 @@ pub struct Tagging {
 /// Ingest summary for status lines and tests.
 #[derive(Debug, Default, PartialEq)]
 pub struct TagIngestSummary {
+    /// Tags read from the file.
     pub tags: usize,
     /// Distinct cards that carry at least one tag.
     pub tagged_cards: usize,
+    /// Card-tag associations written.
     pub taggings: usize,
 }
 
 /// A tag's stable identity plus its display label and popularity.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TagInfo {
+    /// Stable tag UUID.
     pub id: String,
+    /// Human-readable tag label.
     pub label: String,
     /// Global number of cards carrying this tag (popularity signal).
     pub use_count: i64,

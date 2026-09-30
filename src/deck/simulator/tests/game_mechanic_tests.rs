@@ -4,40 +4,13 @@
 //! mulligan policy alignment.
 
 use super::aggregate::aggregate;
+use super::deck_test_support::card;
 use super::game::run_game;
 use super::game_tests::stub_deck;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
-use super::oracle_parser::cost::parse_cost;
-use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-
-/// A minimal card row for tests.
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 #[test]
 fn hasted_creature_attacks_entry_turn() {
@@ -174,8 +147,10 @@ fn x_spell_pays_leftover_and_drains() {
     let mut rng = ChaCha8Rng::seed_from_u64(13);
     let logs: Vec<_> = (0..200).map(|_| run_game(&deck, &mut rng, 8)).collect();
     let stats = aggregate(&logs, &deck, 8);
+    // The X conversion still drains (single-counted now: the fixed X
+    // fallback no longer stacks on top of X).
     assert!(
-        stats.opponent_life_loss_by_turn[7] > 10.0,
+        stats.opponent_life_loss_by_turn[7] > 6.0,
         "X drain spell should convert floated mana to life_loss, got {:.1}",
         stats.opponent_life_loss_by_turn[7]
     );

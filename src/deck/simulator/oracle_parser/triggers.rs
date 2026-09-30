@@ -200,17 +200,7 @@ pub(super) fn parse_oracle_triggered(
                 OracleEffect::Mana(_) | OracleEffect::ManaPerCounter(_)
             )
         })
-        && !effects.iter().any(|effect| match effect {
-            OracleEffect::Search(_)
-            | OracleEffect::Draw(_)
-            | OracleEffect::DrawThenDiscard(_)
-            | OracleEffect::DrawAndMinusCounter
-            | OracleEffect::Scry(_)
-            | OracleEffect::Surveil(_)
-            | OracleEffect::Mill(_) => true,
-            OracleEffect::Unsupported(text) => text.to_ascii_lowercase().contains("library"),
-            _ => false,
-        });
+        && !effects.iter().any(is_non_mana_effect);
     OracleTriggeredAbility {
         event,
         is_mana_ability,

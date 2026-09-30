@@ -1,11 +1,11 @@
-// Ownership accounting shared by `deck show`, `deck buylist`, and JSON
-// callers: one definition of "this deck's available copies" so the
-// ownership and missing numbers can never disagree.
-//
-// The rule (unchanged from before, now in one place): a deck slot is
-// filled by copies assigned to this deck plus copies sitting in binders.
-// Copies assigned to other decks never count (that would deconstruct
-// those decks). Basic lands are unlimited and never tracked.
+//! Ownership accounting shared by `deck show`, `deck buylist`, and JSON
+//! callers: one definition of "this deck's available copies" so the
+//! ownership and missing numbers can never disagree.
+//!
+//! The rule (unchanged from before, now in one place): a deck slot is
+//! filled by copies assigned to this deck plus copies sitting in binders.
+//! Copies assigned to other decks never count (that would deconstruct
+//! those decks). Basic lands are unlimited and never tracked.
 
 use rusqlite::Connection;
 

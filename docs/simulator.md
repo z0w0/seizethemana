@@ -410,11 +410,14 @@ the `low_castability` finding.
 
 Hybrid pips (`{W/U}`) pay from either color (CR 107.4e). Phyrexian pips
 (`{B/P}`) pay their color or 2 life (CR 107.4f); the goldfish pays life
-when it has room. Convoke (CR 702.51) taps untapped creatures for {1}
+when it has room. Colorless pips (`{C}`) pay from colorless mana only
+(CR 107.4a). Convoke (CR 702.51) taps untapped creatures for {1}
 each, or a matching colored pip. Delve (CR 702.66) exiles graveyard
 cards for {1} generic each. Twobrid `{2/W}` reads as 2 generic. Snow
 `{S}` pays as colorless (no snow-source tracking). X-costs follow the
-X-cost section above.
+X-cost section above. Static cost changes on other cards ("spells cost
+{1} more", "artifact spells cost {1} less") stay inert; only a card's
+own printed or typed reduction applies.
 
 ## The turn pipeline
 
@@ -897,7 +900,16 @@ The `assumptions` array in every report lists the current limits:
 - **"For each" token counts cap at 8.** Go-wide boards stay bounded.
 - **Life loss follows its target.** "Each opponent" applies once per
   opponent; "target player" applies once; "each player" also affects the
-  goldfish. Commander has three opponents and constructed has one.
+  goldfish; an unqualified "you lose N life" is a self-cost and affects
+  only the goldfish. Commander has three opponents and constructed has
+  one.
+- **The legend rule is enforced.** When you control two legendary
+  permanents with the same name, the later one goes to the graveyard
+  (CR 704.5j). Distinct names coexist.
+- **The simulation never ends a game early.** Drawing from an empty
+  library, reaching 0 or less life, and commander damage do not stop the
+  game or count as a loss; the report measures the board and damage
+  instead.
 - **Extra turns run the full player turn.** They untap, resolve upkeep,
   draw, play lands, cast spells, activate abilities, and attack. Each extra
   turn uses the next configured turn slot; chained turns stop at the

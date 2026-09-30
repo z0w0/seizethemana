@@ -1,8 +1,8 @@
-// Karsten colored-source audit: static weighted-source census against
-// published requirement floors. No simulation — pure math on the deck's
-// card census. Powers `stm deck mana` and the `colored_sources` block in
-// the simulate report. Source: Frank Karsten, "How Many Sources Do You
-// Need to Consistently Cast Your Spells? A 2022 Update".
+//! Karsten colored-source audit: static weighted-source census against
+//! published requirement floors. No simulation — pure math on the deck's
+//! card census. Powers `stm deck mana` and the `colored_sources` block in
+//! the simulate report. Source: Frank Karsten, "How Many Sources Do You
+//! Need to Consistently Cast Your Spells? A 2022 Update".
 
 /// WUBRG color letters.
 pub const WUBRG: [char; 5] = ['W', 'U', 'B', 'R', 'G'];
@@ -21,11 +21,11 @@ const COMMANDER_REQUIREMENTS: [f64; 4] = [0.0, 12.0, 17.0, 21.0];
 
 /// Convert an integral, nonnegative card quantity to a platform count.
 fn quantity_count(quantity: f64) -> usize {
-    quantity
-        .trunc()
-        .to_string()
-        .parse()
-        .expect("card quantities are finite and nonnegative")
+    if quantity.is_finite() && quantity > 0.0 {
+        quantity.trunc() as usize
+    } else {
+        0
+    }
 }
 
 /// Requirement floors for a 60-card deck at 24–25 lands, indexed by
@@ -381,24 +381,38 @@ fn lookup_sixty(generic: u8, total: u8, same: u8) -> f64 {
 /// One requirement line of the report.
 #[derive(Debug, Clone)]
 pub struct RequirementRow {
+    /// Card name.
     pub name: String,
+    /// Printed mana cost.
     pub mana_cost: String,
+    /// Mana value.
     pub cmc: f64,
+    /// Colored sources the card needs, by color.
     pub needs: Vec<(char, f64)>,
+    /// Colored sources the deck has, by color.
     pub have: Vec<(char, f64)>,
+    /// Shortfall per color.
     pub deficit: Vec<(char, f64)>,
+    /// True when every color meets its requirement.
     pub ok: bool,
 }
 
 /// Full audit output for a deck.
 #[derive(Debug, Clone)]
 pub struct Audit {
+    /// Effective source count per color.
     pub sources: Vec<f64>,
+    /// Weighted source census.
     pub census: SourceCensus,
+    /// Per-card requirement lines.
     pub requirements: Vec<RequirementRow>,
+    /// Number of lands that enter tapped.
     pub tapland_count: usize,
+    /// Untapped sources available on turn one, per color.
     pub untapped_t1: Vec<f64>,
+    /// Whether the deck is commander-shaped.
     pub is_commander: bool,
+    /// Effective land count.
     pub lands: f64,
 }
 

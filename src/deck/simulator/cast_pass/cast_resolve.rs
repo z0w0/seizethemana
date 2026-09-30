@@ -15,6 +15,17 @@ use super::super::game_mana::{
 use super::super::model::{CardIdx, Cost, Role, SimDeck, SimEffect, SimTrigger};
 use super::{resolve_reveal_rule, select_alternative_cost_cards};
 
+/// How a cast was paid. An X spell cast without paying its mana cost has
+/// only one legal X value, zero (CR 107.3b).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(in crate::deck::simulator) enum CastPayment {
+    /// The caster paid the printed mana cost.
+    Mana,
+    /// The caster paid no mana ("without paying its mana cost", cascade,
+    /// or an alternative cost): X is 0 (CR 107.3b).
+    Free,
+}
+
 /// Resolve one affordable cast: pay the cost, push the permanent, and
 /// fire every on-cast rider (kicker, additional costs, ETB counters,
 /// rituals, draws, mills, scry, wheels, X conversion, life_loss, tokens,
@@ -32,6 +43,7 @@ pub(in crate::deck::simulator) fn resolve_cast(
     spent_total: &mut u32,
     repeatable_sources: &mut Vec<(u32, u32)>,
     resolve_cascade: bool,
+    payment: CastPayment,
 ) {
     let card = &deck[idx];
     let alternative_cards = select_alternative_cost_cards(deck, st, idx);
@@ -71,7 +83,7 @@ pub(in crate::deck::simulator) fn resolve_cast(
     let kicked = if let Some(k) = card.spell_data.kicker
         && usable_for_noncreature(pool) >= k.total() - kicker_charge / 2
         && pips_ok(&k, pool)
-        && st.life > kicker_charge as i32
+        && st.life >= kicker_charge as i32
     {
         pay_cost(&k, pool);
         st.life -= kicker_charge as i32;
@@ -209,7 +221,11 @@ pub(in crate::deck::simulator) fn resolve_cast(
     // convert the cast's leftover pool into counters (Astral
     // Cornucopia class).
     let entry_counters = if card.enter_counters.is_x() {
-        let x = convert_pool_to_x(card, pool);
+        // CR 107.3b: a free cast (cascade, alternative cost) has X = 0.
+        let x = match payment {
+            CastPayment::Free => 0,
+            CastPayment::Mana => convert_pool_to_x(card, pool),
+        };
         *spent_total += x;
         card.enter_counters.with_paid_x(x)
     } else {
@@ -332,7 +348,7 @@ pub(in crate::deck::simulator) fn resolve_cast(
                 .spell_data
                 .life_loss_scope
                 .table_multiplier(deck.format);
-        if card.spell_data.life_loss_scope == super::super::model::LifeLossScope::EachPlayer {
+        if card.spell_data.life_loss_scope.charges_player() {
             st.life -= rider as i32;
         }
     }
@@ -392,7 +408,12 @@ pub(in crate::deck::simulator) fn resolve_cast(
     if let Some(class) = card.spell_data.x_class
         && class != super::super::model::XClass::Counters
     {
-        let x = convert_pool_to_x(card, pool).max(1);
+        // CR 107.3b: a spell cast without paying its mana cost has X = 0.
+        // The pool is not drained for a free cast.
+        let x = match payment {
+            CastPayment::Free => 0,
+            CastPayment::Mana => convert_pool_to_x(card, pool).max(1),
+        };
         // Spent accounting is single-counted: the entered X counters
         // ARE the paid X; `spent_total` records it once here.
         *spent_total += x;
@@ -402,8 +423,7 @@ pub(in crate::deck::simulator) fn resolve_cast(
                     .spell_data
                     .life_loss_scope
                     .table_multiplier(deck.format);
-                if card.spell_data.life_loss_scope == super::super::model::LifeLossScope::EachPlayer
-                {
+                if card.spell_data.life_loss_scope.charges_player() {
                     st.life -= x as i32;
                 }
             }
@@ -561,13 +581,13 @@ pub(in crate::deck::simulator) fn resolve_cast(
                 }
                 Some(SimEffect::LoseLife { amount, scope }) => {
                     st.opponent_life_lost += amount * scope.table_multiplier(deck.format);
-                    if *scope == super::super::model::LifeLossScope::EachPlayer {
+                    if scope.charges_player() {
                         st.life -= *amount as i32;
                     }
                 }
                 Some(SimEffect::Damage { amount, scope }) => {
                     st.damage_dealt_this_turn += *amount * scope.table_multiplier(deck.format);
-                    if *scope == super::super::model::LifeLossScope::EachPlayer {
+                    if scope.charges_player() {
                         st.life -= *amount as i32;
                     }
                 }
@@ -633,6 +653,7 @@ pub(in crate::deck::simulator) fn resolve_cast(
                 spent_total,
                 repeatable_sources,
                 false,
+                CastPayment::Free,
             );
         }
     }
@@ -647,7 +668,7 @@ fn record_player_damage(
     scope: super::super::model::LifeLossScope,
 ) {
     st.damage_dealt_this_turn += amount * scope.table_multiplier(format);
-    if scope == super::super::model::LifeLossScope::EachPlayer {
+    if scope.charges_player() {
         st.life -= amount as i32;
     }
 }

@@ -1,36 +1,11 @@
 //! Tests for the simulator pipeline module.
 
-/// A minimal card row for tests.
 use super::deck::build_sim_deck;
+use super::deck_test_support::card;
 use super::oracle_lower::parse_sim_card;
-use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use std::collections::HashMap;
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// A deck text with one section.
 fn deck_text(section: &str, entries: &[(&str, i64)]) -> crate::deck::grammar::Deck {
@@ -438,14 +413,14 @@ fn partner_upkeep_engines_fire_once_per_commander_per_turn() {
         "the second partner's engine fires exactly once"
     );
     // Turn 3: cast interference (free filler casts also enter the seen
-    // census and diverge with the libraries), so the bound is a range:
-    // the second engine adds 0-2 pops (its draw plus hand-limit noise).
-    // It must never exceed the +2 double-fire from duplicate registration.
+    // census and diverge with the libraries), so the bound is a range.
+    // The second engine fires at least once (1) and never exceeds the +2
+    // double-fire from duplicate registration.
     let growth_pair3 = log.cards_seen[2] - log.cards_seen[1];
     let growth_solo3 = silent_log.cards_seen[2] - silent_log.cards_seen[1];
     assert!(
-        (0..=2).contains(&(growth_pair3 - growth_solo3)),
-        "the second partner's engine stays bounded (pair {growth_pair3} vs solo {growth_solo3})"
+        (1..=2).contains(&(growth_pair3 - growth_solo3)),
+        "the second partner's engine fires once and stays bounded (pair {growth_pair3} vs solo {growth_solo3})"
     );
 }
 

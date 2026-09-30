@@ -1,14 +1,14 @@
-// `stm deck combos`: bracket-aware combo audit over a deck, split by
-// section.
-//
-// A static join against the Spellbook store (`load_variants_for` +
-// `combos::candidates`); no simulation runs. Complete combos and one-card-
-// away near misses report per section (COMMANDER / DECK / SIDEBOARD), with
-// near-miss rows flagging whether the deck holds the piece and whether the
-// completing card is owned (buy vs pull from the binder). `--bracket`
-// flags combos — complete or near miss — whose Spellbook bracket tag
-// breaks the target bracket (an "S"-tagged infinite-turn combo in a
-// bracket-3 main deck is the Stationz case).
+//! `stm deck combos`: bracket-aware combo audit over a deck, split by
+//! section.
+//!
+//! A static join against the Spellbook store (`load_variants_for` +
+//! `combos::candidates`); no simulation runs. Complete combos and one-card-
+//! away near misses report per section (COMMANDER / DECK / SIDEBOARD), with
+//! near-miss rows flagging whether the deck holds the piece and whether the
+//! completing card is owned (buy vs pull from the binder). `--bracket`
+//! flags combos — complete or near miss — whose Spellbook bracket tag
+//! breaks the target bracket (an "S"-tagged infinite-turn combo in a
+//! bracket-3 main deck is the Stationz case).
 
 /// One combo audit row for a deck section.
 #[derive(Debug, Clone, serde::Serialize)]
@@ -42,8 +42,11 @@ pub struct ComboRow {
 /// One section's audit result.
 #[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct SectionCombos {
+    /// Section name.
     pub section: String,
+    /// Combos fully present in the section.
     pub complete: Vec<ComboRow>,
+    /// Combos missing only a few pieces.
     pub near_misses: Vec<ComboRow>,
     /// Combos whose bracket tag exceeds the target bracket.
     pub bracket_breaks: Vec<String>,
@@ -60,7 +63,7 @@ pub fn section_combos(
     section: &str,
     names: &std::collections::HashSet<String>,
     commander_names: &std::collections::HashSet<String>,
-    format_key: &str,
+    format_key: Option<&str>,
     owned_counts: &std::collections::HashMap<String, i64>,
 ) -> anyhow::Result<SectionCombos> {
     let variants = crate::combos::load_variants_for(conn, names)?;
@@ -69,7 +72,10 @@ pub fn section_combos(
         ..Default::default()
     };
     for (variant, pieces) in variants {
-        if !variant.legalities.get(format_key).copied().unwrap_or(false) {
+        // No pinned/inferred format means no legality filter.
+        if let Some(format) = format_key
+            && !crate::combos::variant_legal_in(&variant, format)
+        {
             continue;
         }
         // One slot per ordinal, preferring faces the section holds.
@@ -156,10 +162,11 @@ pub fn combos(
         out.hint("run 'stm setup' or 'stm sync' to refresh combo data");
         return Ok(crate::cli::codes::NO_RESULTS);
     }
-    // Format key: explicit flag, else the deck's inferred format.
-    let format_key = format
-        .map(str::to_string)
-        .unwrap_or_else(|| super::simulator::deck::infer_format_key(&deck));
+    // Format key: explicit flag (lowercased), else the deck's inferred
+    // format when it is a real Spellbook key; 60-card decks with no pin
+    // get no legality filter.
+    let format_key = super::simulator::deck::combo_format_key(&deck, format);
+    let format_key = format_key.as_deref();
 
     // Commander names: the COMMANDER section's entries.
     let commander_names: std::collections::HashSet<String> = deck
@@ -179,7 +186,7 @@ pub fn combos(
             section,
             &names,
             &commander_names,
-            &format_key,
+            format_key,
             &owned_counts,
         ) {
             Ok(mut c) => {

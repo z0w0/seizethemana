@@ -475,9 +475,13 @@ fn life_loss_scope(lower: &str) -> super::super::model::LifeLossScope {
         }
     } else if lower.contains("target player") || lower.contains("target opponent") {
         LifeLossScope::TargetPlayer
+    } else if lower.contains("you lose") {
+        // Unqualified "you lose N life" is a self-cost, not a drain
+        // (CR 119.3): the goldfish pays it and no opponent loses life.
+        LifeLossScope::SelfOnly
     } else {
-        // Unqualified "you lose N life" is a self-cost, not a drain; the
-        // conservative read of any other phrasing is one opponent.
+        // Any other phrasing ("this creature loses N life" is not a
+        // player life loss) reads as one opponent drain.
         LifeLossScope::TargetPlayer
     }
 }

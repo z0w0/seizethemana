@@ -1,35 +1,57 @@
+//! Structured card filters and matching: the parsed form of the CLI's
+//! `--type`/`--color`/`--cmc`/... flags, shared by `query` and
+//! `collection query`. All set criteria are AND-combined.
+
 /// Structured card filters shared by `query` and `collection query`.
 ///
 /// Built from [`crate::cli::CardFilters`]; all criteria are AND-combined.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct CardFilters {
+    /// Type-line substring.
     pub type_: Option<String>,
+    /// Colors the card may contain (subset of WUBRG).
     pub color: Option<String>,
+    /// Color identity the card must fit within (subset of WUBRG).
     pub color_identity: Option<String>,
+    /// Converted mana cost comparison.
     pub cmc: Option<NumOp>,
+    /// Power comparison.
     pub power: Option<NumOp>,
+    /// Toughness comparison.
     pub toughness: Option<NumOp>,
+    /// Rarity name.
     pub rarity: Option<String>,
+    /// Set code.
     pub set: Option<String>,
+    /// Keyword substring.
     pub keyword: Option<String>,
+    /// Oracle-text substring.
     pub oracle_text: Option<String>,
+    /// Format the card must be legal in.
     pub format: Option<String>,
 }
 
 /// Numeric comparison: `<op> <value>`, e.g. `<=3`, `=2`, `>5`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NumOp {
+    /// Comparison operator.
     pub op: Cmp,
+    /// Value the operator compares against.
     pub value: f64,
 }
 
 /// Comparison operators, in ascending token length.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Cmp {
+    /// Less than.
     Lt,
+    /// Less than or equal.
     Le,
+    /// Equal.
     Eq,
+    /// Greater than or equal.
     Ge,
+    /// Greater than.
     Gt,
 }
 
@@ -138,18 +160,31 @@ impl CardFilters {
 /// The fields [`CardFilters`] tests against; implemented by card rows and
 /// collection-augmented rows alike.
 pub trait Filterable {
+    /// Card name.
     fn name(&self) -> &str;
+    /// Mana cost in Scryfall notation.
     fn mana_cost(&self) -> &str;
+    /// Converted mana cost.
     fn cmc(&self) -> f64;
+    /// Type line.
     fn type_line(&self) -> &str;
+    /// Colors as a JSON array string.
     fn colors(&self) -> &str;
+    /// Color identity as a JSON array string.
     fn color_identity(&self) -> &str;
+    /// Keywords as a JSON array string.
     fn keywords(&self) -> &str;
+    /// Power as a number, when the card has one.
     fn power(&self) -> Option<f64>;
+    /// Toughness as a number, when the card has one.
     fn toughness(&self) -> Option<f64>;
+    /// Rules text.
     fn oracle_text(&self) -> &str;
+    /// Rarity name.
     fn rarity(&self) -> &str;
+    /// Set code.
     fn set_code(&self) -> &str;
+    /// Format legalities as a JSON object string.
     fn legalities(&self) -> &str;
 }
 
@@ -290,6 +325,8 @@ mod tests {
             scryfall_id: String::new(),
             released_at: String::new(),
             game_changer: None,
+            penny_rank: None,
+            reserved: None,
         };
         overrides(&mut r);
         r

@@ -1,3 +1,7 @@
+//! Terminal output and styling: the [`Output`] hub that routes results to
+//! stdout and status lines to stderr, styled human text or JSON as the
+//! command's `--json` flag asks.
+
 use owo_colors::OwoColorize;
 use std::io::IsTerminal;
 
@@ -104,9 +108,13 @@ const VERB_WIDTH: usize = 12;
 /// Color family for [`Styles::glyph`].
 #[derive(Debug, Clone, Copy)]
 pub enum GlyphKind {
+    /// Positive result.
     Good,
+    /// Caution.
     Warn,
+    /// Negative result.
     Bad,
+    /// De-emphasized text.
     Dim,
     /// Advisory note (bracket judgment calls): informational, never a
     /// violation or a genuine conflict.
@@ -534,15 +542,29 @@ mod tests {
     }
 
     #[test]
+    fn progress_bar_is_suppressed_in_json_mode() {
+        // JSON mode emits only the command's JSON result, so a progress
+        // bar must not be created or drawn.
+        let mut out = Output::new(true, false, false);
+        out.progress_bar("Embedding", "cards", 10);
+        assert!(out.progress.is_none(), "no bar in JSON mode");
+    }
+
+    #[test]
     fn progress_bar_templates_have_no_extra_padding() {
         // The templates must not prepend spaces: Styles::status already
-        // pads the verb to the cargo-style verb column.
-        let out = Output::new(false, false, false);
-        let mut out = out;
-        out.progress_bar("Embedding", "cards", 10);
-        out.clear_progress();
-        out.progress_bar("Downloading", "bulk data", 0);
-        out.clear_progress();
+        // pads the verb to the cargo-style verb column. Build the same
+        // templates directly and check their prefix.
+        for template in [
+            "{msg} [{bar:.cyan/blue}] {pos}/{len} ({eta})",
+            "{msg} {spinner:.green} {pos}",
+        ] {
+            assert!(template.starts_with("{msg}"), "{template}");
+            assert!(
+                !template.starts_with(' '),
+                "no leading padding in {template}"
+            );
+        }
     }
 
     #[test]

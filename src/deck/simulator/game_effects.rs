@@ -15,8 +15,9 @@ pub(in crate::deck::simulator) use keyword_actions::{
 pub(in crate::deck::simulator) mod activation;
 
 pub(in crate::deck::simulator) use activation::{
-    fire_death_triggers, has_sacrificable_creature, resolve_creature_sacrifice,
-    resolve_deck_creature_sacrifice, resolve_sacrifice_uid, spend_leftover,
+    enforce_legend_rule, fire_death_triggers, has_sacrificable_creature,
+    resolve_creature_sacrifice, resolve_deck_creature_sacrifice, resolve_sacrifice_uid,
+    spend_leftover,
 };
 
 use super::game::{
@@ -208,15 +209,16 @@ pub(crate) fn apply_effect_at(
         SimEffect::LoseLife { amount, scope } => {
             // The scope decides the table multiplier (CR 119.3): "each
             // opponent" hits the opponent count, "target player" hits
-            // exactly one, "each player" hits the table plus the player.
+            // exactly one, "each player" hits the table plus the player,
+            // and "you lose" costs only the player.
             st.opponent_life_lost += *amount * scope.table_multiplier(deck.format);
-            if *scope == super::model::LifeLossScope::EachPlayer {
+            if scope.charges_player() {
                 st.life -= *amount as i32;
             }
         }
         SimEffect::Damage { amount, scope } => {
             st.damage_dealt_this_turn += amount * scope.table_multiplier(deck.format);
-            if *scope == super::model::LifeLossScope::EachPlayer {
+            if scope.charges_player() {
                 st.life -= *amount as i32;
             }
         }

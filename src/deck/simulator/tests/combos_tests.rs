@@ -1,3 +1,4 @@
+//! Tests for combo assembly measurement.
 use crate::deck::simulator::combos::{candidates, measure};
 use crate::deck::simulator::format::rules_for;
 use crate::deck::simulator::game::{GameLog, run_game};

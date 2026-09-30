@@ -1,3 +1,4 @@
+//! Tests for defining-line traces in a game.
 use super::deck_test_support::*;
 use super::game::{GameLog, run_game};
 use super::model::SimDeck;

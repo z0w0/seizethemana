@@ -17,7 +17,9 @@ mod cast_sweep;
 /// Face-down casting and turning face up (morph, megamorph, disguise).
 mod face_down;
 
-pub(in crate::deck::simulator) use cast_resolve::{resolve_cast, upkeep_trigger_registration};
+pub(in crate::deck::simulator) use cast_resolve::{
+    CastPayment, resolve_cast, upkeep_trigger_registration,
+};
 pub(super) use face_down::{resolve_face_down, turn_face_up};
 
 /// Play one land from the hand (untapped first), fetch a search land,
@@ -43,7 +45,7 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
     let idx = st.hand.remove(pos);
     let card = &deck[idx];
     let life_cost = card.life_to_untap;
-    let can_pay_life = life_cost > 0 && st.life > life_cost as i32;
+    let can_pay_life = life_cost > 0 && st.life >= life_cost as i32;
     if can_pay_life {
         st.life -= life_cost as i32;
         st.life_paid += life_cost;
@@ -62,7 +64,7 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
         // Fetch lands pay one life and sacrifice themselves before searching.
         // The parsed Oracle search provides the target type restriction.
         let fetch_life_cost = card.fetch_life_cost;
-        if st.life <= fetch_life_cost as i32 {
+        if st.life < fetch_life_cost as i32 {
             return true;
         }
         st.life -= fetch_life_cost as i32;
@@ -86,7 +88,7 @@ pub(super) fn play_land(deck: &SimDeck, st: &mut GameState, turn: u32) -> bool {
             let fuid = take_uid(st);
             let fetched_card = &deck[fetched];
             let fetched_life_cost = fetched_card.life_to_untap;
-            let fetched_can_pay_life = fetched_life_cost > 0 && st.life > fetched_life_cost as i32;
+            let fetched_can_pay_life = fetched_life_cost > 0 && st.life >= fetched_life_cost as i32;
             if fetched_can_pay_life {
                 st.life -= fetched_life_cost as i32;
                 st.life_paid += fetched_life_cost;
@@ -313,15 +315,13 @@ pub(super) fn cast_graveyard_spells(
                     .own_escape
                     .unwrap_or_else(|| effective_min_cost(deck, &deck[index], &st.battlefield))
             };
-            // Additional life costs gate the same way hand casts gate
-            // (the cast would pay the life and could drive life
-            // negative).
-            if st.life <= deck[index].spell_data.additional_cost_life as i32 {
-                continue;
-            }
-            // Phyrexian pips pay with 2 life each (CR 107.4f).
+            // Life costs pay from one total: phyrexian pips at 2 life
+            // each (CR 107.4f) plus any "pay N life" additional cost.
+            // CR 119.4 requires the player to cover the whole amount, so
+            // a cast short of the combined cost stays in the graveyard.
             let charge = phyrexian_life_charge(&cost);
-            if st.life <= charge as i32 {
+            let life_cost = deck[index].spell_data.additional_cost_life + charge;
+            if st.life < life_cost as i32 {
                 continue;
             }
             if !payable(&cost, pool) || !pips_ok(&cost, pool) {
@@ -355,6 +355,7 @@ pub(super) fn cast_graveyard_spells(
                 &mut spent,
                 repeatable_sources,
                 true,
+                CastPayment::Mana,
             );
             st.replay_casts += 1;
             super::game::milestone_for_turn(st, turn as u32).graveyard_casts += 1;
@@ -409,7 +410,7 @@ fn cycle_unusable_cards(
         // (CR 107.4f), on top of any "pay N life" rider.
         let charge = phyrexian_life_charge(&cost);
         if !st.hand.contains(&index)
-            || st.life <= (card.spell_data.cycling_life + charge) as i32
+            || st.life < (card.spell_data.cycling_life + charge) as i32
             || !payable(&cost, pool)
             || !pips_ok(&cost, pool)
         {
@@ -441,7 +442,10 @@ fn cycle_unusable_cards(
     cycled
 }
 
-/// Reveal cards for the supported life-payment spell until life reaches zero.
+/// Reveal cards for the supported life-payment spell until life is
+/// exhausted. CR 119.4: a player can pay life only up to their total, so a
+/// reveal whose mana value exceeds remaining life stops the loop before it
+/// would drive life below zero.
 pub(in crate::deck::simulator) fn resolve_reveal_rule(
     deck: &SimDeck,
     st: &mut GameState,
@@ -449,9 +453,15 @@ pub(in crate::deck::simulator) fn resolve_reveal_rule(
     turn: u32,
 ) {
     while st.life > 0 {
-        let Some(index) = st.library.pop() else {
+        let Some(&index) = st.library.last() else {
             break;
         };
+        if matches!(rule.life_loss, super::model::RevealLifeLoss::ManaValue)
+            && deck[index].mana_value as i32 > st.life
+        {
+            break;
+        }
+        st.library.pop();
         match rule.destination {
             super::model::RevealDestination::Hand => st.hand.push(index),
         }

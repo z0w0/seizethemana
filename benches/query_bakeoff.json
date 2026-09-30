@@ -16,12 +16,7 @@
   "database_schema_version": 2,
   "ranking_settings": {
     "fts_tokenizer": "porter",
-    "fts_column_weights": [
-      8.0,
-      4.0,
-      2.0,
-      1.0
-    ],
+    "fts_column_weights": [8.0, 4.0, 2.0, 1.0],
     "fts_candidate_depth": 20,
     "vector_candidate_depth": 20,
     "rrf_k": 60.0,
@@ -1509,9 +1504,7 @@
             "Farseeing Flockmate",
             "Charging Strifeknight"
           ],
-          "fts": [
-            "Farseek"
-          ],
+          "fts": ["Farseek"],
           "vector": [
             "Farseek",
             "Aven Farseer",
@@ -7244,9 +7237,7 @@
             "Farseeing Flockmate",
             "Charging Strifeknight"
           ],
-          "fts": [
-            "Farseek"
-          ],
+          "fts": ["Farseek"],
           "vector": [
             "Farseek",
             "Aven Farseer",
@@ -12987,9 +12978,7 @@
             "Farseeing Flockmate",
             "Charging Strifeknight"
           ],
-          "fts": [
-            "Farseek"
-          ],
+          "fts": ["Farseek"],
           "vector": [
             "Farseek",
             "Aven Farseer",
@@ -18728,9 +18717,7 @@
             "Farseeing Flockmate",
             "Charging Strifeknight"
           ],
-          "fts": [
-            "Farseek"
-          ],
+          "fts": ["Farseek"],
           "vector": [
             "Farseek",
             "Aven Farseer",
@@ -24494,9 +24481,7 @@
             "Farseeing Flockmate",
             "Charging Strifeknight"
           ],
-          "fts": [
-            "Farseek"
-          ],
+          "fts": ["Farseek"],
           "vector": [
             "Aven Farseer",
             "Farseek",

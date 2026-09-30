@@ -1,34 +1,42 @@
+//! Collection: ManaBox CSV import and owned-only semantic search.
+//! Stats live in `collection_stats`; the cross-deck conflict report in
+//! `collection_conflicts`. CSV rows key by (binder name, binder type in
+//! {binder, deck}, name, set, cn, foil); quantity aggregates on that key.
+//! Deck rows project onto `decks/<name>.txt` during import; `list`
+//! (wishlist) rows are ignored.
+
 use anyhow::Context;
 use rusqlite::Connection;
-
-// Collection: ManaBox CSV import and owned-only semantic search.
-// Stats live in `collection_stats`; the cross-deck conflict report in
-// `collection_conflicts`. CSV rows key by (binder name, binder type ∈
-// {binder, deck}, name, set, cn, foil); quantity aggregates on that key.
-// Deck rows project onto `decks/<name>.txt` during import; `list`
-// (wishlist) rows are ignored.
 
 /// One parsed ManaBox row.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CsvRow {
     /// Binder or deck name (`Binder Name` column).
     pub binder: String,
+    /// Binder category (binder or deck).
     pub binder_type: BinderType,
+    /// Oracle card name.
     pub name: String,
+    /// Set code.
     pub set_code: String,
+    /// Collector number within the set.
     pub collector_number: String,
     /// `normal`, `foil`, or `etched`.
     pub foil: String,
+    /// Copies at this location.
     pub quantity: i64,
     /// Row total for the row (ManaBox's per-copy price × quantity).
     pub purchase_price: f64,
+    /// Scryfall print ID, when the CSV carries one.
     pub scryfall_id: String,
 }
 
 /// ManaBox binder type; wishlist (`list`) rows are skipped on import.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BinderType {
+    /// A physical binder.
     Binder,
+    /// A deck assignment.
     Deck,
 }
 
@@ -56,6 +64,7 @@ struct CollectionSearchReport {
 }
 
 impl BinderType {
+    /// The stored string form (`binder` or `deck`).
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Binder => "binder",
@@ -231,12 +240,16 @@ pub fn aggregate(rows: &[CsvRow]) -> Vec<CsvRow> {
 /// Import result summary.
 #[derive(Debug, Default, PartialEq)]
 pub struct ImportSummary {
+    /// Distinct binder locations written.
     pub binders: usize,
+    /// Distinct deck locations written.
     pub decks: usize,
+    /// Rows written after aggregation.
     pub rows: usize,
+    /// Total copies imported.
     pub cards: i64,
+    /// Wishlist rows skipped.
     pub skipped_list_rows: usize,
-    pub unknown_cards: Vec<String>,
 }
 
 /// Import a ManaBox collection CSV into the collection (replace by default,
@@ -386,7 +399,6 @@ pub fn import(
             rows: resolved.len(),
             cards,
             skipped_list_rows,
-            unknown_cards: unknown,
         })
     })();
     let summary = match result {
@@ -486,9 +498,13 @@ fn missing_list_note(
 /// One owned-search hit: card, score, and every location that owns it.
 #[derive(Debug, Clone)]
 pub struct OwnedHit {
+    /// Matched card.
     pub card: crate::db::CardRow,
+    /// Search score.
     pub score: f32,
+    /// Copies owned in the queried scope.
     pub owned: i64,
+    /// Locations holding the card: `(binder, binder_type, quantity)`.
     pub locations: Vec<(String, String, i64)>,
 }
 

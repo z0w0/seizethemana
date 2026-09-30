@@ -33,6 +33,8 @@ fn card(name: &str, type_line: &str, identity: &str, text: &str, rank: Option<i6
         scryfall_id: String::new(),
         released_at: "2020-01-01".into(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 

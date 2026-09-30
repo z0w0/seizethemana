@@ -1,12 +1,12 @@
-use crate::output::round2;
-// `stm deck buylist`: missing copies as a plain `2x Name` list (generic
-// default) or a store CSV for Card Kingdom / TCGPlayer, plus a JSON view.
-//
-// Missing math: a deck slot is filled by copies assigned to this deck plus
-// copies sitting in binders; copies assigned to other decks never count
-// (that would deconstruct those decks). The cheapest released English
-// printing of the right finish fills each missing slot.
+//! `stm deck buylist`: missing copies as a plain `2x Name` list (generic
+//! default) or a store CSV for Card Kingdom / TCGPlayer, plus a JSON view.
+//!
+//! Missing math: a deck slot is filled by copies assigned to this deck plus
+//! copies sitting in binders; copies assigned to other decks never count
+//! (that would deconstruct those decks). The cheapest released English
+//! printing of the right finish fills each missing slot.
 
+use crate::output::round2;
 use rusqlite::Connection;
 
 use super::store::load_deck;
@@ -58,12 +58,19 @@ impl Store {
 /// wanted by both DECK and SIDEBOARD lists both).
 #[derive(Debug, Clone)]
 pub struct BuylistRow {
+    /// Card name.
     pub name: String,
+    /// Set code of the cheapest printing.
     pub set_code: String,
+    /// Set name, when known.
     pub set_name: Option<String>,
+    /// Collector number of the cheapest printing.
     pub collector_number: String,
+    /// Scryfall identifier of the cheapest printing.
     pub scryfall_id: String,
+    /// Whether the missing copies are foil.
     pub foil: bool,
+    /// Number of missing copies.
     pub quantity: i64,
     /// Sections holding this card: a BTreeSet-ordered list of section names.
     pub sections: Vec<String>,

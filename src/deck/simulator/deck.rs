@@ -117,13 +117,28 @@ fn companion_card(
     Some(idx)
 }
 
-/// The deck's format key: `commander` when a COMMANDER section exists,
-/// else `constructed` (the same inference `build_sim_deck` uses).
+/// The deck's inferred format key: `commander` when a COMMANDER section
+/// exists, else `constructed` (the same inference `build_sim_deck` uses).
+/// `constructed` is a simulator-internal key, not a Spellbook legality
+/// key; combo consumers treat it as "no format filter".
 pub fn infer_format_key(deck: &crate::deck::grammar::Deck) -> String {
     let has_commanders = deck.section_index("COMMANDER").is_some();
     super::format::rules_inferred(has_commanders)
         .key
         .to_string()
+}
+
+/// The format key to filter a combo lookup by: an explicit `--format`
+/// lowercased, the inferred key when it is a real Spellbook format, or
+/// `None` for "no format filter" (a 60-card deck with no pinned format).
+pub fn combo_format_key(deck: &crate::deck::grammar::Deck, format: Option<&str>) -> Option<String> {
+    match format {
+        Some(fmt) => Some(fmt.to_ascii_lowercase()),
+        None => {
+            let inferred = infer_format_key(deck);
+            (inferred != "constructed").then_some(inferred)
+        }
+    }
 }
 
 /// An explicit `--format` may override the inferred one. A constructed run

@@ -39,6 +39,8 @@ fn land_row(name: &str, tapped: bool) -> (String, CardRow) {
             scryfall_id: format!("sid-{name}"),
             released_at: "2020-01-01".into(),
             game_changer: None,
+            penny_rank: None,
+            reserved: None,
         },
     )
 }
@@ -68,6 +70,8 @@ fn spell_row(name: &str) -> (String, CardRow) {
             scryfall_id: format!("sid-{name}"),
             released_at: "2020-01-01".into(),
             game_changer: None,
+            penny_rank: None,
+            reserved: None,
         },
     )
 }
@@ -151,24 +155,39 @@ fn all_tapland_deck_ramps_one_turn_behind() {
 
 #[test]
 fn mixed_tapland_base_beats_the_all_tapland_base() {
-    // Untapped lands pay a turn earlier: by turn 4 the mixed base must
-    // cast strictly more (or equal — the seed makes early turns
-    // borderline) than the all-tapland base.
-    let lands = vec![("Island", false)];
-    let (deck, cards) = deck_with_base(&lands, 98);
-    let sim_deck = build_sim_deck(&deck, &cards, Some("commander"));
+    // Untapped lands pay a turn earlier: by turn 2 the all-untapped base
+    // must have a live pool while the all-tapland base is still dry, and
+    // turn 1 must be dry only for the tapland base.
+    let untapped = vec![("Island", false)];
+    let (deck_u, cards_u) = deck_with_base(&untapped, 98);
+    let sim_untapped = build_sim_deck(&deck_u, &cards_u, Some("commander"));
     let mut rng = ChaCha8Rng::seed_from_u64(11);
-    let logs: Vec<_> = (0..100)
-        .map(|_| run_game(&sim_deck, &mut rng, 10))
+    let logs_untapped: Vec<_> = (0..100)
+        .map(|_| run_game(&sim_untapped, &mut rng, 10))
         .collect();
-    let stats = super::aggregate::aggregate(&logs, &sim_deck, 10);
+    let stats_untapped = super::aggregate::aggregate(&logs_untapped, &sim_untapped, 10);
     assert!(
-        stats.unused_mana.is_empty() || stats.unused_mana.len() <= 10,
-        "sanity: turn vector bounded"
-    );
-    assert!(
-        stats.unused_mana[0] > 0.0,
+        stats_untapped.unused_mana[0] > 0.0,
         "untapped lands pay from turn 1: {:.1}",
-        stats.unused_mana[0]
+        stats_untapped.unused_mana[0]
+    );
+
+    let tapped = vec![("Tapland Island", true)];
+    let (deck_t, cards_t) = deck_with_base(&tapped, 98);
+    let sim_tapped = build_sim_deck(&deck_t, &cards_t, Some("commander"));
+    let mut rng = ChaCha8Rng::seed_from_u64(11);
+    let logs_tapped: Vec<_> = (0..100)
+        .map(|_| run_game(&sim_tapped, &mut rng, 10))
+        .collect();
+    for log in &logs_tapped {
+        assert_eq!(log.mana_available[0], 0.0, "tapland: turn 1 is dry");
+    }
+    let stats_tapped = super::aggregate::aggregate(&logs_tapped, &sim_tapped, 10);
+    // The untapped base floats mana on turn 1; the tapland base does not.
+    assert!(
+        stats_untapped.unused_mana[0] > stats_tapped.unused_mana[0],
+        "untapped base pays on turn 1 and the tapland base does not ({} vs {})",
+        stats_untapped.unused_mana[0],
+        stats_tapped.unused_mana[0]
     );
 }

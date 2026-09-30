@@ -1,3 +1,7 @@
+//! Hybrid card search: a keyword (BM25) leg and a meaning (vector) leg,
+//! fused by reciprocal rank fusion. Also holds query-text expansion and the
+//! shared settings used by the search quality harness.
+
 use anyhow::Context;
 
 use crate::db::{self, CardRow};

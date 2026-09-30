@@ -2,8 +2,8 @@ use clap::Parser;
 use rusqlite::Connection;
 use seizethemana::{
     card,
-    cli::{self, Cli, CollectionCommand, Command, DeckCommand, codes},
-    collection, collection_conflicts, collection_stats, db, deck,
+    cli::{self, codes, Cli, CollectionCommand, Command, DeckCommand},
+    collection, collection_conflicts, collection_sell, collection_stats, db, deck,
     output::Output,
     paths, query, setup, sync,
 };
@@ -167,6 +167,30 @@ fn run_collection(
                 paths, conn, out, query, filters, binder, deck, *limit, *json,
             )
         }
+        Some(CollectionCommand::Sell {
+            min_price,
+            max_price,
+            rarity,
+            format,
+            rank_floor,
+            target,
+            limit,
+            json,
+        }) => collection_sell::run(
+            paths,
+            conn,
+            out,
+            &collection_sell::SellOptions {
+                min_price: *min_price,
+                max_price: *max_price,
+                rarity: rarity.as_deref(),
+                format: format.as_deref(),
+                rank_floor: rank_floor.unwrap_or(collection_sell::DEFAULT_RANK_FLOOR),
+                target: *target,
+                limit: *limit as usize,
+            },
+            *json,
+        ),
     }
 }
 

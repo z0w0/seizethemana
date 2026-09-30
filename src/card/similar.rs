@@ -1,10 +1,16 @@
-use super::{ambiguous_error, card_json};
+//! `stm card similar`: tag-overlap neighbors for one card, fused with
+//! semantic similarity when a stored vector exists.
+
+use super::{card_json, resolve_card_or_report};
 use anyhow::Context;
 /// One tag-overlap neighbor: the card, its shared tag labels, and the count.
 #[derive(Debug, Clone)]
 pub struct SimilarHit {
+    /// The neighboring card.
     pub card: crate::db::CardRow,
+    /// Number of shared tags.
     pub shared_count: i64,
+    /// Labels of the shared tags.
     pub shared_tags: Vec<String>,
     /// Hybrid rank in `[0, 1]` (reciprocal-rank fusion of the tag leg and
     /// the stored-vector cosine leg); `None` when only the tag leg ran.
@@ -40,7 +46,7 @@ pub fn rank_similar(
                 c.color_identity, c.keywords, c.power, c.toughness, c.loyalty,
                 c.oracle_text, c.rarity, c.edhrec_rank, c.legalities,
                 c.set_code, c.collector_number, c.scryfall_id, c.released_at,
-                c.game_changer,
+                c.game_changer, c.penny_rank, c.reserved,
                 COUNT(ct2.tag_id) AS shared,
                 GROUP_CONCAT(t2.label, '\u{1}') AS labels
          FROM card_tags ct
@@ -75,8 +81,10 @@ pub fn rank_similar(
             row.get::<_, String>(17)?,
             row.get::<_, String>(18)?,
             row.get::<_, Option<bool>>(19)?,
-            row.get::<_, i64>(20)?,
-            row.get::<_, String>(21)?,
+            row.get::<_, Option<i64>>(20)?,
+            row.get::<_, Option<bool>>(21)?,
+            row.get::<_, i64>(22)?,
+            row.get::<_, String>(23)?,
         ))
     })?;
     let mut hits = Vec::new();
@@ -102,6 +110,8 @@ pub fn rank_similar(
             scryfall_id,
             released_at,
             game_changer,
+            penny_rank,
+            reserved,
             shared,
             labels,
         ) = row.context("reading similar card")?;
@@ -132,6 +142,8 @@ pub fn rank_similar(
                 scryfall_id,
                 released_at,
                 game_changer,
+                penny_rank,
+                reserved,
             },
             shared_count: shared,
             shared_tags,
@@ -206,16 +218,8 @@ pub fn run_similar(
         out.hint("run 'stm setup' first");
         return Ok(crate::cli::codes::ERROR);
     }
-    let seed = match crate::db::resolve_name(conn, typed).context("resolving card name")? {
-        crate::db::NameMatch::Found(card) => card,
-        crate::db::NameMatch::Ambiguous { candidates, total } => {
-            return ambiguous_error(out, typed, &candidates, total);
-        }
-        crate::db::NameMatch::NotFound => {
-            out.error(&format!("no card named {typed:?}"));
-            out.hint("names resolve by exact match, case, or unique prefix");
-            return Ok(crate::cli::codes::NO_RESULTS);
-        }
+    let Some(seed) = resolve_card_or_report(out, conn, typed)? else {
+        return Ok(crate::cli::codes::NO_RESULTS);
     };
     let restrict = if owned_only {
         let owned = crate::collection::owned_names_all(conn)?;

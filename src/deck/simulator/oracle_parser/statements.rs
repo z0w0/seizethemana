@@ -356,6 +356,9 @@ pub(super) fn is_static_statement(source: &str) -> bool {
 /// Identify a one-shot spell statement or resolution clause.
 pub(super) fn is_spell_statement(source: &str) -> bool {
     let lower = source.to_ascii_lowercase();
+    // This list overlaps the shared effect prefixes but is not a
+    // subset: it omits effect-only prefixes (lose, counter, untap) and
+    // adds statement-only ones (each player, target, deals).
     [
         "as an additional cost to cast this spell",
         "draw ",

@@ -1,12 +1,12 @@
-// Decklist fetching from a hosted deck site: Archidekt. One public
-// entry (`fetch`) turns a deck URL into the internal `Deck`; network
-// failures surface as `error:` + `hint:` lines, never panics.
-//
-// Archidekt is the only supported host: the only deck site whose API
-// serves unauthenticated JSON to this tool's user agent. Scryfall has no
-// public deck API (the `/decks` endpoint requires an OAuth grant), and
-// Moxfield's API sits behind a Cloudflare bot wall that rejects
-// non-browser agents. Moxfield decks still import fine as txt files.
+//! Decklist fetching from a hosted deck site: Archidekt. One public
+//! entry (`fetch`) turns a deck URL into the internal `Deck`; network
+//! failures surface as `error:` + `hint:` lines, never panics.
+//!
+//! Archidekt is the only supported host: the only deck site whose API
+//! serves unauthenticated JSON to this tool's user agent. Scryfall has no
+//! public deck API (the `/decks` endpoint requires an OAuth grant), and
+//! Moxfield's API sits behind a Cloudflare bot wall that rejects
+//! non-browser agents. Moxfield decks still import fine as txt files.
 
 use super::grammar::{Deck, DeckEntry};
 use anyhow::Context;
@@ -14,6 +14,7 @@ use anyhow::Context;
 /// The site a deck URL came from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeckSource {
+    /// Archidekt (archidekt.com).
     Archidekt,
 }
 

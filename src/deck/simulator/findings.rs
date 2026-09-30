@@ -542,7 +542,7 @@ fn color_screw_problems(stats: &SimStats, deck: &SimDeck, findings: &mut Vec<Fin
     /// `deck update`'s singleton guard uses). Wastes and snow basics are
     /// limited-supply cards, so they stay tracked.
     fn is_basic_name(name: &str) -> bool {
-        matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
+        crate::collection::is_basic_name(name)
     }
     let basic_count = deck
         .cards

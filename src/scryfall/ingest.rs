@@ -1,6 +1,6 @@
-// Database ingest for Scryfall bulk rows: card-row insert/overwrite and
-// the per-printing price upsert. Split from `scryfall.rs` to keep each
-// file small; the sync pass calls these inside its own transaction.
+//! Database ingest for Scryfall bulk rows: card-row insert/overwrite and
+//! the per-printing price upsert. Split from `scryfall.rs` to keep each
+//! file small; the sync pass calls these inside its own transaction.
 
 use super::ScryfallCard;
 
@@ -20,8 +20,8 @@ pub fn insert_card(conn: &rusqlite::Connection, card: &ScryfallCard) -> anyhow::
             name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
             keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
             legalities, set_code, collector_number, scryfall_id, released_at,
-            game_changer
-        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)",
+            game_changer, penny_rank, reserved
+        ) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22)",
         rusqlite::params![
             card.name,
             card.oracle_id,
@@ -43,6 +43,8 @@ pub fn insert_card(conn: &rusqlite::Connection, card: &ScryfallCard) -> anyhow::
             card.id.clone().unwrap_or_default(),
             card.released_at.clone().unwrap_or_default(),
             card.game_changer,
+            card.penny_rank,
+            card.reserved,
         ],
     )?;
     Ok(())
@@ -72,7 +74,7 @@ pub fn update_card(
             toughness = ?10, loyalty = ?11, oracle_text = ?12, rarity = ?13,
             edhrec_rank = ?14, legalities = ?15, set_code = ?16,
             collector_number = ?17, scryfall_id = ?18, released_at = ?19,
-            game_changer = ?20
+            game_changer = ?20, penny_rank = ?21, reserved = ?22
          WHERE name = ?1",
         rusqlite::params![
             name,
@@ -95,6 +97,8 @@ pub fn update_card(
             card.id.clone().unwrap_or_default(),
             card.released_at.clone().unwrap_or_default(),
             card.game_changer,
+            card.penny_rank,
+            card.reserved,
         ],
     )?;
     anyhow::ensure!(updated == 1, "card {name:?} vanished during update");

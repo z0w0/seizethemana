@@ -1,269 +1,209 @@
 {
- "name": "boros_energy_2026",
- "format": "modern",
- "commanders": [],
- "cards": [
-  {
-   "name": "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
-   "cost": "{1}{W} // ",
-   "type_line": "Legendary Creature — Cat Warrior // Legendary Planeswalker — Ajani",
-   "keywords": "Transform",
-   "power": "1",
-   "loyalty": "3",
-   "text": "When Ajani enters, create a 2/1 white Cat Warrior creature token.\nWhenever one or more other Cats you control die, you may exile Ajani, then return him to the battlefield transformed under his owner's control.\n// +2: Put a +1/+1 counter on each Cat you control.\n0: Create a 2/1 white Cat Warrior creature token. When you do, if you control a red permanent other than Ajani, he deals damage equal to the number of creatures you control to any target.\n−4: Each opponent chooses an artifact, a creature, an enchantment, and a planeswalker from among the nonland permanents they control, then sacrifices the rest."
-  },
-  {
-   "name": "Arena of Glory",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "Exert",
-   "power": null,
-   "loyalty": null,
-   "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If any of that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)"
-  },
-  {
-   "name": "Arid Mesa",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
-  },
-  {
-   "name": "Belladonna Took",
-   "cost": "{1}{W}",
-   "type_line": "Legendary Creature — Halfling Citizen",
-   "keywords": "",
-   "power": "2",
-   "loyalty": null,
-   "text": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control."
-  },
-  {
-   "name": "Dalkovan Encampment",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {W}.\n{2}{W}, {T}: Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and attacking. Sacrifice them at the beginning of the next end step."
-  },
-  {
-   "name": "Elegant Parlor",
-   "cost": "",
-   "type_line": "Land — Mountain Plains",
-   "keywords": "Surveil",
-   "power": null,
-   "loyalty": null,
-   "text": "({T}: Add {R} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
-  },
-  {
-   "name": "Galvanic Discharge",
-   "cost": "{R}",
-   "type_line": "Instant",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
-  },
-  {
-   "name": "Goblin Bombardment",
-   "cost": "{1}{R}",
-   "type_line": "Enchantment",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
-  },
-  {
-   "name": "Guide of Souls",
-   "cost": "{W}",
-   "type_line": "Creature — Human Cleric",
-   "keywords": "",
-   "power": "1",
-   "loyalty": null,
-   "text": "Whenever another creature you control enters, you gain 1 life and get {E} (an energy counter).\nWhenever you attack, you may pay {E}{E}{E}. When you do, put two +1/+1 counters and a flying counter on target attacking creature. It becomes an Angel in addition to its other types."
-  },
-  {
-   "name": "Marsh Flats",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
-  },
-  {
-   "name": "Mountain",
-   "cost": "",
-   "type_line": "Basic Land — Mountain",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "({T}: Add {R}.)"
-  },
-  {
-   "name": "Ocelot Pride",
-   "cost": "{W}",
-   "type_line": "Creature — Cat",
-   "keywords": "Lifelink Ascend First strike",
-   "power": "1",
-   "loyalty": null,
-   "text": "First strike, lifelink\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your end step, if you gained life this turn, create a 1/1 white Cat creature token. Then if you have the city's blessing, for each token you control that entered this turn, create a token that's a copy of it."
-  },
-  {
-   "name": "Plains",
-   "cost": "",
-   "type_line": "Basic Land — Plains",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "({T}: Add {W}.)"
-  },
-  {
-   "name": "Prismatic Ending",
-   "cost": "{X}{W}",
-   "type_line": "Sorcery",
-   "keywords": "Converge",
-   "power": null,
-   "loyalty": null,
-   "text": "Converge — Exile target nonland permanent if its mana value is less than or equal to the number of colors of mana spent to cast this spell."
-  },
-  {
-   "name": "Ragavan, Nimble Pilferer",
-   "cost": "{R}",
-   "type_line": "Legendary Creature — Monkey Pirate",
-   "keywords": "Treasure Dash",
-   "power": "2",
-   "loyalty": null,
-   "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
-  },
-  {
-   "name": "Reckless Pyrosurfer",
-   "cost": "{1}{R}",
-   "type_line": "Creature — Human Scout",
-   "keywords": "Haste Landfall",
-   "power": "2",
-   "loyalty": null,
-   "text": "Haste\nLandfall — Whenever a land you control enters, this creature gains battle cry until end of turn. (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn. Each instance of battle cry triggers separately.)"
-  },
-  {
-   "name": "Sacred Foundry",
-   "cost": "",
-   "type_line": "Land — Mountain Plains",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
-  },
-  {
-   "name": "Seasoned Pyromancer",
-   "cost": "{1}{R}{R}",
-   "type_line": "Creature — Human Shaman",
-   "keywords": "",
-   "power": "2",
-   "loyalty": null,
-   "text": "When this creature enters, discard two cards, then draw two cards. For each nonland card discarded this way, create a 1/1 red Elemental creature token.\n{3}{R}{R}, Exile this card from your graveyard: Create two 1/1 red Elemental creature tokens."
-  },
-  {
-   "name": "Voice of Victory",
-   "cost": "{1}{W}",
-   "type_line": "Creature — Human Bard",
-   "keywords": "Mobilize",
-   "power": "1",
-   "loyalty": null,
-   "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
-  },
-  {
-   "name": "Windswept Heath",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "",
-   "power": null,
-   "loyalty": null,
-   "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
-  }
- ],
- "list": [
-  [
-   "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
-   4
+  "name": "boros_energy_2026",
+  "format": "modern",
+  "commanders": [],
+  "cards": [
+    {
+      "name": "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
+      "cost": "{1}{W} // ",
+      "type_line": "Legendary Creature — Cat Warrior // Legendary Planeswalker — Ajani",
+      "keywords": "Transform",
+      "power": "1",
+      "loyalty": "3",
+      "text": "When Ajani enters, create a 2/1 white Cat Warrior creature token.\nWhenever one or more other Cats you control die, you may exile Ajani, then return him to the battlefield transformed under his owner's control.\n// +2: Put a +1/+1 counter on each Cat you control.\n0: Create a 2/1 white Cat Warrior creature token. When you do, if you control a red permanent other than Ajani, he deals damage equal to the number of creatures you control to any target.\n−4: Each opponent chooses an artifact, a creature, an enchantment, and a planeswalker from among the nonland permanents they control, then sacrifices the rest."
+    },
+    {
+      "name": "Arena of Glory",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "Exert",
+      "power": null,
+      "loyalty": null,
+      "text": "This land enters tapped unless you control a Mountain.\n{T}: Add {R}.\n{R}, {T}, Exert this land: Add {R}{R}. If any of that mana is spent on a creature spell, it gains haste until end of turn. (An exerted permanent won't untap during your next untap step.)"
+    },
+    {
+      "name": "Arid Mesa",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Belladonna Took",
+      "cost": "{1}{W}",
+      "type_line": "Legendary Creature — Halfling Citizen",
+      "keywords": "",
+      "power": "2",
+      "loyalty": null,
+      "text": "Whenever a token you control enters, you gain 1 life if this is the first time this ability has resolved this turn. If it's the second time, draw a card. If it's the third time, put a +1/+1 counter on each creature you control."
+    },
+    {
+      "name": "Dalkovan Encampment",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "This land enters tapped unless you control a Swamp or a Mountain.\n{T}: Add {W}.\n{2}{W}, {T}: Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and attacking. Sacrifice them at the beginning of the next end step."
+    },
+    {
+      "name": "Elegant Parlor",
+      "cost": "",
+      "type_line": "Land — Mountain Plains",
+      "keywords": "Surveil",
+      "power": null,
+      "loyalty": null,
+      "text": "({T}: Add {R} or {W}.)\nThis land enters tapped.\nWhen this land enters, surveil 1. (Look at the top card of your library. You may put it into your graveyard.)"
+    },
+    {
+      "name": "Galvanic Discharge",
+      "cost": "{R}",
+      "type_line": "Instant",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "Choose target creature or planeswalker. You get {E}{E}{E} (three energy counters), then you may pay any amount of {E}. Galvanic Discharge deals that much damage to that permanent."
+    },
+    {
+      "name": "Goblin Bombardment",
+      "cost": "{1}{R}",
+      "type_line": "Enchantment",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "Sacrifice a creature: This enchantment deals 1 damage to any target."
+    },
+    {
+      "name": "Guide of Souls",
+      "cost": "{W}",
+      "type_line": "Creature — Human Cleric",
+      "keywords": "",
+      "power": "1",
+      "loyalty": null,
+      "text": "Whenever another creature you control enters, you gain 1 life and get {E} (an energy counter).\nWhenever you attack, you may pay {E}{E}{E}. When you do, put two +1/+1 counters and a flying counter on target attacking creature. It becomes an Angel in addition to its other types."
+    },
+    {
+      "name": "Marsh Flats",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Mountain",
+      "cost": "",
+      "type_line": "Basic Land — Mountain",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "({T}: Add {R}.)"
+    },
+    {
+      "name": "Ocelot Pride",
+      "cost": "{W}",
+      "type_line": "Creature — Cat",
+      "keywords": "Lifelink Ascend First strike",
+      "power": "1",
+      "loyalty": null,
+      "text": "First strike, lifelink\nAscend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\nAt the beginning of your end step, if you gained life this turn, create a 1/1 white Cat creature token. Then if you have the city's blessing, for each token you control that entered this turn, create a token that's a copy of it."
+    },
+    {
+      "name": "Plains",
+      "cost": "",
+      "type_line": "Basic Land — Plains",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "({T}: Add {W}.)"
+    },
+    {
+      "name": "Prismatic Ending",
+      "cost": "{X}{W}",
+      "type_line": "Sorcery",
+      "keywords": "Converge",
+      "power": null,
+      "loyalty": null,
+      "text": "Converge — Exile target nonland permanent if its mana value is less than or equal to the number of colors of mana spent to cast this spell."
+    },
+    {
+      "name": "Ragavan, Nimble Pilferer",
+      "cost": "{R}",
+      "type_line": "Legendary Creature — Monkey Pirate",
+      "keywords": "Treasure Dash",
+      "power": "2",
+      "loyalty": null,
+      "text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)"
+    },
+    {
+      "name": "Reckless Pyrosurfer",
+      "cost": "{1}{R}",
+      "type_line": "Creature — Human Scout",
+      "keywords": "Haste Landfall",
+      "power": "2",
+      "loyalty": null,
+      "text": "Haste\nLandfall — Whenever a land you control enters, this creature gains battle cry until end of turn. (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn. Each instance of battle cry triggers separately.)"
+    },
+    {
+      "name": "Sacred Foundry",
+      "cost": "",
+      "type_line": "Land — Mountain Plains",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "({T}: Add {R} or {W}.)\nAs this land enters, you may pay 2 life. If you don't, it enters tapped."
+    },
+    {
+      "name": "Seasoned Pyromancer",
+      "cost": "{1}{R}{R}",
+      "type_line": "Creature — Human Shaman",
+      "keywords": "",
+      "power": "2",
+      "loyalty": null,
+      "text": "When this creature enters, discard two cards, then draw two cards. For each nonland card discarded this way, create a 1/1 red Elemental creature token.\n{3}{R}{R}, Exile this card from your graveyard: Create two 1/1 red Elemental creature tokens."
+    },
+    {
+      "name": "Voice of Victory",
+      "cost": "{1}{W}",
+      "type_line": "Creature — Human Bard",
+      "keywords": "Mobilize",
+      "power": "1",
+      "loyalty": null,
+      "text": "Mobilize 2 (Whenever this creature attacks, create two tapped and attacking 1/1 red Warrior creature tokens. Sacrifice them at the beginning of the next end step.)\nYour opponents can't cast spells during your turn."
+    },
+    {
+      "name": "Windswept Heath",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "",
+      "power": null,
+      "loyalty": null,
+      "text": "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle."
+    }
   ],
-  [
-   "Arena of Glory",
-   1
-  ],
-  [
-   "Arid Mesa",
-   4
-  ],
-  [
-   "Belladonna Took",
-   2
-  ],
-  [
-   "Dalkovan Encampment",
-   2
-  ],
-  [
-   "Elegant Parlor",
-   2
-  ],
-  [
-   "Galvanic Discharge",
-   4
-  ],
-  [
-   "Goblin Bombardment",
-   3
-  ],
-  [
-   "Guide of Souls",
-   4
-  ],
-  [
-   "Marsh Flats",
-   3
-  ],
-  [
-   "Mountain",
-   1
-  ],
-  [
-   "Ocelot Pride",
-   4
-  ],
-  [
-   "Plains",
-   2
-  ],
-  [
-   "Prismatic Ending",
-   2
-  ],
-  [
-   "Ragavan, Nimble Pilferer",
-   4
-  ],
-  [
-   "Reckless Pyrosurfer",
-   3
-  ],
-  [
-   "Sacred Foundry",
-   3
-  ],
-  [
-   "Seasoned Pyromancer",
-   4
-  ],
-  [
-   "Voice of Victory",
-   4
-  ],
-  [
-   "Windswept Heath",
-   4
+  "list": [
+    ["Ajani, Nacatl Pariah // Ajani, Nacatl Avenger", 4],
+    ["Arena of Glory", 1],
+    ["Arid Mesa", 4],
+    ["Belladonna Took", 2],
+    ["Dalkovan Encampment", 2],
+    ["Elegant Parlor", 2],
+    ["Galvanic Discharge", 4],
+    ["Goblin Bombardment", 3],
+    ["Guide of Souls", 4],
+    ["Marsh Flats", 3],
+    ["Mountain", 1],
+    ["Ocelot Pride", 4],
+    ["Plains", 2],
+    ["Prismatic Ending", 2],
+    ["Ragavan, Nimble Pilferer", 4],
+    ["Reckless Pyrosurfer", 3],
+    ["Sacred Foundry", 3],
+    ["Seasoned Pyromancer", 4],
+    ["Voice of Victory", 4],
+    ["Windswept Heath", 4]
   ]
- ]
 }

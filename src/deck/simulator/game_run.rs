@@ -83,10 +83,7 @@ pub fn run_game(deck: &SimDeck, rng: &mut ChaCha8Rng, turns: u32) -> GameLog {
         milestones_by_turn: HashMap::new(),
         life_paid: 0,
         life_funded_draws: 0,
-        life: match deck.format {
-            super::model::Format::Commander => 40,
-            super::model::Format::Constructed => 20,
-        },
+        life: deck.rules.starting_life,
         is_monarch: false,
         awareness_cards: 0,
         extra_turns_queued: 0,
@@ -146,6 +143,9 @@ pub(super) fn run_turn(
 ) {
     beginning_phase(deck, st, census, repeatable_sources, turn);
     precombat_main_phase(deck, st, census, commander, repeatable_sources, turn);
+    // State-based action (CR 704.5j): only one legendary permanent of
+    // each name survives before the combat census reads the board.
+    super::game_effects::enforce_legend_rule(deck, st, turn as u32);
     combat_phase(deck, st, census, repeatable_sources, turn);
     postcombat_main_phase();
     ending_phase(deck, st, census, turn, is_extra_turn);

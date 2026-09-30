@@ -80,6 +80,8 @@ stm collection [--json]                           # stats/overview
 stm collection import <file> [--add] [--force]    # replace default; --add merges
 stm collection query <QUERY> [filters] [--binder NAME]... [--deck NAME]... [--json]
 stm collection conflicts [--json]                 # cards wanted by more decks than owned copies
+stm collection sell [--min-price USD] [--max-price USD] [--rarity R] [--format FMT]
+                    [--rank-floor N] [--target USD] [--limit N] [--json]   # dead-money sells
 
 stm deck create <name>
 stm deck list [--json]                            # decklists + unimported collection decks
@@ -114,8 +116,9 @@ Conventions:
 --set --keyword --oracle-text --format`); numeric filters take comparison
   operators (`<=`, `<`, `=`, `>`, `>=`).
 - `--limit` defaults to 20, capped at 100, except `deck suggest` (default
-  10, capped at 50 — suggestion rows are long) and `deck cuts --count`
-  (default 5, capped at 50).
+  10, capped at 50 — suggestion rows are long), `deck cuts --count`
+  (default 5, capped at 50), and `collection sell` (default 50, capped at
+  500 — the list is a sell sheet).
 - `query` and `collection query` are hybrid: SQLite full-text (BM25)
   and vector (semantic) legs, fused by reciprocal rank fusion. The
   printed and JSON `score` is the fused score normalized to 0–1, not raw
@@ -189,6 +192,26 @@ owned}], total_usd}, freed_usd, net_usd}` and `sim` is the
   excluded), each with the competing decks and the cheapest-printing cost
   to close the gap. Informational: always exit 0. Decks registered in the
   collection but missing a decklist print once as "unverified".
+- `stm collection sell` ranks **binder-only** cards by idle value: any card
+  assigned to a deck, or wanted by any decklist, is excluded, as are basics.
+  Value is **per printing** (each owned printing prices at its own rate, and
+  the row lists them), while play demand, rarity, Reserved List, and Game
+  Changer are **per oracle card**. Play demand reads two free signals,
+  `edhrec_rank` (Commander) and `penny_rank` (Penny Dreadful); a card with
+  neither rank and no deck demand is `unplayed`. Each row carries `reasons`
+  (why to sell: `not_in_deck`, `rarely_played`, `reprint_risk`,
+  `format_unplayed`) and `hold_warnings` (why to keep: `reserved_list`,
+  `game_changer`), plus a transparent `sell_confidence` (`1.0` minus `0.25`
+  per hold warning). `--rank-floor` tunes the unplayed cutoff (default 15000,
+  minimum 5000); `--format` flags cards with no legality in that format, but
+  only when the card resolved against the oracle. `--target USD` greedy-picks
+  highest-value rows until the total reaches the target and reports
+  `achieved_usd` honestly. Price bounds use the highest priced owned print.
+  JSON: `{currency, sellable_binder_value, bulk_value, rows[], fund?}`.
+  `sellable_binder_value` is the total of copies at or above the $0.25 bulk
+  floor; `bulk_value` is the sub-$0.25 boxful total. Each row carries
+  `max_price`, `sellable_value`, `bulk_value`, `total_value`, and a
+  `printings` array. Exit 0 with candidates, 3 when none.
 - `stm deck hand <name> [--seed S] [--count N]` deals sample opening
   hands with the simulator's shuffle + mulligan rules: seed N's first
   hand is sim game #1's opener, so advice and sim runs never disagree

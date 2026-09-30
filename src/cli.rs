@@ -1,3 +1,6 @@
+//! Command-line surface: clap argument and subcommand definitions for `stm`.
+//! The binary dispatches on these; command logic lives in the feature modules.
+
 use clap::{Args, Parser, Subcommand};
 
 /// Exit codes used across the CLI (grep-style, documented in `--help`).
@@ -47,6 +50,7 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub offline: bool,
 
+    /// Top-level subcommand to run.
     #[command(subcommand)]
     pub command: Command,
 }
@@ -137,6 +141,7 @@ pub enum Command {
     Query {
         /// Free-text query, e.g. "sacrifice a creature to draw cards"
         query: String,
+        /// Structured filters applied to the query.
         #[command(flatten)]
         filters: CardFilters,
         /// Maximum results (default 20, max 100)
@@ -156,6 +161,7 @@ pub enum Command {
         /// Emit JSON (bare `stm collection` stats view)
         #[arg(long)]
         json: bool,
+        /// Collection subcommand; none shows collection stats.
         #[command(subcommand)]
         command: Option<CollectionCommand>,
     },
@@ -165,6 +171,7 @@ pub enum Command {
         /// Emit JSON (bare `stm deck` list view and `stm deck <name>` sugar)
         #[arg(long)]
         json: bool,
+        /// Deck subcommand; none shows the deck list.
         #[command(subcommand)]
         command: Option<DeckCommand>,
         /// Deck name for the bare `stm deck <name>` form
@@ -196,6 +203,7 @@ pub enum CollectionCommand {
     Query {
         /// Free-text query
         query: String,
+        /// Structured filters applied to the query.
         #[command(flatten)]
         filters: CardFilters,
         /// Only show cards in this binder (repeatable)
@@ -211,13 +219,44 @@ pub enum CollectionCommand {
         #[arg(long)]
         json: bool,
     },
+    /// Suggest binder cards to sell: idle value not played in any deck
+    Sell {
+        /// Only cards with an owned copy priced at or above this USD
+        #[arg(long = "min-price", value_name = "USD", value_parser = parse_max_price)]
+        min_price: Option<f64>,
+        /// Only cards whose every owned copy prices at or below this USD
+        #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
+        max_price: Option<f64>,
+        /// Only this rarity: common, uncommon, rare, or mythic
+        #[arg(long, value_name = "RARITY")]
+        rarity: Option<String>,
+        /// Flag cards not legal in this format, e.g. commander, modern
+        #[arg(long = "format", value_name = "FMT")]
+        format: Option<String>,
+        /// EDHREC rank past which a card counts as unplayed (default 15000,
+        /// minimum 5000)
+        #[arg(long = "rank-floor", value_name = "N", value_parser = parse_rank_floor)]
+        rank_floor: Option<i64>,
+        /// Greedy-pick highest-value cards until their total reaches this USD
+        #[arg(long, value_name = "USD", value_parser = parse_positive_usd)]
+        target: Option<f64>,
+        /// Maximum results (default 50, max 500)
+        #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u32).range(1..=500))]
+        limit: u32,
+        /// Emit JSON
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 /// Deck subcommands: build, edit, evaluate, and share deck files.
 #[derive(Subcommand, Debug)]
 pub enum DeckCommand {
     /// Create a new empty deck
-    Create { name: String },
+    Create {
+        /// New deck name.
+        name: String,
+    },
 
     /// List decks
     List {
@@ -264,6 +303,7 @@ pub enum DeckCommand {
 
     /// Update a deck (add/remove/set/move quantities, per section)
     Update {
+        /// Deck name.
         name: String,
         /// Add copies, e.g. `2 Lightning Bolt` or `commander:1 Breya`
         #[arg(long = "add", value_name = "SPEC")]
@@ -310,6 +350,7 @@ pub enum DeckCommand {
 
     /// Merge duplicate lines (same card name) into one line per section
     Dedupe {
+        /// Deck name.
         name: String,
         /// Emit JSON
         #[arg(long)]
@@ -319,6 +360,7 @@ pub enum DeckCommand {
     /// Suggest cards for a deck: role fills, theme cards, or combo
     /// completions, owned first
     Suggest {
+        /// Deck name.
         name: String,
         /// Positional free-text query (same as --query), e.g. "frog payoff"
         #[arg(value_name = "QUERY")]
@@ -366,6 +408,7 @@ pub enum DeckCommand {
 
     /// Check a deck's format legality (and Commander bracket)
     Legal {
+        /// Deck name.
         name: String,
         /// Format to check (default: inferred from the deck's sections)
         #[arg(long = "format", value_name = "FMT")]
@@ -380,6 +423,7 @@ pub enum DeckCommand {
 
     /// Import a decklist from a ManaBox deck txt export (upsert by name)
     Import {
+        /// Deck name to create or overwrite.
         name: String,
         /// ManaBox deck txt file to import
         #[arg(value_name = "FILE")]
@@ -394,6 +438,7 @@ pub enum DeckCommand {
 
     /// Simulate goldfish games to find mana and consistency problems
     Simulate {
+        /// Deck name.
         name: String,
         /// Number of games to simulate (default 10000)
         #[arg(long, value_parser = clap::value_parser!(u32).range(100..=1_000_000))]
@@ -431,6 +476,7 @@ pub enum DeckCommand {
 
     /// Rank a deck's incumbents by expendability (guided cutting)
     Cuts {
+        /// Deck name.
         name: String,
         /// Maximum cut rows (default 5)
         #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u32).range(1..=50))]
@@ -463,6 +509,7 @@ pub enum DeckCommand {
 
     /// Audit a deck's Commander Spellbook combos, per section
     Combos {
+        /// Deck name.
         name: String,
         /// Format to filter combos by (default: inferred from the deck's
         /// sections)
@@ -501,6 +548,7 @@ pub enum DeckCommand {
 
     /// Export a deck to a ManaBox txt file
     Export {
+        /// Deck name.
         name: String,
         /// Destination txt file
         file: std::path::PathBuf,
@@ -514,11 +562,15 @@ pub enum DeckCommand {
     },
 
     /// Delete a decklist (ownership in the collection is kept)
-    Delete { name: String },
+    Delete {
+        /// Deck name.
+        name: String,
+    },
 
     /// Missing deck copies as a buylist (owned copies autofill; only
     /// purchases are listed)
     Buylist {
+        /// Deck name.
         name: String,
         /// Output format: generic (default), cardkingdom, tcgplayer
         #[arg(long, value_name = "STORE")]
@@ -541,6 +593,7 @@ pub enum DeckCommand {
 
     /// Print or replace a deck's primer markdown
     Primer {
+        /// Deck name.
         name: String,
         /// Replace the primer's contents from a markdown file, or `-` for
         /// stdin
@@ -560,6 +613,34 @@ fn parse_max_price(s: &str) -> Result<f64, String> {
     }
     if v < 0.0 {
         return Err("--max-price must be zero or positive".to_string());
+    }
+    Ok(v)
+}
+
+/// Parse `--rank-floor`: reject values at or below the played cutoff, where
+/// the floor would silently never apply (any rank at or under
+/// [`crate::collection_sell::PLAYED_CUTOFF`] is already "played").
+fn parse_rank_floor(s: &str) -> Result<i64, String> {
+    let v: i64 = s
+        .parse()
+        .map_err(|_| format!("`{s}` is not an integer rank"))?;
+    if v <= crate::collection_sell::PLAYED_CUTOFF {
+        return Err(format!(
+            "--rank-floor must be above {} (the played cutoff)",
+            crate::collection_sell::PLAYED_CUTOFF
+        ));
+    }
+    Ok(v)
+}
+
+/// Parse `--target`: require a positive USD amount so the fund never comes
+/// back silently empty.
+fn parse_positive_usd(s: &str) -> Result<f64, String> {
+    let v: f64 = s
+        .parse()
+        .map_err(|_| format!("`{s}` is not a USD amount"))?;
+    if !v.is_finite() || v <= 0.0 {
+        return Err("--target must be a positive USD amount".to_string());
     }
     Ok(v)
 }
@@ -590,6 +671,7 @@ impl Cli {
                     CollectionCommand::Conflicts { json } => *json,
                     CollectionCommand::Import { .. } => false,
                     CollectionCommand::Query { json, .. } => *json,
+                    CollectionCommand::Sell { json, .. } => *json,
                 },
             },
             Command::Deck { json, command, .. } => deck_json_flag(json, command),
@@ -681,11 +763,22 @@ mod tests {
 
     #[test]
     fn cli_parses_valid_tree() {
-        // Well-formed invocation must parse.
-        Cli::try_parse_from([
+        // Well-formed invocation must parse into the expected command and
+        // flags.
+        let cli = Cli::try_parse_from([
             "stm", "query", "bolt", "--type", "Instant", "--cmc", "<=3", "--json",
         ])
         .expect("should parse");
+        match cli.command {
+            Command::Query {
+                query, json, limit, ..
+            } => {
+                assert_eq!(query, "bolt");
+                assert!(json);
+                assert_eq!(limit, 20);
+            }
+            other => panic!("expected query command, got {other:?}"),
+        }
     }
 
     #[test]

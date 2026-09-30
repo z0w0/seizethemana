@@ -1,6 +1,6 @@
 //! Tests for the simulator parse module.
 
-/// A minimal card row for tests.
+use super::deck_test_support::card;
 use super::game::run_game;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
@@ -8,30 +8,6 @@ use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// Lower one parsed activation for focused parser tests.
 fn parse_oracle_ability(source: &str) -> Option<SimAbility> {
@@ -100,6 +76,31 @@ fn upkeep_draw_engine_parses() {
         sim.unlocked_abilities(0)
             .any(|a| a.trigger == SimTrigger::Upkeep)
     );
+}
+
+#[test]
+fn you_lose_life_is_a_self_cost_not_a_drain() {
+    // CR 119.3: unqualified "you lose N life" costs the goldfish, not
+    // an opponent. The scope must say so.
+    let row = card(
+        "Self Bleed",
+        "{B}",
+        "Enchantment",
+        "At the beginning of your upkeep, you draw a card and you lose 1 life.",
+    );
+    let sim = parse_sim_card(&row);
+    let scope = sim
+        .unlocked_abilities(0)
+        .flat_map(|a| a.effects.iter())
+        .filter_map(|e| match e {
+            super::model::SimEffect::LoseLife { scope, .. } => Some(*scope),
+            _ => None,
+        })
+        .next()
+        .expect("upkeep self-cost parses");
+    assert_eq!(scope, super::model::LifeLossScope::SelfOnly);
+    assert_eq!(scope.table_multiplier(Format::Commander), 0);
+    assert!(scope.charges_player());
 }
 
 #[test]

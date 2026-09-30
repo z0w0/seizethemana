@@ -26,6 +26,8 @@ fn card(name: &str, type_line: &str) -> CardRow {
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 

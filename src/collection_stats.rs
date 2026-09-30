@@ -1,27 +1,38 @@
-// Whole-collection stats for `stm collection`: counts, value, curve,
-// colors, sets, binders, and universe breakdowns. Split out of
-// `collection.rs` to keep each file under the size limit.
+//! Whole-collection stats for `stm collection`: counts, value, curve,
+//! colors, sets, binders, and universe breakdowns. Split out of
+//! `collection.rs` to keep each file under the size limit.
 
 use anyhow::Context;
 use rusqlite::Connection;
+
 /// Whole-collection aggregates for `stm collection`.
 #[derive(Debug, Default)]
 pub struct Stats {
+    /// Distinct card-name count.
     pub unique_cards: usize,
+    /// Total owned copies.
     pub total_cards: i64,
+    /// Foil copies.
     pub foils: i64,
+    /// Current value at exact owned printings.
     pub total_value: f64,
+    /// Purchase-price total.
     pub purchase_total: f64,
+    /// Copies per color-identity key.
     pub color_identity: std::collections::BTreeMap<String, i64>,
+    /// Copies per mana-value curve bucket.
     pub curve: std::collections::BTreeMap<String, i64>,
+    /// Copies per rarity.
     pub rarity: std::collections::BTreeMap<String, i64>,
     /// Most-represented sets: (full name, code, copies). The name is the
     /// code when the store has no set metadata yet.
     pub top_sets: Vec<(String, String, i64)>,
+    /// Copies per binder or deck: (name, type, copies).
     pub binders: Vec<(String, String, i64)>,
     /// Cards + value per universe ("multiverse" / "beyond"), then per
     /// franchise inside the beyond bucket.
     pub by_universe: std::collections::BTreeMap<String, Bucket>,
+    /// Cards and value per franchise inside the beyond bucket.
     pub by_franchise: std::collections::BTreeMap<String, Bucket>,
 }
 

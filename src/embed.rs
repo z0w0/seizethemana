@@ -1,16 +1,16 @@
+//! Local text embedding via fastembed ONNX plus a flat on-disk vector store.
+//!
+//! Cards are embedded into unit-normalized 384-dim vectors
+//! (bge-small-en-v1.5); at this corpus size (~32k) brute-force cosine over a
+//! flat f32 matrix is well under 50ms, so no ANN index is needed.
+
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
+/// Core ML embedding for document rebuild experiments (macOS only).
 #[cfg(target_os = "macos")]
-/// Core ML embedding for document rebuild experiments.
 pub mod coreml;
-
-// Local text embedding via fastembed ONNX + a flat on-disk vector store.
-//
-// Cards are embedded into unit-normalized 384-dim vectors (bge-small-en-v1.5);
-// at this corpus size (~32k) brute-force cosine over a flat f32 matrix is
-// well under 50ms, so no ANN index is needed.
 
 /// Cast raw little-endian bytes to `f32`s (vectors.bin layout).
 mod f32slice {

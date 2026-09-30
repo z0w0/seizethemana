@@ -1,3 +1,4 @@
+//! Tests for the report CLI entry point.
 use super::*;
 
 fn setup_one_land_deck() -> (tempfile::TempDir, crate::paths::Paths, rusqlite::Connection) {

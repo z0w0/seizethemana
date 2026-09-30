@@ -1,18 +1,18 @@
-// Universe and franchise mapping for sets and cards.
-//
-// Universes Beyond (UB) is Magic's crossover product family: sets printed
-// under an outside IP (Marvel, Final Fantasy, Fallout, …). Two levels:
-//
-// - `universe`: is a card/print from beyond Magic's own multiverse?
-//   Detected per print from Scryfall's `promo_types` "universesbeyond"
-//   flag; a card is UB only when *all* of its prints are UB-flagged.
-// - `franchise`: which outside IP a UB set belongs to ("Marvel",
-//   "Final Fantasy", …). Only UB families get one; Secret Lair drops are
-//   UB but have no single franchise.
-//
-// Franchises apply only to UB sets. In-universe sets never carry one. D&D
-// is honorary UB: Wizards owns D&D, so Scryfall does not flag its prints,
-// but players read AFR/CLB as crossover product.
+//! Universe and franchise mapping for sets and cards.
+//!
+//! Universes Beyond (UB) is Magic's crossover product family: sets printed
+//! under an outside IP (Marvel, Final Fantasy, Fallout, …). Two levels:
+//!
+//! - `universe`: is a card/print from beyond Magic's own multiverse?
+//!   Detected per print from Scryfall's `promo_types` "universesbeyond"
+//!   flag; a card is UB only when *all* of its prints are UB-flagged.
+//! - `franchise`: which outside IP a UB set belongs to ("Marvel",
+//!   "Final Fantasy", …). Only UB families get one; Secret Lair drops are
+//!   UB but have no single franchise.
+//!
+//! Franchises apply only to UB sets. In-universe sets never carry one. D&D
+//! is honorary UB: Wizards owns D&D, so Scryfall does not flag its prints,
+//! but players read AFR/CLB as crossover product.
 
 use rusqlite::OptionalExtension;
 

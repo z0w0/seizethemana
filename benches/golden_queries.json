@@ -47,10 +47,7 @@
   },
   {
     "query": "Lightning Bolt",
-    "relevant": [
-      "Lightning Bolt",
-      "Emeritus of Conflict // Lightning Bolt"
-    ],
+    "relevant": ["Lightning Bolt", "Emeritus of Conflict // Lightning Bolt"],
     "not_relevant": [
       "Ball Lightning",
       "Boltwave",
@@ -101,10 +98,7 @@
   },
   {
     "query": "lightning bolt",
-    "relevant": [
-      "Lightning Bolt",
-      "Emeritus of Conflict // Lightning Bolt"
-    ],
+    "relevant": ["Lightning Bolt", "Emeritus of Conflict // Lightning Bolt"],
     "not_relevant": [
       "Ball Lightning",
       "Black Bolt, Inhuman King",
@@ -156,9 +150,7 @@
   },
   {
     "query": "Cyclonic Rift",
-    "relevant": [
-      "Cyclonic Rift"
-    ],
+    "relevant": ["Cyclonic Rift"],
     "not_relevant": [
       "Aether Rift",
       "Apex Witchstalker",
@@ -227,9 +219,7 @@
   },
   {
     "query": "Smothering Tithe",
-    "relevant": [
-      "Smothering Tithe"
-    ],
+    "relevant": ["Smothering Tithe"],
     "not_relevant": [
       "Agatha's Champion",
       "Archangel of Tithes",
@@ -292,9 +282,7 @@
   },
   {
     "query": "The Great Henge",
-    "relevant": [
-      "The Great Henge"
-    ],
+    "relevant": ["The Great Henge"],
     "not_relevant": [
       "Ankle Biter",
       "Argothian Swine",
@@ -350,9 +338,7 @@
   },
   {
     "query": "Kiki-Jiki",
-    "relevant": [
-      "Kiki-Jiki, Mirror Breaker"
-    ],
+    "relevant": ["Kiki-Jiki, Mirror Breaker"],
     "not_relevant": [
       "Akki Battle Squad",
       "Akki Blizzard-Herder",
@@ -422,9 +408,7 @@
   },
   {
     "query": "Atraxa, Grand Unifier",
-    "relevant": [
-      "Atraxa, Grand Unifier"
-    ],
+    "relevant": ["Atraxa, Grand Unifier"],
     "not_relevant": [
       "Aang, Air Nomad",
       "Adric, Mathematical Genius",
@@ -498,9 +482,7 @@
   },
   {
     "query": "Demonic Consultation",
-    "relevant": [
-      "Demonic Consultation"
-    ],
+    "relevant": ["Demonic Consultation"],
     "not_relevant": [
       "Aesthetic Consultation",
       "Alpharael, Dreaming Acolyte",
@@ -568,9 +550,7 @@
   },
   {
     "query": "Thassa's Oracle",
-    "relevant": [
-      "Thassa's Oracle"
-    ],
+    "relevant": ["Thassa's Oracle"],
     "not_relevant": [
       "Alesha's Vanguard",
       "Bident of Thassa",
@@ -617,9 +597,7 @@
   },
   {
     "query": "Rhystic Study",
-    "relevant": [
-      "Rhystic Study"
-    ],
+    "relevant": ["Rhystic Study"],
     "not_relevant": [
       "Careful Study",
       "Culmination of Studies",
@@ -662,10 +640,7 @@
   },
   {
     "query": "Sol Ring",
-    "relevant": [
-      "Sol Ring // Sol Ring",
-      "Sol Ring"
-    ],
+    "relevant": ["Sol Ring // Sol Ring", "Sol Ring"],
     "not_relevant": [
       "Bombadil's Song",
       "Bond of Insight",
@@ -810,9 +785,7 @@
   },
   {
     "query": "Beast Within",
-    "relevant": [
-      "Beast Within"
-    ],
+    "relevant": ["Beast Within"],
     "not_relevant": [
       "Affectionate Indrik",
       "Anara, Wolvid Familiar",
@@ -886,9 +859,7 @@
   },
   {
     "query": "Farseek",
-    "relevant": [
-      "Farseek"
-    ],
+    "relevant": ["Farseek"],
     "not_relevant": [
       "Alabaster Host Sanctifier",
       "Ashiok's Forerunner",
@@ -1019,9 +990,7 @@
   },
   {
     "query": "Kodama's Reach",
-    "relevant": [
-      "Kodama's Reach"
-    ],
+    "relevant": ["Kodama's Reach"],
     "not_relevant": [
       "Boseiju Reaches Skyward // Branch of Boseiju",
       "Bugenhagen, Wise Elder",
@@ -1068,9 +1037,7 @@
   },
   {
     "query": "Avacyn, Angel of Hope",
-    "relevant": [
-      "Avacyn, Angel of Hope"
-    ],
+    "relevant": ["Avacyn, Angel of Hope"],
     "not_relevant": [
       "Angel of Destiny",
       "Angel of Light",
@@ -1111,9 +1078,7 @@
   },
   {
     "query": "Elesh Norn, Grand Cenobite",
-    "relevant": [
-      "Elesh Norn, Grand Cenobite"
-    ],
+    "relevant": ["Elesh Norn, Grand Cenobite"],
     "not_relevant": [
       "Almost Perfect",
       "Ancient Amphitheater",
@@ -1190,9 +1155,7 @@
   },
   {
     "query": "Frodo, Adventurous Hobbit",
-    "relevant": [
-      "Frodo, Adventurous Hobbit"
-    ],
+    "relevant": ["Frodo, Adventurous Hobbit"],
     "not_relevant": [
       "Advanced Hoverguard",
       "Adventurous Eater // Have a Bite",
@@ -1658,10 +1621,7 @@
       "Havengul Lich",
       "Shadow of the Enemy"
     ],
-    "not_relevant": [
-      "Advanced Reconstruction",
-      "Reminisce"
-    ],
+    "not_relevant": ["Advanced Reconstruction", "Reminisce"],
     "note": "mechanic intent"
   },
   {
@@ -1795,12 +1755,7 @@
       "Scattering Stroke",
       "Unified Will"
     ],
-    "not_relevant": [
-      "Arcbound Tracker",
-      "Bind",
-      "Interdict",
-      "Trickbind"
-    ],
+    "not_relevant": ["Arcbound Tracker", "Bind", "Interdict", "Trickbind"],
     "note": "role term"
   },
   {
@@ -1871,12 +1826,7 @@
       "Scattering Stroke",
       "Unified Will"
     ],
-    "not_relevant": [
-      "Arcbound Tracker",
-      "Bind",
-      "Interdict",
-      "Trickbind"
-    ],
+    "not_relevant": ["Arcbound Tracker", "Bind", "Interdict", "Trickbind"],
     "note": "oracle phrasing"
   },
   {
@@ -2360,9 +2310,7 @@
       "Rhys the Redeemed",
       "Song of the Worldsoul"
     ],
-    "not_relevant": [
-      "Generous Gift"
-    ],
+    "not_relevant": ["Generous Gift"],
     "note": "loose intent"
   },
   {
@@ -3137,9 +3085,7 @@
       "Delver's Torch",
       "Hunter's Bow"
     ],
-    "not_relevant": [
-      "Masterwork of Ingenuity"
-    ],
+    "not_relevant": ["Masterwork of Ingenuity"],
     "note": "keyword word"
   },
   {
@@ -3493,9 +3439,7 @@
       "Goblin Lookout",
       "Tar Pitcher"
     ],
-    "not_relevant": [
-      "Fugitive Wizard"
-    ],
+    "not_relevant": ["Fugitive Wizard"],
     "filters": {
       "type": "Creature"
     },
@@ -3639,11 +3583,7 @@
       "Scattering Stroke",
       "Unified Will"
     ],
-    "not_relevant": [
-      "Interdict",
-      "Trickbind",
-      "Turn Aside"
-    ],
+    "not_relevant": ["Interdict", "Trickbind", "Turn Aside"],
     "filters": {
       "color": "U"
     },

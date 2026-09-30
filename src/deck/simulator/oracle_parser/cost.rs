@@ -32,6 +32,11 @@ pub fn parse_cost(mana_cost: &str) -> Cost {
             cost.generic += 1;
             continue;
         }
+        // Colorless pip (`{C}`): paid with colorless mana only (CR 107.4a).
+        if upper == "C" {
+            cost.colorless += 1;
+            continue;
+        }
         let phyrexian = upper.ends_with("/P");
         let letters: String = upper
             .trim_end_matches("/P")

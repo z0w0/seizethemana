@@ -133,6 +133,9 @@ pub(super) fn assumptions(deck: &SimDeck) -> Vec<String> {
         "A land/spell MDFC (e.g. Valakut Awakening) is played as its land face when no other land drop is available, and cast as its spell face otherwise. Non-mythic MDFCs count 0.4 land, mythic 0.75.".to_string(),
         "Unsupported Oracle clauses stay inert. Other parsed costs, keywords, and abilities on the same card still apply.".to_string(),
         "Keywords that need an opponent or blockers stay inert by design: ward, shroud, protection, defender, exalted, provoke, and changeling. Temporary keyword loss and imprint are not modeled.".to_string(),
+        "The legend rule is enforced (CR 704.5j): when you control two legendary permanents with the same name, the later one goes to the graveyard. Distinct names coexist.".to_string(),
+        "The simulation never ends a game early. Drawing from an empty library, reaching 0 or less life, and commander damage do not stop the game or count as a loss; the report measures the board and damage instead.".to_string(),
+        "Colorless pips ({C}) must be paid with colorless mana (CR 107.4a). Static cost changes on other cards ('spells cost {1} more', 'artifact spells cost {1} less') stay inert; only a card's own printed or typed reduction applies.".to_string(),
         "Seeded baselines change between versions. Regenerate any saved baseline report after upgrading.".to_string(),
     ];
     if deck.commanders.is_empty() {

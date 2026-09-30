@@ -1,13 +1,13 @@
+//! Print storage and lookups.
+//!
+//! Per-printing price and print info live in `card_prints` (one row per
+//! physical printing), harvested from Scryfall's default-cards bulk by the
+//! sync pass in `crate::sync`. This module owns the read queries: cheapest /
+//! most expensive printing per card name, and batched print lookups. Set
+//! codes are lowercase everywhere in this store.
+
 use anyhow::Context;
 use rusqlite::{Connection, OptionalExtension};
-
-// Print storage and lookups.
-//
-// Per-printing price and print info live in `card_prints` (one row per
-// physical printing), harvested from Scryfall's default-cards bulk by the
-// sync pass in `crate::sync`. This module owns the read queries: cheapest /
-// most expensive printing per card name, and batched print lookups. Set
-// codes are lowercase everywhere in this store.
 
 /// One physical printing with its price snapshot.
 ///
@@ -15,16 +15,27 @@ use rusqlite::{Connection, OptionalExtension};
 /// code is unknown to this snapshot.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Print {
+    /// Scryfall print ID; the print's primary key.
     pub scryfall_id: String,
+    /// Oracle card name.
     pub name: String,
+    /// Set code (lowercase).
     pub set_code: String,
+    /// Full set name from the `sets` table.
     pub set_name: String,
+    /// Collector number within the set.
     pub collector_number: String,
+    /// Printing language, e.g. `en`.
     pub lang: String,
+    /// Available finishes, e.g. `nonfoil`, `foil`.
     pub finishes: Vec<String>,
+    /// Release date (YYYY-MM-DD).
     pub released_at: String,
+    /// Non-foil USD price.
     pub usd: Option<f64>,
+    /// Foil USD price.
     pub usd_foil: Option<f64>,
+    /// Etched-foil USD price.
     pub usd_etched: Option<f64>,
 }
 
@@ -362,6 +373,11 @@ pub fn price_for_owned(
                FROM card_prints
                WHERE name = ?1 AND set_code = ?2 AND collector_number = ?3
                  AND lang = 'en'
+                 AND CASE ?4
+                         WHEN 'foil' THEN COALESCE(usd_foil, usd)
+                         WHEN 'etched' THEN COALESCE(usd_etched, usd_foil, usd)
+                         ELSE usd
+                     END IS NOT NULL
                ORDER BY price ASC, scryfall_id ASC
                LIMIT 1",
             rusqlite::params![name, set_code.to_ascii_lowercase(), collector_number, foil],
@@ -735,6 +751,43 @@ mod tests {
         assert_eq!(
             price_for_owned(&conn, "Fog", "m11", "1", "foil").unwrap(),
             Some(2.0)
+        );
+    }
+
+    #[test]
+    fn price_for_owned_skips_null_rows_on_duplicates() {
+        // One duplicate row has a NULL price, another has a real one.
+        // SQLite sorts NULLs first ascending, so the pick must exclude
+        // NULL or it would report "unpriced" and disagree with the batch
+        // MIN-based path.
+        let conn = conn();
+        seed(
+            &conn,
+            "n1",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            None,
+            None,
+            "en",
+            "2010-01-01",
+        );
+        seed(
+            &conn,
+            "n2",
+            "Bolt",
+            "m11",
+            "Magic 2011",
+            "148",
+            Some(3.0),
+            None,
+            "en",
+            "2010-01-01",
+        );
+        assert_eq!(
+            price_for_owned(&conn, "Bolt", "m11", "148", "normal").unwrap(),
+            Some(3.0)
         );
     }
 

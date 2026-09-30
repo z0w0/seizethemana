@@ -33,6 +33,17 @@ pub struct FormatRules {
     pub default_turns: u32,
     /// Opening-hand redraw policy.
     pub mulligan: MulliganPolicy,
+    /// Starting life total for the player and each opponent (CR 103.4c,
+    /// 903.12f: commander 40, brawl 25).
+    pub starting_life: i32,
+}
+
+impl FormatRules {
+    /// Total life across the modeled opponent table: starting life times
+    /// the opponent count. The lethal census races this total.
+    pub fn life_target(&self) -> f64 {
+        f64::from(self.starting_life) * f64::from(self.shape.life_loss_mult())
+    }
 }
 
 /// Rule table, one row per format `deck legal` knows. Unknown keys use
@@ -46,54 +57,63 @@ const TABLE: &[FormatRules] = &[
         // mulligan; the 2-6 band is close and changing it would churn
         // commander baselines for little gain.
         mulligan: MulliganPolicy::FreeRedraw { land_band: (2, 6) },
+        starting_life: 40,
     },
     FormatRules {
         key: "brawl",
         shape: Format::Commander,
         default_turns: 10,
         mulligan: MulliganPolicy::FreeRedraw { land_band: (2, 6) },
+        starting_life: 25,
     },
     FormatRules {
         key: "oathbreaker",
         shape: Format::Commander,
         default_turns: 10,
         mulligan: MulliganPolicy::FreeRedraw { land_band: (2, 6) },
+        starting_life: 20,
     },
     FormatRules {
         key: "standard",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
     FormatRules {
         key: "pioneer",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
     FormatRules {
         key: "modern",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
     FormatRules {
         key: "legacy",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
     FormatRules {
         key: "vintage",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
     FormatRules {
         key: "pauper",
         shape: Format::Constructed,
         default_turns: 8,
         mulligan: MulliganPolicy::London,
+        starting_life: 20,
     },
 ];
 
@@ -108,6 +128,7 @@ pub fn rules_for(key: &str) -> FormatRules {
             shape: Format::Constructed,
             default_turns: 8,
             mulligan: MulliganPolicy::London,
+            starting_life: 20,
         })
 }
 

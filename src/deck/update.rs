@@ -1,7 +1,7 @@
-// Deck update ops (`--add`/`--remove`/`--set`/`--move`) and the
-// `deck update` command. The op verbs and the apply engine live in
-// `deck/ops.rs`; this file is the command flow: name validation, the
-// real update, the `--dry-run` preview, and `deck dedupe`.
+//! Deck update ops (`--add`/`--remove`/`--set`/`--move`) and the
+//! `deck update` command. The op verbs and the apply engine live in
+//! `deck/ops.rs`; this file is the command flow: name validation, the
+//! real update, the `--dry-run` preview, and `deck dedupe`.
 
 use super::grammar::Deck;
 pub(super) use super::ops::{DeckOp, USAGE_EXIT, apply_ops, parse_op};
@@ -851,7 +851,7 @@ fn singleton_warnings(
 /// "any number of cards named X" cards are rare enough that `deck legal`
 /// is the authority).
 fn is_unlimited_basics(name: &str) -> bool {
-    matches!(name, "Plains" | "Island" | "Swamp" | "Mountain" | "Forest")
+    crate::collection::is_basic_name(name)
 }
 
 /// True when a card may hold any number of copies in a commander deck:

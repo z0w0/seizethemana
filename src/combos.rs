@@ -1,11 +1,11 @@
-// Shared reads over the Spellbook `combos`/`combo_pieces` tables.
-//
-// `spellbook.rs` owns parsing and ingest; this module owns the deck/card
-// joins every combo consumer (`card combos`, `deck suggest`, `deck
-// simulate`) shares. Variant and piece queries run per candidate chunk
-// (`prepare_cached` keeps the piece query a cheap statement reuse, not a
-// fresh parse per variant); candidate batching is set-based per name
-// chunk.
+//! Shared reads over the Spellbook `combos`/`combo_pieces` tables.
+//!
+//! `spellbook.rs` owns parsing and ingest; this module owns the deck/card
+//! joins every combo consumer (`card combos`, `deck suggest`, `deck
+//! simulate`) shares. Variant and piece queries run per candidate chunk
+//! (`prepare_cached` keeps the piece query a cheap statement reuse, not a
+//! fresh parse per variant); candidate batching is set-based per name
+//! chunk.
 
 use anyhow::Context;
 use rusqlite::Connection;

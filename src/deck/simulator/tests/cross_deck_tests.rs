@@ -1,7 +1,4 @@
 //! Cross-deck invariants: properties every real fixture deck must hold.
-//! ---------------------------------------------------------------------------
-//! Cross-deck invariants (all twelve lists)
-//! ---------------------------------------------------------------------------
 
 use super::deck_test_support::*;
 use crate::db::CardRow;
@@ -59,8 +56,9 @@ fn all_real_decks_show_land_openers() {
 }
 
 #[test]
-fn all_real_decks_never_trip_all_colors() {
-    // The pool model is sound: no real deck trips all five colors.
+fn mardu_discard_never_trips_all_colors() {
+    // The pool model is sound: the Mardu midrange list does not trip all
+    // five colors.
     let cards = fixture_cards("mardu-discard");
     let stats = sim(&fixture_deck("mardu-discard"), &cards, 200, 8);
     let tripped = stats.color_screw.iter().filter(|p| **p >= 0.10).count();

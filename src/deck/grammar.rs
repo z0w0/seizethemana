@@ -1,19 +1,21 @@
-// ManaBox deck txt grammar.
-//
-// Sections start with `// NAME`; entries are `qty Name (SET) cn [*F*]` —
-// the set/cn part and the foil marker are optional (plain deck lists omit
-// them). Blank lines are separators and are not preserved — except inside
-// `// COMMANDER`, where ManaBox exports one blank line between the
-// commander(s) and the rest of the deck; that blank splits the section
-// into `COMMANDER` and `DECK`. Parse → serialize is round-trip stable for
-// entries ManaBox itself writes.
+//! ManaBox deck txt grammar.
+//!
+//! Sections start with `// NAME`; entries are `qty Name (SET) cn [*F*]` —
+//! the set/cn part and the foil marker are optional (plain deck lists omit
+//! them). Blank lines are separators and are not preserved — except inside
+//! `// COMMANDER`, where ManaBox exports one blank line between the
+//! commander(s) and the rest of the deck; that blank splits the section
+//! into `COMMANDER` and `DECK`. Parse → serialize is round-trip stable for
+//! entries ManaBox itself writes.
 
 use anyhow::Context;
 
 /// One deck entry: `qty Name (SET) cn [*F*]`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeckEntry {
+    /// Copies in the entry.
     pub quantity: i64,
+    /// Card name.
     pub name: String,
     /// Set code, when the line carried one.
     pub set_code: Option<String>,
@@ -222,13 +224,19 @@ impl Deck {
     }
 }
 
+/// Largest quantity a deck entry may hold. Well above any real deck
+/// (even a basic-land count) and low enough that later `i32` conversions
+/// never overflow.
+pub const MAX_ENTRY_QUANTITY: i64 = 9_999;
+
 /// Parse one entry line: `qty Name [(SET) [cn]] [*F*]`.
 ///
 /// The set/cn part and the foil marker are optional; the name is everything
 /// between the quantity and the `(SET)` / `*F*` suffix.
 ///
 /// # Errors
-/// Fails on a missing/invalid quantity or an empty name.
+/// Fails on a missing/invalid quantity, a quantity above
+/// [`MAX_ENTRY_QUANTITY`], or an empty name.
 pub fn parse_entry(line: &str) -> anyhow::Result<DeckEntry> {
     let line = line.trim();
     let (qty_str, rest) = line
@@ -239,6 +247,10 @@ pub fn parse_entry(line: &str) -> anyhow::Result<DeckEntry> {
         .parse()
         .with_context(|| format!("invalid quantity in entry: {line:?}"))?;
     anyhow::ensure!(quantity > 0, "non-positive quantity in entry: {line:?}");
+    anyhow::ensure!(
+        quantity <= MAX_ENTRY_QUANTITY,
+        "quantity above {MAX_ENTRY_QUANTITY} in entry: {line:?}"
+    );
 
     // Trailing foil marker.
     let (rest, foil) = match rest.trim().strip_suffix("*F*") {
@@ -308,6 +320,9 @@ fn strip_tail(rest: &str, words: usize) -> Option<(String, String, Option<String
 }
 
 /// Set codes are short uppercase/digit tokens (MH3, 2XM, PLST).
+///
+/// Stricter than `io_external::valid_set`: deck files carry official
+/// uppercase codes, so lowercase input is rejected here.
 fn valid_set(set: &str) -> bool {
     (1..=6).contains(&set.len())
         && set
@@ -382,6 +397,18 @@ mod tests {
         for line in ["Bolt", "x2 Bolt", "0 Bolt", "-1 Bolt", "1 "] {
             assert!(parse_entry(line).is_err(), "{line:?} should fail");
         }
+    }
+
+    #[test]
+    fn rejects_quantities_above_the_cap() {
+        // An oversized quantity must not parse: later i32 conversions
+        // would otherwise overflow.
+        assert!(parse_entry("10000 Bolt").is_err());
+        assert!(parse_entry("9999999999 Bolt").is_err());
+        assert_eq!(
+            parse_entry("9999 Bolt").unwrap().quantity,
+            MAX_ENTRY_QUANTITY
+        );
     }
 
     #[test]

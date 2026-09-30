@@ -1,6 +1,6 @@
-// Land color-relevance: what colors a land can add or fetch, derived from
-// its name, type line, and oracle text. Powers `deck suggest` land ranking
-// (zero-overlap lands out) and the `deck cuts` `off_color_land` reason.
+//! Land color-relevance: what colors a land can add or fetch, derived from
+//! its name, type line, and oracle text. Powers `deck suggest` land ranking
+//! (zero-overlap lands out) and the `deck cuts` `off_color_land` reason.
 
 /// The five basic land types, in WUBRG color order.
 const BASIC_TYPES: &[(&str, char)] = &[

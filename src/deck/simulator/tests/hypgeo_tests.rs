@@ -1,3 +1,4 @@
+//! Tests for hypergeometric cast ceilings.
 use super::hypgeo::{cast_ceilings, choose, flood_expectation, hyper_at_least};
 
 #[test]

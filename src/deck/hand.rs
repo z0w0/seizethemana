@@ -1,7 +1,7 @@
-// `stm deck hand`: sample opening hands for a deck, dealt with the same
-// shuffle and mulligan rules the goldfish simulator uses. Seed N deals
-// the same opener as the sim's game #1, so "does this deck keep hands?"
-// has a reproducible answer.
+//! `stm deck hand`: sample opening hands for a deck, dealt with the same
+//! shuffle and mulligan rules the goldfish simulator uses. Seed N deals
+//! the same opener as the sim's game #1, so "does this deck keep hands?"
+//! has a reproducible answer.
 
 use crate::db::CardRow;
 use rand::SeedableRng;

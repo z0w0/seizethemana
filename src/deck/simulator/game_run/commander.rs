@@ -55,7 +55,7 @@ pub(in crate::deck::simulator) fn commander_phase(
             usable_for_classes(pool, &classes) >= mana_total
                 && (pips_ok(&cmd.cost, pool) || bucket + pool.flexible >= pip_total)
         };
-        if !mana_ok || st.life <= charge as i32 {
+        if !mana_ok || st.life < charge as i32 {
             // Skip this commander; the next partner still gets its try
             // this turn.
             continue;

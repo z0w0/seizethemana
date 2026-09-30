@@ -398,7 +398,7 @@ fn commander_timing_stats(
 
 /// Per-turn mana, velocity, board, and damage census averages.
 fn velocity_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats, turns: usize, n: f64) {
-    let life_target = deck.format.life_target();
+    let life_target = deck.rules.life_target();
     for log in logs {
         for t in 0..turns {
             stats.unused_mana[t] += (log.mana_available[t] - log.mana_spent[t]).max(0.0) / n;
@@ -461,7 +461,7 @@ fn lethal_stats(logs: &[GameLog], deck: &SimDeck, stats: &mut SimStats) {
             .iter()
             .zip(log.opponent_life_loss.iter())
             .enumerate()
-            .find(|(_, (d, dr))| f64::from(*d + *dr) >= deck.format.life_target())
+            .find(|(_, (d, dr))| f64::from(*d + *dr) >= deck.rules.life_target())
             .map(|(t, _)| t as u32 + 1)
         {
             lethal_turns.push(t);

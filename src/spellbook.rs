@@ -1,11 +1,11 @@
-// Commander Spellbook combo ingest: download the variants bulk, stream-parse
-// the `variants` array, and rewrite the `combos`/`combo_pieces` tables.
-//
-// The bulk is one JSON object (`timestamp`, `version`, `variants`,
-// `aliases`) at a static URL, gzipped, ~28 MB / 652 MB raw. A brace-matched
-// scanner walks the `variants` array and parses one variant at a time, so
-// peak memory stays small regardless of dataset size. Aliases are stale-id
-// redirects and are not ingested; spoiled variants are skipped.
+//! Commander Spellbook combo ingest: download the variants bulk, stream-parse
+//! the `variants` array, and rewrite the `combos`/`combo_pieces` tables.
+//!
+//! The bulk is one JSON object (`timestamp`, `version`, `variants`,
+//! `aliases`) at a static URL, gzipped, ~28 MB / 652 MB raw. A brace-matched
+//! scanner walks the `variants` array and parses one variant at a time, so
+//! peak memory stays small regardless of dataset size. Aliases are stale-id
+//! redirects and are not ingested; spoiled variants are skipped.
 
 use anyhow::Context;
 use rusqlite::Connection;
@@ -40,6 +40,7 @@ struct SpellbookFeature {
     name: String,
 }
 
+/// One thing a combo produces (a feature like "Win the game").
 #[derive(Debug, serde::Deserialize)]
 pub struct SpellbookProduce {
     feature: SpellbookFeature,
@@ -49,19 +50,27 @@ pub struct SpellbookProduce {
 /// description are dropped; the store keeps what deck joins need.
 #[derive(Debug, serde::Deserialize)]
 pub struct SpellbookVariant {
+    /// Spellbook variant id.
     pub id: String,
+    /// Features the combo produces.
     #[serde(default)]
     pub produces: Vec<SpellbookProduce>,
+    /// Mana value the combo needs available.
     #[serde(default, rename = "manaValueNeeded")]
     pub mana_value_needed: u32,
+    /// Spellbook bracket tag ("S", "K", ...), when tagged.
     #[serde(default, rename = "bracketTag")]
     pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
     #[serde(default)]
     pub popularity: Option<i64>,
+    /// Format name → legal flag.
     #[serde(default)]
     pub legalities: std::collections::HashMap<String, bool>,
+    /// The combo's pieces.
     #[serde(default, rename = "uses")]
     pub uses: Vec<SpellbookUse>,
+    /// True when the variant is a spoiler and should be skipped.
     #[serde(default)]
     pub spoiler: bool,
 }
@@ -331,11 +340,15 @@ pub fn ingest(
 /// Combo variant loaded from the store.
 #[derive(Debug, Clone)]
 pub struct ComboVariant {
+    /// Spellbook variant id.
     pub id: String,
     /// Feature names the combo produces.
     pub produces: Vec<String>,
+    /// Mana value the combo needs available.
     pub mana_value_needed: i64,
+    /// Spellbook bracket tag, when tagged.
     pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
     pub popularity: Option<i64>,
     /// Format name → legal.
     pub legalities: std::collections::HashMap<String, bool>,
@@ -344,9 +357,13 @@ pub struct ComboVariant {
 /// One combo piece as stored.
 #[derive(Debug, Clone)]
 pub struct ComboPieceRow {
+    /// Card (or face) name.
     pub name: String,
+    /// Position of the piece within the combo.
     pub ordinal: i64,
+    /// Zones the combo needs the card in.
     pub zones: Vec<String>,
+    /// True when the card must be the deck's commander.
     pub must_be_commander: bool,
 }
 

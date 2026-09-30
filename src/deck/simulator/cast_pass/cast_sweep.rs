@@ -6,7 +6,7 @@ use super::super::game_mana::{
     usable_for_classes, usable_for_noncreature,
 };
 use super::super::model::{CardIdx, Cost, SimDeck};
-use super::{resolve_cast, resolve_face_down, select_alternative_cost_cards};
+use super::{CastPayment, resolve_cast, resolve_face_down, select_alternative_cost_cards};
 
 /// One affordability sweep over the remaining queue. Casts deduct from
 /// the pool and add mana (rituals), so a card skipped as unaffordable
@@ -55,6 +55,7 @@ pub(super) fn cast_pass(
                 spent_total,
                 repeatable_sources,
                 true,
+                CastPayment::Free,
             );
             queue.remove(idx);
             continue;
@@ -67,7 +68,6 @@ pub(super) fn cast_pass(
         let available_discards = st.hand.iter().filter(|i| **i != card_idx).count();
         if available_creatures < card.spell_data.additional_cost_creatures as usize
             || available_discards < card.spell_data.additional_cost_discards as usize
-            || st.life <= card.spell_data.additional_cost_life as i32
         {
             idx += 1;
             continue;
@@ -81,9 +81,12 @@ pub(super) fn cast_pass(
         let convoke = convoke_payment(deck, st, card, &eff);
         let delve = delve_payment(st, card, &eff);
         let extra_payment = convoke.total + delve;
-        // Phyrexian pips pay with 2 life each (CR 107.4f); the cast
-        // would charge that life, so a life-starved cast stays put.
-        if st.life <= phyrexian_life_charge(&eff) as i32 {
+        // Life costs pay from one total: phyrexian pips at 2 life each
+        // (CR 107.4f) plus any "pay N life" additional cost. CR 119.4
+        // requires the player to cover the whole amount, so a cast short
+        // of the combined life cost stays put.
+        let life_cost = card.spell_data.additional_cost_life + phyrexian_life_charge(&eff);
+        if st.life < life_cost as i32 {
             idx += 1;
             continue;
         }
@@ -166,6 +169,7 @@ pub(super) fn cast_pass(
             spent_total,
             repeatable_sources,
             true,
+            CastPayment::Mana,
         );
         queue.remove(idx);
     }

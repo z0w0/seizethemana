@@ -1,7 +1,7 @@
-// Suggest retrieval pipeline: tag matching, the oracle-id tag map, the
-// fusion window constants, and RRF fusion. Split from `suggest.rs` to
-// keep each file small; the role-fill and commander paths share every
-// helper here.
+//! Suggest retrieval pipeline: tag matching, the oracle-id tag map, the
+//! fusion window constants, and RRF fusion. Split from `suggest.rs` to
+//! keep each file small; the role-fill and commander paths share every
+//! helper here.
 
 use super::Role;
 use crate::db::CardRow;

@@ -1,8 +1,8 @@
-// Release gating happens at ingest: `sync` skips never-released oracle
-// cards (see `scryfall::should_ingest`), so the store only ever holds cards
-// that are released or upcoming reprints. `released_at` refers to the
-// oracle's latest recognized printing and is display-only. This module keeps
-// the date parsing/checking helpers shared by ingest and display.
+//! Release gating happens at ingest: `sync` skips never-released oracle
+//! cards (see `scryfall::should_ingest`), so the store only ever holds cards
+//! that are released or upcoming reprints. `released_at` refers to the
+//! oracle's latest recognized printing and is display-only. This module keeps
+//! the date parsing/checking helpers shared by ingest and display.
 
 /// Today's date (local) as the YYYY-MM-DD string used by SQL comparisons.
 pub fn today() -> String {

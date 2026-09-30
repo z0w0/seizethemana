@@ -1,3 +1,4 @@
+//! Tests for the Oracle syntax tree types.
 use super::model::BasicLandType;
 use super::oracle_ast::{
     AbilityRestriction, ActivationCost, ActivationTarget, CostObject, DamageTarget,

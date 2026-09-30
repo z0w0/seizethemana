@@ -1,26 +1,28 @@
-// `stm deck suggest`: role/theme cards for a deck, ranked by fit with
-// ownership and Game Changer context per hit.
-//
-// Candidate legs:
-// 1. a semantic query (free text; required unless `--role` alone is used),
-// 2. role keyword shapes scanned over the oracle,
-// 3. Scryfall Tagger labels ("removal", "card draw", "typal frog", ...)
-//    matched against the role or the query.
-// The semantic and tag/keyword lists fuse by reciprocal rank fusion (like
-// `query`); EDHREC rank breaks ties. The final list is grouped: owned
-// cards first, each group in relevance order. Price, ownership, and Game
-// Changer flags surface per hit.
+//! `stm deck suggest`: role/theme cards for a deck, ranked by fit with
+//! ownership and Game Changer context per hit.
+//!
+//! Candidate legs:
+//! 1. a semantic query (free text; required unless `--role` alone is used),
+//! 2. role keyword shapes scanned over the oracle,
+//! 3. Scryfall Tagger labels ("removal", "card draw", "typal frog", ...)
+//!    matched against the role or the query.
+//! The semantic and tag/keyword lists fuse by reciprocal rank fusion (like
+//! `query`); EDHREC rank breaks ties. The final list is grouped: owned
+//! cards first, each group in relevance order. Price, ownership, and Game
+//! Changer flags surface per hit.
 
 pub use super::role::Role;
 use anyhow::Context;
 use rusqlite::Connection;
 
+use super::legal::identity_ok;
 use super::store::load_deck;
-use crate::db::CardRow;
+use crate::db::{CardRow, map_card};
 
 /// One suggestion row.
 #[derive(Debug, Clone)]
 pub struct Suggestion {
+    /// The suggested card.
     pub card: CardRow,
     /// Copies in the collection (0 = none owned).
     pub owned: i64,
@@ -82,13 +84,11 @@ fn keyword_hits(
         ("", "")
     };
     let sql = format!(
-        "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
-                keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-                legalities, set_code, collector_number, scryfall_id, released_at,
-                game_changer
+        "SELECT {}
          FROM cards
          WHERE oracle_text LIKE '%' || ?1 || '%' {rank_filter} {order}
-         LIMIT ?2"
+         LIMIT ?2",
+        crate::db::CARD_COLUMNS
     );
     // Round-robin over the role's keywords: fill one card per keyword
     // per pass, so the first keyword cannot crowd out the rest and the
@@ -138,41 +138,6 @@ impl PopFront for Vec<CardRow> {
     fn pop_front_card(&mut self) -> Option<CardRow> {
         (!self.is_empty()).then(|| self.remove(0))
     }
-}
-
-/// Map one `cards` row into a [`CardRow`] (shared column order).
-fn map_card(row: &rusqlite::Row<'_>) -> rusqlite::Result<CardRow> {
-    Ok(CardRow {
-        name: row.get(0)?,
-        oracle_id: row.get(1)?,
-        mana_cost: row.get(2)?,
-        cmc: row.get(3)?,
-        type_line: row.get(4)?,
-        colors: row.get(5)?,
-        color_identity: row.get(6)?,
-        keywords: row.get(7)?,
-        power: row.get(8)?,
-        toughness: row.get(9)?,
-        loyalty: row.get(10)?,
-        oracle_text: row.get(11)?,
-        rarity: row.get(12)?,
-        edhrec_rank: row.get(13)?,
-        legalities: row.get(14)?,
-        set_code: row.get(15)?,
-        collector_number: row.get(16)?,
-        scryfall_id: row.get(17)?,
-        released_at: row.get(18)?,
-        game_changer: row.get(19)?,
-    })
-}
-
-/// True when every identity color of `card` sits inside `identity`.
-///
-/// Wraps the shared parser in `legal::identity_letters`.
-pub(super) fn identity_ok(card: &CardRow, identity: &str) -> bool {
-    super::legal::identity_letters(&card.color_identity)
-        .chars()
-        .all(|c| identity.contains(c))
 }
 
 /// 60-card ranking: lands sort by color relevance and nonland cards
@@ -392,15 +357,13 @@ pub(super) fn bracket_allows(bracket: Option<u8>, card: &CardRow, existing_gcs: 
 /// # Errors
 /// Propagates SQLite failures.
 fn card_by_oracle(conn: &Connection, oracle_id: &str) -> anyhow::Result<Option<CardRow>> {
-    let mut stmt = conn.prepare(
-        "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
-                keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-                legalities, set_code, collector_number, scryfall_id, released_at,
-                game_changer
+    let mut stmt = conn.prepare(&format!(
+        "SELECT {}
          FROM cards
          WHERE oracle_id = ?1
          LIMIT 1",
-    )?;
+        crate::db::CARD_COLUMNS
+    ))?;
     let mut rows = stmt.query_map([oracle_id], map_card)?;
     Ok(rows.next().transpose()?)
 }

@@ -1,19 +1,19 @@
-// `stm deck cuts`: guided cutting — rank the deck's incumbents by
-// expendability, with `--for <role N>` pairing each cut to a fill.
-//
-// Ranking (pins first, then by score):
-// 1. Pins: Game Changers over the bracket cap and format-illegal cards go
-//    to the top regardless of score.
-// 2. Sim castability: cards rarely castable on curve (dead weight), with
-//    reactive removal and improvise/affinity cards exempt (the sim
-//    exempts them from `dead_cards` for the same reason).
-// 3. Curve: CMC outliers vs the deck's own median.
-// 4. Price: expensive one-offs with no other fault, as a tiebreaker.
-//
-// Basics and the commander are never suggested (the sim's `mana_base`
-// verdict owns land counts). `--for` discounts incumbents serving the
-// deficit role from the cut list and pairs every cut with a fill
-// candidate owned first.
+//! `stm deck cuts`: guided cutting — rank the deck's incumbents by
+//! expendability, with `--for <role N>` pairing each cut to a fill.
+//!
+//! Ranking (pins first, then by score):
+//! 1. Pins: Game Changers over the bracket cap and format-illegal cards go
+//!    to the top regardless of score.
+//! 2. Sim castability: cards rarely castable on curve (dead weight), with
+//!    reactive removal and improvise/affinity cards exempt (the sim
+//!    exempts them from `dead_cards` for the same reason).
+//! 3. Curve: CMC outliers vs the deck's own median.
+//! 4. Price: expensive one-offs with no other fault, as a tiebreaker.
+//!
+//! Basics and the commander are never suggested (the sim's `mana_base`
+//! verdict owns land counts). `--for` discounts incumbents serving the
+//! deficit role from the cut list and pairs every cut with a fill
+//! candidate owned first.
 
 use rusqlite::Connection;
 
@@ -692,7 +692,7 @@ fn make_room_rows(
         .flat_map(|(_, e)| e.iter())
         .filter_map(|entry| cards_by_name.get(&entry.name))
         .filter(|card| {
-            (!is_commander || identity.is_empty() || super::suggest::identity_ok(card, &identity))
+            (!is_commander || identity.is_empty() || super::legal::identity_ok(card, &identity))
                 && match format {
                     Some(f) => super::suggest::card_legal_in(card, Some(f)),
                     None if is_commander => super::suggest::card_is_commander_legal(card),

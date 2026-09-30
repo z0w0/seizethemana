@@ -198,8 +198,8 @@ fn copy_deck(deck: &SimDeck) -> SimDeck {
 }
 
 #[test]
-fn sweep_modern_burn_casts_early() {
-    // Boros LD and Boros Energy want cheap interaction online early.
+fn sweep_modern_land_destruction_sees_interaction_early() {
+    // Boros Land Destruction wants cheap interaction online early.
     let cards = fixture_cards("boros-land-destruction");
     let deck = fixture_deck("boros-land-destruction");
     let stats = sim(&deck, &cards, 200, 8);
@@ -435,14 +435,18 @@ fn affinity_mox_opal_increases_mana_when_metalcraft_is_active() {
 }
 
 #[test]
-fn black_burn_bowmasters_drains_early() {
-    // Burn + Bowmasters: player-targeted damage shows up by t5.
+fn black_burn_self_costs_do_not_leak_into_the_drain_census() {
+    // Thoughtseize ("you lose 2 life") and Castle Locthwain ("you lose
+    // life equal to ...") are self-costs (CR 119.3), not drains. The
+    // deck's only player-directed burn (Soul Spike, Bowmasters) targets
+    // creatures/any-target and stays inert in the goldfish, so the drain
+    // census must not pick up the self-costs.
     let cards = fixture_cards("black burn bowmasters modern");
     let deck = fixture_deck("black burn bowmasters modern");
     let stats = sim(&deck, &cards, 200, 8);
     assert!(
-        stats.opponent_life_loss_by_turn[4] > 0.8,
-        "burn drain by t5: {:.1}",
+        stats.opponent_life_loss_by_turn[4] < 0.2,
+        "self-costs must not register as opponent drain: {:.2}",
         stats.opponent_life_loss_by_turn[4]
     );
 }

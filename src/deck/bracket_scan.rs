@@ -1,6 +1,6 @@
-// Commander bracket signal scans: Game Changer allowance, oracle-text
-// scans for tutors/extra turns/mass land denial/alternate wins, and the
-// bracket checklist. Split from `legal.rs` to keep each file small.
+//! Commander bracket signal scans: Game Changer allowance, oracle-text
+//! scans for tutors/extra turns/mass land denial/alternate wins, and the
+//! bracket checklist. Split from `legal.rs` to keep each file small.
 
 use super::super::grammar::Deck;
 use super::{BracketNote, maindeck_copies_by_name};

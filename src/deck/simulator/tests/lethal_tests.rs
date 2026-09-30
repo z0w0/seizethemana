@@ -1,3 +1,4 @@
+//! Tests for lethal-damage detection.
 use super::deck_test_support::*;
 use crate::db::CardRow;
 use crate::deck::grammar::{Deck, DeckEntry};

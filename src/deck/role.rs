@@ -1,51 +1,93 @@
-// Card roles for `deck suggest`: classification and oracle-text /
-// tagger-label legs. Split from suggest.rs.
+//! Card roles for `deck suggest`: classification and oracle-text /
+//! tagger-label legs. Split from suggest.rs.
 
 /// A deckbuilding job a card can do ("draw", "ramp", "removal"), used to
 /// rank role-keyword scans and structured `--role` suggestions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Role {
+    /// Draws cards.
     Draw,
+    /// Answers opposing permanents.
     Removal,
+    /// Accelerates mana.
     Ramp,
+    /// Closes out the game.
     Wincon,
+    /// Counters spells.
     Counterspell,
+    /// Fixes or provides mana.
     Land,
+    /// Sweeps the board.
     BoardWipe,
+    /// Searches the library.
     Tutor,
+    /// Provides sacrifice outlets.
     Sacrifice,
+    /// Returns cards from the graveyard to the battlefield.
     Reanimate,
+    /// Recurs cards from the graveyard.
     Recursion,
+    /// Fuels or punishes discarding.
     Discard,
+    /// Mills cards.
     Mill,
+    /// Gains or drains life.
     Lifegain,
+    /// Deals direct damage.
     Burn,
+    /// Creates tokens.
     Token,
+    /// Boosts the whole team.
     Anthem,
+    /// Equips creatures.
     Equipment,
+    /// Evades blockers.
     Evasion,
+    /// Tricks in combat.
     CombatTrick,
+    /// Steals opposing permanents.
     Theft,
+    /// Protects permanents.
     Protection,
+    /// Taxes or locks opponents.
     Stax,
+    /// Attacks graveyards.
     GraveyardHate,
+    /// Forms a combo.
     Combo,
+    /// Builds a storm count.
     Storm,
-    Blink,
-    Landfall,
-    Artifact,
-    Enchantment,
-    Planeswalker,
-    Counters,
-    Energy,
-    Vehicles,
-    GroupHug,
-    Politics,
-    Voltron,
-    Spellslinger,
-    Typal,
+    /// Takes extra turns.
     ExtraTurn,
+    /// Blinks permanents for enter-the-battlefield value.
+    Blink,
+    /// Rewards landfall.
+    Landfall,
+    /// Synergizes with artifacts.
+    Artifact,
+    /// Synergizes with enchantments.
+    Enchantment,
+    /// Synergizes with planeswalkers.
+    Planeswalker,
+    /// Synergizes with counters.
+    Counters,
+    /// Uses energy counters.
+    Energy,
+    /// Synergizes with Vehicles.
+    Vehicles,
+    /// Helps every player.
+    GroupHug,
+    /// Rewards politics.
+    Politics,
+    /// Builds one large commander.
+    Voltron,
+    /// Rewards casting instants and sorceries.
+    Spellslinger,
+    /// Rewards a creature type.
+    Typal,
+    /// Spends spare mana.
     ManaSink,
+    /// Improves card quality.
     CardSelection,
 }
 

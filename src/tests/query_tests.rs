@@ -156,6 +156,8 @@ fn query_json_is_the_full_card_shape_plus_score() {
         scryfall_id: "sid-1".into(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     };
     let empty_tags = crate::tags::TagIndex::default();
     let range = crate::prints::PrintRange {
@@ -542,19 +544,17 @@ fn shared_search_rejects_vector_alignment_and_dimension_errors() {
         rows: vec![vec![1.0, 0.0]],
         dim: 2,
     };
-    assert!(
-        search_with_vectors(
-            &conn,
-            &cards,
-            &wrong_name,
-            &[1.0, 0.0],
-            "needle",
-            &CardFilters::default(),
-            1,
-            None,
-        )
-        .is_err()
-    );
+    assert!(search_with_vectors(
+        &conn,
+        &cards,
+        &wrong_name,
+        &[1.0, 0.0],
+        "needle",
+        &CardFilters::default(),
+        1,
+        None,
+    )
+    .is_err());
 
     let vectors = test_vectors(&cards, &[1.0]);
     let error = search_with_vectors(
@@ -575,19 +575,17 @@ fn shared_search_rejects_vector_alignment_and_dimension_errors() {
         rows: vec![vec![1.0]],
         dim: 2,
     };
-    assert!(
-        search_with_vectors(
-            &conn,
-            &cards,
-            &wrong_row_dim,
-            &[1.0, 0.0],
-            "needle",
-            &CardFilters::default(),
-            1,
-            None,
-        )
-        .is_err()
-    );
+    assert!(search_with_vectors(
+        &conn,
+        &cards,
+        &wrong_row_dim,
+        &[1.0, 0.0],
+        "needle",
+        &CardFilters::default(),
+        1,
+        None,
+    )
+    .is_err());
 }
 
 /// A store shorter than `cards` must error at runtime, not silently

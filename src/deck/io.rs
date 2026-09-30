@@ -1,4 +1,4 @@
-// Deck file I/O: decklist import (upsert), export txt, primer read/write.
+//! Deck file I/O: decklist import (upsert), export txt, primer read/write.
 
 use std::io::IsTerminal;
 
@@ -120,13 +120,21 @@ fn prompt_commander(candidates: &[String]) -> anyhow::Result<Option<String>> {
 ///
 /// Grouped so `import` stays under the argument-count lint.
 pub struct ImportSource<'a> {
+    /// Application paths.
     pub paths: &'a crate::paths::Paths,
+    /// Card database connection.
     pub conn: &'a rusqlite::Connection,
+    /// Output sink.
     pub out: &'a mut crate::output::Output,
+    /// Whether to emit JSON.
     pub json: bool,
+    /// Deck name to import into.
     pub name: &'a str,
+    /// Source decklist file, when importing from disk.
     pub file: Option<&'a std::path::Path>,
+    /// Source deck URL, when importing from a deck site.
     pub url: Option<&'a str>,
+    /// Pinned format, when given.
     pub format: Option<&'a str>,
 }
 

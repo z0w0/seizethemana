@@ -3,36 +3,11 @@
 //! and the truth-fix grammar (interaction, treasure banking,
 //! X-scaling draws).
 
+use super::deck_test_support::card;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
 use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
-
-/// A minimal card row for tests.
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// A card row with keywords.
 fn card_kw(name: &str, mana_cost: &str, type_line: &str, keywords: &str, text: &str) -> CardRow {
@@ -134,7 +109,7 @@ fn landfall_engine_parses_draw_and_tokens() {
 }
 
 #[test]
-fn haste_skips_sickness_in_game() {
+fn haste_parses_into_the_flag() {
     let hasted = parse_sim_card(&card_kw(
         "Swift Body",
         "{R}",
@@ -217,6 +192,34 @@ fn x_cost_class_parses() {
         "Exile the top card.",
     ));
     assert_eq!(none.spell_data.x_class, None);
+}
+
+#[test]
+fn x_clause_fixed_rider_is_not_double_counted() {
+    // The X amount is paid and applied by the X conversion, so the fixed
+    // rider for the matching clause must be zero. Otherwise the effect
+    // resolves as X + 1.
+    let drain = parse_sim_card(&card(
+        "X Drain",
+        "{X}{B}{B}",
+        "Sorcery",
+        "Target player loses X life.",
+    ));
+    assert_eq!(drain.spell_data.x_class, Some(XClass::Drain));
+    assert_eq!(drain.spell_data.life_loss_on_resolve, 0);
+
+    let draw = parse_sim_card(&card("X Draw", "{X}{U}{U}", "Instant", "Draw X cards."));
+    assert_eq!(draw.spell_data.x_class, Some(XClass::Draw));
+    assert_eq!(draw.spell_data.draws_on_cast, 0);
+
+    let tokens = parse_sim_card(&card(
+        "X Tokens",
+        "{X}{W}{W}",
+        "Sorcery",
+        "Create X 1/1 white Soldier creature tokens.",
+    ));
+    assert_eq!(tokens.spell_data.x_class, Some(XClass::Tokens));
+    assert_eq!(tokens.spell_data.tokens_on_cast, 0);
 }
 
 #[test]

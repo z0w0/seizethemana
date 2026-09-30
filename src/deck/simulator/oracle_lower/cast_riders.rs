@@ -156,6 +156,67 @@ pub(super) fn parse_cast_riders(
     } else {
         None
     };
+    // An X-shaped clause ("loses X life", "draw X cards") parses a fixed
+    // fallback of 1 because the amount is the variable X. The X conversion
+    // adds X at resolution, so the fixed rider must be zero or the effect
+    // double-counts (X + 1). Zero only the rider matching the X class.
+    let (
+        draws_on_cast,
+        life_loss_on_resolve,
+        damage_on_resolve,
+        tokens_on_cast,
+        treasures_on_cast,
+        mills_on_enter,
+    ) = match x_class {
+        Some(super::super::model::XClass::Drain) => (
+            draws_on_cast,
+            0,
+            0,
+            tokens_on_cast,
+            treasures_on_cast,
+            mills_on_enter,
+        ),
+        Some(super::super::model::XClass::Draw) => (
+            0,
+            life_loss_on_resolve,
+            damage_on_resolve,
+            tokens_on_cast,
+            treasures_on_cast,
+            mills_on_enter,
+        ),
+        Some(super::super::model::XClass::Tokens) => (
+            draws_on_cast,
+            life_loss_on_resolve,
+            damage_on_resolve,
+            0,
+            treasures_on_cast,
+            mills_on_enter,
+        ),
+        Some(super::super::model::XClass::Treasures) => (
+            draws_on_cast,
+            life_loss_on_resolve,
+            damage_on_resolve,
+            tokens_on_cast,
+            0,
+            mills_on_enter,
+        ),
+        Some(super::super::model::XClass::Mill) => (
+            draws_on_cast,
+            life_loss_on_resolve,
+            damage_on_resolve,
+            tokens_on_cast,
+            treasures_on_cast,
+            0,
+        ),
+        _ => (
+            draws_on_cast,
+            life_loss_on_resolve,
+            damage_on_resolve,
+            tokens_on_cast,
+            treasures_on_cast,
+            mills_on_enter,
+        ),
+    };
     // Repeatable per-cast mana: "add {N} for each spell you've cast this
     // turn". Fires per spell cast while the host is untapped.
     let mana_per_cast = cast_face

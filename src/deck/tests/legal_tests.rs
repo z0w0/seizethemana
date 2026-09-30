@@ -31,6 +31,8 @@ fn card(name: &str, type_line: &str, identity: &str, text: &str) -> CardRow {
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 
@@ -81,27 +83,19 @@ fn bracket_scan_flags_tutors_and_extra_turns() {
     )
     .unwrap();
     let checks = scan_bracket_signals(&deck, &cards, 2);
-    assert!(
-        checks
-            .iter()
-            .any(|c| c.starts_with("CHECK library search:") && c.contains("Demonic Tutor"))
-    );
-    assert!(
-        checks
-            .iter()
-            .any(|c| c.starts_with("CHECK extra turns") && c.contains("Time Warp"))
-    );
-    assert!(
-        checks
-            .iter()
-            .any(|c| c.starts_with("CHECK mass land destruction"))
-    );
+    assert!(checks
+        .iter()
+        .any(|c| c.starts_with("CHECK library search:") && c.contains("Demonic Tutor")));
+    assert!(checks
+        .iter()
+        .any(|c| c.starts_with("CHECK extra turns") && c.contains("Time Warp")));
+    assert!(checks
+        .iter()
+        .any(|c| c.starts_with("CHECK mass land destruction")));
     // The clean card's section passes.
-    assert!(
-        !checks
-            .iter()
-            .any(|c| c.starts_with("PASS") && c.contains("library search"))
-    );
+    assert!(!checks
+        .iter()
+        .any(|c| c.starts_with("PASS") && c.contains("library search")));
 }
 
 #[test]
@@ -219,13 +213,11 @@ fn commander_count_and_partner_rules() {
     // Two without partner: violation.
     assert!(commander_legal(&["Solo".to_string(), "Breya".to_string()], &cards).is_some());
     // Three commanders: violation.
-    assert!(
-        commander_legal(
-            &["Solo".to_string(), "Breya".to_string(), "Bruse".to_string()],
-            &cards
-        )
-        .is_some()
-    );
+    assert!(commander_legal(
+        &["Solo".to_string(), "Breya".to_string(), "Bruse".to_string()],
+        &cards
+    )
+    .is_some());
 }
 
 #[test]
@@ -872,11 +864,9 @@ fn bracket_scan_matches_library_and_or_graveyard() {
     .collect();
     let deck = Deck::parse("// COMMANDER\n1 Shenanigans\n\n// DECK\n").unwrap();
     let checks = scan_bracket_signals(&deck, &cards, 2);
-    assert!(
-        checks
-            .iter()
-            .any(|c| c.starts_with("CHECK library search:") && c.contains("Shenanigans"))
-    );
+    assert!(checks
+        .iter()
+        .any(|c| c.starts_with("CHECK library search:") && c.contains("Shenanigans")));
 }
 
 #[test]
@@ -1053,12 +1043,17 @@ fn restricted_cards_capped_at_one_copy() {
         .expect("2 copies of a restricted card violate the 1-copy cap");
     assert_eq!(cap.cards, vec!["Flash ×2"]);
 
-    // One copy passes.
+    // One copy passes: no violation at all (a restricted card at one
+    // copy is legal in Vintage, not a "restricted" violation).
     let deck = Deck::parse("// DECK\n1 Flash\n").unwrap();
     let (violations, _) = check(&deck, &cards, Some("vintage"), None);
     assert!(
         !violations.iter().any(|v| v.rule == "restricted copy limit"),
         "one copy of a restricted card is legal"
+    );
+    assert!(
+        !violations.iter().any(|v| v.rule == "restricted"),
+        "a restricted card at one copy is not a violation: {violations:?}"
     );
 }
 

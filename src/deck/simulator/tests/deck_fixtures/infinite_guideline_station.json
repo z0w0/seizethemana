@@ -1,546 +1,405 @@
 {
- "commanders": [
-  {
-   "name": "Infinite Guideline Station",
-   "cost": "{W}{U}{B}{R}{G}",
-   "type_line": "Legendary Artifact \u2014 Spacecraft",
-   "keywords": "[\"Station\"]",
-   "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control."
-  }
- ],
- "cards": [
-  {
-   "name": "Infinite Guideline Station",
-   "cost": "{W}{U}{B}{R}{G}",
-   "type_line": "Legendary Artifact \u2014 Spacecraft",
-   "keywords": "[\"Station\"]",
-   "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control."
-  },
-  {
-   "name": "Sol Ring",
-   "cost": "{1}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add {C}{C}."
-  },
-  {
-   "name": "Arcane Signet",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color in your commander's color identity."
-  },
-  {
-   "name": "Fellwar Stone",
-   "cost": "{2}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
-  },
-  {
-   "name": "Chromatic Lantern",
-   "cost": "{3}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color."
-  },
-  {
-   "name": "Coalition Relic",
-   "cost": "{3}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color.\n{T}: Put a charge counter on this artifact.\nAt the beginning of your first main phase, remove all charge counters from this artifact. Add one mana of any color for each charge counter removed this way."
-  },
-  {
-   "name": "Astral Cornucopia",
-   "cost": "{X}{X}{X}",
-   "type_line": "Artifact",
-   "keywords": "[]",
-   "text": "This artifact enters with X charge counters on it.\n{T}: Choose a color. Add one mana of that color for each charge counter on this artifact."
-  },
-  {
-   "name": "Everflowing Chalice",
-   "cost": "{0}",
-   "type_line": "Artifact",
-   "keywords": "[\"Multikicker\"]",
-   "text": "Multikicker {2} (You may pay an additional {2} any number of times as you cast this spell.)\nThis artifact enters with a charge counter on it for each time it was kicked.\n{T}: Add {C} for each charge counter on this artifact."
-  },
-  {
-   "name": "Sisay, Weatherlight Captain",
-   "cost": "{2}{W}",
-   "type_line": "Legendary Creature \u2014 Human Soldier",
-   "keywords": "[]",
-   "text": "Sisay gets +1/+1 for each color among other legendary permanents you control.\n{W}{U}{B}{R}{G}: Search your library for a legendary permanent card with mana value less than Sisay's power, put that card onto the battlefield, then shuffle."
-  },
-  {
-   "name": "Jodah, Archmage Eternal",
-   "cost": "{1}{U}{R}{W}",
-   "type_line": "Legendary Creature \u2014 Human Wizard",
-   "keywords": "[\"Flying\"]",
-   "text": "Flying\nYou may pay {W}{U}{B}{R}{G} rather than pay the mana cost for spells you cast."
-  },
-  {
-   "name": "Golos, Tireless Pilgrim",
-   "cost": "{5}",
-   "type_line": "Legendary Artifact Creature \u2014 Scout",
-   "keywords": "[]",
-   "text": "When Golos enters, you may search your library for a land card, put that card onto the battlefield tapped, then shuffle.\n{2}{W}{U}{B}{R}{G}: Exile the top three cards of your library. You may play them this turn without paying their mana costs."
-  },
-  {
-   "name": "Esika, God of the Tree // The Prismatic Bridge",
-   "cost": "{1}{G}{G} // {W}{U}{B}{R}{G}",
-   "type_line": "Legendary Creature \u2014 God // Legendary Enchantment",
-   "keywords": "[\"Vigilance\"]",
-   "text": "Vigilance\n{T}: Add one mana of any color.\nOther legendary creatures you control have vigilance and \"{T}: Add one mana of any color.\"\n// At the beginning of your upkeep, reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order."
-  },
-  {
-   "name": "Faeburrow Elder",
-   "cost": "{1}{G}{W}",
-   "type_line": "Creature \u2014 Treefolk Druid",
-   "keywords": "[\"Vigilance\"]",
-   "text": "Vigilance\nThis creature gets +1/+1 for each color among permanents you control.\n{T}: For each color among permanents you control, add one mana of that color."
-  },
-  {
-   "name": "Bloom Tender",
-   "cost": "{1}{G}",
-   "type_line": "Creature \u2014 Elf Druid",
-   "keywords": "[\"Vivid\"]",
-   "text": "Vivid \u2014 {T}: For each color among permanents you control, add one mana of that color."
-  },
-  {
-   "name": "The Ur-Dragon",
-   "cost": "{4}{W}{U}{B}{R}{G}",
-   "type_line": "Legendary Creature \u2014 Dragon Avatar",
-   "keywords": "[\"Flying\", \"Eminence\"]",
-   "text": "Eminence \u2014 As long as The Ur-Dragon is in the command zone or on the battlefield, other Dragon spells you cast cost {1} less to cast.\nFlying\nWhenever one or more Dragons you control attack, draw that many cards, then you may put a permanent card from your hand onto the battlefield."
-  },
-  {
-   "name": "Atraxa, Grand Unifier",
-   "cost": "{3}{G}{W}{U}{B}",
-   "type_line": "Legendary Creature \u2014 Phyrexian Angel",
-   "keywords": "[\"Deathtouch\", \"Flying\", \"Lifelink\", \"Vigilance\"]",
-   "text": "Flying, vigilance, deathtouch, lifelink\nWhen Atraxa enters, reveal the top ten cards of your library. For each card type, you may put a card of that type from among the revealed cards into your hand. Put the rest on the bottom of your library in a random order. (Artifact, battle, creature, enchantment, instant, land, planeswalker, and sorcery are card types.)"
-  },
-  {
-   "name": "Omnath, Locus of Creation",
-   "cost": "{R}{G}{W}{U}",
-   "type_line": "Legendary Creature \u2014 Elemental",
-   "keywords": "[\"Landfall\"]",
-   "text": "When Omnath enters, draw a card.\nLandfall \u2014 Whenever a land you control enters, you gain 4 life if this is the first time this ability has resolved this turn. If it's the second time, add {R}{G}{W}{U}. If it's the third time, Omnath deals 4 damage to each opponent and each planeswalker you don't control."
-  },
-  {
-   "name": "Kenrith, the Returned King",
-   "cost": "{4}{W}",
-   "type_line": "Legendary Creature \u2014 Human Noble",
-   "keywords": "[]",
-   "text": "{R}: All creatures gain trample and haste until end of turn.\n{1}{G}: Put a +1/+1 counter on target creature.\n{2}{W}: Target player gains 5 life.\n{3}{U}: Target player draws a card.\n{4}{B}: Put target creature card from a graveyard onto the battlefield under its owner's control."
-  },
-  {
-   "name": "Niv-Mizzet Reborn",
-   "cost": "{W}{U}{B}{R}{G}",
-   "type_line": "Legendary Creature \u2014 Dragon Avatar",
-   "keywords": "[\"Flying\"]",
-   "text": "Flying\nWhen Niv-Mizzet enters, reveal the top ten cards of your library. For each color pair, choose a card that's exactly those colors from among them. Put the chosen cards into your hand and the rest on the bottom of your library in a random order."
-  },
-  {
-   "name": "Yasharn, Implacable Earth",
-   "cost": "{2}{G}{W}",
-   "type_line": "Legendary Creature \u2014 Elemental Boar",
-   "keywords": "[]",
-   "text": "When Yasharn enters, search your library for a basic Forest card and a basic Plains card, reveal those cards, put them into your hand, then shuffle.\nPlayers can't pay life or sacrifice nonland permanents to cast spells or activate abilities."
-  },
-  {
-   "name": "Tatyova, Benthic Druid",
-   "cost": "{3}{G}{U}",
-   "type_line": "Legendary Creature \u2014 Merfolk Druid",
-   "keywords": "[\"Landfall\"]",
-   "text": "Landfall \u2014 Whenever a land you control enters, you gain 1 life and draw a card."
-  },
-  {
-   "name": "Aesi, Tyrant of Gyre Strait",
-   "cost": "{4}{G}{U}",
-   "type_line": "Legendary Creature \u2014 Serpent",
-   "keywords": "[\"Landfall\"]",
-   "text": "You may play an additional land on each of your turns.\nLandfall \u2014 Whenever a land you control enters, you may draw a card."
-  },
-  {
-   "name": "Counterspell",
-   "cost": "{U}{U}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Counter target spell."
-  },
-  {
-   "name": "Swan Song",
-   "cost": "{U}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
-  },
-  {
-   "name": "Assassin's Trophy",
-   "cost": "{B}{G}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
-  },
-  {
-   "name": "Swords to Plowshares",
-   "cost": "{W}",
-   "type_line": "Instant",
-   "keywords": "[]",
-   "text": "Exile target creature. Its controller gains life equal to its power."
-  },
-  {
-   "name": "Cultivate",
-   "cost": "{2}{G}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
-  },
-  {
-   "name": "Kodama's Reach",
-   "cost": "{2}{G}",
-   "type_line": "Sorcery \u2014 Arcane",
-   "keywords": "[]",
-   "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
-  },
-  {
-   "name": "Farseek",
-   "cost": "{1}{G}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
-  },
-  {
-   "name": "Three Visits",
-   "cost": "{1}{G}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Search your library for a Forest card, put it onto the battlefield, then shuffle."
-  },
-  {
-   "name": "Rhystic Study",
-   "cost": "{2}{U}",
-   "type_line": "Enchantment",
-   "keywords": "[]",
-   "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
-  },
-  {
-   "name": "Smothering Tithe",
-   "cost": "{3}{W}",
-   "type_line": "Enchantment",
-   "keywords": "[\"Treasure\"]",
-   "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
-  },
-  {
-   "name": "Guardian Project",
-   "cost": "{3}{G}",
-   "type_line": "Enchantment",
-   "keywords": "[]",
-   "text": "Whenever a nontoken creature you control enters, if it doesn't have the same name as another creature you control or a creature card in your graveyard, draw a card."
-  },
-  {
-   "name": "Elemental Bond",
-   "cost": "{2}{G}",
-   "type_line": "Enchantment",
-   "keywords": "[]",
-   "text": "Whenever a creature you control with power 3 or greater enters, draw a card."
-  },
-  {
-   "name": "Wrath of God",
-   "cost": "{2}{W}{W}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Destroy all creatures. They can't be regenerated."
-  },
-  {
-   "name": "Farewell",
-   "cost": "{4}{W}{W}",
-   "type_line": "Sorcery",
-   "keywords": "[]",
-   "text": "Choose one or more \u2014\n\u2022 Exile all artifacts.\n\u2022 Exile all creatures.\n\u2022 Exile all enchantments.\n\u2022 Exile all graveyards."
-  },
-  {
-   "name": "Cyclonic Rift",
-   "cost": "{1}{U}",
-   "type_line": "Instant",
-   "keywords": "[\"Overload\"]",
-   "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
-  },
-  {
-   "name": "Forest",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Forest",
-   "keywords": "[]",
-   "text": "({T}: Add {G}.)"
-  },
-  {
-   "name": "Island",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Island",
-   "keywords": "[]",
-   "text": "({T}: Add {U}.)"
-  },
-  {
-   "name": "Plains",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Plains",
-   "keywords": "[]",
-   "text": "({T}: Add {W}.)"
-  },
-  {
-   "name": "Swamp",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Swamp",
-   "keywords": "[]",
-   "text": "({T}: Add {B}.)"
-  },
-  {
-   "name": "Mountain",
-   "cost": "",
-   "type_line": "Basic Land \u2014 Mountain",
-   "keywords": "[]",
-   "text": "({T}: Add {R}.)"
-  },
-  {
-   "name": "Command Tower",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color in your commander's color identity."
-  },
-  {
-   "name": "Exotic Orchard",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
-  },
-  {
-   "name": "Path of Ancestry",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[\"Scry\"]",
-   "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
-  },
-  {
-   "name": "Mana Confluence",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}, Pay 1 life: Add one mana of any color."
-  },
-  {
-   "name": "City of Brass",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
-  },
-  {
-   "name": "Forbidden Orchard",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any color.\nWhenever you tap this land for mana, target opponent creates a 1/1 colorless Spirit creature token."
-  },
-  {
-   "name": "Reflecting Pool",
-   "cost": "",
-   "type_line": "Land",
-   "keywords": "[]",
-   "text": "{T}: Add one mana of any type that a land you control could produce."
-  }
- ],
- "list": [
-  [
-   "Sol Ring",
-   1
+  "commanders": [
+    {
+      "name": "Infinite Guideline Station",
+      "cost": "{W}{U}{B}{R}{G}",
+      "type_line": "Legendary Artifact \u2014 Spacecraft",
+      "keywords": "[\"Station\"]",
+      "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control."
+    }
   ],
-  [
-   "Arcane Signet",
-   1
+  "cards": [
+    {
+      "name": "Infinite Guideline Station",
+      "cost": "{W}{U}{B}{R}{G}",
+      "type_line": "Legendary Artifact \u2014 Spacecraft",
+      "keywords": "[\"Station\"]",
+      "text": "When Infinite Guideline Station enters, create a tapped 2/2 colorless Robot artifact creature token for each multicolored permanent you control.\nStation (Tap another creature you control: Put charge counters equal to its power on this Spacecraft. Station only as a sorcery. It's an artifact creature at 12+.)\n12+ | Flying\nWhenever Infinite Guideline Station attacks, draw a card for each multicolored permanent you control."
+    },
+    {
+      "name": "Sol Ring",
+      "cost": "{1}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add {C}{C}."
+    },
+    {
+      "name": "Arcane Signet",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color in your commander's color identity."
+    },
+    {
+      "name": "Fellwar Stone",
+      "cost": "{2}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+    },
+    {
+      "name": "Chromatic Lantern",
+      "cost": "{3}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "Lands you control have \"{T}: Add one mana of any color.\"\n{T}: Add one mana of any color."
+    },
+    {
+      "name": "Coalition Relic",
+      "cost": "{3}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color.\n{T}: Put a charge counter on this artifact.\nAt the beginning of your first main phase, remove all charge counters from this artifact. Add one mana of any color for each charge counter removed this way."
+    },
+    {
+      "name": "Astral Cornucopia",
+      "cost": "{X}{X}{X}",
+      "type_line": "Artifact",
+      "keywords": "[]",
+      "text": "This artifact enters with X charge counters on it.\n{T}: Choose a color. Add one mana of that color for each charge counter on this artifact."
+    },
+    {
+      "name": "Everflowing Chalice",
+      "cost": "{0}",
+      "type_line": "Artifact",
+      "keywords": "[\"Multikicker\"]",
+      "text": "Multikicker {2} (You may pay an additional {2} any number of times as you cast this spell.)\nThis artifact enters with a charge counter on it for each time it was kicked.\n{T}: Add {C} for each charge counter on this artifact."
+    },
+    {
+      "name": "Sisay, Weatherlight Captain",
+      "cost": "{2}{W}",
+      "type_line": "Legendary Creature \u2014 Human Soldier",
+      "keywords": "[]",
+      "text": "Sisay gets +1/+1 for each color among other legendary permanents you control.\n{W}{U}{B}{R}{G}: Search your library for a legendary permanent card with mana value less than Sisay's power, put that card onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Jodah, Archmage Eternal",
+      "cost": "{1}{U}{R}{W}",
+      "type_line": "Legendary Creature \u2014 Human Wizard",
+      "keywords": "[\"Flying\"]",
+      "text": "Flying\nYou may pay {W}{U}{B}{R}{G} rather than pay the mana cost for spells you cast."
+    },
+    {
+      "name": "Golos, Tireless Pilgrim",
+      "cost": "{5}",
+      "type_line": "Legendary Artifact Creature \u2014 Scout",
+      "keywords": "[]",
+      "text": "When Golos enters, you may search your library for a land card, put that card onto the battlefield tapped, then shuffle.\n{2}{W}{U}{B}{R}{G}: Exile the top three cards of your library. You may play them this turn without paying their mana costs."
+    },
+    {
+      "name": "Esika, God of the Tree // The Prismatic Bridge",
+      "cost": "{1}{G}{G} // {W}{U}{B}{R}{G}",
+      "type_line": "Legendary Creature \u2014 God // Legendary Enchantment",
+      "keywords": "[\"Vigilance\"]",
+      "text": "Vigilance\n{T}: Add one mana of any color.\nOther legendary creatures you control have vigilance and \"{T}: Add one mana of any color.\"\n// At the beginning of your upkeep, reveal cards from the top of your library until you reveal a creature or planeswalker card. Put that card onto the battlefield and the rest on the bottom of your library in a random order."
+    },
+    {
+      "name": "Faeburrow Elder",
+      "cost": "{1}{G}{W}",
+      "type_line": "Creature \u2014 Treefolk Druid",
+      "keywords": "[\"Vigilance\"]",
+      "text": "Vigilance\nThis creature gets +1/+1 for each color among permanents you control.\n{T}: For each color among permanents you control, add one mana of that color."
+    },
+    {
+      "name": "Bloom Tender",
+      "cost": "{1}{G}",
+      "type_line": "Creature \u2014 Elf Druid",
+      "keywords": "[\"Vivid\"]",
+      "text": "Vivid \u2014 {T}: For each color among permanents you control, add one mana of that color."
+    },
+    {
+      "name": "The Ur-Dragon",
+      "cost": "{4}{W}{U}{B}{R}{G}",
+      "type_line": "Legendary Creature \u2014 Dragon Avatar",
+      "keywords": "[\"Flying\", \"Eminence\"]",
+      "text": "Eminence \u2014 As long as The Ur-Dragon is in the command zone or on the battlefield, other Dragon spells you cast cost {1} less to cast.\nFlying\nWhenever one or more Dragons you control attack, draw that many cards, then you may put a permanent card from your hand onto the battlefield."
+    },
+    {
+      "name": "Atraxa, Grand Unifier",
+      "cost": "{3}{G}{W}{U}{B}",
+      "type_line": "Legendary Creature \u2014 Phyrexian Angel",
+      "keywords": "[\"Deathtouch\", \"Flying\", \"Lifelink\", \"Vigilance\"]",
+      "text": "Flying, vigilance, deathtouch, lifelink\nWhen Atraxa enters, reveal the top ten cards of your library. For each card type, you may put a card of that type from among the revealed cards into your hand. Put the rest on the bottom of your library in a random order. (Artifact, battle, creature, enchantment, instant, land, planeswalker, and sorcery are card types.)"
+    },
+    {
+      "name": "Omnath, Locus of Creation",
+      "cost": "{R}{G}{W}{U}",
+      "type_line": "Legendary Creature \u2014 Elemental",
+      "keywords": "[\"Landfall\"]",
+      "text": "When Omnath enters, draw a card.\nLandfall \u2014 Whenever a land you control enters, you gain 4 life if this is the first time this ability has resolved this turn. If it's the second time, add {R}{G}{W}{U}. If it's the third time, Omnath deals 4 damage to each opponent and each planeswalker you don't control."
+    },
+    {
+      "name": "Kenrith, the Returned King",
+      "cost": "{4}{W}",
+      "type_line": "Legendary Creature \u2014 Human Noble",
+      "keywords": "[]",
+      "text": "{R}: All creatures gain trample and haste until end of turn.\n{1}{G}: Put a +1/+1 counter on target creature.\n{2}{W}: Target player gains 5 life.\n{3}{U}: Target player draws a card.\n{4}{B}: Put target creature card from a graveyard onto the battlefield under its owner's control."
+    },
+    {
+      "name": "Niv-Mizzet Reborn",
+      "cost": "{W}{U}{B}{R}{G}",
+      "type_line": "Legendary Creature \u2014 Dragon Avatar",
+      "keywords": "[\"Flying\"]",
+      "text": "Flying\nWhen Niv-Mizzet enters, reveal the top ten cards of your library. For each color pair, choose a card that's exactly those colors from among them. Put the chosen cards into your hand and the rest on the bottom of your library in a random order."
+    },
+    {
+      "name": "Yasharn, Implacable Earth",
+      "cost": "{2}{G}{W}",
+      "type_line": "Legendary Creature \u2014 Elemental Boar",
+      "keywords": "[]",
+      "text": "When Yasharn enters, search your library for a basic Forest card and a basic Plains card, reveal those cards, put them into your hand, then shuffle.\nPlayers can't pay life or sacrifice nonland permanents to cast spells or activate abilities."
+    },
+    {
+      "name": "Tatyova, Benthic Druid",
+      "cost": "{3}{G}{U}",
+      "type_line": "Legendary Creature \u2014 Merfolk Druid",
+      "keywords": "[\"Landfall\"]",
+      "text": "Landfall \u2014 Whenever a land you control enters, you gain 1 life and draw a card."
+    },
+    {
+      "name": "Aesi, Tyrant of Gyre Strait",
+      "cost": "{4}{G}{U}",
+      "type_line": "Legendary Creature \u2014 Serpent",
+      "keywords": "[\"Landfall\"]",
+      "text": "You may play an additional land on each of your turns.\nLandfall \u2014 Whenever a land you control enters, you may draw a card."
+    },
+    {
+      "name": "Counterspell",
+      "cost": "{U}{U}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Counter target spell."
+    },
+    {
+      "name": "Swan Song",
+      "cost": "{U}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying."
+    },
+    {
+      "name": "Assassin's Trophy",
+      "cost": "{B}{G}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Destroy target permanent an opponent controls. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Swords to Plowshares",
+      "cost": "{W}",
+      "type_line": "Instant",
+      "keywords": "[]",
+      "text": "Exile target creature. Its controller gains life equal to its power."
+    },
+    {
+      "name": "Cultivate",
+      "cost": "{2}{G}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+    },
+    {
+      "name": "Kodama's Reach",
+      "cost": "{2}{G}",
+      "type_line": "Sorcery \u2014 Arcane",
+      "keywords": "[]",
+      "text": "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+    },
+    {
+      "name": "Farseek",
+      "cost": "{1}{G}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle."
+    },
+    {
+      "name": "Three Visits",
+      "cost": "{1}{G}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Search your library for a Forest card, put it onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Rhystic Study",
+      "cost": "{2}{U}",
+      "type_line": "Enchantment",
+      "keywords": "[]",
+      "text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}."
+    },
+    {
+      "name": "Smothering Tithe",
+      "cost": "{3}{W}",
+      "type_line": "Enchantment",
+      "keywords": "[\"Treasure\"]",
+      "text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")"
+    },
+    {
+      "name": "Guardian Project",
+      "cost": "{3}{G}",
+      "type_line": "Enchantment",
+      "keywords": "[]",
+      "text": "Whenever a nontoken creature you control enters, if it doesn't have the same name as another creature you control or a creature card in your graveyard, draw a card."
+    },
+    {
+      "name": "Elemental Bond",
+      "cost": "{2}{G}",
+      "type_line": "Enchantment",
+      "keywords": "[]",
+      "text": "Whenever a creature you control with power 3 or greater enters, draw a card."
+    },
+    {
+      "name": "Wrath of God",
+      "cost": "{2}{W}{W}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Destroy all creatures. They can't be regenerated."
+    },
+    {
+      "name": "Farewell",
+      "cost": "{4}{W}{W}",
+      "type_line": "Sorcery",
+      "keywords": "[]",
+      "text": "Choose one or more \u2014\n\u2022 Exile all artifacts.\n\u2022 Exile all creatures.\n\u2022 Exile all enchantments.\n\u2022 Exile all graveyards."
+    },
+    {
+      "name": "Cyclonic Rift",
+      "cost": "{1}{U}",
+      "type_line": "Instant",
+      "keywords": "[\"Overload\"]",
+      "text": "Return target nonland permanent you don't control to its owner's hand.\nOverload {6}{U} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")"
+    },
+    {
+      "name": "Forest",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Forest",
+      "keywords": "[]",
+      "text": "({T}: Add {G}.)"
+    },
+    {
+      "name": "Island",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Island",
+      "keywords": "[]",
+      "text": "({T}: Add {U}.)"
+    },
+    {
+      "name": "Plains",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Plains",
+      "keywords": "[]",
+      "text": "({T}: Add {W}.)"
+    },
+    {
+      "name": "Swamp",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Swamp",
+      "keywords": "[]",
+      "text": "({T}: Add {B}.)"
+    },
+    {
+      "name": "Mountain",
+      "cost": "",
+      "type_line": "Basic Land \u2014 Mountain",
+      "keywords": "[]",
+      "text": "({T}: Add {R}.)"
+    },
+    {
+      "name": "Command Tower",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color in your commander's color identity."
+    },
+    {
+      "name": "Exotic Orchard",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color that a land an opponent controls could produce."
+    },
+    {
+      "name": "Path of Ancestry",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[\"Scry\"]",
+      "text": "This land enters tapped.\n{T}: Add one mana of any color in your commander's color identity. When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1. (Look at the top card of your library. You may put that card on the bottom.)"
+    },
+    {
+      "name": "Mana Confluence",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}, Pay 1 life: Add one mana of any color."
+    },
+    {
+      "name": "City of Brass",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "Whenever this land becomes tapped, it deals 1 damage to you.\n{T}: Add one mana of any color."
+    },
+    {
+      "name": "Forbidden Orchard",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any color.\nWhenever you tap this land for mana, target opponent creates a 1/1 colorless Spirit creature token."
+    },
+    {
+      "name": "Reflecting Pool",
+      "cost": "",
+      "type_line": "Land",
+      "keywords": "[]",
+      "text": "{T}: Add one mana of any type that a land you control could produce."
+    }
   ],
-  [
-   "Fellwar Stone",
-   1
-  ],
-  [
-   "Chromatic Lantern",
-   1
-  ],
-  [
-   "Coalition Relic",
-   1
-  ],
-  [
-   "Astral Cornucopia",
-   1
-  ],
-  [
-   "Everflowing Chalice",
-   1
-  ],
-  [
-   "Sisay, Weatherlight Captain",
-   1
-  ],
-  [
-   "Jodah, Archmage Eternal",
-   1
-  ],
-  [
-   "Golos, Tireless Pilgrim",
-   1
-  ],
-  [
-   "Faeburrow Elder",
-   1
-  ],
-  [
-   "Bloom Tender",
-   1
-  ],
-  [
-   "The Ur-Dragon",
-   1
-  ],
-  [
-   "Atraxa, Grand Unifier",
-   1
-  ],
-  [
-   "Omnath, Locus of Creation",
-   1
-  ],
-  [
-   "Kenrith, the Returned King",
-   1
-  ],
-  [
-   "Niv-Mizzet Reborn",
-   1
-  ],
-  [
-   "Yasharn, Implacable Earth",
-   1
-  ],
-  [
-   "Tatyova, Benthic Druid",
-   1
-  ],
-  [
-   "Aesi, Tyrant of Gyre Strait",
-   1
-  ],
-  [
-   "Counterspell",
-   1
-  ],
-  [
-   "Swan Song",
-   1
-  ],
-  [
-   "Assassin's Trophy",
-   1
-  ],
-  [
-   "Swords to Plowshares",
-   1
-  ],
-  [
-   "Cultivate",
-   1
-  ],
-  [
-   "Kodama's Reach",
-   1
-  ],
-  [
-   "Farseek",
-   1
-  ],
-  [
-   "Three Visits",
-   1
-  ],
-  [
-   "Rhystic Study",
-   1
-  ],
-  [
-   "Smothering Tithe",
-   1
-  ],
-  [
-   "Guardian Project",
-   1
-  ],
-  [
-   "Elemental Bond",
-   1
-  ],
-  [
-   "Wrath of God",
-   1
-  ],
-  [
-   "Farewell",
-   1
-  ],
-  [
-   "Cyclonic Rift",
-   1
-  ],
-  [
-   "Forest",
-   13
-  ],
-  [
-   "Island",
-   13
-  ],
-  [
-   "Plains",
-   12
-  ],
-  [
-   "Swamp",
-   10
-  ],
-  [
-   "Mountain",
-   9
-  ],
-  [
-   "Command Tower",
-   1
-  ],
-  [
-   "Exotic Orchard",
-   1
-  ],
-  [
-   "Path of Ancestry",
-   1
-  ],
-  [
-   "Mana Confluence",
-   1
-  ],
-  [
-   "City of Brass",
-   1
-  ],
-  [
-   "Forbidden Orchard",
-   1
-  ],
-  [
-   "Reflecting Pool",
-   1
+  "list": [
+    ["Sol Ring", 1],
+    ["Arcane Signet", 1],
+    ["Fellwar Stone", 1],
+    ["Chromatic Lantern", 1],
+    ["Coalition Relic", 1],
+    ["Astral Cornucopia", 1],
+    ["Everflowing Chalice", 1],
+    ["Sisay, Weatherlight Captain", 1],
+    ["Jodah, Archmage Eternal", 1],
+    ["Golos, Tireless Pilgrim", 1],
+    ["Faeburrow Elder", 1],
+    ["Bloom Tender", 1],
+    ["The Ur-Dragon", 1],
+    ["Atraxa, Grand Unifier", 1],
+    ["Omnath, Locus of Creation", 1],
+    ["Kenrith, the Returned King", 1],
+    ["Niv-Mizzet Reborn", 1],
+    ["Yasharn, Implacable Earth", 1],
+    ["Tatyova, Benthic Druid", 1],
+    ["Aesi, Tyrant of Gyre Strait", 1],
+    ["Counterspell", 1],
+    ["Swan Song", 1],
+    ["Assassin's Trophy", 1],
+    ["Swords to Plowshares", 1],
+    ["Cultivate", 1],
+    ["Kodama's Reach", 1],
+    ["Farseek", 1],
+    ["Three Visits", 1],
+    ["Rhystic Study", 1],
+    ["Smothering Tithe", 1],
+    ["Guardian Project", 1],
+    ["Elemental Bond", 1],
+    ["Wrath of God", 1],
+    ["Farewell", 1],
+    ["Cyclonic Rift", 1],
+    ["Forest", 13],
+    ["Island", 13],
+    ["Plains", 12],
+    ["Swamp", 10],
+    ["Mountain", 9],
+    ["Command Tower", 1],
+    ["Exotic Orchard", 1],
+    ["Path of Ancestry", 1],
+    ["Mana Confluence", 1],
+    ["City of Brass", 1],
+    ["Forbidden Orchard", 1],
+    ["Reflecting Pool", 1]
   ]
- ]
 }

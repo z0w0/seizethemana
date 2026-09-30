@@ -627,6 +627,25 @@ pub enum OracleEffect {
     Unsupported(String),
 }
 
+/// Return true when an effect does more than produce mana.
+///
+/// A CR 605 mana ability must not have a non-mana effect. Unsupported text
+/// counts when it mentions the library. The activation and trigger mana
+/// checks share this test.
+pub fn is_non_mana_effect(effect: &OracleEffect) -> bool {
+    match effect {
+        OracleEffect::Search(_)
+        | OracleEffect::Draw(_)
+        | OracleEffect::DrawThenDiscard(_)
+        | OracleEffect::DrawAndMinusCounter
+        | OracleEffect::Scry(_)
+        | OracleEffect::Surveil(_)
+        | OracleEffect::Mill(_) => true,
+        OracleEffect::Unsupported(text) => text.to_ascii_lowercase().contains("library"),
+        _ => false,
+    }
+}
+
 /// Target class named by a damage effect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DamageTarget {

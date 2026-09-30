@@ -1,7 +1,7 @@
-// External decklist formats: Moxfield, Archidekt, and Arena txt shapes,
-// plus the export renderers. Parsing normalizes every format into the
-// internal `Deck` before `normalize_sections` runs, so commander
-// inference, primers, and ownership notes work unchanged.
+//! External decklist formats: Moxfield, Archidekt, and Arena txt shapes,
+//! plus the export renderers. Parsing normalizes every format into the
+//! internal `Deck` before `normalize_sections` runs, so commander
+//! inference, primers, and ownership notes work unchanged.
 
 use super::grammar::{Deck, DeckEntry};
 
@@ -400,6 +400,9 @@ fn split_print(rest: &str, open: char, close: char) -> (String, Option<String>, 
 }
 
 /// Set codes: 1-6 alphanumeric tokens (either case; normalized later).
+///
+/// Looser than `grammar::valid_set`: external exports may lowercase set
+/// codes, so any alphanumeric case is accepted here.
 fn valid_set(set: &str) -> bool {
     (1..=6).contains(&set.len()) && set.chars().all(|c| c.is_ascii_alphanumeric())
 }

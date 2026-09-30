@@ -1,8 +1,8 @@
-use anyhow::Context;
+//! Status-file and vector-store bookkeeping for the sync pass: staleness,
+//! the embed-target list, progress reporting, the vector upsert, and the
+//! status.json writers. Split from `sync.rs` to keep each file small.
 
-// Status-file and vector-store bookkeeping for the sync pass: staleness,
-// the embed-target list, progress reporting, the vector upsert, and the
-// status.json writers. Split from `sync.rs` to keep each file small.
+use anyhow::Context;
 
 /// True when the stored vectors were built with the current document layout.
 pub(crate) fn doc_version_current(paths: &crate::paths::Paths) -> anyhow::Result<bool> {
@@ -42,21 +42,29 @@ pub(crate) fn embed_targets(
 /// uneven totals report every `step`-th card plus the tail. Small
 /// batches (fewer than 20 cards) stay silent: below that, decile steps
 /// of 1 would report every card.
-pub(crate) fn tick_embed_progress(out: &mut crate::output::Output, total: usize, pos: usize) {
+/// True when the embed progress line should print for `pos` of `total`.
+/// Batches fewer than 20 cards stay silent; otherwise a line prints when
+/// `pos` is a multiple of `total / 10` (rounded down) or on the last card.
+pub(crate) fn should_report_embed_progress(total: usize, pos: usize) -> bool {
     if total < 20 {
-        return;
+        return false;
     }
     let step = total / 10;
-    if pos.is_multiple_of(step) || pos == total {
-        out.status(
-            "Embedding",
-            &format!(
-                "{} of {} cards",
-                crate::output::grouped_int(pos as i64),
-                crate::output::grouped_int(total as i64)
-            ),
-        );
+    pos.is_multiple_of(step) || pos == total
+}
+
+pub(crate) fn tick_embed_progress(out: &mut crate::output::Output, total: usize, pos: usize) {
+    if !should_report_embed_progress(total, pos) {
+        return;
     }
+    out.status(
+        "Embedding",
+        &format!(
+            "{} of {} cards",
+            crate::output::grouped_int(pos as i64),
+            crate::output::grouped_int(total as i64)
+        ),
+    );
 }
 
 /// True when the store needs a sync: never synced, or older than

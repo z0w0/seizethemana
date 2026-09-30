@@ -53,7 +53,7 @@ jobs:
           archive="seizethemana-${version}-${{ matrix.target }}.tar.xz"
           staging="seizethemana-${version}-${{ matrix.target }}"
           mkdir "$staging"
-          cp "target/${{ matrix.target }}/release/seizethemana" "$staging/"
+          cp "target/${{ matrix.target }}/release/stm" "$staging/"
           cp README.md LICENSE "$staging/"
           tar -cJf "$archive" "$staging"
           echo "archive=$archive" >> "$GITHUB_ENV"
@@ -66,7 +66,7 @@ jobs:
           $archive = "seizethemana-${version}-${{ matrix.target }}.zip"
           $staging = "seizethemana-${version}-${{ matrix.target }}"
           New-Item -ItemType Directory -Force -Path $staging | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/seizethemana.exe" $staging
+          Copy-Item "target/${{ matrix.target }}/release/stm.exe" $staging
           Copy-Item README.md, LICENSE $staging
           Compress-Archive -Path $staging -DestinationPath $archive
           "archive=$archive" | Out-File -Append -FilePath $env:GITHUB_ENV

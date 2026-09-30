@@ -161,7 +161,7 @@ pub(in crate::deck::simulator) fn activate_mana_mode(
             {
                 return None;
             }
-            if activation.life_payment() > 0 && st.life <= activation.life_payment() as i32
+            if activation.life_payment() > 0 && st.life < activation.life_payment() as i32
                 || activation.energy_payment() > st.player_counters.energy
                 || activation.charge_counter_payment() > source.counters.charge
             {

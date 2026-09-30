@@ -1,16 +1,16 @@
-// Format and Commander-bracket legality for decks.
-//
-// The checks here are deterministic: everything computable from stored card
-// data (deck size, copy limits, commander rules, format legality, Game
-// Changer counts). Bracket signals that need judgment — tutor density,
-// extra turns, mass land destruction, combo speed — are not computed; the
-// command prints a checklist of what to review instead.
-//
-// Deck shape assumptions: a `// COMMANDER` section names the commander(s);
-// a `// SIDEBOARD` section holds sideboard cards for 60-card formats (or
-// the commander upgrade kit); a `// MAYBEBOARD` section holds loose
-// candidates. Both bench sections check per-card legality and, in
-// commander, color identity.
+//! Format and Commander-bracket legality for decks.
+//!
+//! The checks here are deterministic: everything computable from stored card
+//! data (deck size, copy limits, commander rules, format legality, Game
+//! Changer counts). Bracket signals that need judgment — tutor density,
+//! extra turns, mass land destruction, combo speed — are not computed; the
+//! command prints a checklist of what to review instead.
+//!
+//! Deck shape assumptions: a `// COMMANDER` section names the commander(s);
+//! a `// SIDEBOARD` section holds sideboard cards for 60-card formats (or
+//! the commander upgrade kit); a `// MAYBEBOARD` section holds loose
+//! candidates. Both bench sections check per-card legality and, in
+//! commander, color identity.
 
 use super::grammar::Deck;
 use super::stats::{is_basic_land, is_unlimited_copies};
@@ -343,7 +343,7 @@ fn color_identity(card: &CardRow) -> String {
 }
 
 /// True when every identity color of `card` is in the commander's identity.
-fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
+pub(super) fn identity_ok(card: &CardRow, commander_identity: &str) -> bool {
     color_identity(card)
         .chars()
         .all(|c| commander_identity.contains(c))
@@ -546,14 +546,8 @@ fn format_legality_violations(
             detail: "restricted cards are limited to one copy".into(),
         });
     }
-    let restricted_names: Vec<String> = restricted.into_iter().map(|(name, _)| name).collect();
-    if !restricted_names.is_empty() {
-        violations.push(Violation {
-            rule: "restricted".into(),
-            cards: restricted_names,
-            detail: format!("restricted in {format}"),
-        });
-    }
+    // A restricted card at one copy is legal in Vintage (CR 100.2c /
+    // Vintage restricted list); only the copy count above is a violation.
     if !banned.is_empty() {
         violations.push(Violation {
             rule: "banned".into(),

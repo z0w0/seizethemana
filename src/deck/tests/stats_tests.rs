@@ -24,6 +24,8 @@ fn card(name: &str, cmc: f64, type_line: &str, identity: &str, text: &str) -> Ca
         scryfall_id: String::new(),
         released_at: String::new(),
         game_changer: None,
+        penny_rank: None,
+        reserved: None,
     }
 }
 

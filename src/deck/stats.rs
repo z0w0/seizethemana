@@ -1,11 +1,11 @@
-// Deck overview stats for the human `stm deck show` view: mana curve, ramp
-// sources, color identity, and type breakdown, all pure functions over the
-// deck's card metadata. Ownership completion comes from the caller.
-//
-// Ramp classification is heuristic on purpose: lands, artifacts that add
-// mana ("rocks"), creatures that add mana ("dorks"), and everything else
-// ("other"). A card can serve more than one role (e.g. a land that also
-// taps for colored mana counts only as a land).
+//! Deck overview stats for the human `stm deck show` view: mana curve, ramp
+//! sources, color identity, and type breakdown, all pure functions over the
+//! deck's card metadata. Ownership completion comes from the caller.
+//!
+//! Ramp classification is heuristic on purpose: lands, artifacts that add
+//! mana ("rocks"), creatures that add mana ("dorks"), and everything else
+//! ("other"). A card can serve more than one role (e.g. a land that also
+//! taps for colored mana counts only as a land).
 
 use crate::db::CardRow;
 use crate::deck::Deck;
@@ -116,11 +116,10 @@ pub fn lookup_names(
     if names.is_empty() {
         return Ok(map);
     }
-    let row_sql = "SELECT name, oracle_id, mana_cost, cmc, type_line, colors, color_identity,
-                keywords, power, toughness, loyalty, oracle_text, rarity, edhrec_rank,
-                legalities, set_code, collector_number, scryfall_id, released_at,
-                game_changer
-         FROM cards WHERE name IN";
+    let row_sql = format!(
+        "SELECT {} FROM cards WHERE name IN",
+        crate::db::CARD_COLUMNS
+    );
     for chunk in names.chunks(CHUNK) {
         let mut stmt = conn
             .prepare(&format!(
@@ -129,30 +128,10 @@ pub fn lookup_names(
             ))
             .context("preparing card lookup")?;
         let rows = stmt
-            .query_map(rusqlite::params_from_iter(chunk.iter()), |row| {
-                Ok(CardRow {
-                    name: row.get(0)?,
-                    oracle_id: row.get(1)?,
-                    mana_cost: row.get(2)?,
-                    cmc: row.get(3)?,
-                    type_line: row.get(4)?,
-                    colors: row.get(5)?,
-                    color_identity: row.get(6)?,
-                    keywords: row.get(7)?,
-                    power: row.get(8)?,
-                    toughness: row.get(9)?,
-                    loyalty: row.get(10)?,
-                    oracle_text: row.get(11)?,
-                    rarity: row.get(12)?,
-                    edhrec_rank: row.get(13)?,
-                    legalities: row.get(14)?,
-                    set_code: row.get(15)?,
-                    collector_number: row.get(16)?,
-                    scryfall_id: row.get(17)?,
-                    released_at: row.get(18)?,
-                    game_changer: row.get(19)?,
-                })
-            })
+            .query_map(
+                rusqlite::params_from_iter(chunk.iter()),
+                crate::db::map_card,
+            )
             .context("reading card rows")?;
         for row in rows.flatten() {
             map.insert(row.name.clone(), row);
@@ -192,8 +171,7 @@ pub fn compute(
             let land = is_land(card);
             if let Some(bucket) = cmc_bucket(card.cmc, land) {
                 *curve.entry(bucket).or_insert(0) += entry.quantity;
-                cmc_sum += card.cmc
-                    * f64::from(i32::try_from(entry.quantity).expect("deck quantities fit i32"));
+                cmc_sum += card.cmc * entry.quantity as f64;
                 cmc_cards += entry.quantity;
             }
             if land {
@@ -227,20 +205,17 @@ pub fn compute(
     }
 
     stats.avg_cmc = if cmc_cards > 0 {
-        cmc_sum / f64::from(i32::try_from(cmc_cards).expect("deck size fits i32"))
+        cmc_sum / cmc_cards as f64
     } else {
         0.0
     };
     let normalize = |map: std::collections::BTreeMap<String, i64>| -> Vec<BucketLine> {
-        let max = f64::from(
-            i32::try_from(map.values().copied().max().unwrap_or(1).max(1))
-                .expect("deck counts fit i32"),
-        );
+        let max = map.values().copied().max().unwrap_or(1).max(1) as f64;
         map.into_iter()
             .map(|(label, count)| BucketLine {
                 label,
                 count,
-                ratio: f64::from(i32::try_from(count).expect("deck counts fit i32")) / max,
+                ratio: count as f64 / max,
             })
             .collect()
     };

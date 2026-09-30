@@ -60,7 +60,7 @@ fn section_combos_splits_complete_and_near_miss() {
         "DECK",
         &names,
         &commanders,
-        "commander",
+        Some("commander"),
         &Default::default(),
     )
     .unwrap();
@@ -108,7 +108,7 @@ fn commander_piece_never_reports_missing() {
         "DECK",
         &names,
         &commanders,
-        "commander",
+        Some("commander"),
         &Default::default(),
     )
     .unwrap();
@@ -134,15 +134,22 @@ fn format_illegal_combos_are_filtered() {
     let names: std::collections::HashSet<String> =
         ["A", "B"].iter().map(|s| s.to_string()).collect();
     let empty: std::collections::HashSet<String> = Default::default();
-    let result =
-        section_combos(&conn, "DECK", &names, &empty, "modern", &Default::default()).unwrap();
+    let result = section_combos(
+        &conn,
+        "DECK",
+        &names,
+        &empty,
+        Some("modern"),
+        &Default::default(),
+    )
+    .unwrap();
     assert!(result.complete.is_empty(), "filtered by format");
     let result = section_combos(
         &conn,
         "DECK",
         &names,
         &empty,
-        "commander",
+        Some("commander"),
         &Default::default(),
     )
     .unwrap();
@@ -219,7 +226,15 @@ fn near_miss_owned_flag_and_full_produces() {
         ["Piece A"].iter().map(|s| s.to_string()).collect();
     let commanders: std::collections::HashSet<String> = Default::default();
     let owned = crate::collection::owned_counts_all(&conn).unwrap();
-    let result = section_combos(&conn, "DECK", &names, &commanders, "commander", &owned).unwrap();
+    let result = section_combos(
+        &conn,
+        "DECK",
+        &names,
+        &commanders,
+        Some("commander"),
+        &owned,
+    )
+    .unwrap();
     assert_eq!(result.near_misses.len(), 1);
     let miss = &result.near_misses[0];
     assert_eq!(miss.owned, Some(true), "the completing piece is owned");
@@ -256,7 +271,7 @@ fn near_miss_to_buy_and_popularity_and_commander_flag() {
         "DECK",
         &names,
         &commanders,
-        "commander",
+        Some("commander"),
         &Default::default(),
     )
     .unwrap();
@@ -289,7 +304,7 @@ fn bracket_breaks_flag_near_misses_too() {
         "DECK",
         &names,
         &commanders,
-        "commander",
+        Some("commander"),
         &Default::default(),
     )
     .unwrap();

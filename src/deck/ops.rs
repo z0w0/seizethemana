@@ -1,6 +1,6 @@
-// Deck operations: the `DeckOp` verbs, their text parsing, and the
-// pure `apply_ops` engine that mutates a `Deck`. Split out of
-// `update.rs` to keep each file under the size limit.
+//! Deck operations: the `DeckOp` verbs, their text parsing, and the
+//! pure `apply_ops` engine that mutates a `Deck`. Split out of
+//! `update.rs` to keep each file under the size limit.
 
 use super::grammar::{Deck, DeckEntry};
 use anyhow::Context;
@@ -10,25 +10,34 @@ use anyhow::Context;
 pub enum DeckOp {
     /// Add copies (`--add [section:]qty Name`).
     Add {
+        /// Target section; defaults to DECK.
         section: Option<String>,
+        /// Card and quantity to add.
         entry: DeckEntry,
     },
     /// Remove a line entirely, or decrement by qty (`--remove [section:]qty Name`).
     Remove {
+        /// Source section; defaults to DECK.
         section: Option<String>,
+        /// Card and quantity to remove.
         entry: DeckEntry,
     },
     /// Set an exact quantity; 0 deletes the line (`--set [section:]qty Name`).
     Set {
+        /// Target section; defaults to DECK.
         section: Option<String>,
+        /// Card and quantity to set.
         entry: DeckEntry,
     },
     /// Move copies between sections (`--move [section:]qty Name to:section`).
     /// Applied as an atomic remove-then-add so the net state (one copy, in
     /// the new section) is what every later check sees.
     Move {
+        /// Source section; defaults to DECK.
         from: Option<String>,
+        /// Destination section.
         to: String,
+        /// Card and quantity to move.
         entry: DeckEntry,
     },
 }

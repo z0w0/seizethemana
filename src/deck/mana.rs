@@ -1,6 +1,6 @@
-// `stm deck mana <name>`: the static colored-source audit command
-// (`deck mana` runs the Karsten census with no simulation; the same
-// block rides along in the simulate report as `colored_sources`).
+//! `stm deck mana <name>`: the static colored-source audit command
+//! (`deck mana` runs the Karsten census with no simulation; the same
+//! block rides along in the simulate report as `colored_sources`).
 
 use rusqlite::Connection;
 
@@ -31,10 +31,7 @@ fn mana_audit_input(conn: &Connection, deck: &Deck) -> anyhow::Result<AuditInput
                 break;
             }
             if let Some(card) = cards_by_name.get(&entry.name) {
-                rows.push((
-                    card.clone(),
-                    f64::from(i32::try_from(entry.quantity).expect("deck quantities fit i32")),
-                ));
+                rows.push((card.clone(), entry.quantity as f64));
             }
         }
     }

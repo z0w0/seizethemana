@@ -3,39 +3,13 @@
 //! graveyard timing, X-cost restricted-bucket wipes, fetch land pairs,
 //! and awareness accounting.
 
+use super::deck_test_support::card;
 use super::game::run_game;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
-use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
-
-/// A minimal card row for tests.
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// Build a deck from explicit card rows (count pairs).
 fn deck_from(rows: &[(CardRow, usize)]) -> SimDeck {
@@ -339,9 +313,11 @@ fn blink_refires_once_land_search_does_not() {
     // where the body entered by turn 2.
     let big = logs.iter().map(|log| log.cards_seen[3]).collect::<Vec<_>>();
     let fed = big.iter().filter(|s| **s > 13).count();
+    // 12 copies in a 38-card deck: the body enters by turn 2 in most
+    // games, so the re-fire shows in a large share of the 200 runs.
     assert!(
-        fed > 5,
-        "blink re-fire should add one extra draw: {fed}/200 above 13"
+        fed > 60,
+        "blink re-fire should add one extra draw in most games: {fed}/200 above 13"
     );
     // Land-search path: a fetch land alone re-fires nothing. One fetch
     // on an otherwise bare deck fetches exactly one extra land.
@@ -476,9 +452,11 @@ fn wheel_draws_feed_awareness() {
     // past the plain-draw baseline in a good share of games.
     let aware: Vec<_> = logs.iter().map(|log| log.awareness[4]).collect();
     let high = aware.iter().filter(|a| **a > 0.6).count();
+    // 12 wheels in 36 cards; wheels cast most games, so a clear majority
+    // of the 100 runs cross the awareness bar.
     assert!(
-        high > 10,
-        "wheel draws should feed awareness: {high} games above 0.6"
+        high > 50,
+        "wheel draws should feed awareness in most games: {high}/100 above 0.6"
     );
 }
 
@@ -1066,18 +1044,45 @@ fn graveyard_cast_gates_on_additional_life_cost() {
         &mut [0.0],
         &mut Vec::new(),
     );
-    // Life at 4 cannot pay the additional 4 (the same gate hand casts
-    // apply: life must stay above the additional cost), so the spell
-    // stays in the graveyard and no life is paid.
+    // CR 119.4: life at 4 may pay the additional 4 (down to 0), so the
+    // spell casts and the cost is paid.
     assert!(
-        st.graveyard
+        !st.graveyard
             .contains(&crate::deck::simulator::model::CardIdx(0)),
-        "the costly spell stays in the graveyard: {:?}",
+        "life equal to the cost pays it: {:?}",
         st.graveyard
     );
-    assert_eq!(st.life, 4, "no additional life was paid");
-    // The gate lifts when life is above the cost: life 5 pays the 4
-    // and the spell resolves to exile.
+    assert_eq!(st.life, 0, "the additional cost was paid");
+    // One life short: the gate holds and the spell stays in the graveyard.
+    let mut st_short = super::turn_loop_tests::state(vec![], vec![1]);
+    st_short
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(0));
+    st_short
+        .flashback_permissions
+        .insert(crate::deck::simulator::model::CardIdx(0));
+    st_short.life = 3;
+    let mut pool_short = super::game::ManaPool {
+        flexible: 4,
+        ..super::game::ManaPool::default()
+    };
+    super::cast_pass::cast_graveyard_spells(
+        &cards,
+        &mut st_short,
+        &mut pool_short,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+    );
+    assert!(
+        st_short
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
+        "life below the cost keeps the spell in the graveyard: {:?}",
+        st_short.graveyard
+    );
+    assert_eq!(st_short.life, 3, "no additional life was paid");
+    // Life above the cost also casts (the prior behavior).
     let mut st_ok = super::turn_loop_tests::state(vec![], vec![1]);
     st_ok
         .graveyard
@@ -1795,10 +1800,99 @@ fn phyrexian_pip_pays_life() {
         &mut pip_blocks,
         &mut blocked_colors,
     );
-    assert_eq!(st.life, 2, "a cast at lethal life never pays the pip");
+    assert_eq!(st.life, 0, "a cast at exactly the pip's life cost pays it");
+    assert!(
+        !st.hand.contains(&crate::deck::simulator::model::CardIdx(0)),
+        "the cast resolves and leaves the hand"
+    );
+    // One life short of the pip cost: the cast stays in hand.
+    let mut st = super::turn_loop_tests::state(vec![0], vec![]);
+    st.life = 1;
+    let mut pool = super::game::ManaPool {
+        colorless: 1,
+        ..super::game::ManaPool::default()
+    };
+    let mut engines = Vec::new();
+    let mut mana_spent = [0.0];
+    let mut pip_blocks = Vec::new();
+    let mut blocked_colors = [false; 5];
+    super::cast_pass::cast_pass(
+        &deck,
+        &mut st,
+        &mut pool,
+        1,
+        &mut mana_spent,
+        &mut engines,
+        &mut pip_blocks,
+        &mut blocked_colors,
+    );
+    assert_eq!(st.life, 1, "a life-starved cast never pays the pip");
     assert!(
         st.hand.contains(&crate::deck::simulator::model::CardIdx(0)),
         "the unpayable cast stays in hand"
+    );
+}
+
+/// A phyrexian pip and an additional life cost pay from one total
+/// (CR 119.4): a spell with both needs life for the whole amount, so a
+/// pool short of the sum cannot drive life negative.
+#[test]
+fn combined_life_costs_gate_on_the_total() {
+    let spell = card(
+        "Life-Paid Spell",
+        "{1}{B/P}",
+        "Sorcery",
+        "As an additional cost to cast this spell, pay 2 life. Draw a card.",
+    );
+    let cards = vec![parse_sim_card(&spell)];
+    let deck = SimDeck {
+        companion: None,
+        cards,
+        commanders: vec![],
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    };
+    assert_eq!(
+        deck.cards[0].spell_data.additional_cost_life, 2,
+        "the pay-2-life cost parses"
+    );
+    let run = |life: i32| {
+        let mut st = super::turn_loop_tests::state(vec![0], vec![]);
+        st.life = life;
+        let mut pool = super::game::ManaPool {
+            colorless: 1,
+            ..super::game::ManaPool::default()
+        };
+        let mut engines = Vec::new();
+        let mut mana_spent = [0.0];
+        let mut pip_blocks = Vec::new();
+        let mut blocked_colors = [false; 5];
+        super::cast_pass::cast_pass(
+            &deck,
+            &mut st,
+            &mut pool,
+            1,
+            &mut mana_spent,
+            &mut engines,
+            &mut pip_blocks,
+            &mut blocked_colors,
+        );
+        st
+    };
+    let paid = run(4);
+    assert_eq!(paid.life, 0, "the combined 4-life cost was paid exactly");
+    assert_eq!(paid.life_paid, 4);
+    assert!(
+        paid.hand.is_empty(),
+        "the cast resolves and leaves the hand"
+    );
+    let short = run(3);
+    assert_eq!(short.life, 3, "a life-starved cast never partially pays");
+    assert!(
+        short
+            .hand
+            .contains(&crate::deck::simulator::model::CardIdx(0)),
+        "a cast short of the combined cost stays in hand"
     );
 }
 
@@ -1948,8 +2042,8 @@ fn phyrexian_activation_charges_life() {
         hand_before + 1,
         "the activation resolved its draw"
     );
-    // Life at the charge level: the activation skips instead of
-    // driving life to zero.
+    // CR 119.4: life exactly equal to the pip's life charge pays it (down
+    // to 0), so the activation still fires.
     let mut low = super::turn_loop_tests::state(vec![0], vec![]);
     low.seen = low.hand.len() as u32 + low.library.len() as u32;
     low.battlefield.push(super::game::new_perm_with(
@@ -1966,7 +2060,78 @@ fn phyrexian_activation_charges_life() {
     };
     low.life = 2;
     assert!(
-        super::game_effects::activation::pick_best_activation(&deck, &low, &pool, 1).is_none(),
-        "life at the charge level cannot fire the pip activation"
+        super::game_effects::activation::pick_best_activation(&deck, &low, &pool, 1).is_some(),
+        "life equal to the pip charge still fires the activation"
     );
+    // One life short: the activation skips instead of driving life below
+    // zero.
+    let mut very_low = super::turn_loop_tests::state(vec![0], vec![]);
+    very_low.seen = very_low.hand.len() as u32 + very_low.library.len() as u32;
+    very_low.battlefield.push(super::game::new_perm_with(
+        2,
+        &deck,
+        crate::deck::simulator::model::CardIdx(0),
+        0,
+        false,
+    ));
+    very_low.battlefield[0].summoning_sick = false;
+    let pool = super::game::ManaPool {
+        colorless: 6,
+        ..super::game::ManaPool::default()
+    };
+    very_low.life = 1;
+    assert!(
+        super::game_effects::activation::pick_best_activation(&deck, &very_low, &pool, 1).is_none(),
+        "life below the pip charge cannot fire the activation"
+    );
+}
+
+/// CR 704.5j: the legend rule keeps one legendary permanent per name. A
+/// second copy of the same legend leaves the battlefield (fires Dies
+/// triggers) instead of stacking.
+#[test]
+fn legend_rule_keeps_one_copy_per_name() {
+    let legend = card(
+        "Legendary Bear",
+        "{2}{G}",
+        "Legendary Creature — Bear",
+        "When this creature dies, draw a card.",
+    );
+    let filler = card("Bystander", "{1}", "Creature — Human", "");
+    let cards = deck_from(&[(legend, 2), (filler, 1)]);
+    let mut st = super::turn_loop_tests::state(vec![], vec![2]);
+    st.battlefield
+        .push(super::game::new_perm_with(1, &cards, CardIdx(0), 0, false));
+    st.battlefield
+        .push(super::game::new_perm_with(2, &cards, CardIdx(1), 0, false));
+    st.battlefield
+        .push(super::game::new_perm_with(3, &cards, CardIdx(2), 0, false));
+    super::game_effects::enforce_legend_rule(&cards, &mut st, 1);
+    assert_eq!(st.battlefield.len(), 2, "one duplicate legend was removed");
+    assert_eq!(
+        st.graveyard,
+        [CardIdx(1)].to_vec(),
+        "the later legend copy went to the graveyard"
+    );
+    // The surviving copy is the first (uid 1), not the removed uid 2.
+    assert!(st.battlefield.iter().any(|perm| perm.uid == 1));
+    assert!(!st.battlefield.iter().any(|perm| perm.uid == 2));
+    // The Dies trigger on the removed legend fired (CR 603.6).
+    assert_eq!(st.hand.len(), 1, "the legend's Dies draw fired");
+}
+
+/// Distinct legendary names coexist: the legend rule is per name.
+#[test]
+fn legend_rule_allows_distinct_names() {
+    let first = card("Legend One", "{2}{G}", "Legendary Creature — Bear", "");
+    let second = card("Legend Two", "{2}{G}", "Legendary Creature — Wolf", "");
+    let cards = deck_from(&[(first, 1), (second, 1)]);
+    let mut st = super::turn_loop_tests::state(vec![], vec![]);
+    st.battlefield
+        .push(super::game::new_perm_with(1, &cards, CardIdx(0), 0, false));
+    st.battlefield
+        .push(super::game::new_perm_with(2, &cards, CardIdx(1), 0, false));
+    super::game_effects::enforce_legend_rule(&cards, &mut st, 1);
+    assert_eq!(st.battlefield.len(), 2);
+    assert!(st.graveyard.is_empty());
 }

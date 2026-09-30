@@ -1,3 +1,4 @@
+//! Tests for format rules and mulligan policy.
 use crate::deck::simulator::format::{MulliganPolicy, rules_for, rules_inferred};
 use crate::deck::simulator::model::Format;
 
@@ -30,6 +31,24 @@ fn commander_family_keeps_free_redraw_band() {
             "{key} lost its redraw band"
         );
     }
+}
+
+#[test]
+fn starting_life_matches_the_rules() {
+    // CR 103.4c: commander starts at 40. CR 903.12f: brawl starts at 25.
+    // Oathbreaker and 60-card constructed start at 20.
+    assert_eq!(rules_for("commander").starting_life, 40);
+    assert_eq!(rules_for("brawl").starting_life, 25);
+    assert_eq!(rules_for("oathbreaker").starting_life, 20);
+    for key in [
+        "standard", "pioneer", "modern", "legacy", "vintage", "pauper",
+    ] {
+        assert_eq!(rules_for(key).starting_life, 20, "{key} life");
+    }
+    // The lethal census races opponents' total life.
+    assert_eq!(rules_for("commander").life_target(), 120.0);
+    assert_eq!(rules_for("brawl").life_target(), 75.0);
+    assert_eq!(rules_for("modern").life_target(), 20.0);
 }
 
 #[test]

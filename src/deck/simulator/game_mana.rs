@@ -152,7 +152,11 @@ pub(super) fn add_yield_turns(
 pub(super) fn payable(cost: &super::model::Cost, pool: &ManaPool) -> bool {
     // Phyrexian pips pay with 2 life each, not mana, so the pool owes
     // only the mana part.
-    pool.total() >= cost.total() - phyrexian_life_charge(cost) / 2
+    if pool.total() < cost.total() - phyrexian_life_charge(cost) / 2 {
+        return false;
+    }
+    // Colorless pips pay from colorless mana only (CR 107.4a).
+    pool.colorless >= u32::from(cost.colorless)
 }
 
 /// True when every monocolor pip is covered. The flexible pool is ONE
@@ -180,13 +184,19 @@ pub(super) fn pips_ok(cost: &super::model::Cost, pool: &ManaPool) -> bool {
     if pip_shortfall > flex {
         return false;
     }
+    // Colorless pips pay from colorless mana only (CR 107.4a), before the
+    // generic draw on colorless, so reserve them up front.
+    let colorless_pips = u32::from(cost.colorless);
+    if pool.colorless < colorless_pips {
+        return false;
+    }
     // Generic and flex pips: paid from remaining flexible, then
     // colorless, then spare fixed pips (mirroring `pay_cost`'s order).
     let mut generic_left = cost.generic + cost.hybrid_pips;
     let flexible_left = flex.saturating_sub(pip_shortfall);
     let from_flex = generic_left.min(flexible_left);
     generic_left -= from_flex;
-    generic_left = generic_left.saturating_sub(pool.colorless);
+    generic_left = generic_left.saturating_sub(pool.colorless - colorless_pips);
     // Spare fixed pips over-pay colors legally.
     let mut spare = 0u32;
     for i in 0..5 {
@@ -265,12 +275,16 @@ pub(super) fn pay_restricted_cost(
     classes: &[SpendRestriction],
 ) {
     let mana_total = cost.total() - phyrexian_life_charge(cost) / 2;
+    // Bucket mana is colored ("one color of the source's choice"), so it
+    // pays generic, hybrid, and monocolor pips but never a colorless pip
+    // (CR 107.4c: {C} costs only colorless mana).
+    let colored_total = mana_total - u32::from(cost.colorless);
     let mut paid = 0u32;
     for class in classes {
-        if paid >= mana_total {
+        if paid >= colored_total {
             break;
         }
-        let room = mana_total - paid;
+        let room = colored_total - paid;
         let spent = bucket_of(pool, *class).min(room);
         spend_bucket(pool, *class, spent);
         paid += spent;
@@ -330,6 +344,9 @@ pub(super) fn pay_cost(cost: &super::model::Cost, pool: &mut ManaPool) {
     let from_flex = remaining.min(flexible);
     consume_flexible(pool, from_flex);
     remaining -= from_flex;
+    // Colorless pips pay first from colorless mana (CR 107.4a).
+    let colorless_pips = u32::from(cost.colorless);
+    pool.colorless = pool.colorless.saturating_sub(colorless_pips);
     let from_colorless = pool.colorless.min(remaining);
     pool.colorless -= from_colorless;
     remaining -= from_colorless;

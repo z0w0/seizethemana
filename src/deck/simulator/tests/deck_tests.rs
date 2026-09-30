@@ -1,36 +1,11 @@
 //! Tests for the simulator deck module.
 
-/// A minimal card row for tests.
 use super::deck::build_sim_deck;
+use super::deck_test_support::card;
 use super::model::*;
 use super::oracle_lower::parse_sim_card;
-use super::oracle_parser::cost::parse_cost;
 use crate::db::CardRow;
 use std::collections::HashMap;
-fn card(name: &str, mana_cost: &str, type_line: &str, text: &str) -> CardRow {
-    CardRow {
-        name: name.to_string(),
-        oracle_id: String::new(),
-        mana_cost: mana_cost.to_string(),
-        cmc: parse_cost(mana_cost).total() as f64,
-        type_line: type_line.to_string(),
-        colors: "[]".into(),
-        color_identity: "[]".into(),
-        keywords: "[]".into(),
-        power: None,
-        toughness: None,
-        loyalty: None,
-        oracle_text: text.to_string(),
-        rarity: "common".into(),
-        edhrec_rank: None,
-        legalities: "{}".into(),
-        set_code: String::new(),
-        collector_number: String::new(),
-        scryfall_id: String::new(),
-        released_at: String::new(),
-        game_changer: None,
-    }
-}
 
 /// A deck text with one section.
 fn deck_text(section: &str, entries: &[(&str, i64)]) -> crate::deck::grammar::Deck {
@@ -166,6 +141,24 @@ fn format_override_merges_commander_into_library() {
     assert_eq!(sim.commanders.len(), 0);
     assert_eq!(sim.cards.len(), 31);
     assert!(!super::deck::apply_format_override(&mut sim, "commander"));
+}
+
+#[test]
+fn combo_format_key_falls_back_to_no_filter() {
+    // A commander deck infers the commander key; a 60-card deck with no
+    // pin has no Spellbook format, so combos are not filtered out.
+    let commander = deck_text("COMMANDER", &[("Boss", 1)]);
+    assert_eq!(
+        super::deck::combo_format_key(&commander, None).as_deref(),
+        Some("commander")
+    );
+    let constructed = deck_text("DECK", &[("Bolt", 4)]);
+    assert_eq!(super::deck::combo_format_key(&constructed, None), None);
+    // An explicit flag wins and lowercases.
+    assert_eq!(
+        super::deck::combo_format_key(&constructed, Some("Modern")).as_deref(),
+        Some("modern")
+    );
 }
 
 // Aggregation + findings

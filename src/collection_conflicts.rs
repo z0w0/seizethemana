@@ -1,12 +1,14 @@
-// Cross-deck conflict report: cards wanted by more deck slots than the
-// collection covers, plus the decklist demand helpers behind it. Split
-// out of `collection.rs` to keep each file under the size limit.
+//! Cross-deck conflict report: cards wanted by more deck slots than the
+//! collection covers, plus the decklist demand helpers behind it. Split
+//! out of `collection.rs` to keep each file under the size limit.
 
 use anyhow::Context;
 use rusqlite::Connection;
+
 /// One card wanted by more deck slots than you own copies.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConflictRow {
+    /// Oracle card name.
     pub name: String,
     /// Copies owned anywhere (binders + deck assignments).
     pub owned: i64,
@@ -23,7 +25,9 @@ pub struct ConflictRow {
 /// One deck's slot demand for a conflicted card.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct ConflictDeck {
+    /// Deck name.
     pub name: String,
+    /// Slots the deck needs of the card.
     pub quantity: i64,
 }
 
@@ -245,8 +249,15 @@ pub(crate) fn deck_demand(
     paths: &crate::paths::Paths,
 ) -> anyhow::Result<std::collections::BTreeMap<String, Vec<(String, i64)>>> {
     let mut out = std::collections::BTreeMap::new();
-    let Ok(entries) = std::fs::read_dir(paths.decks_dir()) else {
-        return Ok(out);
+    // A missing decks directory means "no decks yet" (empty demand), but
+    // any other read failure must surface: swallowing it would undercount
+    // demand and report a false "nothing is short".
+    let entries = match std::fs::read_dir(paths.decks_dir()) {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(out),
+        Err(err) => {
+            return Err(err).context("reading decks directory for demand");
+        }
     };
     for entry in entries.flatten() {
         let path = entry.path();

@@ -3,7 +3,7 @@
 //! sacrifice outlets. Split from `game_effects` to keep files small.
 
 use super::super::game::{
-    Activation, GameState, ManaPool, Permanent, card_of, new_token_perm, take_uid,
+    Activation, CardRef, GameState, ManaPool, Permanent, card_of, new_token_perm, take_uid,
 };
 use super::super::game_mana::{add_yield_turns, pay_cost, payable, phyrexian_life_charge, pips_ok};
 use super::super::model::{
@@ -160,7 +160,7 @@ pub(in crate::deck::simulator) fn pick_best_activation(
         });
         for ability in unlocked {
             let costs = activation_data(ability);
-            if costs.life_payment() > 0 && st.life <= costs.life_payment() as i32 {
+            if costs.life_payment() > 0 && st.life < costs.life_payment() as i32 {
                 continue;
             }
             // Once-per-game abilities (Exhaust, Power-up): the permanent
@@ -296,7 +296,7 @@ fn activation_usable(
     let loyalty_affordable =
         loyalty_change >= 0 || perm.counters.loyalty >= loyalty_change.unsigned_abs();
     let energy_affordable = energy >= costs.energy_payment();
-    let life_affordable = life > (costs.life_payment() + phyrexian_life_charge(cost)) as i32;
+    let life_affordable = life >= (costs.life_payment() + phyrexian_life_charge(cost)) as i32;
     let mana_affordable = payable(cost, pool) && pips_ok(cost, pool);
     usable
         && loyalty_affordable
@@ -493,13 +493,13 @@ fn resolve_activation_effect(
         }
         SimEffect::LoseLife { amount, scope } => {
             st.opponent_life_lost += amount * scope.table_multiplier(deck.format);
-            if *scope == super::super::model::LifeLossScope::EachPlayer {
+            if scope.charges_player() {
                 st.life -= *amount as i32;
             }
         }
         SimEffect::Damage { amount, scope } => {
             st.damage_dealt_this_turn += amount * scope.table_multiplier(deck.format);
-            if *scope == super::super::model::LifeLossScope::EachPlayer {
+            if scope.charges_player() {
                 st.life -= *amount as i32;
             }
         }
@@ -737,6 +737,38 @@ pub(in crate::deck::simulator) fn apply_minus_counter(
         .unwrap_or(super::super::game::TOKEN_CREATURE_TOUGHNESS);
     if target.counters.minus1 >= toughness {
         resolve_sacrifice_uid(deck, st, turn, target_uid);
+    }
+}
+
+/// Enforce the legend rule (CR 704.5j): the player may control only one
+/// legendary permanent of each name. The goldfish keeps the copy that
+/// entered first (it may hold counters or equipment) and puts later
+/// duplicates into the graveyard, firing their death triggers. Tokens are
+/// skipped: the sim does not create legendary-copy tokens.
+pub(in crate::deck::simulator) fn enforce_legend_rule(
+    deck: &SimDeck,
+    st: &mut GameState,
+    turn: u32,
+) {
+    let mut seen: Vec<String> = Vec::new();
+    let mut duplicates: Vec<usize> = Vec::new();
+    for (position, perm) in st.battlefield.iter().enumerate() {
+        if perm.card.deck_idx().is_none() && !matches!(perm.card, CardRef::Commander { .. }) {
+            continue;
+        }
+        let card = card_of(deck, perm);
+        if !card.is_legendary {
+            continue;
+        }
+        if seen.iter().any(|name| name == &card.name) {
+            duplicates.push(position);
+        } else {
+            seen.push(card.name.clone());
+        }
+    }
+    // Remove from the back so earlier positions stay valid.
+    for position in duplicates.into_iter().rev() {
+        resolve_sacrifice_at(deck, st, turn, Some(position));
     }
 }
 

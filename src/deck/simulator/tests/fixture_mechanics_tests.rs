@@ -1,3 +1,4 @@
+//! Tests that real deck fixtures exercise parsed mechanics.
 use super::deck_test_support::*;
 use super::model::{Role, SimEffect};
 use super::oracle_lower::parse_sim_card;
