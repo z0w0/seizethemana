@@ -1,5 +1,5 @@
 # PR validation: tests, lint, formatting, and a release build.
-name: validate
+name: Validate
 
 on:
   pull_request:

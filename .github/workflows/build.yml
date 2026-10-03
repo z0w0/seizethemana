@@ -3,7 +3,7 @@
 # Runs on manual dispatch or on vX.Y.Z tags (e.g. `v0.1.0`). Tag builds
 # create a GitHub release with the archives, which cargo-binstall consumes
 # (see Cargo.toml); dispatch runs attach the archives as workflow artifacts.
-name: build
+name: Build
 
 on:
   workflow_dispatch:
