@@ -68,7 +68,7 @@ a:focus-visible {
   margin: 0;
   font-family: inherit;
   font-size: clamp(12px, 1.1vw, 17px);
-  line-height: 1.2;
+  line-height: 1.08;
   letter-spacing: 0;
   font-variant-ligatures: none;
   white-space: pre;

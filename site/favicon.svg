@@ -1,12 +1,14 @@
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 16 16"
+  viewBox="0 0 32 32"
   shape-rendering="crispEdges"
 >
-  <rect width="16" height="16" fill="#211820" />
+  <rect width="32" height="32" fill="#211820" />
   <path
-    d="M5 2L8 1H11V2H13V4H14V6H15V10H14V12H12V13H10V14H7V15H4V13H6V12H10V11H12V9H13V6H12V4H10V3H8Z"
+    fill-rule="evenodd"
+    d="M10 2H22V4H26V6H28V10H30V22H28V26H26V28H22V30H10V28H6V26H4V22H2V10H4V6H6V4H10Z M11 6H21V8H25V11H26V21H24V24H21V26H11V24H8V21H6V11H8V8H11Z"
     fill="#ff5c9a"
   />
-  <path d="M3 6L5 4L13 12L11 14Z M1 6L5 2L7 4L3 8Z" fill="#ffe5f0" />
+  <path d="M16 14H19L12 24L9 22Z" fill="#ffe5f0" />
+  <rect x="11" y="9" width="12" height="6" fill="#ffe5f0" />
 </svg>

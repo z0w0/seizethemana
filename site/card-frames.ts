@@ -150,20 +150,20 @@ const back = front({
   cost: "[ stm ]",
   type: "CLI + AGENT SKILL",
   caption: "Use what you own.",
-  art: String.raw`      #####
-    = #######
-   ===    ###
-  ====      ##
- =====      ##
- ======      ##
-  = ====     ##
-     ====    ##
-      ====  ###
-       ==== ##
-        ====##
-      ###===
-    ######=
-    ###`,
+  art: String.raw`        ##########
+     ###          ###
+   ##                ##
+  ##       @@@@@@@@   ##
+ ##        @@@@@@@@    ##
+##          @@@         ##
+##         @@@          ##
+##        @@@           ##
+##       @@@            ##
+ ##     @@@            ##
+  ##   @@@            ##
+   ##                ##
+     ###          ###
+        ##########`,
 });
 
 /** Project a card into fewer cells while keeping normal glyph proportions. */
