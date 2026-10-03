@@ -1,178 +1,76 @@
-//! `stm collection sell`: rank binder cards by idle value — money sitting
-//! unused because no decklist wants the card and it sees little play.
-//!
-//! Supply is binder copies only: a card assigned to a deck, or wanted by any
-//! decklist, is never a candidate, and neither are basics. Price and value are
-//! **per printing** (printings of the same card trade at very different
-//! prices), while play demand, rarity, Reserved List, and Game Changer are
-//! **per oracle card** and come from the `cards` table.
-//!
-//! Each row carries explainable `reasons` to sell (`not_in_deck`,
-//! `rarely_played`, `reprint_risk`, `format_unplayed`) and `hold_warnings` to
-//! keep (`reserved_list`, `game_changer`), never a black-box score.
-//!
-//! Play demand comes from two free Scryfall bulk signals: `edhrec_rank`
-//! (Commander) and `penny_rank` (Penny Dreadful). A card with neither rank and
-//! no deck demand is treated as unplayed. Because `edhrec_rank` is
-//! Commander-only, `--format` gating exists to catch cards that see play in a
-//! format you actually care about.
+//! Copy-level sell plans with deck protection, demand evidence, and bulk reserves.
+
+use std::collections::BTreeMap;
 
 use anyhow::Context;
 use rusqlite::Connection;
 
-use crate::collection_conflicts::deck_demand;
+mod evidence;
+mod export;
+mod render;
 
-/// Per-copy price at or under which a print is bulk ("boxful money"): bulk
-/// rares trade around $0.15-0.25, and commons only sell by the thousand.
-const BULK_FLOOR: f64 = 0.25;
+pub use export::SellOutput;
 
-/// EDHREC rank at or under which a card is considered actively played.
+/// Minimum per-copy market price for the singles view.
+const SINGLES_FLOOR: f64 = 1.0;
+/// Commander popularity boundary used to reserve a useful spare.
 pub const PLAYED_CUTOFF: i64 = 5_000;
-
-/// Default EDHREC rank past which a card counts as unplayed. Overridable
-/// with `--rank-floor`. Roughly the tail of EDHREC's ranked set.
+/// Commander popularity boundary used for low-demand evidence.
 pub const DEFAULT_RANK_FLOOR: i64 = 15_000;
 
-/// The play band a card falls in, from its popularity ranks.
-const BAND_PLAYED: &str = "played";
-/// See [`BAND_PLAYED`].
-const BAND_NICHE: &str = "niche";
-/// See [`BAND_PLAYED`].
-const BAND_UNPLAYED: &str = "unplayed";
-
-/// Knobs for a `collection sell` run. One struct keeps the entry point below
-/// the argument-count lint.
+/// Filters and valuation assumptions for a sell plan.
 #[derive(Debug, Clone)]
 pub struct SellOptions<'a> {
-    /// Keep only cards with an owned copy priced at or above this.
+    pub output: Option<SellOutput>,
+    pub exclude_binders: &'a [String],
+    pub details: bool,
+    pub review: bool,
     pub min_price: Option<f64>,
-    /// Keep only cards whose every owned copy prices at or below this.
     pub max_price: Option<f64>,
-    /// Keep only this rarity (`common`, `uncommon`, `rare`, `mythic`).
     pub rarity: Option<&'a str>,
-    /// Flag cards not legal in this format as `format_unplayed`.
     pub format: Option<&'a str>,
-    /// EDHREC rank past which a card counts as unplayed.
     pub rank_floor: i64,
-    /// Greedy-pick highest-value cards until their total reaches this USD.
     pub target: Option<f64>,
-    /// Maximum rows shown.
     pub limit: usize,
+    pub bulk: bool,
+    pub bulk_rate: Option<f64>,
 }
 
 impl Default for SellOptions<'_> {
     fn default() -> Self {
         Self {
+            output: None,
+            exclude_binders: &[],
+            details: false,
+            review: false,
             min_price: None,
             max_price: None,
             rarity: None,
             format: None,
             rank_floor: DEFAULT_RANK_FLOOR,
             target: None,
-            limit: 50,
+            limit: 20,
+            bulk: false,
+            bulk_rate: None,
         }
     }
 }
 
-/// One owned printing of a candidate card.
+/// Owned printing with an explicit sale and retention allocation.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct Printing {
-    /// Set code (lowercase).
     pub set_code: String,
-    /// Collector number.
     pub collector_number: String,
-    /// Finish: `normal`, `foil`, or `etched`.
     pub foil: String,
-    /// Binder holding these copies.
     pub binder: String,
-    /// Copies in this printing.
     pub quantity: i64,
-    /// Per-copy price, or null when unpriced.
+    pub sell_quantity: i64,
+    pub keep_quantity: i64,
     pub price: Option<f64>,
 }
 
-/// One sell candidate: an oracle card with its owned printings.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct SellRow {
-    /// Oracle card name.
-    pub name: String,
-    /// Binder copies owned, across all printings.
-    pub owned_binder: i64,
-    /// Rarity from the card row (empty when the snapshot lacks the card).
-    pub rarity: String,
-    /// EDHREC rank when known.
-    pub edhrec_rank: Option<i64>,
-    /// Penny Dreadful rank when known.
-    pub penny_rank: Option<i64>,
-    /// Play band: `played`, `niche`, or `unplayed`.
-    pub play_band: &'static str,
-    /// Highest per-copy price across owned printings; null when all unpriced.
-    pub max_price: Option<f64>,
-    /// Value of owned copies priced at or above the bulk floor.
-    pub sellable_value: f64,
-    /// Value of owned copies priced below the bulk floor.
-    pub bulk_value: f64,
-    /// Total value of all priced owned copies.
-    pub total_value: f64,
-    /// True when the card is on the Reserved List.
-    pub reserved: bool,
-    /// True when the card is a Commander Game Changer.
-    pub game_changer: bool,
-    /// Why it is safe to sell.
-    pub reasons: Vec<&'static str>,
-    /// Why you might keep it.
-    pub hold_warnings: Vec<&'static str>,
-    /// Transparent `[0, 1]` sell confidence (see `sell_confidence`).
-    pub sell_confidence: f64,
-    /// The owned printings, each with its own price.
-    pub printings: Vec<Printing>,
-}
-
-/// The `--target` fund summary.
-#[derive(Debug, Clone, serde::Serialize)]
-pub struct FundReport {
-    /// Requested amount.
-    pub target_usd: f64,
-    /// Total reached by the picked cards.
-    pub achieved_usd: f64,
-    /// Names picked, highest value first.
-    pub picks: Vec<String>,
-}
-
-/// Complete typed JSON response for `collection sell`.
-#[derive(Debug, serde::Serialize)]
-struct SellReport {
-    /// Currency for every money field.
-    currency: &'static str,
-    /// Total value of owned copies worth selling (at or above the bulk floor).
-    sellable_binder_value: f64,
-    /// Total value of owned copies below the bulk floor (boxful money).
-    bulk_value: f64,
-    /// Candidate rows, highest value first.
-    rows: Vec<SellRow>,
-    /// Present only with `--target`.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    fund: Option<FundReport>,
-}
-
-/// One binder collection row joined to its card metadata.
-struct BinderRow {
-    name: String,
-    binder: String,
-    foil: String,
-    set_code: String,
-    collector_number: String,
-    quantity: i64,
-    oracle_known: bool,
-    rarity: String,
-    edhrec_rank: Option<i64>,
-    penny_rank: Option<i64>,
-    reserved: bool,
-    game_changer: bool,
-    legalities: String,
-}
-
-/// Aggregated candidate data: one oracle card with its owned printings.
+/// Card metadata and binder inventory before allocation.
+#[derive(Debug, Default)]
 struct Candidate {
     name: String,
     rarity: String,
@@ -182,20 +80,118 @@ struct Candidate {
     game_changer: bool,
     legalities: String,
     oracle_known: bool,
+    recent_release: bool,
     prints: Vec<Printing>,
-    owned_binder: i64,
-    total_value: f64,
-    sellable_value: f64,
-    bulk_value: f64,
-    max_price: Option<f64>,
 }
 
-/// Entry point for `stm collection sell`.
-///
-/// Exit 0 with candidates, exit 3 when nothing qualifies.
+/// Protected demand and additional loose-copy reserve for a card.
+#[derive(Clone, Copy)]
+struct Protection {
+    deck_needed: i64,
+    spare: i64,
+}
+
+/// One card's recommended copies and the evidence behind the action.
+#[derive(Debug, serde::Serialize)]
+pub struct SellRow {
+    pub name: String,
+    pub owned_binder: i64,
+    pub sell_quantity: i64,
+    pub keep_quantity: i64,
+    pub deck_needed: i64,
+    pub spare_reserve: i64,
+    pub rarity: String,
+    pub edhrec_rank: Option<i64>,
+    pub penny_rank: Option<i64>,
+    pub combo_variants: Option<usize>,
+    pub combo_piece_sets: Option<usize>,
+    pub owned_combo_options: usize,
+    pub combo_examples: Vec<String>,
+    pub game_changer: bool,
+    pub reserved: bool,
+    pub legal_in_format: Option<bool>,
+    pub market_value: f64,
+    pub sell_priority: f64,
+    pub action: &'static str,
+    pub reasons: Vec<&'static str>,
+    pub hold_warnings: Vec<&'static str>,
+    pub printings: Vec<Printing>,
+}
+
+/// Funding picks at market value, before transaction costs.
+#[derive(Debug, serde::Serialize)]
+pub struct FundReport {
+    pub target_usd: f64,
+    pub achieved_usd: f64,
+    pub shortfall_usd: f64,
+    pub valuation_basis: &'static str,
+    pub picks: Vec<String>,
+    pub allocations: Vec<FundPick>,
+}
+
+/// Exact funding allocation that remains available outside the display limit.
+#[derive(Debug, serde::Serialize)]
+pub struct FundPick {
+    pub name: String,
+    pub sell_quantity: i64,
+    pub market_value: f64,
+    pub printings: Vec<Printing>,
+}
+
+/// Inventory summary independent of the displayed row limit.
+#[derive(Debug, Default, serde::Serialize)]
+struct Summary {
+    cards: usize,
+    copies: i64,
+    market_value: f64,
+}
+
+/// Compact bulk summary with an optional explicit proceeds assumption.
+#[derive(Debug, Default, serde::Serialize)]
+struct BulkSummary {
+    cards: usize,
+    copies: i64,
+    normal_commons_uncommons: i64,
+    foils: i64,
+    rares_mythics: i64,
+    other: i64,
+    rate_per_1000: Option<f64>,
+    estimated_proceeds: Option<f64>,
+}
+
+/// Counts of protected binder copies, including reserves that fit supply.
+#[derive(Debug, Default, serde::Serialize)]
+struct Protected {
+    deck_copies: i64,
+    spare_copies: i64,
+    game_changers: usize,
+}
+
+/// Typed response shared by the singles and bulk views.
+#[derive(Debug, serde::Serialize)]
+struct SellReport {
+    currency: &'static str,
+    view: &'static str,
+    valuation_basis: &'static str,
+    evidence_scope: &'static str,
+    singles: Summary,
+    bulk: BulkSummary,
+    protected: Protected,
+    rows: Vec<SellRow>,
+    review: Vec<SellRow>,
+    review_cards: usize,
+    warnings: Vec<String>,
+    scryfall_synced_at: String,
+    combos_synced_at: String,
+    excluded_binders: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    fund: Option<FundReport>,
+}
+
+/// Produce a read-only sell plan. Empty views return exit code 3.
 ///
 /// # Errors
-/// Propagates SQLite and deck-directory read failures.
+/// Propagates inventory, metadata, deck-directory, and export writer failures.
 pub fn run(
     paths: &crate::paths::Paths,
     conn: &Connection,
@@ -208,410 +204,443 @@ pub fn run(
         out.hint("run 'stm setup' first");
         return Ok(crate::cli::codes::ERROR);
     }
-    let rows = load_binder_rows(conn)?;
-    if rows.is_empty() {
-        return empty_result(out, json, Empty::NoBinder);
-    }
-    // Cards any decklist wants are spoken for: never suggest selling them.
-    let demand = deck_demand(paths)?;
-    let Some(report) = build_report(conn, rows, &demand, options)? else {
-        return empty_result(out, json, Empty::Filtered);
-    };
-    if json {
+    let report = build_report(paths, conn, options)?;
+    let empty = if let Some(format) = options.output {
+        export::write(&report, format, std::io::stdout().lock())? == 0
+    } else if json {
         println!("{}", serde_json::to_string_pretty(&report)?);
+        report.rows.is_empty() && report.review.is_empty()
     } else {
-        render_text(out, &report);
-    }
-    Ok(crate::cli::codes::OK)
+        render::text(out, &report, options);
+        report.rows.is_empty() && report.review.is_empty()
+    };
+    Ok(if empty {
+        crate::cli::codes::NO_RESULTS
+    } else {
+        crate::cli::codes::OK
+    })
 }
 
-/// Build the sell report from binder rows and deck demand, or `None` when the
-/// filters removed every candidate. Split from [`run`] so tests can assert the
-/// typed report without capturing stdout.
-fn build_report(
-    conn: &Connection,
-    rows: Vec<BinderRow>,
-    demand: &std::collections::BTreeMap<String, Vec<(String, i64)>>,
-    options: &SellOptions<'_>,
-) -> anyhow::Result<Option<SellReport>> {
-    let candidates = classify(conn, rows, demand)?;
-    let mut candidates = apply_filters(candidates, options);
-    candidates.sort_by(|a, b| {
-        b.total_value
-            .total_cmp(&a.total_value)
-            .then_with(|| a.name.cmp(&b.name))
-    });
-    if candidates.is_empty() {
-        return Ok(None);
-    }
-    // Totals cover every candidate, before the display limit, so the summary
-    // is the true sellable figure rather than just what fits on screen.
-    let sellable_binder_value: f64 = candidates.iter().map(|c| c.sellable_value).sum();
-    let bulk_value: f64 = candidates.iter().map(|c| c.bulk_value).sum();
-    let fund = options
-        .target
-        .map(|target| build_fund(&candidates, target, options.limit));
-    candidates.truncate(options.limit);
-    Ok(Some(SellReport {
-        currency: crate::output::CURRENCY,
-        sellable_binder_value: crate::output::round2(sellable_binder_value),
-        bulk_value: crate::output::round2(bulk_value),
-        rows: candidates
-            .iter()
-            .map(|c| build_row(c, options.rank_floor, options.format))
-            .collect(),
-        fund,
-    }))
-}
-
-/// Which empty state the run hit, so the hint tells the user what to do.
-enum Empty {
-    /// The binder holds no cards at all.
-    NoBinder,
-    /// Candidates existed but the filters removed them all.
-    Filtered,
-}
-
-/// Print the empty contract and return exit 3.
-fn empty_result(out: &mut crate::output::Output, json: bool, empty: Empty) -> anyhow::Result<i32> {
-    if json {
-        let report = SellReport {
-            currency: crate::output::CURRENCY,
-            sellable_binder_value: 0.0,
-            bulk_value: 0.0,
-            rows: Vec::new(),
-            fund: None,
-        };
-        println!("{}", serde_json::to_string_pretty(&report)?);
-        return Ok(crate::cli::codes::NO_RESULTS);
-    }
-    match empty {
-        Empty::NoBinder => {
-            out.error("no binder cards to sell");
-            out.hint("import a ManaBox CSV: stm collection import <file>");
-        }
-        Empty::Filtered => {
-            out.error("no cards matched the sell filters");
-            out.hint("loosen --min-price/--max-price/--rarity, or drop --format");
-        }
-    }
-    Ok(crate::cli::codes::NO_RESULTS)
-}
-
-/// Every binder collection row joined to its card metadata, ordered by name.
-fn load_binder_rows(conn: &Connection) -> anyhow::Result<Vec<BinderRow>> {
+/// Load and price binder holdings in one batch, grouped by card identity.
+fn load_candidates(conn: &Connection, excluded: &[String]) -> anyhow::Result<Vec<Candidate>> {
     let mut stmt = conn.prepare(
         "SELECT c.name, c.binder, c.foil, c.set_code, c.collector_number,
-                c.quantity, (k.name IS NOT NULL) AS oracle_known, k.rarity,
-                k.edhrec_rank, k.penny_rank, k.reserved, k.game_changer,
-                k.legalities
+                c.quantity, k.name IS NOT NULL, k.rarity, k.edhrec_rank,
+                k.penny_rank, k.reserved, k.game_changer, k.legalities,
+                (SELECT MIN(p.released_at) FROM card_prints p WHERE p.name = c.name)
          FROM collection c LEFT JOIN cards k ON k.name = c.name
-         WHERE c.binder_type = 'binder'
-         ORDER BY c.name",
+         WHERE c.binder_type = 'binder' AND c.quantity > 0 ORDER BY c.name",
     )?;
-    let rows = stmt.query_map([], |row| {
-        Ok(BinderRow {
-            name: row.get(0)?,
-            binder: row.get(1)?,
-            foil: row.get(2)?,
-            set_code: row.get(3)?,
-            collector_number: row.get(4)?,
-            quantity: row.get(5)?,
-            oracle_known: row.get(6)?,
-            rarity: row.get::<_, Option<String>>(7)?.unwrap_or_default(),
-            edhrec_rank: row.get(8)?,
-            penny_rank: row.get(9)?,
-            reserved: row.get::<_, Option<bool>>(10)?.unwrap_or(false),
-            game_changer: row.get::<_, Option<bool>>(11)?.unwrap_or(false),
-            legalities: row.get::<_, Option<String>>(12)?.unwrap_or_default(),
-        })
-    })?;
-    rows.map(|row| row.context("reading binder row")).collect()
-}
-
-/// Fold binder rows into candidates, dropping basics and any card a decklist
-/// wants. Prices each owned printing through one batched query and keeps the
-/// per-print detail, so value is print-accurate.
-fn classify(
-    conn: &Connection,
-    rows: Vec<BinderRow>,
-    demand: &std::collections::BTreeMap<String, Vec<(String, i64)>>,
-) -> anyhow::Result<Vec<Candidate>> {
-    let keys: Vec<(String, String, String, String)> = rows
+    let rows = stmt
+        .query_map([], |r| {
+            Ok((
+                Candidate {
+                    name: r.get(0)?,
+                    oracle_known: r.get(6)?,
+                    rarity: r.get::<_, Option<String>>(7)?.unwrap_or_default(),
+                    edhrec_rank: r.get(8)?,
+                    penny_rank: r.get(9)?,
+                    reserved: r.get::<_, Option<bool>>(10)?.unwrap_or(false),
+                    game_changer: r.get::<_, Option<bool>>(11)?.unwrap_or(false),
+                    legalities: r.get::<_, Option<String>>(12)?.unwrap_or_default(),
+                    recent_release: r.get::<_, Option<String>>(13)?.is_some_and(|date| {
+                        chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d").is_ok_and(|date| {
+                            chrono::Utc::now()
+                                .date_naive()
+                                .signed_duration_since(date)
+                                .num_days()
+                                < 90
+                        })
+                    }),
+                    prints: Vec::new(),
+                },
+                Printing {
+                    binder: r.get(1)?,
+                    foil: r.get(2)?,
+                    set_code: r.get::<_, String>(3)?.to_ascii_lowercase(),
+                    collector_number: r.get(4)?,
+                    quantity: r.get(5)?,
+                    sell_quantity: 0,
+                    keep_quantity: 0,
+                    price: None,
+                },
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()
+        .context("reading sell inventory")?;
+    let keys = rows
         .iter()
-        .map(|r| {
+        .map(|(c, p)| {
             (
-                r.name.clone(),
-                r.set_code.to_ascii_lowercase(),
-                r.collector_number.clone(),
-                r.foil.clone(),
+                c.name.clone(),
+                p.set_code.clone(),
+                p.collector_number.clone(),
+                p.foil.clone(),
             )
         })
-        .collect();
+        .collect::<Vec<_>>();
+    for name in excluded {
+        if !rows
+            .iter()
+            .any(|(_, print)| print.binder.eq_ignore_ascii_case(name))
+        {
+            anyhow::bail!("binder '{name}' not found in the collection");
+        }
+    }
     let prices = crate::prints::prices_for_owned(conn, &keys)?;
-    let mut by_name: std::collections::BTreeMap<String, Candidate> = Default::default();
-    for row in rows {
-        if crate::collection::is_basic_name(&row.name) || demand.contains_key(&row.name) {
+    let mut cards = BTreeMap::new();
+    for (card, mut print) in rows {
+        if crate::collection::is_basic_name(&card.name) || binder_excluded(&print.binder, excluded)
+        {
             continue;
         }
-        let price = prices
+        print.price = prices
             .get(&(
-                row.name.clone(),
-                row.set_code.to_ascii_lowercase(),
-                row.collector_number.clone(),
-                row.foil.clone(),
+                card.name.clone(),
+                print.set_code.clone(),
+                print.collector_number.clone(),
+                print.foil.clone(),
             ))
             .copied()
             .flatten();
-        let candidate = by_name
-            .entry(row.name.clone())
-            .or_insert_with(|| Candidate {
-                name: row.name.clone(),
-                rarity: row.rarity.clone(),
-                edhrec_rank: row.edhrec_rank,
-                penny_rank: row.penny_rank,
-                reserved: row.reserved,
-                game_changer: row.game_changer,
-                legalities: row.legalities.clone(),
-                oracle_known: row.oracle_known,
-                prints: Vec::new(),
-                owned_binder: 0,
-                total_value: 0.0,
-                sellable_value: 0.0,
-                bulk_value: 0.0,
-                max_price: None,
-            });
-        candidate.owned_binder += row.quantity;
-        if let Some(price) = price {
-            let value = price * row.quantity as f64;
-            candidate.total_value += value;
-            if price >= BULK_FLOOR {
-                candidate.sellable_value += value;
+        cards
+            .entry(card.name.clone())
+            .or_insert(card)
+            .prints
+            .push(print);
+    }
+    Ok(cards.into_values().collect())
+}
+
+/// Allocate deck protection and spare copies to the cheapest known printings.
+fn allocate(card: &mut Candidate, deck_needed: i64, spare: i64) {
+    card.prints.sort_by(|a, b| {
+        a.price
+            .unwrap_or(f64::INFINITY)
+            .total_cmp(&b.price.unwrap_or(f64::INFINITY))
+            .then_with(|| {
+                (&a.set_code, &a.collector_number, &a.foil, &a.binder).cmp(&(
+                    &b.set_code,
+                    &b.collector_number,
+                    &b.foil,
+                    &b.binder,
+                ))
+            })
+    });
+    let mut remaining = deck_needed + spare;
+    for print in &mut card.prints {
+        print.keep_quantity = remaining.min(print.quantity);
+        remaining -= print.keep_quantity;
+        print.sell_quantity = print.quantity - print.keep_quantity;
+    }
+}
+
+/// Select printing-level actions without treating unknown prices as bulk.
+fn eligible(print: &Printing, card: &Candidate, options: &SellOptions<'_>, bulk: bool) -> bool {
+    print.sell_quantity > 0
+        && print.price.is_some_and(|p| {
+            (if bulk {
+                p < SINGLES_FLOOR
             } else {
-                candidate.bulk_value += value;
-            }
-            candidate.max_price = Some(
-                candidate
-                    .max_price
-                    .map_or(price, |current| current.max(price)),
-            );
+                p >= SINGLES_FLOOR
+            }) && options.min_price.is_none_or(|min| p >= min)
+                && options.max_price.is_none_or(|max| p <= max)
+        })
+        && options
+            .rarity
+            .is_none_or(|r| card.rarity.eq_ignore_ascii_case(r))
+}
+
+/// Rank sales by value released and the strongest remaining usefulness signal.
+fn priority(
+    card: &Candidate,
+    combo: &evidence::ComboEvidence,
+    value: f64,
+    retains_copy: bool,
+    floor: i64,
+) -> f64 {
+    if retains_copy {
+        return value;
+    }
+    let edh = card.edhrec_rank.map_or(0.35, |r| {
+        if r <= PLAYED_CUTOFF {
+            1.0
+        } else {
+            (1.0 - (r - PLAYED_CUTOFF) as f64 / (floor - PLAYED_CUTOFF) as f64).clamp(0.0, 1.0)
         }
-        candidate.prints.push(Printing {
-            set_code: row.set_code.to_ascii_lowercase(),
-            collector_number: row.collector_number.clone(),
-            foil: row.foil.clone(),
-            binder: row.binder.clone(),
-            quantity: row.quantity,
-            price,
-        });
-    }
-    Ok(by_name.into_values().collect())
+    });
+    let penny = card
+        .penny_rank
+        .map_or(0.0, |r| 0.6 / (1.0 + r.max(1) as f64 / 500.0));
+    let combos = (0.15 * (1.0 + combo.piece_sets as f64).log2()).min(0.6);
+    let recent = if card.recent_release { 0.15_f64 } else { 0.0 };
+    value * (1.0 - edh.max(penny).max(combos).max(recent))
 }
 
-/// Apply the CLI's price and rarity filters.
-///
-/// Price bounds use the highest priced owned print: `--min-price` keeps cards
-/// with at least one copy at or above it; `--max-price` keeps cards whose
-/// every copy is at or below it. Unpriced cards are dropped whenever either
-/// bound is set, because their price cannot be confirmed.
-fn apply_filters(candidates: Vec<Candidate>, options: &SellOptions<'_>) -> Vec<Candidate> {
-    candidates
-        .into_iter()
-        .filter(|c| match c.max_price {
-            Some(price) => {
-                options.min_price.is_none_or(|min| price >= min)
-                    && options.max_price.is_none_or(|max| price <= max)
-            }
-            None => options.min_price.is_none() && options.max_price.is_none(),
-        })
-        .filter(|c| {
-            options
-                .rarity
-                .is_none_or(|r| c.rarity.eq_ignore_ascii_case(r))
-        })
-        .collect()
-}
-
-/// Build the JSON row, computing reasons, warnings, and confidence.
-fn build_row(candidate: &Candidate, rank_floor: i64, format: Option<&str>) -> SellRow {
-    let band = play_band(candidate.edhrec_rank, candidate.penny_rank, rank_floor);
-    let mut reasons: Vec<&'static str> = vec!["not_in_deck"];
-    if band != BAND_PLAYED {
-        reasons.push("rarely_played");
+/// Build exact card actions with raw evidence and a nonprobabilistic priority.
+fn build_row(
+    card: &Candidate,
+    combo: &evidence::ComboEvidence,
+    protection: Protection,
+    options: &SellOptions<'_>,
+    bulk: bool,
+    evidence_known: bool,
+) -> Option<SellRow> {
+    let Protection { deck_needed, spare } = protection;
+    let mut prints = card.prints.clone();
+    for print in &mut prints {
+        if !eligible(print, card, options, bulk) {
+            print.keep_quantity += print.sell_quantity;
+            print.sell_quantity = 0;
+        }
     }
-    if !candidate.reserved && candidate.max_price.is_some_and(|p| p >= BULK_FLOOR) {
-        reasons.push("reprint_risk");
+    let sold: i64 = prints.iter().map(|p| p.sell_quantity).sum();
+    if sold == 0 {
+        return None;
     }
-    // An unresolved card has no known legality; do not claim it is unplayed.
-    if candidate.oracle_known
-        && format.is_some_and(|f| !crate::search::legal_in(&candidate.legalities, f))
-    {
-        reasons.push("format_unplayed");
+    let owned: i64 = prints.iter().map(|p| p.quantity).sum();
+    let retained = owned > sold;
+    let value: f64 = prints
+        .iter()
+        .map(|p| p.price.unwrap_or(0.0) * p.sell_quantity as f64)
+        .sum();
+    let mut warnings = Vec::new();
+    if !card.oracle_known {
+        warnings.push("unknown_card_metadata");
     }
-    let mut hold_warnings: Vec<&'static str> = Vec::new();
-    if candidate.reserved {
-        hold_warnings.push("reserved_list");
+    if card.reserved {
+        warnings.push("reserved_list");
     }
-    if candidate.game_changer {
-        hold_warnings.push("game_changer");
+    if !retained && combo.interested {
+        warnings.push("maybeboard_interest");
     }
-    SellRow {
-        name: candidate.name.clone(),
-        owned_binder: candidate.owned_binder,
-        rarity: candidate.rarity.clone(),
-        edhrec_rank: candidate.edhrec_rank,
-        penny_rank: candidate.penny_rank,
-        play_band: band,
-        max_price: candidate.max_price.map(crate::output::round2),
-        sellable_value: crate::output::round2(candidate.sellable_value),
-        bulk_value: crate::output::round2(candidate.bulk_value),
-        total_value: crate::output::round2(candidate.total_value),
-        reserved: candidate.reserved,
-        game_changer: candidate.game_changer,
-        sell_confidence: sell_confidence(&hold_warnings),
+    let mut reasons = vec![if deck_needed == 0 {
+        "no_unmet_deck_demand"
+    } else {
+        "deck_needs_covered"
+    }];
+    if retained {
+        reasons.push("surplus_copies");
+    }
+    if card.edhrec_rank.is_some_and(|r| r > options.rank_floor) {
+        reasons.push("low_commander_demand");
+    }
+    if evidence_known && combo.variants == 0 {
+        reasons.push("no_known_combos");
+    }
+    let action = if warnings.is_empty() {
+        if bulk { "bulk" } else { "sell" }
+    } else {
+        "review"
+    };
+    Some(SellRow {
+        name: card.name.clone(),
+        owned_binder: owned,
+        sell_quantity: sold,
+        keep_quantity: owned - sold,
+        deck_needed,
+        spare_reserve: spare,
+        rarity: card.rarity.clone(),
+        edhrec_rank: card.edhrec_rank,
+        penny_rank: card.penny_rank,
+        combo_variants: evidence_known.then_some(combo.variants),
+        combo_piece_sets: evidence_known.then_some(combo.piece_sets),
+        owned_combo_options: combo.owned_options,
+        combo_examples: combo.examples.clone(),
+        game_changer: card.game_changer,
+        reserved: card.reserved,
+        legal_in_format: options
+            .format
+            .filter(|_| card.oracle_known)
+            .map(|f| crate::search::legal_in(&card.legalities, f)),
+        market_value: crate::output::round2(value),
+        sell_priority: crate::output::round2(priority(
+            card,
+            combo,
+            value,
+            retained,
+            options.rank_floor,
+        )),
+        action,
         reasons,
-        hold_warnings,
-        printings: candidate
+        hold_warnings: warnings,
+        printings: prints,
+    })
+}
+
+/// Build both inventory summaries, then limit only the selected view.
+fn build_report(
+    paths: &crate::paths::Paths,
+    conn: &Connection,
+    options: &SellOptions<'_>,
+) -> anyhow::Result<SellReport> {
+    let mut cards = load_candidates(conn, options.exclude_binders)?;
+    let evidence = evidence::load(paths, conn, &cards, options)?;
+    let status = crate::paths::Status::read(&paths.status_file())?;
+    let mut report = SellReport {
+        currency: crate::output::CURRENCY,
+        view: if options.bulk { "bulk" } else { "singles" },
+        valuation_basis: "market_value_before_selling_costs",
+        evidence_scope: "Commander popularity, Penny Dreadful popularity, and known Spellbook combos; other format usage is unknown",
+        singles: Summary::default(),
+        bulk: BulkSummary::default(),
+        protected: Protected::default(),
+        rows: Vec::new(),
+        review: Vec::new(),
+        review_cards: 0,
+        warnings: evidence.warnings.clone(),
+        scryfall_synced_at: status.scryfall_synced_at,
+        combos_synced_at: status.combos_synced_at,
+        excluded_binders: options.exclude_binders.to_vec(),
+        fund: None,
+    };
+    for card in &mut cards {
+        let combo = evidence.cards.get(&card.name).cloned().unwrap_or_default();
+        let needed = evidence.deck_needed.get(&card.name).copied().unwrap_or(0);
+        let useful = card.game_changer
+            || card.edhrec_rank.is_some_and(|r| r <= PLAYED_CUTOFF)
+            || card.penny_rank.is_some()
+            || combo.owned_options > 0
+            || combo.deck_completion;
+        let bulk_card = card
             .prints
             .iter()
-            .map(|p| Printing {
-                price: p.price.map(crate::output::round2),
-                ..p.clone()
-            })
-            .collect(),
-    }
-}
-
-/// Classify the play band from the two popularity ranks.
-///
-/// The EDHREC rank is primary; a Penny Dreadful rank only lifts a card out of
-/// `unplayed` (it sees play somewhere, just not Commander). A card with
-/// neither rank is unplayed.
-fn play_band(edhrec: Option<i64>, penny: Option<i64>, rank_floor: i64) -> &'static str {
-    if let Some(rank) = edhrec {
-        if rank <= PLAYED_CUTOFF {
-            return BAND_PLAYED;
+            .any(|p| p.price.is_some_and(|v| v < SINGLES_FLOOR));
+        let spare = if bulk_card { 4 } else { i64::from(useful) };
+        allocate(card, needed, spare);
+        let kept: i64 = card.prints.iter().map(|p| p.keep_quantity).sum();
+        report.protected.deck_copies += kept.min(needed);
+        report.protected.spare_copies += (kept - needed).max(0);
+        report.protected.game_changers += usize::from(card.game_changer && kept > 0);
+        for bulk in [false, true] {
+            let Some(mut row) = build_row(
+                card,
+                &combo,
+                Protection {
+                    deck_needed: needed,
+                    spare,
+                },
+                options,
+                bulk,
+                evidence.combos_known,
+            ) else {
+                continue;
+            };
+            if !evidence.decks_known {
+                row.action = "review";
+                row.hold_warnings.push("unchecked_deck_demand");
+            }
+            if row.action == "review" {
+                if bulk == options.bulk {
+                    report.review.push(row);
+                }
+            } else {
+                summarize(&mut report, &row, bulk);
+                if bulk == options.bulk {
+                    report.rows.push(row);
+                }
+            }
         }
-        if rank <= rank_floor {
-            return BAND_NICHE;
+        if !options.bulk && card.prints.iter().any(|p| p.price.is_none()) {
+            report.warnings.push(format!(
+                "{} has unpriced copies; those copies are not sale candidates",
+                card.name
+            ));
         }
-        return BAND_UNPLAYED;
     }
-    if penny.is_some() {
-        BAND_NICHE
-    } else {
-        BAND_UNPLAYED
+    sort_rows(&mut report.rows, options.bulk);
+    sort_rows(&mut report.review, options.bulk);
+    report.review_cards = report.review.len();
+    report.fund = options
+        .target
+        .map(|target| build_fund(&report.rows, target));
+    if options.output.is_none() {
+        report.rows.truncate(options.limit);
+        report.review.truncate(options.limit);
+    }
+    report.singles.market_value = crate::output::round2(report.singles.market_value);
+    report.bulk.rate_per_1000 = options.bulk_rate;
+    report.bulk.estimated_proceeds = options
+        .bulk_rate
+        .map(|r| crate::output::round2(r * report.bulk.copies as f64 / 1000.0));
+    Ok(report)
+}
+
+/// Match whole binder names without changing the stored inventory.
+fn binder_excluded(binder: &str, excluded: &[String]) -> bool {
+    excluded
+        .iter()
+        .any(|name| binder.eq_ignore_ascii_case(name))
+}
+
+/// Accumulate recommended quantities independently from review rows and limits.
+fn summarize(report: &mut SellReport, row: &SellRow, bulk: bool) {
+    if !bulk {
+        report.singles.cards += 1;
+        report.singles.copies += row.sell_quantity;
+        report.singles.market_value += row.market_value;
+        return;
+    }
+    report.bulk.cards += 1;
+    report.bulk.copies += row.sell_quantity;
+    for p in &row.printings {
+        if p.foil != "normal" {
+            report.bulk.foils += p.sell_quantity;
+        } else if matches!(row.rarity.as_str(), "common" | "uncommon") {
+            report.bulk.normal_commons_uncommons += p.sell_quantity;
+        } else if matches!(row.rarity.as_str(), "rare" | "mythic") {
+            report.bulk.rares_mythics += p.sell_quantity;
+        } else {
+            report.bulk.other += p.sell_quantity;
+        }
     }
 }
 
-/// Transparent sell confidence in `[0, 1]`: full marks, minus a quarter per
-/// hold warning. Not a promise of sale price, just how clean the sell is.
-fn sell_confidence(hold_warnings: &[&str]) -> f64 {
-    (1.0 - 0.25 * hold_warnings.len() as f64).max(0.0)
+/// Use sale priority for singles and storage reduction for bulk.
+fn sort_rows(rows: &mut [SellRow], bulk: bool) {
+    rows.sort_by(|a, b| {
+        if bulk {
+            b.sell_quantity.cmp(&a.sell_quantity)
+        } else {
+            b.sell_priority
+                .total_cmp(&a.sell_priority)
+                .then_with(|| b.market_value.total_cmp(&a.market_value))
+        }
+        .then_with(|| a.name.cmp(&b.name))
+    });
 }
 
-/// Greedy fund: pick highest-value candidates until the target is reached.
-fn build_fund(candidates: &[Candidate], target: f64, limit: usize) -> FundReport {
+/// Fund only recommended singles, independent of the display limit.
+fn build_fund(rows: &[SellRow], target: f64) -> FundReport {
     let mut achieved = 0.0;
     let mut picks = Vec::new();
-    for candidate in candidates.iter().take(limit) {
+    let mut allocations = Vec::new();
+    for row in rows {
         if achieved >= target {
             break;
         }
-        achieved += candidate.total_value;
-        picks.push(candidate.name.clone());
+        achieved += row.market_value;
+        picks.push(row.name.clone());
+        allocations.push(FundPick {
+            name: row.name.clone(),
+            sell_quantity: row.sell_quantity,
+            market_value: row.market_value,
+            printings: row
+                .printings
+                .iter()
+                .filter(|p| p.sell_quantity > 0)
+                .cloned()
+                .collect(),
+        });
     }
     FundReport {
-        target_usd: crate::output::round2(target),
+        target_usd: target,
         achieved_usd: crate::output::round2(achieved),
+        shortfall_usd: crate::output::round2((target - achieved).max(0.0)),
+        valuation_basis: "market_value_before_selling_costs",
         picks,
+        allocations,
     }
-}
-
-/// Human render: a summary line, then dead-money and bulk-cull sections.
-fn render_text(out: &crate::output::Output, report: &SellReport) {
-    let styles = out.styles();
-    println!(
-        "{}: {} sellable, {} bulk",
-        styles.header("Sell candidates"),
-        styles.money(report.sellable_binder_value),
-        styles.dim(&styles.money(report.bulk_value)),
-    );
-    // A card with any copy worth selling goes under "Dead money"; the rest
-    // (pure bulk or unpriced) go under "Bulk cull". One row per card only.
-    let (bulk, singles): (Vec<&SellRow>, Vec<&SellRow>) =
-        report.rows.iter().partition(|r| r.sellable_value <= 0.0);
-    print_section(&styles, "Dead money", &singles);
-    print_section(&styles, "Bulk cull", &bulk);
-    if let Some(fund) = &report.fund {
-        println!(
-            "{} target {} → {} with {} card{}",
-            styles.header("Fund"),
-            styles.money(fund.target_usd),
-            styles.money(fund.achieved_usd),
-            fund.picks.len(),
-            if fund.picks.len() == 1 { "" } else { "s" },
-        );
-        if !fund.picks.is_empty() {
-            println!("  {}", styles.dim(&fund.picks.join(", ")));
-        }
-    }
-}
-
-/// Print one section of sell rows. Empty sections are skipped.
-fn print_section(styles: &crate::output::Styles, title: &str, rows: &[&SellRow]) {
-    if rows.is_empty() {
-        return;
-    }
-    println!("{}", styles.header(title));
-    for row in rows {
-        let value = match (row.sellable_value > 0.0, row.bulk_value > 0.0) {
-            (true, true) => format!(
-                "{} sellable + {} bulk",
-                styles.money(row.sellable_value),
-                styles.money(row.bulk_value)
-            ),
-            (true, false) => styles.money(row.sellable_value),
-            _ => styles.dim("unpriced"),
-        };
-        let tags: Vec<String> = row
-            .reasons
-            .iter()
-            .chain(row.hold_warnings.iter())
-            .map(|t| (*t).to_string())
-            .collect();
-        println!(
-            "  {} ×{} {} {}",
-            styles.card_name(&row.name),
-            row.owned_binder,
-            value,
-            styles.dim(&format!("[{}]", tags.join(", "))),
-        );
-        let prints = row
-            .printings
-            .iter()
-            .map(format_printing)
-            .collect::<Vec<_>>()
-            .join("; ");
-        println!(
-            "    {}",
-            styles.dim(&format!("{} · {prints}", row.play_band))
-        );
-    }
-}
-
-/// One owned printing as `SET CN finish ×QTY $PRICE`.
-fn format_printing(p: &Printing) -> String {
-    let price = p
-        .price
-        .map_or_else(|| "unpriced".to_string(), |v| format!("${v:.2}"));
-    format!(
-        "{} {} {} ×{} {price}",
-        p.set_code.to_ascii_uppercase(),
-        p.collector_number,
-        p.foil,
-        p.quantity,
-    )
 }
 
 #[cfg(test)]

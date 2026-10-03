@@ -168,6 +168,12 @@ fn run_collection(
             )
         }
         Some(CollectionCommand::Sell {
+            output,
+            exclude_binder,
+            details,
+            review,
+            bulk,
+            bulk_rate,
             min_price,
             max_price,
             rarity,
@@ -181,6 +187,12 @@ fn run_collection(
             conn,
             out,
             &collection_sell::SellOptions {
+                output: *output,
+                exclude_binders: exclude_binder,
+                details: *details,
+                review: *review,
+                bulk: *bulk,
+                bulk_rate: *bulk_rate,
                 min_price: *min_price,
                 max_price: *max_price,
                 rarity: rarity.as_deref(),

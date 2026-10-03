@@ -219,29 +219,46 @@ pub enum CollectionCommand {
         #[arg(long)]
         json: bool,
     },
-    /// Suggest binder cards to sell: idle value not played in any deck
+    /// Suggest surplus binder copies to sell while protecting deckbuilding reserves
     Sell {
-        /// Only cards with an owned copy priced at or above this USD
+        /// Export the full sell list to stdout in ManaBox TXT or CSV format
+        #[arg(long, value_enum, value_name = "FORMAT", conflicts_with_all = ["json", "details", "review"])]
+        output: Option<crate::collection_sell::SellOutput>,
+        /// Exclude a binder from the deckbuilding pool (repeat for multiple binders)
+        #[arg(long, value_name = "BINDER")]
+        exclude_binder: Vec<String>,
+        /// Show printing allocations and demand evidence
+        #[arg(long)]
+        details: bool,
+        /// Also show cards with personal hold reasons
+        #[arg(long)]
+        review: bool,
+        /// Show excess bulk copies below $1 instead of singles
+        #[arg(long, conflicts_with = "target")]
+        bulk: bool,
+        /// Estimate bulk proceeds at this USD per 1,000 copies
+        #[arg(long, value_name = "USD", requires = "bulk", value_parser = parse_positive_usd)]
+        bulk_rate: Option<f64>,
+        /// Only sale printings priced at or above this USD (singles stay at least $1)
         #[arg(long = "min-price", value_name = "USD", value_parser = parse_max_price)]
         min_price: Option<f64>,
-        /// Only cards whose every owned copy prices at or below this USD
+        /// Only sale printings priced at or below this USD
         #[arg(long = "max-price", value_name = "USD", value_parser = parse_max_price)]
         max_price: Option<f64>,
         /// Only this rarity: common, uncommon, rare, or mythic
         #[arg(long, value_name = "RARITY")]
         rarity: Option<String>,
-        /// Flag cards not legal in this format, e.g. commander, modern
+        /// Scope combo evidence and report legality for this format
         #[arg(long = "format", value_name = "FMT")]
         format: Option<String>,
-        /// EDHREC rank past which a card counts as unplayed (default 15000,
-        /// minimum 5000)
+        /// Low-demand Commander rank boundary (default 15000, must exceed 5000)
         #[arg(long = "rank-floor", value_name = "N", value_parser = parse_rank_floor)]
         rank_floor: Option<i64>,
-        /// Greedy-pick highest-value cards until their total reaches this USD
+        /// Pick ranked singles toward this market-value target, before selling costs
         #[arg(long, value_name = "USD", value_parser = parse_positive_usd)]
         target: Option<f64>,
-        /// Maximum results (default 50, max 500)
-        #[arg(long, default_value_t = 50, value_parser = clap::value_parser!(u32).range(1..=500))]
+        /// Maximum displayed results per section (default 20, max 500; exports are complete)
+        #[arg(long, default_value_t = 20, value_parser = clap::value_parser!(u32).range(1..=500))]
         limit: u32,
         /// Emit JSON
         #[arg(long)]
@@ -617,9 +634,7 @@ fn parse_max_price(s: &str) -> Result<f64, String> {
     Ok(v)
 }
 
-/// Parse `--rank-floor`: reject values at or below the played cutoff, where
-/// the floor would silently never apply (any rank at or under
-/// [`crate::collection_sell::PLAYED_CUTOFF`] is already "played").
+/// Keep the low-demand boundary above the useful-spare boundary.
 fn parse_rank_floor(s: &str) -> Result<i64, String> {
     let v: i64 = s
         .parse()
@@ -757,226 +772,5 @@ pub struct CardFilters {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use clap::CommandFactory;
-
-    #[test]
-    fn cli_parses_valid_tree() {
-        // Well-formed invocation must parse into the expected command and
-        // flags.
-        let cli = Cli::try_parse_from([
-            "stm", "query", "bolt", "--type", "Instant", "--cmc", "<=3", "--json",
-        ])
-        .expect("should parse");
-        match cli.command {
-            Command::Query {
-                query, json, limit, ..
-            } => {
-                assert_eq!(query, "bolt");
-                assert!(json);
-                assert_eq!(limit, 20);
-            }
-            other => panic!("expected query command, got {other:?}"),
-        }
-    }
-
-    #[test]
-    fn sync_takes_force() {
-        let cli = Cli::try_parse_from(["stm", "sync"]).expect("parse");
-        assert!(matches!(cli.command, Command::Sync { force: false }));
-        let cli = Cli::try_parse_from(["stm", "sync", "--force"]).expect("parse");
-        assert!(matches!(cli.command, Command::Sync { force: true }));
-    }
-
-    #[test]
-    fn read_commands_take_offline() {
-        // --offline is a global flag: it lives on the Cli, not per command.
-        let cli = Cli::try_parse_from(["stm", "query", "x", "--offline"]).expect("parse");
-        assert!(cli.offline);
-        let cli = Cli::try_parse_from(["stm", "card", "Bolt"]).expect("parse");
-        match cli.command {
-            Command::Card {
-                command: None,
-                name,
-                ..
-            } => {
-                assert_eq!(name.as_deref(), Some("Bolt"));
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-        let cli = Cli::try_parse_from(["stm", "card", "show", "Bolt"]).expect("parse");
-        match cli.command {
-            Command::Card {
-                command: Some(CardCommand::Show { name, .. }),
-                ..
-            } => assert_eq!(name, "Bolt"),
-            other => panic!("unexpected: {other:?}"),
-        }
-        let cli =
-            Cli::try_parse_from(["stm", "collection", "--offline", "query", "x"]).expect("parse");
-        assert!(
-            cli.offline,
-            "the global flag reaches subcommands without a per-command copy"
-        );
-        assert!(matches!(
-            cli.command,
-            Command::Collection {
-                command: Some(CollectionCommand::Query { .. }),
-                ..
-            }
-        ));
-    }
-
-    #[test]
-    fn card_similar_takes_flags() {
-        let cli =
-            Cli::try_parse_from(["stm", "card", "similar", "Bolt", "--owned"]).expect("parse");
-        match cli.command {
-            Command::Card {
-                command:
-                    Some(CardCommand::Similar {
-                        name, limit, owned, ..
-                    }),
-                ..
-            } => {
-                assert_eq!(name, "Bolt");
-                assert_eq!(limit, 20);
-                assert!(owned);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-        let cli = Cli::try_parse_from([
-            "stm",
-            "card",
-            "similar",
-            "Bolt",
-            "--limit",
-            "50",
-            "--json",
-            "--offline",
-        ])
-        .expect("parse");
-        assert!(cli.offline, "--offline is global");
-        match cli.command {
-            Command::Card {
-                command: Some(CardCommand::Similar { limit, json, .. }),
-                ..
-            } => {
-                assert_eq!(limit, 50);
-                assert!(json);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-        assert!(Cli::try_parse_from(["stm", "card", "similar", "Bolt", "--limit", "101"]).is_err());
-    }
-
-    #[test]
-    fn query_limit_is_bounded() {
-        let cli = Cli::try_parse_from(["stm", "query", "bolt", "--limit", "100"]).expect("parse");
-        match cli.command {
-            Command::Query { limit, .. } => assert_eq!(limit, 100),
-            other => panic!("unexpected command: {other:?}"),
-        }
-        assert!(Cli::try_parse_from(["stm", "query", "bolt", "--limit", "101"]).is_err());
-        assert!(Cli::try_parse_from(["stm", "query", "bolt", "--limit", "0"]).is_err());
-    }
-
-    #[test]
-    fn deck_update_takes_repeated_ops() {
-        let cli = Cli::try_parse_from([
-            "stm",
-            "deck",
-            "update",
-            "Burn",
-            "--add",
-            "2 Bolt",
-            "--add",
-            "commander:1 Breya",
-            "--remove",
-            "Sparky",
-            "--set",
-            "Bolt 4",
-        ])
-        .expect("parse");
-        match cli.command {
-            Command::Deck {
-                json: _,
-                command:
-                    Some(DeckCommand::Update {
-                        add, remove, set, ..
-                    }),
-                ..
-            } => {
-                assert_eq!(add.len(), 2);
-                assert_eq!(remove.len(), 1);
-                assert_eq!(set.len(), 1);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-    }
-
-    #[test]
-    fn collection_bare_is_valid() {
-        let cli = Cli::try_parse_from(["stm", "collection"]).expect("parse");
-        assert!(matches!(
-            cli.command,
-            Command::Collection { command: None, .. }
-        ));
-    }
-
-    #[test]
-    fn help_mentions_exit_codes() {
-        // Documented contract: exit codes appear in top-level help.
-        assert!(EXIT_CODE_HELP.contains("3  no results"));
-    }
-
-    #[test]
-    fn deck_legal_takes_format_bracket_json() {
-        let cli = Cli::try_parse_from(["stm", "deck", "legal", "Froggy"]).expect("parse");
-        match cli.command {
-            Command::Deck {
-                command: Some(DeckCommand::Legal { format, .. }),
-                ..
-            } => assert_eq!(format, None),
-            other => panic!("unexpected: {other:?}"),
-        }
-        let cli = Cli::try_parse_from([
-            "stm",
-            "deck",
-            "legal",
-            "Froggy",
-            "--format",
-            "commander",
-            "--bracket",
-            "3",
-            "--json",
-        ])
-        .expect("parse");
-        match cli.command {
-            Command::Deck {
-                command:
-                    Some(DeckCommand::Legal {
-                        format,
-                        bracket,
-                        json,
-                        ..
-                    }),
-                ..
-            } => {
-                assert_eq!(format.as_deref(), Some("commander"));
-                assert_eq!(bracket, Some(3));
-                assert!(json);
-            }
-            other => panic!("unexpected: {other:?}"),
-        }
-        // Bracket outside 1-5 fails to parse.
-        assert!(Cli::try_parse_from(["stm", "deck", "legal", "F", "--bracket", "6"]).is_err());
-    }
-
-    #[test]
-    fn cli_definition_is_unique() {
-        // Guards against duplicate long flags silently breaking help output.
-        Cli::command().debug_assert();
-    }
-}
+#[path = "tests/cli_tests.rs"]
+mod cli_tests;
