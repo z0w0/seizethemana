@@ -15,6 +15,7 @@ use std::time::Instant;
 
 use anyhow::Context as _;
 use fastembed::ModelTrait as _;
+#[cfg(target_os = "macos")]
 use seizethemana::embed::DocumentEmbedder as _;
 use seizethemana::paths::{Paths, Status};
 use seizethemana::query::VectorRowProvider as _;
@@ -997,23 +998,25 @@ fn load_candidate_model(
     let CandidateModel::Onnx(model) = &candidate.model;
     if backend == Backend::CoreMl {
         #[cfg(target_os = "macos")]
-        let documents = embed::coreml::CoreMlEmbedding::load(
-            models_dir,
-            model.clone(),
-            candidate.max_length,
-            profile_coreml,
-        )?;
-        let query_options = fastembed::InitOptions::new(model.clone())
-            .with_cache_dir(models_dir.to_path_buf())
-            .with_show_download_progress(show_progress)
-            .with_max_length(candidate.max_length)
-            .with_intra_threads(embed::INTRA_THREADS);
-        let queries = fastembed::TextEmbedding::try_new(query_options)
-            .context("initializing CPU query model")?;
-        return Ok(LoadedCandidateModel::CoreMl {
-            documents: Box::new(documents),
-            queries: Box::new(queries),
-        });
+        {
+            let documents = embed::coreml::CoreMlEmbedding::load(
+                models_dir,
+                model.clone(),
+                candidate.max_length,
+                profile_coreml,
+            )?;
+            let query_options = fastembed::InitOptions::new(model.clone())
+                .with_cache_dir(models_dir.to_path_buf())
+                .with_show_download_progress(show_progress)
+                .with_max_length(candidate.max_length)
+                .with_intra_threads(embed::INTRA_THREADS);
+            let queries = fastembed::TextEmbedding::try_new(query_options)
+                .context("initializing CPU query model")?;
+            return Ok(LoadedCandidateModel::CoreMl {
+                documents: Box::new(documents),
+                queries: Box::new(queries),
+            });
+        }
         #[cfg(not(target_os = "macos"))]
         anyhow::bail!("Core ML requires macOS");
     }

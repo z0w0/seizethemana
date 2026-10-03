@@ -1,5 +1,18 @@
 use super::*;
 
+/// Reject Core ML before loading or downloading a model on other platforms.
+#[cfg(not(target_os = "macos"))]
+#[test]
+fn coreml_requires_macos_before_model_loading() {
+    let directory = tempfile::tempdir().expect("create model test directory");
+    let models = directory.path().join("models");
+    let error = load_candidate_model(&CANDIDATES[0], &models, false, Backend::CoreMl, false)
+        .err()
+        .expect("Core ML must be rejected on this platform");
+    assert_eq!(error.to_string(), "Core ML requires macOS");
+    assert!(!models.exists());
+}
+
 #[test]
 fn candidate_prompts_match_model_cards() {
     let find = |key| {
@@ -71,6 +84,8 @@ fn cache_identity_covers_prompts_model_and_corpus_order() {
         oracle_text: String::new(),
         rarity: "common".into(),
         edhrec_rank: None,
+        penny_rank: None,
+        reserved: None,
         legalities: "{}".into(),
         set_code: "tst".into(),
         collector_number: "1".into(),
@@ -207,6 +222,8 @@ fn document_formats_preserve_card_name_and_rules_text() {
         oracle_text: "Draw a card.".into(),
         rarity: "common".into(),
         edhrec_rank: None,
+        penny_rank: None,
+        reserved: None,
         legalities: "{}".into(),
         set_code: "tst".into(),
         collector_number: "1".into(),

@@ -19,7 +19,13 @@ async function buildWebsite(): Promise<void> {
   };
 
   await mkdir(new URL("dist/", import.meta.url), { recursive: true });
-  for (const file of ["index.html", "favicon.svg", "CNAME"]) {
+  for (const file of [
+    "index.html",
+    "favicon.svg",
+    "CNAME",
+    "robots.txt",
+    "sitemap.xml",
+  ]) {
     await copyFile(
       new URL(file, import.meta.url),
       new URL(`dist/${file}`, import.meta.url),
