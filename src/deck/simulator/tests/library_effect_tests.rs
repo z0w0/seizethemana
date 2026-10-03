@@ -305,15 +305,21 @@ fn rider_alternate_cost_and_sacrifice_search_put_a_countered_target_into_play() 
             .map(|card| (card.name.as_str(), card.colors, card.mana_value))
             .collect::<Vec<_>>()
     );
-    assert!(state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(0)));
-    assert!(state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(1)));
-    assert!(state
-        .hand
-        .contains(&crate::deck::simulator::model::CardIdx(5)));
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
+    assert!(
+        state
+            .hand
+            .contains(&crate::deck::simulator::model::CardIdx(5))
+    );
     let target = state
         .battlefield
         .iter()
@@ -389,12 +395,16 @@ fn sacrifice_search_casts_even_when_no_creature_has_the_required_mana_value() {
         },
     );
 
-    assert!(state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(0)));
-    assert!(state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(1)));
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
     assert!(!state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
     assert_eq!(
@@ -486,15 +496,21 @@ fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
         attacking_this_turn: false,
     });
     cast(&cards, &mut state, &mut pool);
-    assert!(state
-        .exile
-        .contains(&crate::deck::simulator::model::CardIdx(4)));
-    assert!(state
-        .exile
-        .contains(&crate::deck::simulator::model::CardIdx(5)));
-    assert!(state
-        .exile
-        .contains(&crate::deck::simulator::model::CardIdx(6)));
+    assert!(
+        state
+            .exile
+            .contains(&crate::deck::simulator::model::CardIdx(4))
+    );
+    assert!(
+        state
+            .exile
+            .contains(&crate::deck::simulator::model::CardIdx(5))
+    );
+    assert!(
+        state
+            .exile
+            .contains(&crate::deck::simulator::model::CardIdx(6))
+    );
     assert!(state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
     assert!(state.battlefield.iter().any(|permanent| permanent.card
@@ -543,9 +559,11 @@ fn cascade_free_cast_resolves_a_permanent_etb_and_no_cost_spell_stays_uncastable
     );
     assert!(game_state.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(1))));
-    assert!(game_state
-        .hand
-        .contains(&crate::deck::simulator::model::CardIdx(2)));
+    assert!(
+        game_state
+            .hand
+            .contains(&crate::deck::simulator::model::CardIdx(2))
+    );
     assert_eq!(
         game_state.milestones_by_turn[&1].free_cast_permanents_entered,
         1
@@ -857,15 +875,21 @@ fn discard_cost_draws_resolve_individually_and_recheck_dredge() {
     );
     assert_eq!(game_state.seen, 9);
     assert_eq!(game_state.awareness_cards, 9);
-    assert!(game_state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(3)));
-    assert!(game_state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(4)));
-    assert!(game_state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(0)));
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(3))
+    );
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(4))
+    );
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
 }
 
 #[test]

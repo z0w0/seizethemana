@@ -1,12 +1,12 @@
 //! Tests for the per-game turn loop.
 use super::cast_pass::cast_pass;
 use super::deal::london_mulligan;
-use super::game::{fire_on_enter, new_perm_with, run_game, Activation, GameState, ManaPool};
+use super::game::{Activation, GameState, ManaPool, fire_on_enter, new_perm_with, run_game};
 use super::game_commander::CommanderProfile;
 use super::game_effects::activation::{pick_best_activation, resolve_activation};
 use super::game_effects::spend_leftover;
 use super::game_run::{
-    build_pool, run_sagas, run_turn, tap_dorks_for_mana, tap_new_rocks, TurnCensus,
+    TurnCensus, build_pool, run_sagas, run_turn, tap_dorks_for_mana, tap_new_rocks,
 };
 use super::model::CardIdx;
 use super::model::{Format, SimAbility, SimDeck, SimEffect, SimStriation, SimTrigger};
@@ -1177,9 +1177,11 @@ fn extra_turn_runs_a_full_turn_in_its_own_turn_slot() {
             .map(|i| crate::deck::simulator::model::CardIdx(*i))
             .collect::<Vec<_>>()
     );
-    assert!(!control_state
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(3)));
+    assert!(
+        !control_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(3))
+    );
 }
 
 #[test]

@@ -9,9 +9,9 @@
 // sources, with oracle text. Loaded with include_str! and parsed per test.
 // ---------------------------------------------------------------------------
 
+pub(super) use super::aggregate::CardCast;
 /// One card in a fixture file.
 use super::aggregate::aggregate;
-pub(super) use super::aggregate::CardCast;
 pub(super) use super::deck::build_sim_deck;
 pub(super) use super::game::run_game;
 

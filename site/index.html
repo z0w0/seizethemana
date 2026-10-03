@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ff5c9a" />
+    <meta
+      name="description"
+      content="Build budget Magic: The Gathering decks with cards you own and cheaper purchases. Seize the Mana is a CLI and an AI agent skill."
+    />
+    <title>Seize the Mana — Budget Magic decks</title>
+    <link rel="canonical" href="https://seizethemana.com/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="card-animation.js"></script>
+  </head>
+  <body>
+    <main aria-labelledby="title">
+      <header class="topbar">
+        <img
+          class="project-mark"
+          src="favicon.svg"
+          width="32"
+          height="32"
+          alt=""
+        />
+        <a href="https://github.com/z0w0/seizethemana">[ GitHub ↗ ]</a>
+      </header>
+      <h1 id="title" class="visually-hidden">Seize the Mana</h1>
+      <pre class="wordmark" aria-hidden="true">
+████  █████  █████  █████  █████     █████  █   █  █████     █   █   ███   █   █   ███
+█     █        █      █   █           █    █   █  █         ██ ██  █   █  ██  █  █   █
+████  ████     █     █    ████        █    █████  ████      █ █ █  █████  █ █ █  █████
+   █  █        █    █     █           █    █   █  █         █   █  █   █  █  ██  █   █
+████  █████  █████  █████  █████      █    █   █  █████     █   █  █   █  █   █  █   █</pre>
+      <div class="hero">
+        <div
+          class="card-stage"
+          role="img"
+          aria-label="Animated ASCII illustrations of Magic cards"
+        >
+          <pre id="card-art" aria-hidden="true">
++--------------------------------+
+| Sol Ring                       |
+| {1}                            |
++--------------------------------+
+|                                |
+|              . * .             |
+|           .         .          |
+|         .    _____    .        |
+|        .   /#######\   .       |
+|        *  /##/   \##\  *       |
+|       .   |##|   |##|   .      |
+|        *  \##\___/##/  *       |
+|        .   \#######/   .       |
+|         .    -----    .        |
+|           .         .          |
+|              ' * '             |
+|             __| |__            |
+|                                |
+|                                |
+|                                |
++--------------------------------+
+| Artifact                       |
+|                                |
+| A little extra mana.           |
+|                                |
++--------------------------------+</pre>
+        </div>
+        <section class="intro" aria-label="About Seize the Mana">
+          <h2>Build decks.<br />Spend less.</h2>
+          <p class="purpose">
+            A command-line tool and AI agent skill for budget Magic decks.
+          </p>
+          <p class="description">
+            Use cards you own. Buy cheaper cards for the rest.
+          </p>
+          <a class="mana-link" href="https://github.com/z0w0/seizethemana">
+            <span aria-hidden="true">[</span> Tap for Mana
+            <span aria-hidden="true">]</span>
+          </a>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

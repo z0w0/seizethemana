@@ -1,0 +1,16 @@
+{
+  "name": "seizethemana-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "node --test card-frames.test.ts",
+    "build": "npm run check && node build.ts",
+    "start": "npm run check && node build.ts --serve"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

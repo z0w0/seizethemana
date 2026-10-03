@@ -2,7 +2,7 @@ use clap::Parser;
 use rusqlite::Connection;
 use seizethemana::{
     card,
-    cli::{self, codes, Cli, CollectionCommand, Command, DeckCommand},
+    cli::{self, Cli, CollectionCommand, Command, DeckCommand, codes},
     collection, collection_conflicts, collection_sell, collection_stats, db, deck,
     output::Output,
     paths, query, setup, sync,

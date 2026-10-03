@@ -410,13 +410,15 @@ fn sacrifice_mana_activation_requires_and_consumes_a_creature() {
         0,
         false,
     ));
-    assert!(super::game_effects::activation::pick_best_activation(
-        &cards,
-        &without_body,
-        &ManaPool::default(),
-        1,
-    )
-    .is_none());
+    assert!(
+        super::game_effects::activation::pick_best_activation(
+            &cards,
+            &without_body,
+            &ManaPool::default(),
+            1,
+        )
+        .is_none()
+    );
 
     let mut with_body = state(Vec::new(), Vec::new());
     with_body.battlefield.push(super::game::new_perm_with(
@@ -620,9 +622,10 @@ fn flashback_grants_only_the_graveyard_instances_present_at_resolution() {
     st.graveyard.push(crate::deck::simulator::model::CardIdx(2));
     cast_once(&cards, &mut st, &mut ManaPool::default());
     assert_eq!(st.replay_casts, 1);
-    assert!(st
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(2)));
+    assert!(
+        st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(2))
+    );
 }
 
 #[test]
@@ -662,12 +665,14 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
     assert_eq!(pool.fixed[3], 0);
     assert_eq!(st.replay_casts, 2);
     assert_eq!(st.milestones_by_turn[&1].graveyard_casts, 2);
-    assert!(st
-        .exile
-        .contains(&crate::deck::simulator::model::CardIdx(1)));
-    assert!(st
-        .exile
-        .contains(&crate::deck::simulator::model::CardIdx(2)));
+    assert!(
+        st.exile
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
+    assert!(
+        st.exile
+            .contains(&crate::deck::simulator::model::CardIdx(2))
+    );
     assert_eq!(st.exile.len(), 8);
     assert!(st.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(0))));
@@ -686,9 +691,11 @@ fn escape_pays_mana_and_exiles_three_other_graveyard_instances() {
             .map(|i| crate::deck::simulator::model::CardIdx(*i)),
     );
     cast_once(&cards, &mut no_fuel, &mut ManaPool::default());
-    assert!(no_fuel
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(1)));
+    assert!(
+        no_fuel
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
     assert!(no_fuel.exile.is_empty());
     assert_eq!(no_fuel.replay_casts, 0);
 }
@@ -770,17 +777,20 @@ fn sacrificed_escape_artifact_can_be_escaped_again_with_remaining_fuel() {
             .is_some_and(|activation| activation.sacrifices_source())
     }));
     assert!(parsed_artifact.gate_types.is_empty());
-    assert!(parsed_artifact
-        .tap
-        .as_ref()
-        .is_some_and(|yield_| yield_.scaling.is_none()));
+    assert!(
+        parsed_artifact
+            .tap
+            .as_ref()
+            .is_some_and(|yield_| yield_.scaling.is_none())
+    );
     assert!(!permanent.tapped);
     pool = super::game_run::build_pool(&cards, &mut st, 2);
     assert!(!st.battlefield.iter().any(|permanent| permanent.card
         == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(1))));
-    assert!(st
-        .graveyard
-        .contains(&crate::deck::simulator::model::CardIdx(1)));
+    assert!(
+        st.graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
     assert_eq!(pool.total(), 1);
 
     cast_once(&cards, &mut st, &mut pool);

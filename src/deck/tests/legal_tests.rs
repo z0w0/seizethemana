@@ -83,19 +83,27 @@ fn bracket_scan_flags_tutors_and_extra_turns() {
     )
     .unwrap();
     let checks = scan_bracket_signals(&deck, &cards, 2);
-    assert!(checks
-        .iter()
-        .any(|c| c.starts_with("CHECK library search:") && c.contains("Demonic Tutor")));
-    assert!(checks
-        .iter()
-        .any(|c| c.starts_with("CHECK extra turns") && c.contains("Time Warp")));
-    assert!(checks
-        .iter()
-        .any(|c| c.starts_with("CHECK mass land destruction")));
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.starts_with("CHECK library search:") && c.contains("Demonic Tutor"))
+    );
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.starts_with("CHECK extra turns") && c.contains("Time Warp"))
+    );
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.starts_with("CHECK mass land destruction"))
+    );
     // The clean card's section passes.
-    assert!(!checks
-        .iter()
-        .any(|c| c.starts_with("PASS") && c.contains("library search")));
+    assert!(
+        !checks
+            .iter()
+            .any(|c| c.starts_with("PASS") && c.contains("library search"))
+    );
 }
 
 #[test]
@@ -213,11 +221,13 @@ fn commander_count_and_partner_rules() {
     // Two without partner: violation.
     assert!(commander_legal(&["Solo".to_string(), "Breya".to_string()], &cards).is_some());
     // Three commanders: violation.
-    assert!(commander_legal(
-        &["Solo".to_string(), "Breya".to_string(), "Bruse".to_string()],
-        &cards
-    )
-    .is_some());
+    assert!(
+        commander_legal(
+            &["Solo".to_string(), "Breya".to_string(), "Bruse".to_string()],
+            &cards
+        )
+        .is_some()
+    );
 }
 
 #[test]
@@ -864,9 +874,11 @@ fn bracket_scan_matches_library_and_or_graveyard() {
     .collect();
     let deck = Deck::parse("// COMMANDER\n1 Shenanigans\n\n// DECK\n").unwrap();
     let checks = scan_bracket_signals(&deck, &cards, 2);
-    assert!(checks
-        .iter()
-        .any(|c| c.starts_with("CHECK library search:") && c.contains("Shenanigans")));
+    assert!(
+        checks
+            .iter()
+            .any(|c| c.starts_with("CHECK library search:") && c.contains("Shenanigans"))
+    );
 }
 
 #[test]

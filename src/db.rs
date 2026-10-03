@@ -4,7 +4,7 @@
 
 use anyhow::Context;
 use rusqlite::Connection;
-use rusqlite_migration::{Migrations, M};
+use rusqlite_migration::{M, Migrations};
 
 /// One stored card, deserialized from the `cards` table.
 ///
@@ -716,12 +716,13 @@ mod tests {
             [],
         )
         .expect("insert");
-        assert!(conn
-            .execute(
+        assert!(
+            conn.execute(
                 "INSERT INTO cards (name, oracle_id) VALUES ('Bolt', 'x2')",
                 []
             )
-            .is_err());
+            .is_err()
+        );
     }
 
     #[test]
