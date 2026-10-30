@@ -1,0 +1,139 @@
+{
+  "selection_kind": "maintainer_selected_mechanic_regression_targets",
+  "selection_note": "These cards cover named mechanic risks. This is not an EDHREC archetype popularity ranking or a completed execution audit.",
+  "archetypes": [
+    {
+      "id": "tribal",
+      "reason": "Chosen creature types, shared tap costs, native and granted mana, entry counters, and tribal cost reduction.",
+      "cards": [
+        "Giada, Font of Hope",
+        "Herald's Horn",
+        "Urza's Incubator",
+        "Heritage Druid",
+        "Priest of Titania",
+        "Elvish Archdruid",
+        "Marwyn, the Nurturer",
+        "Leaf-Crowned Visionary",
+        "Realmwalker",
+        "Elven Chorus"
+      ]
+    },
+    {
+      "id": "tokens_counters",
+      "reason": "Token and counter replacements, entry timing, and counter placement on other creatures.",
+      "cards": [
+        "Doubling Season",
+        "Hardened Scales",
+        "Cathars' Crusade",
+        "Anointed Procession",
+        "Adrix and Nev, Twincasters",
+        "Parallel Lives",
+        "Skullclamp",
+        "Chatterfang, Squirrel General"
+      ]
+    },
+    {
+      "id": "spellslinger",
+      "reason": "Cast triggers, copies, storm, ordered spell effects, and spell-only discounts.",
+      "cards": [
+        "Archmage Emeritus",
+        "Storm-Kiln Artist",
+        "Thousand-Year Storm",
+        "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+        "Guttersnipe",
+        "Past in Flames",
+        "Baral, Chief of Compliance",
+        "Goblin Electromancer"
+      ]
+    },
+    {
+      "id": "artifacts",
+      "reason": "Artifact restrictions, resource sacrifice, and granted mana abilities.",
+      "cards": [
+        "Mox Amber",
+        "Urza, Lord High Artificer",
+        "Etherium Sculptor",
+        "Foundry Inspector",
+        "Krark-Clan Ironworks",
+        "Sai, Master Thopterist",
+        "Emry, Lurker of the Loch",
+        "Academy Manufactor"
+      ]
+    },
+    {
+      "id": "graveyard",
+      "reason": "Filtered recursion, linked life and sacrifice costs, and graveyard cast permissions.",
+      "cards": [
+        "Reanimate",
+        "Victimize",
+        "Eternal Witness",
+        "Animate Dead",
+        "Underworld Breach",
+        "Meren of Clan Nel Toth",
+        "Phyrexian Reclamation",
+        "Living Death"
+      ]
+    },
+    {
+      "id": "enchantments",
+      "reason": "Enchantment cast versus entry triggers and enchantment-specific discounts.",
+      "cards": [
+        "Sythis, Harvest's Hand",
+        "Enchantress's Presence",
+        "Satyr Enchanter",
+        "Setessan Champion",
+        "Sanctum Weaver",
+        "Starfield Mystic",
+        "Mesa Enchantress"
+      ]
+    },
+    {
+      "id": "lands",
+      "reason": "Additional plays, land-entry triggers, filtered searches, and multiple search destinations.",
+      "cards": [
+        "Exploration",
+        "Azusa, Lost but Seeking",
+        "Tatyova, Benthic Druid",
+        "Tireless Provisioner",
+        "Lotus Cobra",
+        "Cultivate",
+        "Nature's Lore",
+        "Three Visits",
+        "Farseek",
+        "Scapeshift",
+        "Life from the Loam"
+      ]
+    },
+    {
+      "id": "draw_engines",
+      "reason": "Opponent taxes, intervening conditions, paid draws, and conditional own-creature draws.",
+      "cards": [
+        "Rhystic Study",
+        "Mystic Remora",
+        "Esper Sentinel",
+        "Smothering Tithe",
+        "Garruk's Uprising",
+        "Guardian Project",
+        "Beast Whisperer",
+        "Phyrexian Arena",
+        "Tocasia's Welcome",
+        "Welcoming Vampire"
+      ]
+    },
+    {
+      "id": "controls_and_interaction",
+      "reason": "High-exposure mana controls and target-dependent interaction that must not grant unrelated caster rewards.",
+      "cards": [
+        "Sol Ring",
+        "Arcane Signet",
+        "Llanowar Elves",
+        "Elvish Visionary",
+        "Dark Ritual",
+        "Swords to Plowshares",
+        "Beast Within",
+        "Heroic Intervention",
+        "Jet Medallion"
+      ]
+    }
+  ]
+}

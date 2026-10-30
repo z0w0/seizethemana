@@ -1,0 +1,552 @@
+//! Download Commander Spellbook variants and rebuild the combo tables.
+//!
+//! The bulk is one JSON object (`timestamp`, `version`, `variants`,
+//! `aliases`) at a static URL, about 28 MB gzipped or 652 MB uncompressed.
+//! The scanner reads one variant object at a time. Ingest collects parsed
+//! variants before writing them. It skips spoiled variants and ignores aliases,
+//! which redirect old variant IDs.
+
+use anyhow::Context;
+use rusqlite::Connection;
+
+/// Download URL for the gzipped variants bulk. Static, no auth; the
+/// document is refreshed daily.
+pub const VARIANTS_URL: &str = "https://json.commanderspellbook.com/variants.json.gz";
+
+/// One card reference in the bulk payload.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct SpellbookCardRef {
+    name: String,
+}
+
+/// One piece requirement in the bulk payload.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct SpellbookUse {
+    /// The card the combo needs.
+    pub card: SpellbookCardRef,
+    /// Required starting zones, such as hand, battlefield, or graveyard.
+    /// Defaults to an empty list when the bulk file omits the field.
+    #[serde(default, rename = "zoneLocations")]
+    pub zone_locations: Vec<String>,
+    /// True when the card must be the deck's commander.
+    #[serde(default, rename = "mustBeCommander")]
+    pub must_be_commander: bool,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct SpellbookFeature {
+    #[serde(default)]
+    name: String,
+}
+
+/// One thing a combo produces (a feature like "Win the game").
+#[derive(Debug, serde::Deserialize)]
+pub struct SpellbookProduce {
+    feature: SpellbookFeature,
+}
+
+/// One combo variant in the bulk payload. Prices, images, and the
+/// description are dropped; the store keeps what deck joins need.
+#[derive(Debug, serde::Deserialize)]
+pub struct SpellbookVariant {
+    /// Spellbook variant id.
+    pub id: String,
+    /// Features the combo produces.
+    #[serde(default)]
+    pub produces: Vec<SpellbookProduce>,
+    /// Mana value the combo needs available.
+    #[serde(default, rename = "manaValueNeeded")]
+    pub mana_value_needed: u32,
+    /// Spellbook bracket tag ("S", "K", ...), when tagged.
+    #[serde(default, rename = "bracketTag")]
+    pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
+    #[serde(default)]
+    pub popularity: Option<i64>,
+    /// Format names mapped to legality flags.
+    #[serde(default)]
+    pub legalities: std::collections::HashMap<String, bool>,
+    /// The combo's pieces.
+    #[serde(default, rename = "uses")]
+    pub uses: Vec<SpellbookUse>,
+    /// True when the variant is a spoiler and should be skipped.
+    #[serde(default)]
+    pub spoiler: bool,
+}
+
+/// A combo piece flattened for storage: faces split, zones kept.
+#[derive(Debug, PartialEq)]
+pub struct ParsedPiece {
+    /// Card (or face) name.
+    pub name: String,
+    /// Zones the combo needs the card in.
+    pub zones: Vec<String>,
+    /// True when the card must be the deck's commander.
+    pub must_be_commander: bool,
+}
+
+/// One parsed variant ready for the store.
+#[derive(Debug, PartialEq)]
+pub struct ParsedVariant {
+    /// Spellbook variant id.
+    pub id: String,
+    /// Feature names the combo produces.
+    pub produces: Vec<String>,
+    /// Mana value the combo needs available.
+    pub mana_value_needed: u32,
+    /// Spellbook bracket tag ("S", "K", ...), when tagged.
+    pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
+    pub popularity: Option<i64>,
+    /// Format-legality map serialized as JSON.
+    pub legalities: String,
+    /// The combo's pieces.
+    pub pieces: Vec<ParsedPiece>,
+}
+
+/// Prepare one variant for storage.
+/// Returns `None` for spoilers and variants without pieces.
+pub fn parse_variant(v: SpellbookVariant) -> Option<ParsedVariant> {
+    if v.spoiler || v.uses.is_empty() {
+        return None;
+    }
+    let produces: Vec<String> = v.produces.iter().map(|p| p.feature.name.clone()).collect();
+    let legalities = serde_json::to_string(&v.legalities).unwrap_or_default();
+    let pieces = v
+        .uses
+        .iter()
+        .flat_map(|spell_use| {
+            // "A // B" faces match either half when deck joins run.
+            split_faces(&spell_use.card.name)
+                .into_iter()
+                .map(move |name| ParsedPiece {
+                    name,
+                    zones: spell_use.zone_locations.clone(),
+                    must_be_commander: spell_use.must_be_commander,
+                })
+        })
+        .collect();
+    Some(ParsedVariant {
+        id: v.id,
+        produces,
+        mana_value_needed: v.mana_value_needed,
+        bracket_tag: v.bracket_tag,
+        popularity: v.popularity,
+        legalities,
+        pieces,
+    })
+}
+
+/// Split an oracle name into its faces; a single-face name yields itself.
+fn split_faces(name: &str) -> Vec<String> {
+    if name.contains(" // ") {
+        name.split(" // ").map(str::to_string).collect()
+    } else {
+        vec![name.to_string()]
+    }
+}
+
+/// Download missing or stale variants, or download again when `force` is set.
+/// Returns true when a download happened.
+pub fn ensure_fresh_variants(
+    dest: &std::path::Path,
+    out: &mut crate::output::Output,
+    force: bool,
+) -> anyhow::Result<bool> {
+    if !force
+        && let Ok(meta) = std::fs::metadata(dest)
+        && let Ok(modified) = meta.modified()
+        && let Ok(age) = modified.elapsed()
+        && age <= crate::scryfall::stale_after_std()
+    {
+        out.status("Reusing", "Commander Spellbook combos (cached)");
+        return Ok(false);
+    }
+    crate::scryfall::download_to_named(
+        VARIANTS_URL,
+        dest,
+        None,
+        out,
+        "Commander Spellbook combos",
+    )?;
+    Ok(true)
+}
+
+/// Read the variants array one object at a time, tracking matching braces.
+/// Passes raw object text to `visit` and skips objects with invalid UTF-8.
+/// The caller parses each object's JSON.
+pub fn stream_raw_variants<F: FnMut(&str)>(
+    path: &std::path::Path,
+    mut visit: F,
+) -> anyhow::Result<()> {
+    let file = std::fs::File::open(path)
+        .with_context(|| format!("cannot open combo bulk {}", path.display()))?;
+    let mut reader =
+        flate2::read::MultiGzDecoder::new(std::io::BufReader::with_capacity(1 << 20, file));
+
+    // Slide a window until the "variants": marker appears; keep the tail in
+    // case the marker straddles a chunk boundary.
+    const NEEDLE: &[u8] = b"\"variants\":";
+    let mut window: Vec<u8> = Vec::with_capacity(64 * 1024);
+    let mut chunk = [0u8; 64 * 1024];
+    loop {
+        let n =
+            std::io::Read::read(&mut reader, &mut chunk).context("reading combo bulk header")?;
+        if n == 0 {
+            anyhow::bail!("combo bulk has no variants array");
+        }
+        window.extend_from_slice(&chunk[..n]);
+        if let Some(pos) = find_subslice(&window, NEEDLE) {
+            let rest = window[pos + NEEDLE.len()..].to_vec();
+            window = rest;
+            break;
+        }
+        if window.len() > NEEDLE.len() {
+            let keep_from = window.len() - NEEDLE.len();
+            window.drain(..keep_from);
+        }
+    }
+
+    // Track quoted strings so braces within them do not change object depth.
+    //
+    // Scanning is byte-wise: UTF-8 continuation bytes (>= 0x80) never
+    // collide with the ASCII delimiters, so multi-byte card names survive
+    // verbatim. Each closed object is decoded as UTF-8 before `visit`.
+    let mut depth = 0i32;
+    let mut in_string = false;
+    let mut escaped = false;
+    let mut object: Vec<u8> = Vec::new();
+    let mut bytes = window;
+    let mut chunk = [0u8; 64 * 1024];
+    loop {
+        if bytes.is_empty() {
+            let n = std::io::Read::read(&mut reader, &mut chunk).context("reading combo bulk")?;
+            if n == 0 {
+                break;
+            }
+            bytes = chunk[..n].to_vec();
+        }
+        let drained = std::mem::take(&mut bytes);
+        for &b in &drained {
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if b == b'\\' {
+                    escaped = true;
+                } else if b == b'"' {
+                    in_string = false;
+                }
+            } else {
+                match b {
+                    b'"' => in_string = true,
+                    b'{' => depth += 1,
+                    b'}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            object.push(b);
+                            // A non-UTF-8 object is malformed input; skip it
+                            // like any bad row instead of aborting the pass.
+                            if let Ok(text) = std::str::from_utf8(&object) {
+                                visit(text);
+                            }
+                            object.clear();
+                            continue;
+                        }
+                    }
+                    b']' if depth == 0 => return Ok(()),
+                    _ => {}
+                }
+            }
+            if depth > 0 {
+                object.push(b);
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Find the first occurrence of `needle` in `haystack`.
+fn find_subslice(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    if needle.len() > haystack.len() {
+        return None;
+    }
+    haystack.windows(needle.len()).position(|w| w == needle)
+}
+
+/// Parse every variant in the bulk file; malformed rows are skipped.
+pub fn parse_all(path: &std::path::Path) -> anyhow::Result<Vec<ParsedVariant>> {
+    let mut out = Vec::new();
+    stream_raw_variants(path, |raw| {
+        if let Ok(v) = serde_json::from_str::<SpellbookVariant>(raw)
+            && let Some(parsed) = parse_variant(v)
+        {
+            out.push(parsed);
+        }
+    })?;
+    Ok(out)
+}
+
+/// Rewrite the `combos`/`combo_pieces` tables from the bulk file, one
+/// transaction for both. Returns the variant count.
+///
+/// # Errors
+/// Returns bulk-file read and SQLite errors. Malformed variants are skipped.
+pub fn ingest(
+    conn: &mut Connection,
+    bulk_path: &std::path::Path,
+    out: &mut crate::output::Output,
+    updated_at: &str,
+) -> anyhow::Result<usize> {
+    let start = std::time::Instant::now();
+    out.start_task("Loading", "Commander Spellbook combos", 0);
+    let result = ingest_variants(conn, bulk_path, updated_at);
+    out.clear_progress();
+    let n = result?;
+    out.finish(
+        "Loaded",
+        &format!(
+            "Commander Spellbook combos ({} combos)",
+            crate::output::grouped_int(n as i64)
+        ),
+        start.elapsed(),
+    );
+    Ok(n)
+}
+
+/// Parse and commit combo variants before reporting a successful load.
+fn ingest_variants(
+    conn: &mut Connection,
+    bulk_path: &std::path::Path,
+    updated_at: &str,
+) -> anyhow::Result<usize> {
+    let variants = parse_all(bulk_path)?;
+    let n = variants.len();
+    let tx = conn.transaction().context("begin combo ingest")?;
+    tx.execute("DELETE FROM combo_pieces", [])?;
+    tx.execute("DELETE FROM combos", [])?;
+    {
+        let mut combo_stmt = tx.prepare(
+            "INSERT INTO combos (id, produces, mana_value_needed, bracket_tag,
+                legalities, popularity, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        )?;
+        let mut piece_stmt = tx.prepare(
+            "INSERT INTO combo_pieces (combo_id, name, ordinal, zones, must_be_commander)
+             VALUES (?1, ?2, ?3, ?4, ?5)",
+        )?;
+        for v in &variants {
+            combo_stmt.execute(rusqlite::params![
+                v.id,
+                serde_json::to_string(&v.produces).unwrap_or_default(),
+                v.mana_value_needed,
+                v.bracket_tag,
+                v.legalities,
+                v.popularity,
+                updated_at,
+            ])?;
+            for (ordinal, piece) in v.pieces.iter().enumerate() {
+                let zones = serde_json::to_string(&piece.zones).unwrap_or_default();
+                piece_stmt.execute(rusqlite::params![
+                    v.id,
+                    piece.name,
+                    ordinal as i64,
+                    zones,
+                    piece.must_be_commander as i64,
+                ])?;
+            }
+        }
+    }
+    tx.commit().context("commit combo ingest")?;
+    Ok(n)
+}
+
+/// Combo variant loaded from the store.
+#[derive(Debug, Clone)]
+pub struct ComboVariant {
+    /// Spellbook variant id.
+    pub id: String,
+    /// Feature names the combo produces.
+    pub produces: Vec<String>,
+    /// Mana value the combo needs available.
+    pub mana_value_needed: i64,
+    /// Spellbook bracket tag, when tagged.
+    pub bracket_tag: Option<String>,
+    /// Spellbook popularity score, when known.
+    pub popularity: Option<i64>,
+    /// Format names mapped to legality flags.
+    pub legalities: std::collections::HashMap<String, bool>,
+}
+
+/// One combo piece as stored.
+#[derive(Debug, Clone)]
+pub struct ComboPieceRow {
+    /// Card (or face) name.
+    pub name: String,
+    /// Position of the piece within the combo.
+    pub ordinal: i64,
+    /// Zones the combo needs the card in.
+    pub zones: Vec<String>,
+    /// True when the card must be the deck's commander.
+    pub must_be_commander: bool,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn gz_payload(body: &str) -> Vec<u8> {
+        use std::io::Write as _;
+        let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
+        enc.write_all(body.as_bytes()).unwrap();
+        enc.finish().unwrap()
+    }
+
+    fn sample_body() -> String {
+        r#"{"timestamp":"2026-09-17T00:00:00","version":"6.4.0","variants":[
+        {"id":"742-1295","uses":[
+            {"card":{"name":"Demonic Consultation"},"zoneLocations":["H"],"mustBeCommander":false},
+            {"card":{"name":"Thassa's Oracle"},"zoneLocations":["H","B"],"mustBeCommander":false}
+        ],
+        "produces":[{"feature":{"id":2,"name":"Win the game"}}],
+        "identity":"UB","manaNeeded":"{U}{U}{B}","manaValueNeeded":3,
+        "status":"OK","spoiler":false,"bracketTag":"R",
+        "popularity":149575,
+        "legalities":{"commander":true,"modern":false}}],
+        "aliases":[]}"#
+            .to_string()
+    }
+
+    fn write_bulk(dir: &tempfile::TempDir, body: &str) -> std::path::PathBuf {
+        let path = dir.path().join("variants.json.gz");
+        std::fs::write(&path, gz_payload(body)).unwrap();
+        path
+    }
+
+    #[test]
+    fn stream_raw_variants_parses_wrapped_array() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_bulk(&dir, &sample_body());
+        let mut seen = Vec::new();
+        stream_raw_variants(&path, |raw| seen.push(raw.to_string())).unwrap();
+        assert_eq!(seen.len(), 1);
+        let v: SpellbookVariant = serde_json::from_str(&seen[0]).unwrap();
+        assert_eq!(v.id, "742-1295");
+        assert_eq!(v.uses.len(), 2);
+        assert_eq!(v.uses[0].card.name, "Demonic Consultation");
+        assert_eq!(v.uses[1].zone_locations, vec!["H", "B"]);
+        assert_eq!(v.bracket_tag.as_deref(), Some("R"));
+        assert!(v.legalities["commander"]);
+        assert!(!v.legalities["modern"]);
+    }
+
+    #[test]
+    fn stream_raw_variants_keeps_utf8_card_names() {
+        // "Jötun Grunt" is multi-byte UTF-8; the byte-wise scanner must pass
+        // it through undamaged so piece names join against `cards`.
+        let body = r#"{"timestamp":"t","variants":[
+        {"id":"u-1","uses":[{"card":{"name":"Jötun Grunt"},"zoneLocations":["B"]}],
+        "produces":[{"feature":{"name":"Gain life"}}],"spoiler":false,"legalities":{}},
+        {"id":"u-2","uses":[{"card":{"name":"Æthersnipe"}}],"produces":[],"spoiler":false}
+        ]}"#;
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_bulk(&dir, body);
+        let mut seen = Vec::new();
+        stream_raw_variants(&path, |raw| seen.push(raw.to_string())).unwrap();
+        assert_eq!(seen.len(), 2);
+        assert!(seen[0].contains("Jötun Grunt"), "mangled: {}", seen[0]);
+        assert!(seen[1].contains("Æthersnipe"), "mangled: {}", seen[1]);
+        let parsed = parse_all(&path).unwrap();
+        let names: Vec<String> = parsed
+            .iter()
+            .flat_map(|v| v.pieces.iter().map(|p| p.name.clone()))
+            .collect();
+        assert_eq!(
+            names,
+            vec!["Jötun Grunt".to_string(), "Æthersnipe".to_string()]
+        );
+    }
+
+    #[test]
+    fn stream_raw_variants_skips_malformed_rows() {
+        let body = r#"{"timestamp":"t","variants":[
+        {"id":"ok-1","uses":[{"card":{"name":"A"}}],"produces":[],"spoiler":false},
+        {"id":"broken" "uses":[]},
+        {"id":"ok-2","uses":[{"card":{"name":"B"}}],"produces":[],"spoiler":false}
+        ]}"#;
+        let dir = tempfile::tempdir().unwrap();
+        let path = write_bulk(&dir, body);
+        let mut seen = Vec::new();
+        stream_raw_variants(&path, |raw| {
+            if let Ok(v) = serde_json::from_str::<SpellbookVariant>(raw) {
+                seen.push(v.id);
+            }
+        })
+        .unwrap();
+        assert_eq!(seen, vec!["ok-1", "ok-2"]);
+    }
+
+    #[test]
+    fn parse_variant_splits_faces_and_keeps_zones() {
+        let v: SpellbookVariant = serde_json::from_str(
+            r#"{"id":"1-2","uses":[
+            {"card":{"name":"Emeritus of Abundance // Regrowth"},"zoneLocations":["B"]},
+            {"card":{"name":"Bear"},"zoneLocations":["G"],"mustBeCommander":true}],
+            "produces":[{"feature":{"name":"Win the game"}}],
+            "manaValueNeeded":5,"bracketTag":null,"spoiler":false,"legalities":{}}"#,
+        )
+        .unwrap();
+        let parsed = parse_variant(v).unwrap();
+        let names: Vec<&str> = parsed.pieces.iter().map(|p| p.name.as_str()).collect();
+        // A two-face card becomes two rows; the single-face card stays one.
+        assert_eq!(names, vec!["Emeritus of Abundance", "Regrowth", "Bear"]);
+        assert_eq!(parsed.produces, vec!["Win the game"]);
+        assert!(parsed.pieces[2].must_be_commander);
+    }
+
+    #[test]
+    fn parse_variant_skips_spoilers() {
+        let v: SpellbookVariant = serde_json::from_str(
+            r#"{"id":"9-9","uses":[{"card":{"name":"A"}}],"produces":[],"spoiler":true,"legalities":{}}"#,
+        )
+        .unwrap();
+        assert!(parse_variant(v).is_none());
+    }
+
+    #[test]
+    fn ingest_rewrites_tables_wholesale() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut conn = crate::db::open(&dir.path().join("t.db")).unwrap();
+        // Seed a stale row; the refresh must drop it.
+        conn.execute(
+            "INSERT INTO combos (id, updated_at) VALUES ('stale-1', 'old')",
+            [],
+        )
+        .unwrap();
+        let path = write_bulk(&dir, &sample_body());
+        let mut out = crate::output::Output::new(true, false, false);
+        let n = ingest(&mut conn, &path, &mut out, "now").unwrap();
+        assert_eq!(n, 1);
+
+        let combos: i64 = conn
+            .query_row("SELECT COUNT(*) FROM combos", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(combos, 1, "stale row replaced");
+        let pieces: i64 = conn
+            .query_row("SELECT COUNT(*) FROM combo_pieces", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(pieces, 2);
+
+        // Deck join: both names find the variant; an unrelated name does not.
+        let mut names = std::collections::HashSet::new();
+        names.insert("Thassa's Oracle".to_string());
+        let hits = crate::combos::load_variants_for(&conn, &names).unwrap();
+        assert_eq!(hits.len(), 1);
+        let (combo, pieces) = &hits[0];
+        assert_eq!(combo.id, "742-1295");
+        assert_eq!(combo.produces, vec!["Win the game"]);
+        assert_eq!(combo.popularity, Some(149575));
+        assert!(combo.legalities["commander"]);
+        assert_eq!(pieces.len(), 2);
+        assert_eq!(pieces[0].zones, vec!["H"]);
+    }
+}

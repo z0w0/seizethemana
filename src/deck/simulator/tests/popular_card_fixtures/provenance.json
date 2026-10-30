@@ -1,0 +1,2991 @@
+{
+  "additional_capture_date": "2026-10-29",
+  "additional_source_url_pattern": "https://api.scryfall.com/cards/named?exact=<URL-encoded exact name>",
+  "cards": [
+    {
+      "flattened_input_sha256": "699ed9bfcefd1ab133971763712d9424fc207a89369b3dfdf8cdbcd0ff9bf455",
+      "metadata_sha256": "705d91600989603f128f206fbad9d7fffa92e9e5fe4d70793387d2a9aeea1758",
+      "name": "Abrade",
+      "oracle_id": "f9db72dc-9a5b-48a4-a86e-7464d9a2166a",
+      "oracle_text_sha256": "b488fae9472b5252a650111cb32941825edf57c33cd9ed187120e068e218cfae",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "2aac27e3f3efc60322dde11db01378bd319e419911f8750f258f9e5cc5bd71aa",
+      "metadata_sha256": "b1f5a762084de21ab520b4372787f0cce2021e10a857a8ebe2f8c70a79b8df19",
+      "name": "Abrupt Decay",
+      "oracle_id": "1c747fe2-289e-492a-a846-aa77707e2dc3",
+      "oracle_text_sha256": "fd33bdad0b015d135d24b4ba8af3bfd2d32f973dd583a60560761ca0a7592710",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "a8580d034c9f07d98801da20345a02782be1f879ed2097660917cdea9ac19326",
+      "metadata_sha256": "8e7877022a6307c16f51bcff8fccf518e04e1d235ab7004a088a9bad4dc77f6b",
+      "name": "Academy Manufactor",
+      "oracle_id": "f36d1d8b-8303-44a9-ab56-531931641ea2",
+      "oracle_text_sha256": "0169653f19658a088a202009abeba072ae19b4b153129fd629e3b25395c1bda8",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "79709cad3492ed33c39d5f8666ce3892a3741621e9a508f4e0ff9729def149a2",
+      "metadata_sha256": "0fb593c7b5ac184833934a0c0c10e41bef8a8ba8d8bf4b07850a98ab65a4d950",
+      "name": "Adrix and Nev, Twincasters",
+      "oracle_id": "12a6cad9-eb42-43bd-9e68-aaf862cd83db",
+      "oracle_text_sha256": "f1c3543d34c90bc534c0995748e65cb4384f35295d82b7bb0737b9db2e80f33d",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "33818bafb7f3a412a94ad1773e6232e362911acb984d34d4a89a52bf1935650e",
+      "metadata_sha256": "b7f8c0f2ad544daf2e640d047e600c647efed46ccaaa89d0f044a5a45dfa0183",
+      "name": "Aesi, Tyrant of Gyre Strait",
+      "oracle_id": "6511f317-bd38-46d0-b800-7125a3f420da",
+      "oracle_text_sha256": "8802db182b27249aa23c57ecda04ee9852c1fa5c7a5af1ba8c3a6178781a77e1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "3653c70b1e2dbea4a68c557bce3e1ce6a0ee3b6cbeb522aab0964f2514f5a6fb",
+      "metadata_sha256": "77c5ad591851bdeddf2c6146052b7044654dd5377e3f51ceaa4da1418651b742",
+      "name": "Aetherize",
+      "oracle_id": "7c779721-cd1b-4696-9ae9-68ccc284ed2a",
+      "oracle_text_sha256": "99472fd00f4fe7252717a1ab851661124bf057e2756451ae62d7e90b44c6d04c",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "33be0bf0f9315ecf1a87286dc1123d73506aa20b92dea8f04e869f4f610bd73b",
+      "metadata_sha256": "b8ed18212a65a8ddb283bb17df1c9f3a8c61a8ec03f4f1f3253f22a08ce080c8",
+      "name": "Akroma's Will",
+      "oracle_id": "fd949f82-fc10-4e37-8aa9-6c7569fe3c55",
+      "oracle_text_sha256": "9fbb639e917c96b8843b6f4254bd334862cbf2d9ac09273d33db5986dba172b4",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "64b939f5e156f7a6b096dc43aa22beecb1583c59037917f6a414032d57ac2284",
+      "metadata_sha256": "30fe332d8499dafbe7543ad11ca12be1c3d14c41044c7d62c4cc0b220790943a",
+      "name": "An Offer You Can't Refuse",
+      "oracle_id": "234a734b-ba28-4f1b-9d01-3c3e7d516590",
+      "oracle_text_sha256": "54b0bdd28acb44ffdd77744aab67cd78e068c0a75cdd8a48e3f88b12b23f2630",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "660fb77ae6f96bf31d82d3d748f28cdd05216e15ea0b53bd465aea5376a5a409",
+      "metadata_sha256": "297fc4ea4a63bf527b8e5887292050347ff8f90a1573a9d98ee993963d6dddd5",
+      "name": "Anguished Unmaking",
+      "oracle_id": "ad09b3c3-c8e7-481c-8c45-e7f234935117",
+      "oracle_text_sha256": "0ae3d69a7d85c6122d5f13033b67448f715c318d37f781554491c654eb2110bf",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "c0d0bab06f5d7990952c62f3205ce9e0973065d4bf4f51a31362082463f62142",
+      "metadata_sha256": "7d8097aa1743f7cf4564af160075a0c229d871a50c96f0f0652b11de2c7519d4",
+      "name": "Animate Dead",
+      "oracle_id": "c0d8fef4-65f4-4769-982d-b397d2b7e977",
+      "oracle_text_sha256": "4ca2d3bc29bbaea69130cc215d257e61f9edb08a9c1178b3dda7fe4422759de0",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "214e4d8d3b197acac7f2d73cb335298edd5747fa191a1c8e8b546a12bb8a9266",
+      "metadata_sha256": "8da325b89b5ac269d085577c7be88061a8b8d8d7ee6423aa82604171c36dcb08",
+      "name": "Annie Joins Up",
+      "oracle_id": "4c3ad545-b375-44a7-a24e-58baacc4e4b6",
+      "oracle_text_sha256": "27541c9e847e83185e3df5652d09a7b87cdf9cf45d3ec196fcd743a12ef73174",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e1337b87651ce2dcda9f9a7ee6d3dd121228bb40b9847d68a986f06e8d864252",
+      "metadata_sha256": "5771e520f8c4ed276a4a534581c870a3073ec65ce9508c8438bbd2087e962e92",
+      "name": "Anointed Procession",
+      "oracle_id": "7246d45b-2185-4cdd-981b-5419b7d52bce",
+      "oracle_text_sha256": "e9c02900b99a05dd767a7270b584cdcb07c405f201299747590c947e342f95f1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "7b5c7c22b303b8c5e65edc6477a2174d9a97f660e80caec0c88d20bb83a00922",
+      "metadata_sha256": "67d30bac9a0306e62198efc290a86664a01bdf1fea1081b1b7cf30af65662bd0",
+      "name": "Arbor Elf",
+      "oracle_id": "4567a528-75f0-4ea6-b927-3a500caf76ac",
+      "oracle_text_sha256": "43fa0aa96df9f3dd1173343fbe2e832a2ad62ae2bbe3b30a64bb525d31a2b69c",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e75ab75c07c567f7766f124a98befe4a0c47cb98cb7b046c13ab1a5cdbbe579b",
+      "metadata_sha256": "2dfd499b4fdb04181f4c6a2d68315c2138e4644314bb7a5da4f05339d707d7df",
+      "name": "Arcane Denial",
+      "oracle_id": "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37",
+      "oracle_text_sha256": "f488b5cbf8f3aa12d9d80c398a06442c554deb68876e881899a23de05159f2cf",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "27859c8fd7e2316dd62cb8e3498e10bcdb41d4c1dc65c72406c0ded4f7570d53",
+      "metadata_sha256": "15c863c7d9c025f0a937f5331109fc97829318a306fa554ba2da162c3ff7e1b7",
+      "name": "Arcane Signet",
+      "oracle_id": "0bc7f093-bef0-4f1a-852c-4b75ebf54838",
+      "oracle_text_sha256": "d280dbe3c4db107658d5dd037440130e0b86ed10fbad47a6e7a0c3d972187fde",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "d9d3b223aea338af5b106ead6fd5becf5c44f69171b4fa52019520697a8fbdef",
+      "metadata_sha256": "25fa68232945696d6482d90423d515f1604364d8cd68cfef56b6fb92334c4ccf",
+      "name": "Archmage Emeritus",
+      "oracle_id": "8305d576-21d8-4ce7-8eda-a7cd9793aca5",
+      "oracle_text_sha256": "d280e1f071340b2f2bd59f437302b3b1ad31aec30bd49f38eb0d24a1769a2328",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "dc5f4ffdada650b9e9ef1a8239fa7c50c6f700328a2b8053a283797b52b70ba0",
+      "metadata_sha256": "ba93fba202d10d55a2fbd83beb821af7613369f7f26a14d596713a44a2695870",
+      "name": "Assassin's Trophy",
+      "oracle_id": "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5",
+      "oracle_text_sha256": "0dbb7b3fd3bba46f3b8907aebfa5be464911be625779befb7c146659bcba4da0",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "a449595a5115867c86a7503c25231a9035fa257fb298497b4566bc738caa0433",
+      "metadata_sha256": "80a1c69f82c905698edb8e56ceee93a78c9c1f5e461314a780776d5d0509b776",
+      "name": "Aura Shards",
+      "oracle_id": "8d03d050-391c-4311-8c42-4ee632d40fdc",
+      "oracle_text_sha256": "11d61485312f3fa0a88e27073a11bdcde8674188bce8d7459ed04361255a8e38",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "649d0cdb2d860826d616917fbdaf3bab96d8d87d1c91cf3b48f33eb64a8cfdc8",
+      "metadata_sha256": "e07a0a2cd9da1c32f553ca7c6e35ec920f38e7a9fccc0da528155104c81de9e0",
+      "name": "Aurelia, the Warleader",
+      "oracle_id": "0f5a3a09-2f07-4774-9e0f-e99d9a444166",
+      "oracle_text_sha256": "d546db4207008b6b44923227a53f88994af96681c26e414f50858df893df216a",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e9358e2a66bdefb73230889b5e66671e13b100aa241553002bfe0c7055021528",
+      "metadata_sha256": "25644013bbd57c5e7ba4373e106ed5142a9c228630762f19e76f91a3057691fe",
+      "name": "Austere Command",
+      "oracle_id": "09cc8709-fe10-472a-b05c-e89f3523018d",
+      "oracle_text_sha256": "0ffaa5a668879ced57c2180d8773f50994b511849c1f207889f2d2915d143e26",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "328111dbf9f19efb01120179213f89ddd0d93295884048cc689eea4c7d91bdff",
+      "metadata_sha256": "8a4ac76b87515fde268e482ae77153087436879aa2fc4da6e55c847c2dcf2d0e",
+      "name": "Authority of the Consuls",
+      "oracle_id": "55f3c721-e13a-406e-bc8e-d6cdc91ac477",
+      "oracle_text_sha256": "b1d5ddf92853fba61eeabe7d50f59495463cfbf762bb9d33f45c00af3d8b0af6",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "259cfdbc79a95fc60bff11af3a9126cb9c61573af8bba9a34e3e73c786cbb311",
+      "metadata_sha256": "d138f11ed6a7a48889cb999d774d18d96095c5d34f2f1bdcf3c7a0113726a1d2",
+      "name": "Avacyn's Pilgrim",
+      "oracle_id": "069f6530-e65c-4d52-85f3-e0a2acd148c5",
+      "oracle_text_sha256": "3fa59ec3afff4e07da38b1d10e1ed2ee6bfcc128dc635dc1c262a60a2d39b3be",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "a7254521d93635c506f8541cc4da24856ba8036529ed6ad01d53fd5499355210",
+      "metadata_sha256": "00c4806135d08e0236cfc339d6cec3f9bfc9a0679c7c8d6738a1d7941fec5114",
+      "name": "Avenger of Zendikar",
+      "oracle_id": "4ba5b3f6-503b-43e6-b66e-4f8c55cffed7",
+      "oracle_text_sha256": "6c86b833e0bd1f8906a1d5b6ad8efb314c6e5322455cb8c8fbc759be50bc5335",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "25cc707087bf2a0cf161fb25227219cb4672b5b5c2619939e13b0d7930ba23b1",
+      "metadata_sha256": "d3999e3940238bc608c6f200c9d0ddff7aaabf2f41fba095064b9cf115045b7f",
+      "name": "Azorius Signet",
+      "oracle_id": "e018773f-95b3-49a3-9674-6f04ddef2092",
+      "oracle_text_sha256": "f8e60eda4663f1680c66376cf5e62daad41358b554b68141355822e07aa23e31",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "0549f98ba1ab41f8e1a20f730a22c9bd7dd31fc46f1f053a936ae23467c8088f",
+      "metadata_sha256": "c0dd36bd6977526f93331dd2d0dd53ab047b7c843fe9411fee80a5f19b433bde",
+      "name": "Azusa, Lost but Seeking",
+      "oracle_id": "6c2c8bf3-9bf8-4a86-89d3-3bb36260dc51",
+      "oracle_text_sha256": "b6a7e479d3d5c782d58a8e66d483292772b6c448d6b3f728fd157885f59b3bbb",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "5c1c6cd96959b5933957fb619081ce15a86800be5134f1cd80f9462375e9ae9d",
+      "metadata_sha256": "187f6a3017be2cd739702accdcf613fd9b07bbf9ade4074e12f28b6873c601b2",
+      "name": "Bala Ged Recovery // Bala Ged Sanctuary",
+      "oracle_id": "d2075f58-b0e9-4e85-b7e6-0523a27a1d5b",
+      "oracle_text_sha256": "477808bac20739b8671791866809ac833a439efd10c618abba95b5c60df1be14",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "7960aa3e024503316c2fb1fc80a857b77a320a5a2820a2d3d981fd895b68e8f6",
+      "metadata_sha256": "ff950575c29bb044dde793502bea517ec558471e2413d4d9b2c96a346e66cabc",
+      "name": "Baleful Strix",
+      "oracle_id": "37688720-03de-4eca-a82d-a0afe8d58adc",
+      "oracle_text_sha256": "2e52b064e11788d952be8946dc19e6b26ddd2317a3eace5bde2986b9140ebdd5",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "fbef7a7ee6bbb7c7d38d4c0c068d8a889cec1a4b49ec45c5e2d2b9ab4842278e",
+      "metadata_sha256": "9851ba1f883b82c8b3a675940c2daefd181fc952ed2c6df636403792896b80b9",
+      "name": "Baral, Chief of Compliance",
+      "oracle_id": "baf80db7-2ca8-4bfc-b5b6-25ed51878dd7",
+      "oracle_text_sha256": "8f7a77a725809209041abadd6ca0b7e676fcdeb04f31762712056e842bff46ad",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "61ff151eff8ae456fe9de2326a097197cb6f8ec40e8f4c6e0aeec6355fa4b33e",
+      "metadata_sha256": "2fe33d23039c23130ed49f82b7be18379d232886a164b8905fd33867d2dc2539",
+      "name": "Beast Whisperer",
+      "oracle_id": "5da7eea8-bb9e-47ce-a554-8a1ee058bd7a",
+      "oracle_text_sha256": "7bdd17322d2d50a905ed67d2a495d269e9fbc4bd84a07a8328083aaa835ffd3d",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "a67705c7862958c01ef1adcaee2aef48105c50cc090ec92dc3b6d59223235b40",
+      "metadata_sha256": "a1fc6a7990026c1f28e2f9d1d3615fe8e55d2a92642b3442df87de5ccbe53365",
+      "name": "Beast Within",
+      "oracle_id": "7735eeba-693b-47e2-bd51-414379cf1016",
+      "oracle_text_sha256": "d1acd5be4c1fa1d5a483a8cd629960edbd9f08b691b81bdb80d4892f500c20ec",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "4d4a0bd69cfc357c331ab63804f0c3a52d2be428b1939b39aa474030571db410",
+      "metadata_sha256": "5b1d0a5367150810e1d6f903435be893fff95e3a068897c1de6af4d260652ee3",
+      "name": "Bedevil",
+      "oracle_id": "bceecc64-96f1-4e7b-8904-0aef90377764",
+      "oracle_text_sha256": "34efe4ff587fe39b944756bbcd16a7d556e1eeab63916cc62f4d0db1e1e7ab57",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "7abbaf6de50e1272b9273107bb7600ff0616759bac6b7cb2dccbb2a95e64b7e8",
+      "metadata_sha256": "bbd6774302626fb93ef3d2d328ca8dff200e073ea40f9d5b5fc799669129ae18",
+      "name": "Big Score",
+      "oracle_id": "a5cbd257-c836-493e-bb1a-76242619dea2",
+      "oracle_text_sha256": "d81590f3cf6763f4eac5bc640428936eb472c6759e35c40f870756e1e0ec076d",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "c6211c19ccddb3954ad987e6f02ec2f3432330fd8097c9b7de4c8fb3a81417b8",
+      "metadata_sha256": "deac83754c4cab2561ec9c4c117d8c5e2a100f4c1c4255fceb27f8fc05067f6e",
+      "name": "Birds of Paradise",
+      "oracle_id": "d3a0b660-358c-41bd-9cd2-41fbf3491b1a",
+      "oracle_text_sha256": "32bdc6b15c014d26ef6ce0e7109872479be2598e13eaa9f1664776adb1c440b1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "29c4498a449a38c32f0239b034c8eea50a9dee0dc654a3f9832aaa5509309e28",
+      "metadata_sha256": "9f7eb5862029f5a9ac6411da036aeb40471f44d56698c38791a8c6c0979c4822",
+      "name": "Birgi, God of Storytelling // Harnfel, Horn of Bounty",
+      "oracle_id": "fb81e4d3-1d8c-4779-be62-87cf49277e51",
+      "oracle_text_sha256": "8cfa4fa815bc4f4cf854b731a60f2c7cb67c3675b19d6f78bc44c1c06b463165",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "ec911d8df69656d1f10946c892d0d4ff0d6bc12f112098a52a5ccded242c7c84",
+      "metadata_sha256": "137de539976f0f75d46771a8c2b8017d82bd6613d01146c04113c7a52057d7ed",
+      "name": "Bitter Triumph",
+      "oracle_id": "776341cb-d2ec-423f-9250-92dc8bd8d503",
+      "oracle_text_sha256": "ff6d84ce20ad252152bd006587b0af1716d9370b88d13e8988babe676d6370e4",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "a330d0f828b73bcb78255eff2fec11ca75b050940ea3976e8940ec8d814868b8",
+      "metadata_sha256": "e1cc3ce8063dcef349593eee692cd5892b098a0f2c964dd154d9cc358699ca61",
+      "name": "Black Market Connections",
+      "oracle_id": "d2664f28-49e1-46f8-a863-b217e961a57c",
+      "oracle_text_sha256": "6cbd229fa6ee7020534fd75bf0c50623d3e086f4256581c9e0567020dcf712eb",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "1208a6cc689445e1a64e695ec797201616105a6ef7f2746baf9720883b288a79",
+      "metadata_sha256": "ff0b84855b14f960a772d65a4b2a4ab864f4e749e9d10861be042c9efd0a950d",
+      "name": "Blasphemous Act",
+      "oracle_id": "7a2484a9-04fd-41a0-8224-610c1c07ed10",
+      "oracle_text_sha256": "6d490ec9e42f855903eaaf571d9a534f2257ca7fa1f5b575ca35db8fa78e3ce7",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "414fa23281dcee02e8b4fcce2b08a1c8d0ef6dc2e931462dfc4441b0ecd42417",
+      "metadata_sha256": "5bc09e10b4391e4c1d26bfacdcceea619ea03de552c03d2dc44b95eef067b213",
+      "name": "Blood Artist",
+      "oracle_id": "310f141c-7f37-4729-aed6-dd9c09db448d",
+      "oracle_text_sha256": "d13b1d52b760c1dcb2bf84c1e1237c1c18202a23c7736c568e1c55a493d8a9c9",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "b556e8b940a9f27d516503bb9598f68386db648d62843cfe2079eefe0e428c49",
+      "metadata_sha256": "39bc8bb654242c3f6b3897f176ca78b04e0b13eea3c7d86cf05d3278d41b049f",
+      "name": "Bloom Tender",
+      "oracle_id": "0c23fefe-9891-4dd8-9bb1-eebdb3274e31",
+      "oracle_text_sha256": "32b839b08f5c88b1ddfc6b4cf00f36475a24343f968553fd7996cb5ef2dcbcc7",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "28d7c69f87e877db2f9885f0d1573c93d1cdf101088bf1505cac933649c8c659",
+      "metadata_sha256": "ff4fda306c2cd30c97c7ef46369b34afec285e1f23ca85ec68d61a19a668666e",
+      "name": "Blooming Marsh",
+      "oracle_id": "66fa2326-1b5d-41fb-b919-83bf9f383577",
+      "oracle_text_sha256": "8ff3efa4b6873f6ee3ae6a6fa4438471537f7a52b8e4589d2e298d9c9d41e2b1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "1d0c842c2920168b1293f4ad1fe79a2a2f34ae32231983cd3eb3fd8475f47008",
+      "metadata_sha256": "8a0898d1a1d08860b67058e1a4de80ae0427372e2ca5f813801ae35bd1c0fcae",
+      "name": "Bojuka Bog",
+      "oracle_id": "04b7362d-0490-4cb0-b5d7-2a7732f659ce",
+      "oracle_text_sha256": "4bfa9f0b2550fafef6fd4661b562b99ca1525b3c84b0f1d5fec1c9c1f6d708a1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "af36cbf5f8d8a771243ab6e6850d5a628ca4d88afc3f90aa3c6474d76e7dd0e0",
+      "metadata_sha256": "34b556f2e369d663565de704059f3def0b06048e15b730b5cd256facc990cbf4",
+      "name": "Bolas's Citadel",
+      "oracle_id": "2bd111bb-ce02-414c-b5b7-e0e037d8d96b",
+      "oracle_text_sha256": "12c8699ec9858dd844d31b1ce5dfbb5136886485bcb6d193f1a2ab6793043262",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "53130ffbf1a6e1d1b0bc1a04076867b7ae4ec34a4a9c63af53504a5547716604",
+      "metadata_sha256": "df4455e2933840c249cfe04f70a013908e771ed96ecd26053ef50d8d72fa243d",
+      "name": "Boros Charm",
+      "oracle_id": "2679d0dd-ba30-4a1c-b6a0-b3ac6c790496",
+      "oracle_text_sha256": "beaf77e692572cf34f438416e33a4c2fc1a774eaafd6f91dcab3f579a2d9df6d",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "bc5db403ef7517f1f42be20701453d56f58da7452f9b09b20c9b1f9871d3fa17",
+      "metadata_sha256": "61e1a6a97b44a97d05538e1acf11770f344c0f03b3ccf895d14e7514acaca96f",
+      "name": "Boros Signet",
+      "oracle_id": "41c84665-1f99-40ab-aaca-1188649eb263",
+      "oracle_text_sha256": "4b70bd6df7f2fcf5714f80ab9f6376fd08a0b7acf01cec50c07546debc18f215",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "466b1855699daa3817f614069219383e13e5c73519fb70b565ad87c9c14b52f5",
+      "metadata_sha256": "908d63dcf1b9c209e7ac2d60c7f2c6166ec60ff3fddb7f406626c68e54dc0134",
+      "name": "Braids, Arisen Nightmare",
+      "oracle_id": "e0445c80-fa53-4c3e-881e-940e9fce7f57",
+      "oracle_text_sha256": "4698ece8129f91d44998a59e973c0ed45a029802f51e893af53c138b8fd192be",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "2d2dfb793d261cf09c19f74503e94b26ec386429281e715d01e02e79e034960c",
+      "metadata_sha256": "b4f644fc593dcc1a31444bde35fc4f1fdb00511c2d7284c36b0f69641a8b45a3",
+      "name": "Brainstorm",
+      "oracle_id": "36cd2364-d113-47d1-b2c4-b088d9eb88dd",
+      "oracle_text_sha256": "ebcaa62fd0171b31e46e9f2bbd9a2012eb7614a5f7e1813e6ed2be90c3202d81",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "728e91a857b6cf5daa33e5333bf5f22147ceb5c227a14118eff3aadfc13aa319",
+      "metadata_sha256": "a5953d69e7d630e3a71c0055f44db6cd2d4bd8d307616a22aac585811d3cf343",
+      "name": "Brotherhood Regalia",
+      "oracle_id": "d169738e-af0b-4488-a399-3aa1d1933aa1",
+      "oracle_text_sha256": "7ca72fcf25d64827b1ca672f9217d98efac17b8f35f9bed462de2faf0c23df88",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "05840e24df9e9d94b73bf63a30ee9d8d6094b92d507eb0911891cfda38717e62",
+      "metadata_sha256": "895394819e263ffa3cfc429040e1e2833ee11c338afbe5abeb2a6dce6e718d0a",
+      "name": "Cathars' Crusade",
+      "oracle_id": "cc65ac73-5bef-4ecb-ad8e-39199084c027",
+      "oracle_text_sha256": "038008b9085bd755fdf7dbbc91dcfb15e73db729a803f1cbfb669d0a1082eba0",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "faea328cf80c3aafe795930552d308df4cb94e86428fc3e0f295c7eacc215dc9",
+      "metadata_sha256": "44394763a465a9daf0ee3a0e678ec793ecca2a697cd7c73ef72b6f6cfde98faf",
+      "name": "Cauldron of Essence",
+      "oracle_id": "a2f8cde8-bf7b-4234-89f0-a95f9dc937e3",
+      "oracle_text_sha256": "0327175ad030a475f7c49f5a2474f763686ecfbba980e744eceb046277f3346a",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e2b448f13cc04d65fdf89b7dab78042a0be6d621fe41a28a5ac7543d869397cd",
+      "metadata_sha256": "b3a3268873bdc037dfcc7a83a921faeee46aa21456b905ef6f8802341d931336",
+      "name": "Chaos Warp",
+      "oracle_id": "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8",
+      "oracle_text_sha256": "172c312389d638798c4b531572a06b17c50f82e94b1926f03d9ae1a34b82e066",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e4ab560f591c61f3b4f70c29de2741ecd62c53c4402b71e50b602816b294fe0d",
+      "metadata_sha256": "0f6eab996478f94052f969f6cd8b82152375159e1bb1b84704cf3abac87a19ce",
+      "name": "Chatterfang, Squirrel General",
+      "oracle_id": "f15b3b76-d38a-48db-bb44-3296183c8641",
+      "oracle_text_sha256": "8f288b206a662f400d34e22aa0a2222ff0a6c245c971f8ab3d8c787ad4b5606d",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "dc79e4f07e675c30b5692159a72166d61ea02c1980be30b13abd41a2ee54986b",
+      "metadata_sha256": "a1c798f6be02e4b7399da956f66a3f124e808e6dc3409e77f92f68db8aa00d64",
+      "name": "Chromatic Lantern",
+      "oracle_id": "539f5396-d99a-417d-a84c-dff7930b5900",
+      "oracle_text_sha256": "499b8a8da1e0f050df1ee3a989d332ba6e9d2eff85634be6186bbfc169aaa16a",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "bfaa089bed6fe81517c5ebd1ee255d81538c42305391b810d3f6d5980848cac9",
+      "metadata_sha256": "e1a765e820effe72496cc23ad7bb093e8dda363bd8e28cb5b0efb8bc00b2a18a",
+      "name": "City of Brass",
+      "oracle_id": "f25351e3-539b-4bbc-b92d-6480acf4d722",
+      "oracle_text_sha256": "6e3cf66ddbaf75e91c5e3736fd58105842d7c75138950711fb67f6d6e646f338",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "5cebb07f9ff2e15d28c06a58285f6aa58cfae4ccbc974fb4a6ea418db750f374",
+      "metadata_sha256": "99578b36d72857162c44189e6ba568b9e8bcb4a23bb2d88dd13464a5046de14f",
+      "name": "Command Tower",
+      "oracle_id": "0895c9b7-ae7d-4bb3-af17-3b75deb50a25",
+      "oracle_text_sha256": "d280dbe3c4db107658d5dd037440130e0b86ed10fbad47a6e7a0c3d972187fde",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "938ef67f5ed5535094deee4c91b1424216087f4c2479a1faaddc6c279b64b3fa",
+      "metadata_sha256": "cdb3f5a8b68df02b46ac8514a7bda58348794251254ac7e72d96678bd028f94e",
+      "name": "Commander's Sphere",
+      "oracle_id": "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b",
+      "oracle_text_sha256": "a729efd3c7f4da00e124835c9986c078dc0d5027951aedaaa870b212ec91a0ad",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "6ef13a62ce387eb2c171df374e09787fb02c6048c7fb98e04a86aa2881d05b75",
+      "metadata_sha256": "022b6d8a4b606d4c2b54de2f0f0c53748b2c46b8a7c444aa1a51cc9b44fd1b94",
+      "name": "Copperhorn Scout",
+      "oracle_id": "3d2ea1a3-72af-48bc-a8f1-98facc2eebd0",
+      "oracle_text_sha256": "f8bc94b61e52315a2f10e0f24cc68222cbaf4fec3cc5a14bfb0ec4b12ce0d1fa",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "e1773edd282265f4ec7eb598f32059d174c295e887b3fc135230ca975c2877cd",
+      "metadata_sha256": "67817219d7a84bdd5e0b9476ab9110290268b9c798e16cda71546447bc760767",
+      "name": "Counterspell",
+      "oracle_id": "cc187110-1148-4090-bbb8-e205694a39f5",
+      "oracle_text_sha256": "4a9e5faacc6a03091ac2fcd93b14fdbe689533bfe59cc643f4b55c9bc9c7b162",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "f2d4b9b4a68063e4e05a39203c220e41fd90e8dad6444ff6d43d6f7f1f04bec9",
+      "metadata_sha256": "42683cfa4a1323cac4ab87dd8408ad860cbd7c3f92ea8b290e81627aab444f88",
+      "name": "Craterhoof Behemoth",
+      "oracle_id": "8c52bd39-0586-48ca-b263-17210cf9feb6",
+      "oracle_text_sha256": "db14c13188e62f16fe9224a092ae07de744bd97e34af3d7c33f4fbd84b4dcb1c",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "9ff9f09232a125cdaab3eb984501566ae9a9d5c1f82c3e83c423be84a396614e",
+      "metadata_sha256": "a5ea6f61bd40f6f16aabfce453ce05e225caf3bbdb5eda7a279559ee5cd64413",
+      "name": "Crippling Fear",
+      "oracle_id": "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7",
+      "oracle_text_sha256": "41a9153f4a13d35cac7de835e1ca8a194707e2d828e8e8f0860873d883fbcdb1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "58faf56e5bf4156ae61b8da06b865a80cbcd4d1e41d9c8c91f004028301e1301",
+      "metadata_sha256": "6da33c115c533234ad46adf7d3c41b67e0b899e20d8ec6006071cc5d48b97db6",
+      "name": "Crop Rotation",
+      "oracle_id": "28b46183-c62f-47b1-9fee-3ba148202cab",
+      "oracle_text_sha256": "acef94df0549ec6f2272f958eb3a2d6fcad5890d131dbcee145c5f2d2d7003ea",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "248fbcac234efc0ae0be26261406844cf3fd874395d8c0a17a91eb58f5105471",
+      "metadata_sha256": "7534c70804a34f1342f0ed0fdf40666f536040250004aa05224bf823cddc7f83",
+      "name": "Culling Ritual",
+      "oracle_id": "15e5136e-ed15-49a8-b027-e09436673fb4",
+      "oracle_text_sha256": "91f8ecd406110fb29c634833906d2e175043a33134b28d52768743653f9c1da7",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "93415d815ffeaa96800565f9106d284b58227bf06d2c63f158857a5fb855bd90",
+      "metadata_sha256": "6bd2eb263789fc89c47d9e51bca283572ba675145677c531dfbb15b1ba850d18",
+      "name": "Cultivate",
+      "oracle_id": "8b755881-a72d-4e21-a369-d2924eb4585a",
+      "oracle_text_sha256": "7b6774d2b7d8a5fe957953bc1f1d64fd35e5a4ae7d4d15c12c132da0e1b5d6d8",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "030cfbaec1e968f8aa6aeef0a46517e9cab6b85935784fce9364e2ce3831846b",
+      "metadata_sha256": "d42a0dcbff6d63b4a88fd90342021a8812096167b7f7f1bc106c9ce5c7182814",
+      "name": "Cyclonic Rift",
+      "oracle_id": "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b",
+      "oracle_text_sha256": "079baf0e71df2092dfd73c55f9f550521f9b6e8e09f2955775c7d37fee927e73",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "ce68742e7b3f2980c4576affb3d72a6873e08afc481602588a380bfe0ecbb42b",
+      "metadata_sha256": "23afa435cfe3c94c2f2d5fcfdcab368eaf1e3e6910f89644c3ce3d72e371f46f",
+      "name": "Damn",
+      "oracle_id": "b01d61cc-9844-4191-86a0-f2db6d42d6e5",
+      "oracle_text_sha256": "28b79da42f024859fc4e745e9d20b96a82d521c126190d61f557caa5da9825ec",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "522e1563e18e5a8291d588de70515bfc42528b52b57818af2f27f386bbd6e3c4",
+      "metadata_sha256": "ba90438194ad96f05a3eb1ccdb5a4858eb5a76b403c6c84b723b6b16bd3429f0",
+      "name": "Dark Ritual",
+      "oracle_id": "53f7c868-b03e-4fc2-8dcf-a75bbfa3272b",
+      "oracle_text_sha256": "dccb0318a44e703467599500a8dfedef2bfc2d751bde2155fdfa5d1fcb57ea46",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "939b5f6c8b4a7c74eab9138f674a0dbafd3f35338835a19f9570e1c76cf0376e",
+      "metadata_sha256": "9faaefa411cfeef79afd021d7ee5d66759bd2f448d57c6fbab5ef17116754b26",
+      "name": "Dawn's Truce",
+      "oracle_id": "37c06f89-db36-4937-9404-2b07cd22e1a6",
+      "oracle_text_sha256": "5ee4916c8f0062e26727b0dc1a0c00dbd233df781828cd3bcd48315cd7306e99",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "7d59477cf0b1aa0169bf4a3793afbcc0575dcc17e21bcc2bd97320a2a821390d",
+      "metadata_sha256": "4d1be71aff4bcdb06becd8aaec28b8fe5fa9ceec12f2e775ef569fdffc5d5dc5",
+      "name": "Deadly Dispute",
+      "oracle_id": "457af74a-02b3-4659-846d-63e482667f34",
+      "oracle_text_sha256": "2cd77e65d5ade0638c8312dc07f9cca9c8f76a97591b8ace7d5cc9950c8617b1",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "8e0576a49745b7dcc695102a14f1e63702234791a29f075ec0b11b35931b80ad",
+      "metadata_sha256": "d369b846d9c560d9140b0778c47c2721c31783e5f33b3a26965d0feaa95bd013",
+      "name": "Deadly Rollick",
+      "oracle_id": "0456ec64-2c81-4763-a352-8ff64a4c3d6b",
+      "oracle_text_sha256": "4640156eded791c4f745b6deb64da824811a3b677969b96ab9f4c22a36f4ed4a",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "10e94dafe03d95fcd4f0ce2bb5940fbff61108a8b66b4b56d641d69aeb2ba75e",
+      "metadata_sha256": "5031243d5106451b62f0fec8a2e9e894baec91f9c4d105a9369aa4bd8ae0e023",
+      "name": "Deathcap Glade",
+      "oracle_id": "f6d24565-5b32-4eff-b2e0-6e2c25516ff0",
+      "oracle_text_sha256": "3d70f5aca199745238e5082b3f998e0ea1088edc3db65f2fd3bf1f7aa8bfd771",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "fca85d17f6c7a704ecdb23fc5c218632d1d491027d281a149f336bf580e54052",
+      "metadata_sha256": "9c6a1a34a31402cfbea88354fc24adb8447e100320e393b4f0fc8643b9ac595c",
+      "name": "Deathrite Shaman",
+      "oracle_id": "22f1a4a4-c423-4d1c-8775-0ed604a9fa51",
+      "oracle_text_sha256": "c0c60bc2a6773241e51509f17ef6c9c478cbc3e4070a6c02437e9578f13dc6da",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "cc16745e39a6c6610e4b1be4a1f4a83fa22f4a2ea3ad7aacfc62dfca7d0b50ca",
+      "metadata_sha256": "c406c0fb8dcbffa9dbb63916ee8983b7b8d288c35da3b789ff9a1600451ff03f",
+      "name": "Decimate",
+      "oracle_id": "a4e5693f-12a0-451e-818d-d6efc7b4ed25",
+      "oracle_text_sha256": "8d71b3aa094139624eb13ae0fbf467525ae7716a8554ad3941714da27918e252",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "7e0251e6d2e77ece5846ccb017bed476aa765954cf5411d9eb77bcfcdae17b16",
+      "metadata_sha256": "3b67f555f8557d82d4e2f1dbbfba075b0d05ad8a03ce17de0e3c378ef20547a6",
+      "name": "Defend the Rider",
+      "oracle_id": "561af57d-d43d-4d98-9ef6-18a0843f22ae",
+      "oracle_text_sha256": "8f010e626dc06b8fd4d2051150430d1fadb0821c02a16ec70b7b5135a5a7c209",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "4153d839b166fc9f052d173b3db763e706979fdf11332f1e1a53988743becdcf",
+      "metadata_sha256": "ccd1962c69ee508e1186e1c3fe6500357b2f721ca4d112d0d5cc96e6d3822713",
+      "name": "Deflecting Swat",
+      "oracle_id": "ae120613-97d6-4393-b39d-c3e6c076f5d6",
+      "oracle_text_sha256": "06f85730eba0d29a914bbc25bc5f9d94db9be132491e9622adba926dcd7ff747",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "79b66d8bbe2fed171714b5bdbb1ca22af333a2a9ca839e335d470c3deba26995",
+      "metadata_sha256": "17bd8dfab97bc2aeef7322b54eaea37d82c198cad243660b10ce838a7578f45f",
+      "name": "Delighted Halfling",
+      "oracle_id": "f9d3b046-0b95-4103-a630-4b3fb88bb60b",
+      "oracle_text_sha256": "44b26c4be896a9cda812f10e500b7676d19da09115eb95faf56d5991345b5015",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "10b81e840a75c46477a2ed85067e7611e9cca073b4777111f8fd63078fb3f2b7",
+      "metadata_sha256": "c208149334e5fc7fbef0ab4768a557f6c6c327ab5b129f9cecca1607fdd07dbc",
+      "name": "Demonic Tutor",
+      "oracle_id": "82004860-e589-4e38-8d61-8c0210e4ea39",
+      "oracle_text_sha256": "d62fe25083e044aa00ce0bc12fd7bf7a0fd80dff8df9c621d6b06c158e0c6225",
+      "source_path": "sources/scryfall_1.json"
+    },
+    {
+      "flattened_input_sha256": "b9013682416cd86bd269f30d8473fc8e00c4beaf5c5a920c11161bd32fd453ad",
+      "metadata_sha256": "de496fd6e6e9a24b8e6ecf885ad634687ec0f273a11a31a85d4d7bba46eb3d25",
+      "name": "Despark",
+      "oracle_id": "bd16434d-55ea-4c5a-a9ef-752971a4af16",
+      "oracle_text_sha256": "96811914a96b9818ebd2cbd3c615a8c1d27ab946be6e8f93e9991d9542b403c5",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "70bdfbb75a79735f5321a3b6eda5114bd5ca4b3343858faecbdec296f115abd5",
+      "metadata_sha256": "e8b005b31fa7e701469d0a23c59a42edca1254a737c7f1e363f763943766e445",
+      "name": "Diabolic Intent",
+      "oracle_id": "038519b9-bca8-4b27-b5ac-2409595469d0",
+      "oracle_text_sha256": "f6c117d894def9cde94a8433fcd6a468d884b2c063cad38c26463ec67b6c69d5",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "4887efac7bd9279ce19f12acb39a032e739a95a04c4b05218214cd28fa64a11f",
+      "metadata_sha256": "94fa75b62a0cd61db94a45f3180a9a215203931893a985d5e39893aaa76103ce",
+      "name": "Dimir Signet",
+      "oracle_id": "7d881c57-0bd9-4c57-aa4a-b10808b86143",
+      "oracle_text_sha256": "0a963f29a41348e137ade0add3407bf2835764933eefb932e76345fa8e6acc35",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "6ebab9ca7519d36e51255121c48f6612594311dd692c4ff2775996a7e1f0a082",
+      "metadata_sha256": "c77b7889f5563a1148d764298c892fa1917dd8a7f2fdf8d8f5b98a0a72da0b60",
+      "name": "Doubling Season",
+      "oracle_id": "01546b7d-a233-4176-8843-d732074dc5b6",
+      "oracle_text_sha256": "ea735a30cf4a60a573404033f25dc2bce12a3ebd005d7641dad5fc21a58c0ab1",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e845775326c386322c1e4c34b0db22ac1042d12ac8750e5bb00a4025c992366f",
+      "metadata_sha256": "1d63ffad31216ee0d81100bbd7efc62aa48b83449435f185d062cd1e9f90b89f",
+      "name": "Dovin's Veto",
+      "oracle_id": "1b388371-f9ef-45b4-82a3-ca20a8cd7807",
+      "oracle_text_sha256": "4695eebecbb82759dc4b8c049805b712a016f50d2604b7d53af163a784027ff5",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ae5cfaf4614ed3060f3630df729c6366664fa253ad44867fc75f60774a8aa52e",
+      "metadata_sha256": "9b171d668a8bb06aca0b8efe02c5819979ed5ff21a10a2b35d010f998d147f13",
+      "name": "Dryad of the Ilysian Grove",
+      "oracle_id": "bdbde5d0-f5e4-44da-b27c-b4ad6f374cc9",
+      "oracle_text_sha256": "51e6e70f0f437f306af69a25cfe63ed39b5b1bc37070fc08fe45fa0a778f86d7",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "6c5ebe8ab6abaf23259fe48534df425684d71ed5881eb66e2fe0b1bae588a229",
+      "metadata_sha256": "83047a456b03c69e514be1b021c39306189b3f7dc9ec3af6cafc859743f5e128",
+      "name": "Dwynen's Elite",
+      "oracle_id": "3d4a7dd3-9258-4bd1-adc4-08f0205e196a",
+      "oracle_text_sha256": "ef621ad387f6ff9f25e76dff8e59d16687aa43f1618f7343549f23b54c5c271d",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "f1d19b50ef6217b770085cf1a103c05238e4ed401b7666e93d06d0248c857d0c",
+      "metadata_sha256": "152ba1fb343739c4ac088fb4c60e7344c39bcf034eb6e5004fb7895862cdbe08",
+      "name": "Dwynen, Gilt-Leaf Daen",
+      "oracle_id": "30d0d75f-e94c-460b-b957-9f1d655c0f65",
+      "oracle_text_sha256": "088c01ad7d28a732033937b4a1c80bec82a92c020aee0d1d742af2c9897b88f4",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "296264bc43579d246d46b52ad331353e60ec0f684bf42576a63c8a339a5ee7f3",
+      "metadata_sha256": "c0c87f2fecaaacc3922ddbe4da7ed1b4f4ec358f168f06e94e3a39c186a96628",
+      "name": "Eclipsed Elf",
+      "oracle_id": "7c89ef4d-b375-4644-ac8b-034effdbe98c",
+      "oracle_text_sha256": "c486ab5d32cf56621412a61b580c43a79b4b25d8730400160c6cb62caacb92c8",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "13455ccfd074401cab508d2e59b53bad49cea29d2eaa99d7b25e4863657bcb0a",
+      "metadata_sha256": "f67b67ca9a27e7fc224fab7057f8e47d725776bfcae1309e3103ebcc6ac7bf30",
+      "name": "Eerie Ultimatum",
+      "oracle_id": "5674f6ae-ed5d-441e-a534-b5dd415165fd",
+      "oracle_text_sha256": "7c14f049011fd9c42e3aa1d5e0a48fcbd34def398e4dd9b6fdac25620f8e1779",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "684ad10f214e3d052c0d31ad3810f5b9305144fc7965a47ca2bf37a60f7bfc28",
+      "metadata_sha256": "3d6f11e6c63984a74828d926887059512972e58a4c5116acbd42bd2aa4e30643",
+      "name": "Eladamri's Call",
+      "oracle_id": "4acb6612-54e8-428d-acb6-c7259a5ad6a8",
+      "oracle_text_sha256": "a2f031513cf685873cf5feb830460f3bb41ddd94a61b9def591becb74bab59a7",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "d5bae1bda3ea6ca71c129a528bd2f1ec252d95be3b5ac22e95b45bd95598ba7a",
+      "metadata_sha256": "7409a57e93e590564165cadbd81c2c63b6d780229beed9029466d37630b51c68",
+      "name": "Elas il-Kor, Sadistic Pilgrim",
+      "oracle_id": "a4d33e21-d3fe-4d5b-903c-b75e859d6f7f",
+      "oracle_text_sha256": "4997c5ef256e75f19acb14a57dc3ffd9d41532c31d26386a7aa9b39dddf51401",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "f498823d23c75e1a31902610799b09446b979acbf50c817072caf0c74c474764",
+      "metadata_sha256": "886ed772cb168dfdc02ffaa96d00250b1db450a0bc55d3dcdc2604292e5884d8",
+      "name": "Elven Ambush",
+      "oracle_id": "a2373025-20c1-4416-91f7-e51f68dbd146",
+      "oracle_text_sha256": "2aa3557320f6210c3856f918949c9eaf67b0b351602db63cd2cf5f0522c108ee",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "b48eb9df26df3c85843d89a34730b704aaee61fe5e957c54d7e653443ab9201f",
+      "metadata_sha256": "33abd7b82ea0f60bf1f8ac6d8cae8f48971cf8cc9c1eaceb93bc4b7c7a43a14a",
+      "name": "Elven Chorus",
+      "oracle_id": "4d5df2d9-06bf-4bec-9be0-dabe75a858fb",
+      "oracle_text_sha256": "21a47617c78a709ddff313ca1667cb15c4b02d90999a3fb61b36cb5609c0fe9c",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ae7e0952f9fe281620154cb393571f144603811145b5a7dbc9d4ccc31aaea336",
+      "metadata_sha256": "a8aca3e879f87258ee24fa7d1ba3b4d85132d6e08a30609a53760b43398c0d5c",
+      "name": "Elven Passage",
+      "oracle_id": "97a2cd39-6b54-496b-b3ac-dab9dfed7edc",
+      "oracle_text_sha256": "5a984ed110bd199c191aaa54c832fd7b3b2f1e0ff5cb81829e0b9dea1a9d7719",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "0629e315c662b88b08d1673921b2265988baacd8356e7b3e76d4f3aabf46024a",
+      "metadata_sha256": "b5e672f4431bc156e75bc6e04d788e3c5e5f32176fad7a4bf14f4526ba038555",
+      "name": "Elves of Deep Shadow",
+      "oracle_id": "20347559-95a9-4689-bb79-c5bb3809b719",
+      "oracle_text_sha256": "09db2fadab2a429f6c6975ab3da6ca6bec6c5fd775040223ce6ee5190b49bdb3",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "3ec70abb1c334587c873f14bf070449b643a291002f641cdded986ddc9bdae9a",
+      "metadata_sha256": "fc21399ea62f2f8891b2b1154f39fc4327c5690c80384f655191c3ba7b3757fe",
+      "name": "Elvish Archdruid",
+      "oracle_id": "6e2c2423-d854-4478-99e6-64f29851f026",
+      "oracle_text_sha256": "b9172f98f944040b36c4cc342e7305b93311b30bfe61a62590b3ff016d54f121",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "2f31368663a0093e29298341226f62e21800a3140d066a8c76cd47ccb77eccab",
+      "metadata_sha256": "654d4afc8c2eddc939453b1218adc202fcc068ed085759e4bc0e32c140491226",
+      "name": "Elvish Mystic",
+      "oracle_id": "3f3b2c10-21f8-4e13-be83-4ef3fa36e123",
+      "oracle_text_sha256": "01933d8e2b5c12b519bcb781c0bfe9b8f789a31383ef7c73640aa20712de333e",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "601fccaf49ddcba191ce55bf47af81abcaaf7e1d514c7cb8a1bec4814d7835c3",
+      "metadata_sha256": "5f26cbd9a4f15149920d9f2b1e1907ddacf2e79fc150996517f23fd02c32dd61",
+      "name": "Elvish Regrower",
+      "oracle_id": "adac526d-1a85-431a-a302-0a4b8f4a0c44",
+      "oracle_text_sha256": "bc7d385e9e8c8e3ce4badefdebd13992303f9de7fbe26570fed341095fd5b5d1",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "17784f9e8c38280ed1517145a4551aee9f2278f2475aac324348247251eb23e1",
+      "metadata_sha256": "c75752faa6382d585c42b65fe31ebae2fd334408df2640920e8bedb6a6730e5a",
+      "name": "Elvish Visionary",
+      "oracle_id": "c6a3a882-a127-4590-93d7-679ef4313efe",
+      "oracle_text_sha256": "c2ebaccfa719ed167b899010e3977831d703fec10a21eab6b8a80d25a50031ad",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "c7cb947b4c1545b3fd6080af26b0b629a5b3c10fbedc99082975a1889b4117a8",
+      "metadata_sha256": "6d5bdb24884a2f48dee31c12e6c3c7d5b77a1b264d3de048a4bb54f78a6ee69c",
+      "name": "Elvish Warmaster",
+      "oracle_id": "bda83ef4-e345-495d-878c-4da171f997ba",
+      "oracle_text_sha256": "3feae3e365b40c092b4429131eb838f2a4ade8ccc01ad2bc49a7532e58d444cb",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "cded433098c0816bee66d410d11dfd22337c3b3e0335f90a93060e6cc822d29f",
+      "metadata_sha256": "7696d7d4feb64fd5d3a1dd08b24433ed4f9aca89474baa93fee99cd0651a62ef",
+      "name": "Emry, Lurker of the Loch",
+      "oracle_id": "da3e7d3d-2ca0-40c3-9602-fca37c92f507",
+      "oracle_text_sha256": "3367c6b3b190d4190f99d98530948ae9b44625a82a4569b41fa91ca91498bbdf",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "8e471a02fa11269dd11f448b47eccccfa300b25c2fad62575959196462fbc2eb",
+      "metadata_sha256": "3068d66924aac59ad1e27039f2b42fc8ea645e329c9006d7a44574c3a1d89a7e",
+      "name": "Enchantress's Presence",
+      "oracle_id": "795b096a-2bce-4588-a2c9-abc5ea40dc0c",
+      "oracle_text_sha256": "7f2fa421df34eeb4695c75b5676ba0a7ad746e71f8000e4b69e54c7ab2b30763",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "4dae1b7cfa1f2a3a40ce3f5c4b0413cbe12fbecb08f6a3766eb2964235c93bbe",
+      "metadata_sha256": "0c4dddfa435e23ff3f156b4b4492c5c28976ab8060a8eccce9ce9ec157371c56",
+      "name": "Enlightened Tutor",
+      "oracle_id": "c5229c17-b7be-4b05-b683-f2277edc4849",
+      "oracle_text_sha256": "6fd6a8027c82716fcb049ce33f4641f26fc6ee02456d6c11151768c8e821ed8b",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "06a0fa212bf6c99f71c742ae698a4777714aa44c423ed5340e9b979025d48179",
+      "metadata_sha256": "d4665f6144995b312a46d2fdda2d55878530dec6dd54fd3d721e20c35c3991f2",
+      "name": "Esper Sentinel",
+      "oracle_id": "5def9f38-0a0b-4e8d-9f9d-29dcb46520b4",
+      "oracle_text_sha256": "bbb6a8ed2daac78de249d65f0088fb32be321eecc0407f2f7e4085b151be7d45",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "66a668780211d3fd6d88ffa17a2ff9097f3cbcb962549f2fb77cc3beb4195714",
+      "metadata_sha256": "4d91cbf511616902948327b5500ab698356dea9f3ab050d474998014a506d511",
+      "name": "Etali, Primal Conqueror // Etali, Primal Sickness",
+      "oracle_id": "7514e401-7aa1-405d-9f7a-312b4e630cc2",
+      "oracle_text_sha256": "723a142160a190f96ed813eb4b80635bbdc6fae0a62936e1e75bc8317e5c9efc",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ece75f4fa7b80e4772e85c61c8962fccfb4d1ab26ff47e99d2d92dad954fccdb",
+      "metadata_sha256": "5b97cd7972f452399b6f6bdd34805ef3a7f87f8f4d52dc261bcc46e839eabf33",
+      "name": "Etali, Primal Storm",
+      "oracle_id": "078def07-ae5d-4591-8db6-d156834aab97",
+      "oracle_text_sha256": "be5b9facc45d2ba426895cf853aa20baf81927c1c0f044355a2cb6c4edbc9ac1",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "8f525bbf4b9ecfc5737443be7dd02e74a99e73637302563dd62f0011fd4c15b3",
+      "metadata_sha256": "e4f9c4f783ba1169710ce5f47640d3535dff9b22137a537b5572701252da1cac",
+      "name": "Eternal Witness",
+      "oracle_id": "30b24e8e-3b0e-4d8e-90f3-f66eb7c1858c",
+      "oracle_text_sha256": "1df01f52767e20e8dd9e476de9a6e68266d7ab7ffe6a8eef278d18355e9e36a7",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "9e698b834672b8ade754d85b36193b9de3ccb2354478dcdb9955a24f93a1229c",
+      "metadata_sha256": "e41224cfabb8fac24f3e51f221bde3cf65cd267a1a7963bcfb094b31e819c08e",
+      "name": "Etherium Sculptor",
+      "oracle_id": "96b87445-6362-4a17-91b2-cbf203fd03fd",
+      "oracle_text_sha256": "11650c263b80d183cb35b11842b0d91c188a2051ef31dafb205cfe9f1ce77478",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "31db69680915141d805a475b5eac325e1bc0722c453fc4d15b2d6ffc88027a8e",
+      "metadata_sha256": "ba0f870c49fa30b2cc27a51d4d7a85e0071ce2a4dc4f245ef438449adce12a83",
+      "name": "Exploration",
+      "oracle_id": "0c2841bb-038c-4fbf-8360-bc0a1522b58d",
+      "oracle_text_sha256": "698d943c3ffc693bf1b3bffcf0e8ed8874cc33127ad63aebed11b6288e8a387e",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "3f8b6ecbc9fc41af17f026a60e2ec231ecc9f02cb887d330b7ee5ea9463d5ea5",
+      "metadata_sha256": "d47dc2477424136e5b63258e1d611f9fcada624e60640d8f54935ef422354696",
+      "name": "Explore",
+      "oracle_id": "b8f566ea-8283-4afa-9ac8-737e26419283",
+      "oracle_text_sha256": "e064aa95ff1f2f8f918afe6183e25fb27d5c15a995044b1ef6366da41db95a93",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "37511d274fcb7fde7898a62627e846f8095409531a8fa63a5789128aab6cb3bc",
+      "metadata_sha256": "64c9557be4fab4ad055540f246a26ca3890192def9174ebb5d1a1b04e57973e8",
+      "name": "Expressive Iteration",
+      "oracle_id": "c7aecca5-2f67-4245-ab2d-e723d8b23a67",
+      "oracle_text_sha256": "fde7280d8186c8ceece5ce936f254b3b49b606ea131d06beebc37d56b44e049d",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ebd3fe31c429e1acb4ea10225f2b309f8379f0a2df253fa0beeeef8c3350155e",
+      "metadata_sha256": "064cee9a5e78b2b77e61b125f11a2b1b678c6eb3b4f33d53f671c9930744f9a2",
+      "name": "Exsanguinate",
+      "oracle_id": "8164b1e8-3350-465e-8a17-75f57d326344",
+      "oracle_text_sha256": "3b34868f391b95e8d503659484d4d3e5d6842f8fe4af7348daef683913f58e69",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "67e83962a706b193c4b194cde47a3ffea0fcccbb82ae1beeda0d4f889b472819",
+      "metadata_sha256": "65adb78160d7fe1723d628f05f66979eefcab5dccd4d4f73826f39b28665ab47",
+      "name": "Ezuri, Renegade Leader",
+      "oracle_id": "6734497c-16f0-4c4b-ba24-337333511fc6",
+      "oracle_text_sha256": "82b2e81e322ed2c7d0c729966b0e7762c29bca98a3b0b518f6a0c1cb9e021022",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "b0c9bc9f7c371abdd7abdca6b66e804ef3ffc51baf0852c9d3d2d3b0840b6058",
+      "metadata_sha256": "ddc0a2886fd63c5ba1b64aeb984d1654052198aa90fbf004a5be35db956f0fd9",
+      "name": "Fabled Passage",
+      "oracle_id": "0c85b8f7-0bd0-4680-9ec5-d4b110460a54",
+      "oracle_text_sha256": "23882922098ceee61af323df907085d39dd4bb326a68f1ba029f0a52a58b5a5f",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "05bdc36ed01b158b060c1b7c7d7bae0165c425bd17d651ae712aee914bb11535",
+      "metadata_sha256": "a001887f6ebf97121ac4caa0fabc228762b24b47ece7fcc34c9985d3c7c61157",
+      "name": "Faeburrow Elder",
+      "oracle_id": "70a6f08e-854d-4e2f-9d8c-c45ec3231157",
+      "oracle_text_sha256": "9e15203ebf5c2fa1fd15aca4d36f830102d39bb970556260ad449fa5c926fc69",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "c0cb48ae57ca184052ef8bf40586d4e6148a0e6d70518d4b23a72f734f8db6cd",
+      "metadata_sha256": "679a20fb7a144e79ce57c3734042c64dcb93b9d85af21d0523c034d655121d84",
+      "name": "Faerie Mastermind",
+      "oracle_id": "a984db23-40ea-428d-829f-e944267280f8",
+      "oracle_text_sha256": "c96bc19a10e4e4dfae7696ba49ba56836287a49030e442ad0a26837b63ac7b24",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "438853c386c18be55044690351de5447fa7acc13c0c6686c871910cc7dbceee3",
+      "metadata_sha256": "cd4b9ca81436a2b1aa0eba50fef332078db4c50dcb90624fb29d53da0330034c",
+      "name": "Faithless Looting",
+      "oracle_id": "3d6fa57a-aa53-4b5c-b8af-a7612c823117",
+      "oracle_text_sha256": "c5338bd9e22086dbd7ec9f418d363339275a75dc6b8aa2ca1d2bb6283395f41a",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "bac8d58b4824a0636fe465667b11d8edf575d8f7d4d89d61952df53bf363e1de",
+      "metadata_sha256": "a1aeecb2d8e60341d068b6cfc6656e2640ab649059aeb1160ce4dc809c487c8e",
+      "name": "Farewell",
+      "oracle_id": "4eb813fd-2d5a-4b02-8193-662681ef4e7d",
+      "oracle_text_sha256": "572a05197d3e33316274ff63a093cd92ec09913b98cbd43ebb9fc1440cb66256",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "685b6b1b4124cb109f0d091ef55ecf9bb4e57626a49c94e555f6b199f7dbf649",
+      "metadata_sha256": "d68cbe11ccb51a268de82a0c276fedc118bae629a931c2cab4a604a83a3a1531",
+      "name": "Farhaven Elf",
+      "oracle_id": "4ce2357f-93e6-40ca-beca-8f4e15adc464",
+      "oracle_text_sha256": "c16091f61c25aaf310abafc79e3adfe218ee7c61a2c8bae70e1751c11436df73",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e181c84368d708186bfbd12b1e8b95e1c81e08f58df60ac7cacfcd0093f7e694",
+      "metadata_sha256": "1e35913bcdb7fa461869f0edb6567be26b26994d1d457404439f9a30e9152ebd",
+      "name": "Farseek",
+      "oracle_id": "495e52e6-4c2b-4574-9474-eadbdcc8b4ac",
+      "oracle_text_sha256": "d7b1bdcde996d56659f903b9f1b16792a7090d0d1442e0e1257bfd27d39b24a4",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "23b0b8719ffa7d4522506f856e6c16038755ecada4f27d69697ab0f4f98cd2b1",
+      "metadata_sha256": "e18bb21813f0b763031f5ff68ef13a47814d05c91a6b3993057b5c305940e884",
+      "name": "Feed the Swarm",
+      "oracle_id": "5825997b-10d7-4a36-972c-a80ddd90b8ed",
+      "oracle_text_sha256": "85e9446170fd7625e987b3126abae2ae48c4dc67bc588c62108af88e155c1bfc",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "982fb87ce2093877bc6cfe6d3b4150d4d8b924c160d49e4d8d8cb862a1cd4a97",
+      "metadata_sha256": "fcbf14d0724f7354c84ecb8c8a81a6757e95597cef15663344504c43abc2b608",
+      "name": "Fell the Profane // Fell Mire",
+      "oracle_id": "053a69d8-2b5e-4f14-8b02-ca405891dc4a",
+      "oracle_text_sha256": "4aa1c795f05855363f76d25bcb79fb090d3b0bcd3a5bb6d9489a990fa5850d40",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "69b7ab04825c35b98cbfdced559da40ae0f515ac88af462ccb721528a489dfdd",
+      "metadata_sha256": "063707b4c855bbf5b257ea7a88b572fab8ff3b11cf648a85d2c204d399cac02c",
+      "name": "Fellwar Stone",
+      "oracle_id": "95560508-7ac9-4be9-8a3f-3c7d5b52807b",
+      "oracle_text_sha256": "6c8e8f6f877d41a222641eca4fbbfa9e23c1302c70a37aad05c53da1a63ee78e",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "20c540d0e76840730d927ad612ab1d820e375e39dd5843c7c5431bd940fb71fa",
+      "metadata_sha256": "18545feecfe7cb1e69ee1c054803007323da3202621928116d14426c38f504d8",
+      "name": "Fierce Guardianship",
+      "oracle_id": "d09c9cba-fdd2-479b-ad5d-d05181c3e3f9",
+      "oracle_text_sha256": "7fd412fc556508409a14a21e2fcee453c67b9ccc972726dc1d6c706a2f4a8f1a",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "7c60cf4c832cb2f98a55585491bb62e210dde68a4cad2c7dfe79659e5ecd0aff",
+      "metadata_sha256": "684eca7281962acd2825ea887c91de0187ef766003a21747f07592d9a179e26d",
+      "name": "Finale of Devastation",
+      "oracle_id": "69872a9a-fe54-4e58-940c-89395af71acd",
+      "oracle_text_sha256": "8bc3e6788f8541ba14a3fa7e291f359c5cf16efe242f408ea8265e3fced1e54a",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "2c020b685bc317d1f3601fb2832ed4d64557da489a9350f48b7d8a5f7a89c012",
+      "metadata_sha256": "ded59cca547adde419d86d560c324d63b623578aba733d5c72941fdbe7729a73",
+      "name": "Flawless Maneuver",
+      "oracle_id": "4e183439-17d2-47ff-9d99-5e22821d91e3",
+      "oracle_text_sha256": "9b908e3772e390e0a1c04520a7b3d83626863613ff906d1e1a2f13a5838f6d57",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e9aa6c02ac971ee69248558f953a8a04f1e9cf0118fd8ac7fd19c77bf53240db",
+      "metadata_sha256": "a636526e987f5820b36c6631354f8d483108372ca80750c38b4f6a6b3686a8f7",
+      "name": "Flusterstorm",
+      "oracle_id": "86bf58f2-7f25-4e10-b797-25e0e8e67769",
+      "oracle_text_sha256": "257b765e2991b1ee0524f8317dfd145ec379ce7b5809601726a31b86505623ec",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "23b132ee42023b7e83d862a8293df7d63fd073c5a3d52e60b990d42e416e7c77",
+      "metadata_sha256": "65635e6c3b593681ac167f632c8246234917e188061cdd4a66e24852b9549d1f",
+      "name": "Force of Negation",
+      "oracle_id": "ac2173f9-f223-440a-9231-fd98762bdc6f",
+      "oracle_text_sha256": "0f021ced5dd6306c621a7497398ced69bd431042722941341903da4a3649ab85",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ffe3fe7aa5e12b87c625074b0f399b9c81cd9f9a356e27c31f2396349b3acc02",
+      "metadata_sha256": "d9801f64647b2a9120fd387f0c6f16826e7b4c50d54b10f4b4e244fd5e751956",
+      "name": "Force of Will",
+      "oracle_id": "956381ba-6d37-4a8a-846c-bad79222dbee",
+      "oracle_text_sha256": "cb9da9ab0951a3885eef123d85604e8165e0d1ee6e4f5233745be4a6bdc2f9ec",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "3535efbbd951e78c0aa2465f48e279bc860fd754d09ef8514fea290cd625292b",
+      "metadata_sha256": "912f517f99466cb474d54442115ee9d75488226ee037f1b12902c6bda9b50ea4",
+      "name": "Forest",
+      "oracle_id": "b34bb2dc-c1af-4d77-b0b3-a0fb342a5fc6",
+      "oracle_text_sha256": "15050a1a32e66e013cc8aa699ffbd096df8646f48da0c14a2d8582c894dad228",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "3e8ceb37a8f471574c27ad16983df7615bc91439c113d4669e2bf474151dfd4d",
+      "metadata_sha256": "140e819074c2c88efb701c9b8a3d6724d82d4f0c923f6d95503e08d2497e437b",
+      "name": "Foundry Inspector",
+      "oracle_id": "18f22960-87ec-43cd-82ea-ec5cabf49ad3",
+      "oracle_text_sha256": "11650c263b80d183cb35b11842b0d91c188a2051ef31dafb205cfe9f1ce77478",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e37b29b74ed7cdb9c02dd1fd5d7c0d82b6bcb278e82c3bd0d7e08d7ee797df0b",
+      "metadata_sha256": "7cbac5874a719b616291b3ebd3e5ff9b3e222a19bfa4158bf25c65de47b64191",
+      "name": "Frantic Search",
+      "oracle_id": "16e015b2-f8a3-4b1a-80be-58a8f5fb5e8c",
+      "oracle_text_sha256": "8fae03ed30c84c81c17a6ba42dc67d4743f38eacce35fbcbd7cb5fd2052e93c5",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e97cdaf5ca7d9f4217763b76ccad108ba2447fb8ae7f4e0decb98df3e7b2603a",
+      "metadata_sha256": "e951795c062be8f41001761d78c5e918b95eb1568f9b1df1f1a3e7d6ba6709f8",
+      "name": "Fyndhorn Elves",
+      "oracle_id": "df317532-7d36-40fd-938f-e972749c8792",
+      "oracle_text_sha256": "01933d8e2b5c12b519bcb781c0bfe9b8f789a31383ef7c73640aa20712de333e",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "69f480e8894d6f2f034fa069e3e5ac70560dffcf2e0bf130aba28cb5095f9292",
+      "metadata_sha256": "c2cc50f58f24ad851f8737207dd7c1e012c82390aa9f6b2f71479363e1282244",
+      "name": "Galadhrim Brigade",
+      "oracle_id": "da4bf807-93f3-41b7-8bfd-aa63a551754e",
+      "oracle_text_sha256": "d84a4e632eb52dc902889e2074a98f26cbbdd19a0a8a1e27f3b7ef5953563e70",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "121f640b880e7c1e271cf8f270154b6fbbeb39c021e72049b918d936f0e1252e",
+      "metadata_sha256": "a1e926dba1b31e3ba1267e9cbc55be8ad28fad634b3b2d0287df93fd5893d887",
+      "name": "Gamble",
+      "oracle_id": "a54f0869-94c8-42af-9080-166efb9486a4",
+      "oracle_text_sha256": "e3a5a32e671d2a9df50f8ff83516634c360f7a75aa915afd3ea104f2b2c90afe",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "b58dcf1f3bffb70926f9065ad7e52364e99049b80247552dee2fecbadf2bb735",
+      "metadata_sha256": "abc1a9028b694f9b49bece283e5309d3000c85b0882de1e04bc2910819f2e593",
+      "name": "Garruk's Uprising",
+      "oracle_id": "3127ae9b-a7a7-43ec-89d7-688f8445b33d",
+      "oracle_text_sha256": "e0bfeec2a3fa20d5d323aebbd6006f1e62b4f88d35d87b5c3a9d20e1e8675f35",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ff38ab6468425c80238166111380fcf9cb42fb50c1aa4db70666a8e49b19841a",
+      "metadata_sha256": "3bfa1094c06e0198071b7c59c947a31aef59975493d479439542659b2138b706",
+      "name": "Generous Gift",
+      "oracle_id": "fae37e28-e137-4177-b973-fa8b4dd8f409",
+      "oracle_text_sha256": "87ec8fc85150634557ec26540ab0b0803d1af927c1c486c8a5f4f0c1e9dfc827",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "bcf0eadfe8bf8fa2237943a8d4ff35327b5a959f9e45d1a7fcb45c57939e5b35",
+      "metadata_sha256": "6f4c03829ce67068290c9ea78a7ec8b3cee498da20265f63dd1e0b8ad9bd8a75",
+      "name": "Ghostly Prison",
+      "oracle_id": "e828b189-0e8f-43b8-b909-4c23e742e028",
+      "oracle_text_sha256": "14b60f73239a3ad826e64586d537c3919f2621eeeccf3c0cc3cdfd40107a717a",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "0d4f19f8045aec202497f96a9fd67c7cf8c20e0c1bb1b138c7655d9ffdde797e",
+      "metadata_sha256": "b5e07ce72ab6f080e1ba3be16426d64eb76bc2af5e5a8123a6d0b8ebda289e1b",
+      "name": "Giada, Font of Hope",
+      "oracle_id": "48e6d3d8-2f27-4017-acdd-40bce8cdbc02",
+      "oracle_text_sha256": "5ff82a9228ccbf53163cd40b92cb9260c921adf38fc0067dd363950d0bc54e71",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "f207c6c3372271b7e154e044bf16ec30c3695f9ced5fc7f14d857088068bbf31",
+      "metadata_sha256": "cdfb9bd2916c72a062bfc2848586d33942ef566931a154ce02f2ff332b5dc184",
+      "name": "Gilt-Leaf Palace",
+      "oracle_id": "85573a3d-2993-491a-8f8d-bbdb844fa84e",
+      "oracle_text_sha256": "def460baed8e56f54070f9b27b8f641fd7785963df13d5ad3a977d92b2442d91",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "23f96a543839e26c52fca717b50ea26528a2fb215c79d95d625c689983ef5e27",
+      "metadata_sha256": "ef064d8220ff036e5f47c4d0ccd1087df3589805bf338c532cb4b639ec911140",
+      "name": "Gleaming Splendor",
+      "oracle_id": "c01aeaa5-1d3b-4493-9575-30175dcd780d",
+      "oracle_text_sha256": "c20ec0bee13dcb1f00492ed6c6cde94bfdb6b7f4d92793536326fb37d1ab368c",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "666195c2124946ba86155246f75cf0b32d154665ccaa0697a3ba4f156bb904dc",
+      "metadata_sha256": "75ec0539efbfad5cecc852aa810a45c7055a11542daf044f1e7f2d48460ffc4e",
+      "name": "Glimpse of Nature",
+      "oracle_id": "5fae52ed-1b84-406e-951d-b0d329dc48a7",
+      "oracle_text_sha256": "83d5f9bc3d42a3a5261df4884a6fa096c6c83c35af67c5ef8b77b0a9767f21d8",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "039232a397d8d7b942ce2d688647e4b31a51da0b5e756ccd35cbb586994d59a9",
+      "metadata_sha256": "c53c4ae94f997fcde75fab973e79408b0cf524e7c3aba0e1109d3c8a2453aa91",
+      "name": "Goblin Anarchomancer",
+      "oracle_id": "e9319f13-1f2b-429c-9d61-e58a3cbec86a",
+      "oracle_text_sha256": "98633eaffab4d8af8f2a75155a8bf66e46c6b8e2e34e1574a8d72e112427f760",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "18412689f063ad187a1144e8e4d01c86fa5abd88336537a9fd28fbfff5e6bea5",
+      "metadata_sha256": "934993cfe1268b065714d51a749e505de75c962fb6cb3f3c61f52871cf46bc59",
+      "name": "Goblin Electromancer",
+      "oracle_id": "81f06f84-1580-43c0-89d5-08d34541a519",
+      "oracle_text_sha256": "28cfb498f54ca501d6a6b8e0c77c61c40810b80a075589fbe3b62fb956f8ba79",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "e24711199e1f117f9ece9c4fea8e6b19a37c398a3e3b27d638688ef12e3a9ee0",
+      "metadata_sha256": "c327ddf5e65fbf1e4ccd857031ee9b82e9c90fce9fdad478c0910104b2471059",
+      "name": "Golgari Signet",
+      "oracle_id": "1cf51f50-24e4-48d0-95b3-1dad3ffa4bf5",
+      "oracle_text_sha256": "caf620d708ab253a6942e33184beea8d4105f6d1531c43af35b3e2da74000eb2",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "3b93e40706999e51682cf1c3df365be4889ca7cb01ff53457408fb3a1eeab26b",
+      "metadata_sha256": "d256873903d485fdfdc8be28a2d401dea2ebb0ba01e6bdb460188083b6815fb6",
+      "name": "Grand Abolisher",
+      "oracle_id": "c749f23c-40c0-4159-b84c-a70cbb062c14",
+      "oracle_text_sha256": "dba74c08ea86cdf64a873fe45ecd0b8f281cd7f7dce2228892f147e25356717f",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "ab80400fd33c32ed53fd93675c6d77bd044d868d4d16ec039866fad4ac44d82b",
+      "metadata_sha256": "0f18a6c49b6b293712a2f7311ac4a591a8939c31504e41e72612ee20485ef8a8",
+      "name": "Gray Merchant of Asphodel",
+      "oracle_id": "38f3b157-0df4-409b-89cc-086e1531cd5b",
+      "oracle_text_sha256": "52f908031001cfdadb22b3925b3ac67023569b4abf807b1f2cc21b6fd566a674",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "296cc0e71d34dc82d39a814063de1c290744a678768d643f5238f9bc1f9def16",
+      "metadata_sha256": "2f1a2cd21a93bbf9963fc5207e5c5fa936c647b3c9e7dbb7c6e2201f5a527f72",
+      "name": "Growth Spiral",
+      "oracle_id": "34bcc217-dd91-45a0-90d7-a94d02f1f317",
+      "oracle_text_sha256": "283b2db5b4a5c72de6240c74b4994cf0a63e0a07b49372dad8fa59290b9c8d22",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "d3059ef757127a7e9cad8dd820fa8675726e8c2db593b427c6e20abb5df81f75",
+      "metadata_sha256": "5be4ceb7c050bc56184ed44da53e8fe666de188b3a33b1d1143f1c4d60ef4c2a",
+      "name": "Gruul Signet",
+      "oracle_id": "d36e0c9f-c025-4dfe-9644-9cad2461ce38",
+      "oracle_text_sha256": "ef5b9395c27eda0f322f67f18fdd0c6d64ba5cb6025d4cedb525e23386d99124",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "8011fe8e530bc4cf72242080200e44e8747495057207417917a52be4ebc950db",
+      "metadata_sha256": "b645a7f8103472ac4ca1611e6909f6b37018c0f7b87ac5ad528a34dba98931c3",
+      "name": "Guardian Project",
+      "oracle_id": "4f9e07ae-6341-4b46-9f77-f17ab659d266",
+      "oracle_text_sha256": "8859c6a193b01c09485e6ab2677c447490a3b21fdc6f942e1e7d36823fca02d1",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "a2843c91c482f3d9e04c61428d14b9add4b752b637cbf99241761fe0de6a5675",
+      "metadata_sha256": "c85efa2a39e17fec8a4a57543377007d3d5e2a0acf3b72fe14de92a1af30c4ba",
+      "name": "Guttersnipe",
+      "oracle_id": "c6bdaf76-6a03-4695-9c4b-f040e73435af",
+      "oracle_text_sha256": "7cf36a4d63bae0c95ef42ca6910d16e916b3921a2c088aae6619730c5aa9644b",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "4bcd6b921e5f54bae560cfa0d4f05a6a3e9a088a367ed13edeb23f62457b415c",
+      "metadata_sha256": "e42df28c72d591ab30180f023ad13a64289d497e1a07a67f863207f1545bed10",
+      "name": "Hardened Scales",
+      "oracle_id": "a1f3da21-af6d-450e-bf0b-985d158418e6",
+      "oracle_text_sha256": "0a2d1553cb0f73c223fd751ed6337465bd214613ae87a6c119096a092d27291b",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "4e43648be75717adc4330544bbf24d4e11ed8f15842e87e86e4f6adc9bc30b4b",
+      "metadata_sha256": "51ffd3ad23cdc40930ab2fce3d34aa08d76ef7fb252101215078b663b434ef6c",
+      "name": "Harmonize",
+      "oracle_id": "7eff84f1-f772-497a-b350-bbc93d0230f7",
+      "oracle_text_sha256": "51abbdc687fbe984769f4eaa1ca628f5077d4628c60d6e54ed09b8d3397e7ddf",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "2230625088b4d363f3d149668068fd781c2dcccb359bc9e1ff041f6a8ed1b347",
+      "metadata_sha256": "0a552ebaf52f6e28cbc48ebcbf62e29b14ecb316fd348214d812299b2b7b6d85",
+      "name": "Harrow",
+      "oracle_id": "705509e9-a034-4a5a-9c65-66f58748b8a2",
+      "oracle_text_sha256": "ba931a37fa2f6442e42755f14730eb1c302dd737a216ae482668e5e8a37d4c97",
+      "source_path": "sources/scryfall_2.json"
+    },
+    {
+      "flattened_input_sha256": "80f8e68090c4400aa545c49624fdbf05e921e62cea1dd8ae5cb488eba620b1af",
+      "metadata_sha256": "c5051b91fe002145316123c9a1999889192a0642969093a45fb80771f44ebcc4",
+      "name": "Herald's Horn",
+      "oracle_id": "c02c5547-b9c9-4b2d-9d12-e87bfba8f2d2",
+      "oracle_text_sha256": "494a3065c18ed79d9a0d7496e1feecb7e59d1ceff5dc237fde543ff55ea521fc",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d161ab40a264213bc9c534915606660cb30a76cce7a107970966f70f624fc4f5",
+      "metadata_sha256": "7dd711e24fc54cfbdfc1ab584a2c19471f93d8190157dea8065afbfd0af1bc3f",
+      "name": "Heritage Druid",
+      "oracle_id": "0b7f9c71-6f3c-4056-9bed-04b9f2296f3b",
+      "oracle_text_sha256": "54a4538e340725063a507b2085c55fc4de6baf0cda84c8787a25d411db1617df",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "ef2577dc84720f71dc23371d811e41b759d67821026bfdf2e03ac015e767a99a",
+      "metadata_sha256": "39d93cc6e2fe318ffbde3cc66505c769b3bc1497fb5c9bd826999e8c2c8b8edb",
+      "name": "Heroic Intervention",
+      "oracle_id": "24882fa2-3fe9-4c1b-aa3d-0e6488b9db27",
+      "oracle_text_sha256": "067f31df62d5f24702a2135e04ad15b7010ad04df9e637acc2157eaa901d0507",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "1313f551994a6fe6babb89db1fc508a84576d4f4daf6761340ebe7ea137a73f6",
+      "metadata_sha256": "853c19a994d0a802251d51749473dd498e76d14bccda299d1b4d0c5721399884",
+      "name": "Hexing Squelcher",
+      "oracle_id": "96c2d71e-0fc9-42aa-bc6b-6d0ae3f66f8b",
+      "oracle_text_sha256": "10562edf3405cea8e090c0a5fd0bec145a7aac97788cb8b95a836ae50528b25b",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "7d63372e4695768c13382bd4c64518437194ec7c33daf275460a50416dcf3e16",
+      "metadata_sha256": "d6266af7b1a44d9de4a95afd8da169593d10025a19fa9afa6a1b416c9c638110",
+      "name": "Hullbreaker Horror",
+      "oracle_id": "d4a84e78-d9b9-4c67-8a4b-4329e65f0f15",
+      "oracle_text_sha256": "0b264d8abefdb07e9255072ea748d3c6c7bef7fbd5e626740976087bfccdd973",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "42f2eef4d52c04518f45bc099bfb826dfacbc1465a6389d3ba35a4d37cfd1ca9",
+      "metadata_sha256": "8d8e131fc26c7adbaca616213b2f8e47aec34de2a279dd6e8ba887d375e57d15",
+      "name": "Ignoble Hierarch",
+      "oracle_id": "c8de43a3-ebd3-4000-b343-a6ffed11d34d",
+      "oracle_text_sha256": "69c02978e83846ad319a6dc7cc85ce2ebe8168eb4e99ea3c28cc0df8f44b5b28",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d8ae3e1ac7f99bde9e8d78f1ed8200e941d1d38fef21ae7b241954928740f812",
+      "metadata_sha256": "60140d1ebcd4e627e118745765cf965d1bac7bc376ed9d98ea137d5aa74c9e65",
+      "name": "Impact Tremors",
+      "oracle_id": "9242cd3e-1a71-4700-8182-9c1005616033",
+      "oracle_text_sha256": "f88fc736703a5f63b8959b491a2fdb1b98c2d203a6b6f50f945a07bebba23a5a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "8b1d760ef086db419151d93d6d4affa4909acb9342b00773b10829f69402ea71",
+      "metadata_sha256": "11422fc9092ad34bf950c7a50890049ba674d214f4d170974e45b1ff56924484",
+      "name": "Infernal Grasp",
+      "oracle_id": "94f0a572-e91c-4b56-a5d1-6cbbeabd210d",
+      "oracle_text_sha256": "6f0e5107259816d5c74b4f2056678a8eb5c58c0d2ad013611c71368b1bf115a0",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "1457f5790bebd45b431cd25c3968a965909936fae6a0c7fc8f451c3cdeb0e8b1",
+      "metadata_sha256": "9feb127334692901d3f27de5b9bf59801c192d3604e1edbf58b92382d8edb5f2",
+      "name": "Inkshield",
+      "oracle_id": "da93264e-4e04-401a-9809-e4e1056cf604",
+      "oracle_text_sha256": "181dbf413a46fc88cde109f2603d67ad173c7ea82d7f45ed96e88e698003f88e",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "a220d9a1a165f6e04b0f5aa86b9b44ac6e1d9a90833b6cfa2c2fd527c132d1f8",
+      "metadata_sha256": "53134385172167bed78bc048f3233843eab36758d9c99bdd2f0bedf25a5a4c52",
+      "name": "Inspiring Call",
+      "oracle_id": "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c",
+      "oracle_text_sha256": "f3072adcbac7cbe7a5a1c0547eecf23d115f234ccfe30f3a11e51c731a7ce9a7",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "e92bcd88a285568e87b01a9088071a277d56323d14ebc6125976ac3ec5ee9729",
+      "metadata_sha256": "532384629f3cb3de92d93ab033614925648224d1295863312b02d2a71915557d",
+      "name": "Izzet Signet",
+      "oracle_id": "2fda4fe7-8b0c-489c-a000-6d358e614e34",
+      "oracle_text_sha256": "e909e76c0398904898f2b511fc39b5549b322c9900a8c303b2a2e62c3957df88",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "982c6bc6a2ae6ab943ffa45f83738bd190354a19f4d43d56b4584b01d0726229",
+      "metadata_sha256": "8401f951acc9394e2e1c41ba820809025237fe8f11e3f03d1f43cf0ff34abe2f",
+      "name": "Jaspera Sentinel",
+      "oracle_id": "e2f98813-4f39-4135-b05b-407e9eb797f6",
+      "oracle_text_sha256": "b493cd8c427785450a60d4e2177fb176a5c1fb5fa68137cfc0f3d5c53a5bcdd2",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "5e92571327acc95456abf2f3cd7dfc75be61a1c2ab68b062675147869ff94b19",
+      "metadata_sha256": "cd9aaef42af4208b44c2f812cbea3643ecae603783d0354f29d2f163856f2cac",
+      "name": "Jeska's Will",
+      "oracle_id": "0fd114c4-092b-4e28-b0dc-ef529f3bc73e",
+      "oracle_text_sha256": "32f4abaed1c44a22536735f44868f3d831cdc4b7acf02d7dc29e4d48001fd910",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "3bc35c310f39e4ecb6f892ed732f41d6f2ec59a25217df5b28f29fd6dfdda977",
+      "metadata_sha256": "33477e5423000e44578f1142344c6bf54d9979bcc95f30e832e58267f08c32b1",
+      "name": "Jet Medallion",
+      "oracle_id": "bccb06f1-8839-4104-9ffa-c79a817f8378",
+      "oracle_text_sha256": "58f34cf419ef8c07a4cbd48e874820e968a10c637d1bc041d11320e7efa8f014",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "168e94c3363f1c6fbdfc1bc7f4c7174ebdbdf664ee51e52767415547875fa7a2",
+      "metadata_sha256": "5e9a9fa18c17544d7f90b02e970ebc3cae5687e5b190d4c4f2a174e6ac0e287d",
+      "name": "Kodama's Reach",
+      "oracle_id": "1593ea18-2f2f-4ab4-83fb-6ccc0bec8a90",
+      "oracle_text_sha256": "7b6774d2b7d8a5fe957953bc1f1d64fd35e5a4ae7d4d15c12c132da0e1b5d6d8",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "e0d8c974c4a9321240327a99a1915e2e79c4753dd7bafe2fc3e06d2b3ca84014",
+      "metadata_sha256": "d681d580d8923b1bbaf657191614156a88005ef47b1809beff5e8b4a0cd679d0",
+      "name": "Krark-Clan Ironworks",
+      "oracle_id": "68e1f7e0-a9b3-437f-8086-0c0cb85f2880",
+      "oracle_text_sha256": "d67295e53e8bb9273f6026f32559ca061b507e708673d396d0108a75ad358e78",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "f06902fc8eb6748271de17d52479fc928d69981a569a1ac43fdd5068ab22e299",
+      "metadata_sha256": "ebde8976ceb5f908670a1f3007ebae6ad4df96d64c0b3513c4c3f3143e751c3f",
+      "name": "Kutzil, Malamet Exemplar",
+      "oracle_id": "3233af43-7826-4895-b67e-03c6102c2cd5",
+      "oracle_text_sha256": "6a7fab8d2456b607827794a0b347ef3c7f1f97f46d0de4e16e49a8d504430efc",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "203d3f0b62d6d486f2794945d17d28d25d5542e15f95148d3d8323d79a06659e",
+      "metadata_sha256": "25ce848902a344e99a879b74d995c016e54f21533af463c8cb4f40264b22468f",
+      "name": "Land Tax",
+      "oracle_id": "d2d9ecea-7925-420e-98b9-2f87f41f387c",
+      "oracle_text_sha256": "dd43c4d274d796e161399b1e837d35c637420c57391cd77855992e57713ebe6a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "65f51fdf717d7b5743c6f5c8d1a3050a8d1efb832450041bf8d6e304dde422c9",
+      "metadata_sha256": "c7b2448f17d37ff1b9109c72d5fb2e00791b57efb9643066ce9ccc6577a5f476",
+      "name": "Lathril, Blade of the Elves",
+      "oracle_id": "9b568c34-ba0a-44a7-a0ee-bee3a37b3396",
+      "oracle_text_sha256": "053ae143deaef3fa289a6dd7ef091e27b4c32444e5027d880190dbd047a877c0",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "e0030b5dcaa9c386cd962e69e40e319f7d846d5d1070ac5cffd6807211385ea6",
+      "metadata_sha256": "975105e8b0aff09b77e12a4b4b1778f559551abba1bbea0f893a711e5050bb24",
+      "name": "Leaf-Crowned Visionary",
+      "oracle_id": "ef693b9f-11e3-49bf-8387-b8f480b9007a",
+      "oracle_text_sha256": "1dd6b028c094053e115ad2b2f75e2738875a32c19f3af2ff3d52b509f80c9117",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "ae3f8eb4f325380f3bcb2840ccab5eeb9db153139df16adbb936a370cfab1bef",
+      "metadata_sha256": "351bf70061dafbe893046ff9389cf53d87a444ae59d2f843d932dad487cc226e",
+      "name": "Legolas's Quick Reflexes",
+      "oracle_id": "59154c04-6bc5-4b95-af1f-6de5fed05649",
+      "oracle_text_sha256": "6f225ec29354e6eed749427724349b39661aaefb9c594236ff4e012ca8172365",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d20e3a5c4adc373ff6f1f8051666e0828031bd8b93f800dbab899a2f2a196d6f",
+      "metadata_sha256": "ef3165c11c549f5c338e7e3df612e79f6814db67342f24be56ddd483d3946451",
+      "name": "Leyline of the Guildpact",
+      "oracle_id": "6b2e6a51-b9e6-4848-b7d7-98f02f2b897f",
+      "oracle_text_sha256": "d4abb26f5d1eee578c7a4928b40af0f12e495dce8673a35c2aaae2784c70c1e9",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "b384b34e22a2f0600f4d7af4ff0c5127bf83591041cdbe4e2b147444ba862f93",
+      "metadata_sha256": "09071671bba6a1c879a695e446e3d7d807eb9012ffb98b75721cba343fd36c69",
+      "name": "Life from the Loam",
+      "oracle_id": "ac8fba34-512c-4f24-999a-ab72f1ce4acb",
+      "oracle_text_sha256": "303bdbf0eeb26aa51df085c654477b3ad4e6a74220be45548eed0d6691b0c83e",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "fc692e6bdacf3e338fa332274e3acb89da3092387cdfe3641f2ce14482815146",
+      "metadata_sha256": "3eb36e4243815268a30cb342ca1bcfcd4d5da0747346046421f2d7e6f702f696",
+      "name": "Lightning Bolt",
+      "oracle_id": "4457ed35-7c10-48c8-9776-456485fdf070",
+      "oracle_text_sha256": "3353c06cb66fd7b24d189e206721d65a6f08ba42701ccd29d82241a794cabd5e",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d4055b68cc5ac2c454ae9a110b32089663b799d0380fb485a5c114b20f186369",
+      "metadata_sha256": "5d7c6cb7c138cc531a92f617a144fe1f1b21fe001f2d956d7ffa199b643dc04b",
+      "name": "Lightning Greaves",
+      "oracle_id": "ca204b66-8d0c-431a-8d34-282f7c2d17da",
+      "oracle_text_sha256": "64ccaf119978528ce53acafab9c2d53d4072e7d4a322ba02077478536c18d744",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "717eaae413bd347c6c1cd1d72ef63992f0dbb33ac42bca778c7a10b7641de532",
+      "metadata_sha256": "f00efff604c3d0ae36b157e897919c5ad7044bc3c5ead9977448662b86b6b3b1",
+      "name": "Living Death",
+      "oracle_id": "9e6a3df4-67a3-452e-a6ef-f04dbadb21ef",
+      "oracle_text_sha256": "5f862e15380f53ae3e0a4acd757e82fd5417c4f4ab56ef55f977fb769e36702a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "a6fb9e68e42d56c107c9af8d33b6bb39178f45e9d965451372ed3aeeec0f8143",
+      "metadata_sha256": "fd8a6e6662394937c022b861d551ef190c7c3fa245fdb917ede530ebef00154c",
+      "name": "Llanowar Elves",
+      "oracle_id": "68954295-54e3-4303-a6bc-fc4547a4e3a3",
+      "oracle_text_sha256": "01933d8e2b5c12b519bcb781c0bfe9b8f789a31383ef7c73640aa20712de333e",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "9cc42226e2fad1a4544d197c0228ae6584575e297e6cc8bbcfb182d26faad3f3",
+      "metadata_sha256": "e49a78b1399ca91471ea39115b965b71a65f05c8fb09a114b7acfa50ff28e490",
+      "name": "Llanowar Wastes",
+      "oracle_id": "32116127-cf96-4a1b-8896-a1ebc087b597",
+      "oracle_text_sha256": "5a7ac5067edf3f6b852391dff012d80b56d43a31f7d38b2f422c2f749db4517a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "61af43598c39591b4df5783061c74ac238fc9bfc4909ee12afa1923373d1f902",
+      "metadata_sha256": "309c63d50606481560465b41295e2b31800eb590c2dafbe176bfd66f3c88a7c4",
+      "name": "Loran of the Third Path",
+      "oracle_id": "b3d81980-76f2-44e2-b1c9-01e30c726312",
+      "oracle_text_sha256": "54a2a1d9a1e5286ba1d22c928e62f182d62aed87a9924078a3762fd808237cea",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "fd3172cae6e85e3b0b24ae690c8bbdfa8b37c78035efc705962f639ee18dd2a6",
+      "metadata_sha256": "4f6383639e250b2a939f9bc38ae8c609ad6ce17440968a1fcefbdd51f2e21b90",
+      "name": "Lotho, Corrupt Shirriff",
+      "oracle_id": "135cc078-1c45-465e-b0b9-7168c89f56f4",
+      "oracle_text_sha256": "02886dc05a8d049038fbc4803d9bdcaa32c8ce2874f093bfbf20426cd5634bee",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "57ab4f67cadc93f31bef94dbfbd4115d8671277239f51ac1876ed69bae44f426",
+      "metadata_sha256": "87ff9a969a6fc65d9cfaff53b2f2e2d5380ebf0fe7653a9da77c3d41936651e2",
+      "name": "Lotus Cobra",
+      "oracle_id": "8ad91f64-ccab-4edc-bd54-b2ee9267d614",
+      "oracle_text_sha256": "30f89d2faca80b957cc1d84f8c1f6851887016b15bc91d3894d6626e461fe6e4",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "09645fb1df90437f6bcbeaad75c5de8e66b7a0cef33be208f67f844be1a96dae",
+      "metadata_sha256": "62b9ccd6db7b39db4ff6a1cfc46960025bdf6e6c8e6f62602ade3663046f9308",
+      "name": "Lotus Petal",
+      "oracle_id": "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5",
+      "oracle_text_sha256": "c0a70df08a6dca47ac44ae47088a726ef2718f4cbf24b433cfeb8eb4786dea69",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "bdc82cbac6c4c5e4ec4bdde54dc9da776dc597bae546904f78033286a636053a",
+      "metadata_sha256": "ef615c454b0a7d0ca2106023f2631d4588a1e7c0ae4459476ddde9a854538e90",
+      "name": "Maelstrom Wanderer",
+      "oracle_id": "ad9b7fbc-61c8-43ee-a65c-99206fd1e4df",
+      "oracle_text_sha256": "39157af6db83ad0737234be30280dc275f72286a1c994e749a79c7321f7f6af0",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "a7797d3adb94e5c5fdbe0a2ec3933037e72c76ad380289e708e915dd0391484f",
+      "metadata_sha256": "2fce3986321c868e5511352cfcf70bfa018fbb26b26626fb7e11076d49404b15",
+      "name": "Malakir Rebirth // Malakir Mire",
+      "oracle_id": "a731e87b-8d99-4b64-8ee3-8e540d652366",
+      "oracle_text_sha256": "ca4d6eecfc8fcc5b97da62101cacd6c5152553f67d001dc2bde5199b24932543",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "7eeaedada279631bae7489a03747a10f814a3472628de1d99e463445f096a9c2",
+      "metadata_sha256": "3767443ff8121974d7eac95245caf2a9ed5f3a3aae5215c7735a835a3101981f",
+      "name": "Mana Drain",
+      "oracle_id": "74d3277a-38e5-4732-afed-084a56148f20",
+      "oracle_text_sha256": "0247252c58ba89e073b329f2851e35b6b4d6d8b6fc5b41680c533d151ef2871f",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "42f90f261c72ecf16fa0d6ada4d9c557e3a82ec4c7dbf10a96fa6b441b25a048",
+      "metadata_sha256": "0ee04f182a8789849ad55d778b4558de5e59d44f93ff0248c08437333332ffc4",
+      "name": "Mana Geyser",
+      "oracle_id": "a8dba58b-2956-492e-ae30-49db2ae68e53",
+      "oracle_text_sha256": "c5edb74b51a3aa1236886805458e7f4bf03454749310761655bf468b1e41a887",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "9728b36247dca87bdf1f92b7a09dce16a14bf7cfc455d189672f22041be525dc",
+      "metadata_sha256": "4892b8efd9f5efc585336bfdcc3c0526dcdeb32c365ca31dcb6ce01026ac4e07",
+      "name": "Marwyn, the Nurturer",
+      "oracle_id": "ee35de1c-aef1-4bd4-85fd-fe77bc927790",
+      "oracle_text_sha256": "5e1db03ad3e7e2f2c4878845e0e4826ce51181970ff00fbb736b326a0eeddc0c",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d96dcbb8c8fa486cb1b8a95bb3e62f613e81ea0964f143cc7696b58e3e9d9581",
+      "metadata_sha256": "ae38aef101178001d2c69a9085683cfb2425c4527f1bce242a1aba7c3abe6b0b",
+      "name": "Mayhem Devil",
+      "oracle_id": "4709f11c-aef8-45ac-b2bf-e640c568dfac",
+      "oracle_text_sha256": "5068541c9fcc8d6a84ab7f918f9d7fd3ae9041eebdbc6c62cae977bd84f647d7",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "52d2a52867d31e01d6e2b57d2d0e1c509a7d718be1ea0a34694e183001f1bd3b",
+      "metadata_sha256": "4bc4b51a49216594e2f936b4ae48d46dca7dea0bde2b7de6697aeda62eb05f39",
+      "name": "Meren of Clan Nel Toth",
+      "oracle_id": "0310dfdb-0498-488d-9f1a-279f8239e024",
+      "oracle_text_sha256": "e0597f7a40e6a92eaf7593404c52452982b5aaf2170b7abeb159b23c33992bfd",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "c4a69a59170e9dbf02e37ae0bdd1d91f60bc1d4469f97ee73b38fbbc4710ee07",
+      "metadata_sha256": "f1e297b76d52b7d736d04eaf95f61026d9669472ae319cae03b635f7127ccfb0",
+      "name": "Mesa Enchantress",
+      "oracle_id": "8f4b8a19-72f4-48ed-ac05-62a7c7525797",
+      "oracle_text_sha256": "4ba00967aea1dae9d82db866152e26275f4aab2f8f75afe9610eb02bda7c3976",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "c0f7cef2b274fda40b3e7047e024e8fff7d68617dfe3d0e8af3c8cbca624c09a",
+      "metadata_sha256": "f466f646137dd5884e80dcfcf4c81549b42dc946b4add38d3a70696f1da9761b",
+      "name": "Miara, Thorn of the Glade",
+      "oracle_id": "6895d7a2-264b-4731-9294-c02e1e220384",
+      "oracle_text_sha256": "536a735a30d49797efc6e951828591aaae9be08d492fd65fa235ed4399f87249",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "33401ca8e1d720f91d1ba5c61a001f98c964457bbcec5f04378eeb3b6bd7e9de",
+      "metadata_sha256": "34edb5b66b92eaa60badf1321730b2431c6becef2ae5666c5b16a99e966af4cd",
+      "name": "Miirym, Sentinel Wyrm",
+      "oracle_id": "880fcf86-e6a9-482c-b91d-750f293127b2",
+      "oracle_text_sha256": "3de6e272c386ef4c22dd9ead03de1093ad84d81bc3ca6f3888b9df7e3aee9e0b",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "25839349108af786fd01c0a0cb339d4d4cfbe8681527478b5bc0b6d68d5dba83",
+      "metadata_sha256": "81567b828c210bd24d8fc06d173cd319b9293ee0e713fd6966c11706115f17ef",
+      "name": "Mind Stone",
+      "oracle_id": "c97361b5-af16-4a7b-af85-a429dbaf4ad2",
+      "oracle_text_sha256": "7e92316d8ec6bb5878b4c98cbbbcbe9a699bfced810f4563958ba5f5e6139be0",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "643b9a8ca47992adb81f34809d293128e712cf332cdde504a3c6263f0e17e6e2",
+      "metadata_sha256": "e4f78331bcbf1201a2fbc8b4a15823a260d8d4384026ae45e2a48d1f0a92278b",
+      "name": "Mirari's Wake",
+      "oracle_id": "852657c0-18a4-4b28-b9ae-7728acdb5044",
+      "oracle_text_sha256": "d9e1fa3aeb6b82a10cde8f7c028a3e50c89661da1293b8b80a7389dde3ce0ea5",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "df62d9c4408d8c077ea505979778a1ce1e7275cf4fe821b0b6d6c0ed38fa9791",
+      "metadata_sha256": "a6cca6fe3cf0e0073062cfc6ed79d4fa080a68bd4dd96a3e2ab63761708788b9",
+      "name": "Mirkwood Bats",
+      "oracle_id": "0636b6c3-0662-420a-b30d-f0a14e7c512d",
+      "oracle_text_sha256": "fe98e0ebf3c3926a158bc2ae64a61cb4a6cf8b5532e93862674d5f5c81c4df90",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "fb4ecf84421911efef7ec96f47a28ce64a1d4106d3dd094babbe00c1a9e420aa",
+      "metadata_sha256": "79bfe2d478db335b7f1491aa65f37534bd7e711e81006af4c0caa13e558c9523",
+      "name": "Moldervine Reclamation",
+      "oracle_id": "68639a3d-2192-4921-8298-c76bb0cd6b02",
+      "oracle_text_sha256": "a808d9d3d98c530ee29d647487f372cb5275c7e944ed32fd7ff2176e0f09a709",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "237f8f05b2bd36490d1b26c08beeffdce123c55eafb41c957b1f2aa0c67249d9",
+      "metadata_sha256": "f849fe48cdd7e111fa0701b5e028491eaa76ffb51e4200a7c1858ef06e281077",
+      "name": "Moonglove Extractor",
+      "oracle_id": "980affa7-6308-4acd-af64-f804e574a89b",
+      "oracle_text_sha256": "b915bfbdde2d0bac34a94f8b814b8c753149a4641a5cd3a086d3af7ff10dcc53",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "178f2dc1209c5200bc4a724646691bbd1d49b5a50bd6ca31ba30538f8a000734",
+      "metadata_sha256": "dbf9774d483169925e9185341779d7c81517254cd1f9410d286af6205641fa97",
+      "name": "Morbid Opportunist",
+      "oracle_id": "322f44f0-e6da-4ee0-b474-e7d5e9a461c5",
+      "oracle_text_sha256": "a8a10e5cccc49afe64dd5852457d624a6a9882ba413f4411bb63646a8e223b64",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "3bb4fecacc8222ffedaf2796e13fdacf5634234fecc42873baaedcc0bbd2c2ad",
+      "metadata_sha256": "12f8e1b1bb8d8b5f191fd79ba34df29469f4e83b9d8b02cd11c1c7f81983064b",
+      "name": "Morophon, the Boundless",
+      "oracle_id": "bf418a2f-e639-4e52-9cad-5a0713a1829b",
+      "oracle_text_sha256": "0c9df57f68b3abdae38b0fdfb08827af3d56c0aead52b5845ebbd14013edbf62",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "f645ebb2c5be3026fa65267e327d7b4072d32138339949d0516f1e4f9310b30d",
+      "metadata_sha256": "6372f4581a86efe0153a43c7de025ae0db617b55ed65c94b3528af7278d2afbd",
+      "name": "Mortify",
+      "oracle_id": "faa01ed1-ccfa-4e58-951f-cd81f9068027",
+      "oracle_text_sha256": "9446d5b8fc0d40b8781976144bb0db31367913cb46e68109c18b1bf36202c014",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "05d674ec845ba150d896c6a7f4a525bcb5f17cfb349737dae2044b58ed9d9e4d",
+      "metadata_sha256": "86f303d0bbb76442368c89ba6f3489cc8a441be1631ebe7463df9fff871b69ae",
+      "name": "Mox Amber",
+      "oracle_id": "7a43bd27-fdd8-41f0-9bc4-92568f3408f1",
+      "oracle_text_sha256": "2825eeb86036ff279382e59010cc95112b998a8f79aa2b2f8bf6d342f59d8868",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "db71dfc54dcc739630feed68fff78269ecfd8f9d053832cb6e9229aa328f64ff",
+      "metadata_sha256": "a7d15b666d61c9004762d671457aa46521c1ad9c68cfa23b4d7274525772337d",
+      "name": "Muldrotha, the Gravetide",
+      "oracle_id": "e4625704-1d52-44e4-804f-2f45644d76ac",
+      "oracle_text_sha256": "7f7359b2dd578124aad7b9daa0f81056a9caaa17f52acd5397d78bc58057a4e1",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "bb659628b731a3ad1ae2ed853be0241ed89a5d67c04a3d0a590bd20214ab5e45",
+      "metadata_sha256": "6247d70bcd48f400c43d9835703f06d976c74d07a6942fd3c30dbf587b91dd14",
+      "name": "Mystic Remora",
+      "oracle_id": "8a52f3c0-2552-4425-b2e3-5496eb2232a7",
+      "oracle_text_sha256": "3f6099fb974e22979e875beeceb01ec55f009de80a6899faaa4dcc69475b40a2",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "c0c8fb10ea18d8fa45b04bb32d1ec731ce974ec70f3022b0ae24ffe517a12e16",
+      "metadata_sha256": "8721b0a1446257c637fbfda5228ed5cf12973ceac0ccaa2b3b6bc945379fa4b2",
+      "name": "Mystical Tutor",
+      "oracle_id": "fb81f95c-70f8-4eb7-8d15-15d0ae23ec03",
+      "oracle_text_sha256": "0f46d5eff13602d64c15679e24eb1bf0865748685fa7f826e9809d4caadee32f",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "04af706ae129308eaa1476e90d29f0e722ef6778b25cc7311e9d6b99b9e98b11",
+      "metadata_sha256": "6a63c2db9dbe829d619c086928fe36b7022c9541394041fc6946e4bab802d6db",
+      "name": "Nature's Lore",
+      "oracle_id": "78826359-fe63-44ad-adc4-a17ffcd710e4",
+      "oracle_text_sha256": "33761e57378f84ff1fac7079c58352781d965a86eca8baa886af300b73d04621",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "346602adf4692f37481e8e35666c2c578049d1b0bd14f25d99d74ce1c8b83b28",
+      "metadata_sha256": "7ccbf4a6347427f13b84000aa578979658e888689d7a61ff13a86ae2b44c652f",
+      "name": "Necroblossom Snarl",
+      "oracle_id": "761ee6f9-b0fa-43c9-8d1f-9591ea18e52d",
+      "oracle_text_sha256": "773d2daf2011e581ff8c7ea98e295e9ba067a9af6ac1167b40518bda502518aa",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "9d90673d70a7f9bc5e357a311ada26c653a151dd644415033812520b22900f6d",
+      "metadata_sha256": "261dfc72841c1f97879668a957e695a9ae53fc798b75a5fc06025589bc4c98c8",
+      "name": "Negate",
+      "oracle_id": "3407fe41-fdd3-4119-8f70-4bc4590a379f",
+      "oracle_text_sha256": "bb3e523419ff4170c72cfaf3d0808c1bff88919687dc9d29363d23b4ce3888b8",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "dda326362d7bbae7e20e196067556304146ece7b59dbd0f5197f179734ddea39",
+      "metadata_sha256": "87d2e3cbdb8acf98bcf8b6db9449749f2550d64a0f9a9ed17b57b1bde55f15ee",
+      "name": "Night's Whisper",
+      "oracle_id": "7ffae8f8-3006-4969-a339-6d30678f87ea",
+      "oracle_text_sha256": "b5e7d73241d596f3dfbadb63c5414f6a185c177d33bba47b5f707b627142a310",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "565e2cb52c28bca9403f3cda75e70d09a339ad42e46eecc498f15ffff089ea4f",
+      "metadata_sha256": "0425d31c6534a10e45b4a9700ef1bd3856a09bfc7099fcaf2bd3abe23bfff0fc",
+      "name": "Nissa, Leyline Tamer",
+      "oracle_id": "6067b8d0-5b00-402c-967d-e35a1304fafc",
+      "oracle_text_sha256": "c4a9c2354d796814c1622ed50edd88c3ffb5c9360b144535ecd9aad5f9b729db",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "07cfe777178d561a152a618506d4a92e66e23f2c252b07f4b92b0cbb2930c6df",
+      "metadata_sha256": "b47e2be1f4d3ada1b0a976f0b008d2fd0fc8d4e231cdbf3947fae6bf75682cf3",
+      "name": "Niv-Mizzet, Parun",
+      "oracle_id": "33666a98-812f-4892-9f8d-33e0cbecc340",
+      "oracle_text_sha256": "de5e455a8a03a103c93868ca2a01c5f29d62f2030c66c4712ade3adfedbadc1e",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "a66e8df6fc4030795cf6d828e7e15428430d7464cf1fa8fcabf68abc772c6e82",
+      "metadata_sha256": "76d74d5a67e96e001368cd610a7e69f69dd646fea1e503b4b9997033fbbf7abf",
+      "name": "Noble Hierarch",
+      "oracle_id": "98aa9424-5912-4bd6-9300-b3972a31d8af",
+      "oracle_text_sha256": "c3aed40a385f640ac7414d0baac7e829c6479854d5b192b36df4ab209a3fd738",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "49f4ea4af6268724899dd18d1b8eb4d0bee2e31349614b3f3245ea4c809698ce",
+      "metadata_sha256": "6544e7c33570a69d7891c6a942c94ed2e1e8f18d3809ff78e14170ea6cd7566e",
+      "name": "Nullmage Shepherd",
+      "oracle_id": "4dcfd397-9d29-420c-8fd8-c7c2a99de122",
+      "oracle_text_sha256": "40dfdb53183950788a883c32a3e8886fcaf222050454ad52128dfb6f49a535ed",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "7910af7b89b74f904492ad1e5aaad486860b3db7e3937f1aa2ccadf45e389d8b",
+      "metadata_sha256": "f22eeb796747dcb51e298002de44e240248f611282c81a7686078ee033350cfb",
+      "name": "Nurturing Peatland",
+      "oracle_id": "8ed932ff-986c-4592-ad70-53b3fac80d69",
+      "oracle_text_sha256": "36be2c27f2df0ddd157e1690dc1867be55fdbe26dacb49ccbacc9083bca0b244",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "bd5cd0656ee373f4567516369cb93d5b67c2dc649ac0fbcf8ac347669d6678f8",
+      "metadata_sha256": "ffcd02153215abc77124a90db4dc520ef796bb25bc674530cce414e0d6bc53aa",
+      "name": "Omnath, Locus of Rage",
+      "oracle_id": "1816eede-c5bd-49df-958f-a3af64cb2932",
+      "oracle_text_sha256": "434ba8f629a2d620fc78a52904b863832cce9a550302c4889969affb5f006526",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "fa241ebcdb5db15332fb61b9f65c00b17911ad725846226f54fd0e5dae6d5536",
+      "metadata_sha256": "220e29ee0cd280afd14ca653cee4ebf972b5514e331d223254259f7cd0eab6ec",
+      "name": "Opt",
+      "oracle_id": "713332c1-5bd8-400f-bfff-c1ca0697a043",
+      "oracle_text_sha256": "d14302282e313c9bc26a27e4501075bbb8c1af313336e3f7cf57aa4c5529379b",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "1c8e8d83ffb1de56eadcfd874f0ee79527893d036633b17fa27d7479489bb88f",
+      "metadata_sha256": "14a9bdb44a746e144b075c81041ea5dddede91a5cf5967788215d16a5254c01a",
+      "name": "Orcish Bowmasters",
+      "oracle_id": "ea5103f5-27e0-4eb1-902c-7f34652d6bf3",
+      "oracle_text_sha256": "78c2059adaaf73c6a7ba380a1c87b81be8800d66171c9972c5d958fdcb261243",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "e169490fcb6e70dafab183cecd29b8090de98f06fc88ecd70bb6ef555af8feab",
+      "metadata_sha256": "d71d2fd5d367c5d6152f34f74c439a653748dd418f51d5fdb0cd7c3d660b9010",
+      "name": "Origin of Metalbending",
+      "oracle_id": "177113f8-1188-4e5e-8ad7-34a7bb8ca7f1",
+      "oracle_text_sha256": "7473ba57a1c165380d21cd87fc70a51f49ed14f7f2f95b0502407858c084e60b",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "fc6daa1dc555cb3b5545b6e2d7ca9b4df0fc7451bf9bc286f44ea17f7bfc63ac",
+      "metadata_sha256": "f839fb881f22e5160bb5410f6583d34b358e9945914e6d1cc3c13d18a8c3488e",
+      "name": "Orzhov Signet",
+      "oracle_id": "de3dcb5d-775a-479f-99f5-d1883ed9b1b5",
+      "oracle_text_sha256": "2b23939faa2bb46e9ebd6a88fcd80353394a6dffbf513472151f45f044bf75b1",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "c67b27734fc7055e8541ef4054e13e65c4edf7f7422c12134d69484b8a6cdb10",
+      "metadata_sha256": "93b493e716200cac1f0b5323925d756f02f73dfc796555292621f1957404616a",
+      "name": "Overgrown Tomb",
+      "oracle_id": "975ec9a3-6f20-4177-8211-82526e092538",
+      "oracle_text_sha256": "62369613602a39d7e477a718165ac14ef4e3d304b39056e377950f70973cbbab",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "242790817807b959859a55e7a98c59ec60403a7735c11930460a748d52e6ac5d",
+      "metadata_sha256": "dd8a92cdabcac2e4429d335259317ad1b71ef82f781ce21a38a06a7c7b7f8158",
+      "name": "Paradise Druid",
+      "oracle_id": "e119869d-1f66-402b-8251-d351965cf0d3",
+      "oracle_text_sha256": "8d95c3460162eccf60ea4100800acd6245483c1e7483d731fca7e708276c9047",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "b5139df18e439d309093d4c9ea22851e867fd09ba67df445ba388580e14ef1d8",
+      "metadata_sha256": "0aa75d063a0efc5890ad1341188a2deada7aa233aaf36dfeee96320becb49326",
+      "name": "Parallel Lives",
+      "oracle_id": "84dc94b2-95fb-4d53-aaa2-191cb645639f",
+      "oracle_text_sha256": "e9c02900b99a05dd767a7270b584cdcb07c405f201299747590c947e342f95f1",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "ae89efe77e0c8c1cc829c86c7bc3f21cd00f25554327e72d22db7e79bbc9230b",
+      "metadata_sha256": "4cb077f007810e6c0effcfd3387902a9e0db35a246805fc5631898ff574d60c1",
+      "name": "Past in Flames",
+      "oracle_id": "37a18736-5fe2-4897-809b-013497bdd890",
+      "oracle_text_sha256": "d8259092c3601cfe7b3b7b54ac7b8a472f796de3b7317a0e17b59fc6e8f7478a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "21342a2aef2f82673cf2c1ea642e50b6394265cf9a52eec221e36a8f81684afe",
+      "metadata_sha256": "782ea31a3cd32ecaffc53456459d549ac57b7e5d3f0ef7aaf517b16f0596407e",
+      "name": "Path of Ancestry",
+      "oracle_id": "b473e293-59e3-4e04-acf2-622604aeb25f",
+      "oracle_text_sha256": "ce95b73f6bb717f8bc6c41cf1509abbc6d5f8916ca3eba18347ecb9c5a9fde9f",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "69d6cb6b011a1f3e0dc95906784860801cbe439e00fadcf081d45bd67b4c5c95",
+      "metadata_sha256": "db4fcc66bd34899c3f80687dbe7b0806c10d043298eccec5ca22c84c670405d0",
+      "name": "Path to Exile",
+      "oracle_id": "d683d985-9888-4d21-8b5f-69e69ce4a03b",
+      "oracle_text_sha256": "639c0e02957c305ad22705757fa2fecd3c2e748b984f8175eb9bed4dccb1f7c2",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "3fd40926923dada41b9292e615f9a14d7972e415d6c465fd4060c752a3c5b2a5",
+      "metadata_sha256": "f9714165a9a2d9b4733fd80268675a9b142e6f550ec87c57d2a4f97d8df782b1",
+      "name": "Patriarch's Bidding",
+      "oracle_id": "25fc3bc2-d852-4f52-9adb-c7e35c06f3af",
+      "oracle_text_sha256": "f2064841c1eefb7cf699d684995ba5b0909cf7dae4d3bf84b26172a8963eff2a",
+      "source_path": "sources/scryfall_3.json"
+    },
+    {
+      "flattened_input_sha256": "d480d170c353aabddeddb9c65247cadb7c3c72f8641c6f89d12b50b7f25dc32f",
+      "metadata_sha256": "bd5b3f4862b0c122b660cc7bf9aab6ce93a6b430c305ee9f2f173311c0a36754",
+      "name": "Phyrexian Arena",
+      "oracle_id": "ee579a32-a048-4335-b966-231ba731cdea",
+      "oracle_text_sha256": "92675b713bf3e383909943ec6042bc256ec742f80cd24609a36ea80fff354315",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "7bebc186629176f99fc61d1127311400479ab574f81be80400cb4b2a12178299",
+      "metadata_sha256": "d8faab91d0253d28c0dd29ad0daba6d91a78868ca3a515a007598ffcc6af6ca1",
+      "name": "Phyrexian Metamorph",
+      "oracle_id": "340bbe8b-e987-4c3e-ab4e-9dee63e57d4f",
+      "oracle_text_sha256": "eac6e39e642cf5056739571171ec7023c2cd801112ca3dfedc474c2e2d9eb2e2",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "c3512a2e94046d738a9b05c327fa0b97821c30b8f729c150a434543fe60b101a",
+      "metadata_sha256": "8deac7778f5368d484fcd88a0363cef5a00c870e55afa201d53e712552d060b8",
+      "name": "Phyrexian Reclamation",
+      "oracle_id": "647ca69e-cc01-4b2b-b376-bee2a98331e8",
+      "oracle_text_sha256": "731fbfc0b48dbfca23914632e027e5811b8c251f1ccfb93738084788767830fe",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "010686796cce858c9ad85cbc90d3d8a3348161aa9e9a9108a81cb531cf30957f",
+      "metadata_sha256": "d97e9a9cb2c80bfd04bf0d3f17396f222e7060e1176ab0b9221c3fa8856cc868",
+      "name": "Pitiless Plunderer",
+      "oracle_id": "a784481f-eccb-4112-bb38-04a659319660",
+      "oracle_text_sha256": "ee6e7c2d57b815d72427f3437c9c349311f2e413c1987b93a67ef4a619738ad5",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "72dabae12f728c92aa69dd49dfe8011ce98f80175ed45ba60b15d01871367e4e",
+      "metadata_sha256": "f5da9c20f420888288a6ff4bc8a99161e549e443c59cc1b6a47e19fdc602b514",
+      "name": "Poison-Tip Archer",
+      "oracle_id": "d0e810bb-5f38-4045-a718-30d423c05659",
+      "oracle_text_sha256": "5cd8a000adcd4eb8a9676a6cdf77dd87b53bdbd23f449002de01297d6779548c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "53139ff86cd5e115fa57156ee426113d8a992a38db32be37a15c0eea95428f31",
+      "metadata_sha256": "2aefca76ab9156c6917a5c3cfae9c1ce111362d1d0e68d5e52cb4775296d6d28",
+      "name": "Ponder",
+      "oracle_id": "02090581-61aa-4348-ad57-451be8ee91c2",
+      "oracle_text_sha256": "ea8592c1609d082ebe7d8089432f63f957f30b5c85ad243f9782c7ac514471e0",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ec35ecfea822449b6382d4911309da5894f661202c2e2100580706e0d1a0c014",
+      "metadata_sha256": "5b091865f701fe2a9c069ae395f00ec3398fb8155d50184f32f8132e1fbc191c",
+      "name": "Pongify",
+      "oracle_id": "05849bd6-8f38-4031-be2b-e2aa03beb8cc",
+      "oracle_text_sha256": "091712bf51bb276aaa09292e2a05eb2c0d4ab9f600aa006de7f4b4db91b094e4",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "caf79b6f2f97cbc23352b39e3e3e1383c7548a907c5e2ce41b600eadc5297894",
+      "metadata_sha256": "dabec01120e81ca5ece238761677b9735e07dd83a15e352391fe57aac1aa6381",
+      "name": "Preordain",
+      "oracle_id": "ac641490-ca14-48d7-8cc4-b69ce984befa",
+      "oracle_text_sha256": "dbe1720b30d7fc5c5c635eb12309b0fd2e5d08dc7e35ecd2a22b388ae1c01018",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "7a3eb0fe4e5ec0c44850c96bce5aca14e3df71765993ef852cfeaea50c462b25",
+      "metadata_sha256": "ae6f56c4cb72dea8fce3e44b2cb585a474ad02e580fe955d46b22270623d88a1",
+      "name": "Priest of Titania",
+      "oracle_id": "3a198a16-17b9-481e-b516-5bc945c7e247",
+      "oracle_text_sha256": "4771d0726729171ce902097080abcb26d09256996f1ab05e6d5f62fdeef43a0c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "96f07e9b4f623f54f09ae5d8f59a08af88ec5c0595c37d26c3c6f11c68e059a5",
+      "metadata_sha256": "b6e588700fb1936152d05495ac031a767e8474a02a4c090a109a345b51eed2eb",
+      "name": "Professional Face-Breaker",
+      "oracle_id": "04152e7a-969c-4858-841b-0a569a9fc1bf",
+      "oracle_text_sha256": "d13cf242bc05525eaa488a11b77791c1fa0e022961468f8d7d8e6a24688c08da",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "d6323dfa6bce018b41214ad2780120546d2e9a48fbada1ed2f80a1ac6d9f636e",
+      "metadata_sha256": "0a8a557c76e7f77e18eda17fea6069e3152e8d1e49acc047177db9115e286e82",
+      "name": "Propaganda",
+      "oracle_id": "ea9709b6-4c37-4d5a-b04d-cd4c42e4f9dd",
+      "oracle_text_sha256": "14b60f73239a3ad826e64586d537c3919f2621eeeccf3c0cc3cdfd40107a717a",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "a4e315b8ff11386da6b39450d3b224d49e2db270a097f3fc8d737576748f7ee9",
+      "metadata_sha256": "79b1a055e2bd3b3f814bf0646387ff469a041125108e52027d817fe2315b0b0b",
+      "name": "Prowess of the Fair",
+      "oracle_id": "31324235-8a2b-4ce4-b0d4-6d947489b930",
+      "oracle_text_sha256": "60f31ffd913f7d7ec1813d83e2dc2e14c529c4fa9794c21c080da8d53fad211f",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "23505574e52034d6b3a86b8eed437ea9c0397fd92fcd97868aaa9ba2b3018bdc",
+      "metadata_sha256": "65710accb14a709463cb6fcb36b83f25de2ade268ce1744fa3bb9e36da277709",
+      "name": "Putrefy",
+      "oracle_id": "9b271430-f53d-42d6-a547-2f286dd9bcb6",
+      "oracle_text_sha256": "f50eb9062138ecfacb2a43b5c56f6ee852ec8ce0a7306c61703a4dff3781cc91",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "db0e94726b2ead00f7f4cd71d33cc1fb6652b4767a768525f19de20097e986f3",
+      "metadata_sha256": "0533a5046f0b8673264e5ce6bbb0e38aa9eb50eeceaede477547fb08fcfbf85f",
+      "name": "Quirion Ranger",
+      "oracle_id": "3ecaefc8-ead2-47a3-a7ea-b030faab65a7",
+      "oracle_text_sha256": "e5e4875b2f7382938ece077adf1303491f36111a6fa09b09f0af72e11493f2f0",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "1b21448b1f170ff49ca97998750d2fa94074bc8ad0389e90788e0643a62f7bf5",
+      "metadata_sha256": "ea3403072ce2abcb458908a8b7bb300f9a0a69809c85fa4ec543f7c6b1d5cdeb",
+      "name": "Ragavan, Nimble Pilferer",
+      "oracle_id": "37108cd4-bbab-4ce3-9ed6-f60e8422e703",
+      "oracle_text_sha256": "8105afee30b0bb14286c98261ab6ef63c858c92192e73a5e1d18fc00b44d54c5",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "732ba4ccbfa7546a7be8fe2e8ef6afa3479a25edba76aeaf5cc03265d721fcdc",
+      "metadata_sha256": "ae9d478754069c93e421ebbc206dcf3c5efea0903290fe3cc274a0781363e77f",
+      "name": "Rakdos Charm",
+      "oracle_id": "5e62b51d-faec-4aa0-9504-cf2c282d08ea",
+      "oracle_text_sha256": "6ab4746beef791fe11cf8077353b167942973954b50eea575470610ed96e05b8",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "c3c899bd04030817c000f31f72ccf7f2ee907f11c8a72be94becd4b245a517c0",
+      "metadata_sha256": "8e5aa11a8f65d69b940b5df86fbc65ec09d6d701f5af4470b21c5e4a56c39d9d",
+      "name": "Rakdos Signet",
+      "oracle_id": "3adb7681-977f-4a32-9ec8-51481b958268",
+      "oracle_text_sha256": "43195f1f73f52c2d23bc60115037e323905568bcfa4f199fa2c30053f04ebf2c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "72f77b15e7d30baedc89b356e47184f371302c2a6d04d502388cde6929f5f7a1",
+      "metadata_sha256": "945917fe6a1f841d038d6430fd4a7ecc7059c0f09c8365a602de27e34076f546",
+      "name": "Rampant Growth",
+      "oracle_id": "8539f295-5d58-4436-a73a-b9277c4c7795",
+      "oracle_text_sha256": "965887e6bdb0822e11339da53b36ad0c558d61e010089d7e12d6a5bf8007e1fe",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "b10d3666eb5461142411056534bb07f179b83bb12b038501c351f34a504e5629",
+      "metadata_sha256": "6e05c854ee7105c335629501947858fda5fce47d047fd1249af6ae4dbe62363d",
+      "name": "Rapid Hybridization",
+      "oracle_id": "06692cd9-ac2f-4a32-8fd1-043ba3c0fe71",
+      "oracle_text_sha256": "4c2517007a8f52217da5b97c26c69bf05a1d4a2b55520e13b42ce5175d5277e9",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ad404edc450e58e400b41f2b76f90d5f80c5dc6ab48a77cdeeabd7efc0027730",
+      "metadata_sha256": "716284cec2941bed5dc13473743cb0415905682104585f14c4f59aeec408ca2a",
+      "name": "Reality Shift",
+      "oracle_id": "70dc830e-d05b-4fc7-88dd-879e140b3fbf",
+      "oracle_text_sha256": "fd281b3c6e07e2e1562bfdc76b724d3a98b22b7997887c73fc1f980ea85780b4",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "3256c6e8d36e096334c0f2304213980fbefc808c66f6b83f1b1144521ede9f82",
+      "metadata_sha256": "6f841dbdf8bf23b026b0bd7bd5b6d2613840c75cf094495ca169efd9f7904777",
+      "name": "Realmwalker",
+      "oracle_id": "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f",
+      "oracle_text_sha256": "95ccff221160aa0c77055543f9c5d8261cbbd4141921435daefa92a7cfc8f235",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "722171e954560e02a5858b98fb73c09e61fc5512550370742c2d374556cbf657",
+      "metadata_sha256": "ee317530934010ec27827b555bb9d0a907e02e94946cd0f706e876d43885303c",
+      "name": "Reanimate",
+      "oracle_id": "a044474a-cd72-4e9d-bd8d-a08f2de9cdc0",
+      "oracle_text_sha256": "16e4951b33b31342afbcf464963dee8014a767381929348075ad695c134ced16",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "4336d91a8b3d576f65d59f548e9e29a7472289873386c08e527788a3ff27cee5",
+      "metadata_sha256": "9096fc56fa29e50aa1fca8e5dfdb489a83630f43b4f3764bd91ef97c5beb8968",
+      "name": "Reclamation Sage",
+      "oracle_id": "032ec6e2-6cc3-4a97-9cc7-3233f5e11904",
+      "oracle_text_sha256": "0d5653485c3792c1cd0918193f5af8bee381aa8e16c5487078e2523252863bcc",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "b4cfbf0d96abed815006684d96cca8ff25f34c48e84015b934956b9e432c980b",
+      "metadata_sha256": "1070fb68835bd90c7d438ce015a784046a39d9c41898a405350a0e4f20b81de3",
+      "name": "Redirect Lightning",
+      "oracle_id": "c62b5c22-e058-436f-9575-a01cb2112829",
+      "oracle_text_sha256": "171ada9f6d10407e774f84873fe8150771a06a27c102cad656b0fc8ac742975b",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "8bde590445c6a7054145118820ac91113b6873bbe016efa0bc67aef4d7677c55",
+      "metadata_sha256": "fb5452f3c117c6ad2f0ee12aa715123ea946723fed6c1b735d19d73478ca8bfd",
+      "name": "Relic of Sauron",
+      "oracle_id": "b3a81bb1-cbd5-41a0-8dd4-faea06593f84",
+      "oracle_text_sha256": "dedb9ba484799fd4075c6a0411190462b4d566717afa6f3bb181d5db2d824b5a",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ee1bf25680e452e31fa544fde3868704012a2e9addf3decb79e0d81a5cd3d7a4",
+      "metadata_sha256": "f5dc3b17ce9b104d632e5b52c09a279b9e043ebbeb3a40b722cd45413d134f35",
+      "name": "Return of the Wildspeaker",
+      "oracle_id": "2b76f9e9-cd28-4eaf-8674-215c34263f96",
+      "oracle_text_sha256": "cd62b001f806d1cf06d23abd31e48fdadfdf412fd75551dbee0696d4f26638ee",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ad49bc7d806c5f8e4ad4e98173527459aaac53d71f38277f2bbeae7f9a13b14f",
+      "metadata_sha256": "46bc0539a76e2f0f7c6f0c77c5d372b87102a4f91355a038f49e2f6e109b0279",
+      "name": "Revitalizing Repast // Old-Growth Grove",
+      "oracle_id": "8dd6d060-d023-48a6-85cb-7a5521b6257b",
+      "oracle_text_sha256": "6ee39c84ed70ec422b4a6bb31e38fad6bb74f844a924333971a6c36322224db9",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "0f0d22c43ebf56837a201efc678fb8db884c7e03a811b237917ab8b1c28280d7",
+      "metadata_sha256": "2046437976d140806c4cf2a0a3071c24d933f5aa592a4be8807b265441fa533a",
+      "name": "Rhystic Study",
+      "oracle_id": "53236dd7-845a-444c-96d5-f41ed7325d8f",
+      "oracle_text_sha256": "8a4c25c012702851d57d3127c945703361947e2dd4099cd48f3940c3ed56edb2",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "cb639607e7474e853527e5412c8045244b9a821449485344e9f78555e0c01bfc",
+      "metadata_sha256": "3415ff2854bbc6d4ad4ce39e18723ad37f8ab321734f16f09e5b6b231b71ea2a",
+      "name": "Rhythm of the Wild",
+      "oracle_id": "acfa77fd-3610-4f12-9c3c-bd860ce91700",
+      "oracle_text_sha256": "091ead54300da5c6266f827f4ac5eedb5a5a608da8ee98f6b003f4204e194c04",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "c59901d46165d55ce89a267a7152bbe2ea85e4a1fe387d07dc86b685d69fc2a7",
+      "metadata_sha256": "ba0b9cc45054b45f9b91f502f7ebea8a8e4ee2140ba9a4cd06afc87337b47ed5",
+      "name": "Rishkar's Expertise",
+      "oracle_id": "97407cd0-2bd2-4074-94d3-4ec3d243fa78",
+      "oracle_text_sha256": "52d2b82a3ba85d149ed7ce37901be22c0bd0664b26d7e0f653e27213f6fcd007",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "c7131cbcb2ecb0feca73e5ade7948538532ea3eb5617c86cdaba081da9caa11a",
+      "metadata_sha256": "d159fd5012ce507b086fd0bc0b124ba9b8d24250bf42cfcb19d077f66ac8fcd3",
+      "name": "Ruinous Ultimatum",
+      "oracle_id": "a6f38908-aa4f-4f99-a28e-85d11dab52e4",
+      "oracle_text_sha256": "c11e05c0d3c7d1c0759c2132710a910cdacd9f9d8bddce1b6a8ff75bc7a5943c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "5b7409b4eb99fe9b9fdc3c7fbe0b928b5fd36df5a6208067ef6542a20e4f9ed2",
+      "metadata_sha256": "927b362bad2abf1a5a31280ee1292d3c5207ad0dbdb051bc1bf76592b797279c",
+      "name": "Sai, Master Thopterist",
+      "oracle_id": "52241b9c-7a69-4176-9234-8bdab09d8e64",
+      "oracle_text_sha256": "fd5ff7bea74816e013f40d47f5e7f7dab268cc33c0e81a48a6cc8215e500bc50",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "3addf88b40b6192b94db9e4b7dbddc2e89587e6bdb6362982def0a15bfdc951d",
+      "metadata_sha256": "66a60859775f769739674e36fe6bd95ca33b8f8f469d7819bf256e46da8153a4",
+      "name": "Sakura-Tribe Elder",
+      "oracle_id": "e3afc704-220f-498f-9eaa-0821b17dc24c",
+      "oracle_text_sha256": "c8537b3d3f60e79c6c79832337a25bb91195a6b68a2eb70d90220bfda0a75a6c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "3ba52a6738d89bc016c990031b34d20ec18a0fbe05796c3f3df870742db0e4a4",
+      "metadata_sha256": "2491d6479dc61b599a75349a3161b406f152c22cadf3be158b028e6c73489721",
+      "name": "Sanctum Weaver",
+      "oracle_id": "acfe7ec0-0606-4d5e-b1fa-25f0c7aeec47",
+      "oracle_text_sha256": "7f0ce10b2954063811edd013f1d6920f87c5ea7c6bba4290b8ace5a5a4af17a6",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "26c9af2083c9d5dbcc3325649334c9017f86bf96a170ea0eb634ab123f31a7c1",
+      "metadata_sha256": "500aa9de70adeeb207e60e0eebbb92864364c3c13f73438d5442ec62ee5b9a93",
+      "name": "Satyr Enchanter",
+      "oracle_id": "aa321138-b1a7-4b8e-a2ca-b9ce65704e92",
+      "oracle_text_sha256": "7f2fa421df34eeb4695c75b5676ba0a7ad746e71f8000e4b69e54c7ab2b30763",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "3a0362f313f098835033400cda71915691c1a09df9ff56278fa9cb8ecb9d63b3",
+      "metadata_sha256": "a7098e878fdc42facb0afc642af5bc549865918c86c94be24e9da874c8646832",
+      "name": "Scapeshift",
+      "oracle_id": "c235015e-a7a9-4f8d-bf4a-cf68b3847f83",
+      "oracle_text_sha256": "959b7db0ff81c01e243d1876186399aec279c5b6b757fc03b954b5a43641b148",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "17aa8b72268ec23d0845ccce29ff80c946193c4485a91c305c3a19824f4e1ec5",
+      "metadata_sha256": "3e424e455715f578a045a382d55bf8e2c38df074faba4e16e5508c63f471a9b1",
+      "name": "Scute Swarm",
+      "oracle_id": "aa854d50-444c-49d9-bfb1-5476b33c1c0b",
+      "oracle_text_sha256": "587d510b61f197b6fc1f5579d22b9d3a8d391fae48a00b63131f8793319b5885",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "941cf60a0376a1d324bced3b5a6b3aa210bd76082e24a06c901b564d8d6e86ea",
+      "metadata_sha256": "a47c48f4fdbdd59974d03140281d29d48c985657d652bb20508b41a1f1dc41db",
+      "name": "Seedborn Muse",
+      "oracle_id": "463865bc-087e-477b-9e86-84e77f1ad931",
+      "oracle_text_sha256": "3b42784753c86cc848bd4f918fd86c5eadabead1ae13bc5f99daaf5c2e4084f7",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ecc649c8449b067b0423cbf733886bfdc688aa9e5c6d15e1fa5d157d43cc6ec3",
+      "metadata_sha256": "9989e70aa5ad5190f176d13db8e13d00f2c0e8236bb94d24be0e0f84c9c769eb",
+      "name": "Seething Song",
+      "oracle_id": "64bf8929-f5f2-4d50-8667-13b1d007bcfc",
+      "oracle_text_sha256": "48af4d6c8e4d40abf071ac3e66704a44d6fc76b0b272080b3848498b36123812",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "2e57a292ada10e5bf332f3942033ef20322345cf675a5b9926138158673d52a3",
+      "metadata_sha256": "483f97f9dc831956ef75bcbc1539ad1614ac0a4e597d9afe2d77475bebd094d9",
+      "name": "Setessan Champion",
+      "oracle_id": "38513660-260f-4663-b199-6473fa004a3b",
+      "oracle_text_sha256": "e5e66179f1a3e4f74cc754fa7a4efcf2933f722daafd5f1669dad8878788bc74",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "a7478bb63bb8a3dd7be38c8f6647161f5ac5f2bb9ea6aeafb5c274e3df84d339",
+      "metadata_sha256": "700ffd9899cbb38c6e28676527ab44bd0211630d46702e2360b508228db374f9",
+      "name": "Sevinne's Reclamation",
+      "oracle_id": "1b9f9f5b-8712-4f00-90cb-1b7b9970eccc",
+      "oracle_text_sha256": "e9b509ade42808c8663b756566cbba9fe2a082ef834d0b4874084d7d106e4da2",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "510357542a02e77c161a3e5e41dda1ed70753ff443c5df3b393226ce8ee29d1d",
+      "metadata_sha256": "faf3c86af77645c1d6d3efb6e0b624ecb8999f18bcd2e0ef9991169b61a3376d",
+      "name": "Shaman of the Pack",
+      "oracle_id": "39c7d2cc-4fd1-4f1a-be1a-a6ae56d2356d",
+      "oracle_text_sha256": "02d86e916e21a92f0b4a81c95cf0cad582d6dd9832b712461335a552682f6523",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "cf7e9a715189597e84148aa0ea56b6d55c65eab46efcdcfae8a01723bb8d76d3",
+      "metadata_sha256": "5051ecf69d40db9074e9f7ae48d9864d2cb8a88cdddd7f861ab47c636d83a83e",
+      "name": "Shamanic Revelation",
+      "oracle_id": "d1d171de-1c6d-4fb9-817a-9c689c709f3d",
+      "oracle_text_sha256": "387f9f2394d81a90c79c28dd92a2ae1e18307d7f2537a23e732e691946caf003",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "44d6357d2be90b5a2d68b7c4296a91f1ca34936c2c315982eb028dbd617062b0",
+      "metadata_sha256": "078e3cde9ff378e55235080677a3df12dca0870f9fa1099637a15f2c92d2b86b",
+      "name": "Sign in Blood",
+      "oracle_id": "c6207f6a-a624-4754-88f5-dbe700c841ff",
+      "oracle_text_sha256": "43e795327426776735f237e54173b5f665fb6ab722a6bb0c980898c39d5ae1f1",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "90eef2075820e1230212c9dd8efdf2d37bfc108df776d509a618f1293fddc1c5",
+      "metadata_sha256": "4c44b8a268d8393d3200de2f1f49ca7da37acec533a9fd59ead23abe9896e9ad",
+      "name": "Simic Signet",
+      "oracle_id": "44503105-3e13-408d-a44f-37d503c61d72",
+      "oracle_text_sha256": "fcba3d579731ba4e54d48a8051d74435943efd7f1b4de4fb47ef7eca099bbd7e",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "2093cedb41b1660b05e66b070411eee909ecf18a7c7209f70d2775ab0778b26e",
+      "metadata_sha256": "d926a83ea995b46a78d64c63fb831244faca2b288d9f7e6f4e4a8cf3aedcbe4c",
+      "name": "Sink into Stupor // Soporific Springs",
+      "oracle_id": "bcc6eece-75ea-494c-b33a-d4477d504e0b",
+      "oracle_text_sha256": "efcbc3d0f691347a88dc4ca7625cb27619d3563dc78b7c724bd42194b2fd7ed4",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "d7cb2d6362fead60ce714c3f3678e178ae830d4315cdd96557370a33f3fc4329",
+      "metadata_sha256": "b155a96bfe85c99f07a6ceccf92dd1e7176345a6b1b986f8701c259404f9b252",
+      "name": "Skemfar Shadowsage",
+      "oracle_id": "496ecb73-f508-4ac7-b101-23e03404580f",
+      "oracle_text_sha256": "9a36cb2b21b50ef41d60bebee48e25960b6dbb1d6143d27c332493bea23df890",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "ae5e3fab3b35566362a14524dff2381e4fb95b2d31bf6eaa1527f02818ed4516",
+      "metadata_sha256": "6d19ef128c8974af72bafa4e6fed5209aa34c98dba5c7e44336156c2727c427b",
+      "name": "Skullclamp",
+      "oracle_id": "65986c1b-8e51-4604-b685-d82fa7d1263a",
+      "oracle_text_sha256": "3c3d04cb7fd29b21b8d64fb766e17ad5e61508aad22cc8969080e23c60be5632",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "01cf028578a1597f7389940c9663fac01d98825a972edf94f90868b25d4051a9",
+      "metadata_sha256": "d6bb445fbe906a7f3551c544ce8b6a64040bdc97795e1b2fdd44d4140a10820a",
+      "name": "Skyshroud Claim",
+      "oracle_id": "376c9d3f-21d3-4251-bb6a-026fa9e1b0e1",
+      "oracle_text_sha256": "188324f01df47b536e62d867d8e8f8038c536af8282116bfbac9eb1ddff73377",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "4e149539e44ace2bf7315939e4a60f28cb02d45d7af1919782651d25e19e833a",
+      "metadata_sha256": "2961ce5632bfac3441d1cf1d78e9850fd23928d859ea0ea47728042959d326af",
+      "name": "Smothering Tithe",
+      "oracle_id": "153376c9-dffd-458c-8ce3-a4c8269bc4e9",
+      "oracle_text_sha256": "49fc137477f88e03b15c907e6cbfe0767ce54d6495862711fd2cc8fb2440e47e",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "7a72eb23460d3c2c1454efdd73051f0079837bee45146c1fcfd08d27a8886e0d",
+      "metadata_sha256": "124a98e0d0f7175dd19ecaa64a0b2c3cfe6432c54e0c8484a49315cc259eabe1",
+      "name": "Snap",
+      "oracle_id": "ac914d98-221e-426c-8a50-342896b15f9e",
+      "oracle_text_sha256": "9d294e889ab1eb6e3a6d0e60805fff09fa78b7bdf73ac8ddaf373b45092da89e",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "f4bc70de0f6e80a4d97c382c244d1c911752b1b1fbc1517e48c8f6620d66e624",
+      "metadata_sha256": "54a23e3e93a61a180c36f1da2a13775867c4a0e2e584297379aa8b2d3bcff8bb",
+      "name": "Sol Ring",
+      "oracle_id": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "oracle_text_sha256": "ea47133f97d7cc412bc5b781300f44afc7cf65969af703bbeb13b06f0364ce80",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "0a5ab57f934881389f46769f4f9abe9d27783d65b28b8ef142b283052e08c562",
+      "metadata_sha256": "5c0d27a8303b8098850f956505091a8d03c959e115d0624542acfccc1de6bf36",
+      "name": "Solemn Simulacrum",
+      "oracle_id": "00c0543c-2a1f-4425-8283-4062d74a1637",
+      "oracle_text_sha256": "3323d4c55320f53bea4121ccb51ed9645b1b2d94420eda4df8a5e54f67fe81b5",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "8193d7b776f74123369f9426694c8909e8c98e88597d3971ce80c9701df6bbb4",
+      "metadata_sha256": "a35e0fd4241100bcd294dee4cbda06d06343af6f762e8569731face949e3ef29",
+      "name": "Starfield Mystic",
+      "oracle_id": "2975590d-6a5b-41e5-8a3b-e9325e71226a",
+      "oracle_text_sha256": "3b584c05d4a9fe55143b16a6d25866d89768a66a785deb7e7907e61a5fd4e286",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "1472716407a122ee16ab3408a18f1e428e13c331a25c5ad419858de70005efe2",
+      "metadata_sha256": "bf5733adbede7d096ff38f10c61327f64143622f3c7c9683ef3830628e9f7992",
+      "name": "Storm-Kiln Artist",
+      "oracle_id": "a145ff8c-5812-4bcb-bd16-9839dc25121d",
+      "oracle_text_sha256": "12a9a6d822b294f59cb2a5369bc03036eb400bd2dd7b1aab2760b94815f8528f",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "31e5c9315080e78a413d3d2d9c1f6c6adebd39c118a1f3a6592d149a2cc57404",
+      "metadata_sha256": "c3186c4bf0ce44ca70f51df0ec3ef3d6b9ca51790f189152e71103ea739249d6",
+      "name": "Stroke of Midnight",
+      "oracle_id": "9a107e48-3d50-4941-95b1-10f2b29a4245",
+      "oracle_text_sha256": "45b6d755e4111370634f3518f3810d60d92c1985a43b334796d6ce3a7ea91917",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "23a6ac139b1627e5835821a305f202bebb6598f32425741de6c85bbc1c204f99",
+      "metadata_sha256": "20c381e46684a01d978b2bba3df8b8bc0bece97863975489826a5d885c6632a3",
+      "name": "Sun Titan",
+      "oracle_id": "b2e950fb-cb7e-40a0-a311-5bbdd0477b29",
+      "oracle_text_sha256": "72f97af89e48e7d46d958c5304f3c97228415bbeb42e74480fa58b8e86893f87",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "1fe8c8c97928df66e4832400207663a31e155c22f97ae5b6790f1a64c18c8b7e",
+      "metadata_sha256": "ca5c89ab11fd2084ecdcf43d22ada0fe2efb62a0756a97b3c1f92717c3c7f7de",
+      "name": "Supreme Verdict",
+      "oracle_id": "0230de18-8d15-4cfa-9d42-7ccddd9f9570",
+      "oracle_text_sha256": "f5944924eea8ca4c511d2e5480f027a40e8840cb71477765c37ab15a431ef017",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "aa8c4077039bed0b754769fc7627ef5f4508951518264c59e473dacb9b19c98c",
+      "metadata_sha256": "5d368e57bb2d71db2a0ec1193110ebc2fa7a0d8bbb64b91209e350e64507f6e8",
+      "name": "Swamp",
+      "oracle_id": "56719f6a-1a6c-4c0a-8d21-18f7d7350b68",
+      "oracle_text_sha256": "06e1ce7b3311227dc60506b051f40c64e0ca43ec07841b7b1879d1e93d7ec8d2",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "f7062a1fdee33319f69c8b32c99bbc836150c3f7814a2eb7bedd83865b738b42",
+      "metadata_sha256": "0a15137cf5a5a64e555c7210ff63ade794142f5ce792e025762572bdf0e18bfc",
+      "name": "Swan Song",
+      "oracle_id": "8ddfc283-c9b4-41a5-af88-cf0068e986cc",
+      "oracle_text_sha256": "b83a1662289d81b163c41c4eb2a5987e9ca003166a7e2a814ea8e2a5b43d48fa",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "65a7b3ea99d398df4fc6b01154f9a158ac7c04735b05958183836bf9197ca19e",
+      "metadata_sha256": "d014ab46cae467c6777a0541e7dd32d13306e1c568577979c5548a353eda9108",
+      "name": "Swiftfoot Boots",
+      "oracle_id": "c8b143ad-43ec-4e0d-a440-e348daa31391",
+      "oracle_text_sha256": "b6b60718748dfe07ae9a539e6f74e4b11dcbcdd65ed5a3545bac0284df02d972",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "4f83c9212899b3b80cfc96972b9c626ed4e15ef3db41572d6e1ee179952a49e0",
+      "metadata_sha256": "0df55eebd2507bbb3dbecf2c0d4845d705994d710271d31f3e9d10e477e275b1",
+      "name": "Swords to Plowshares",
+      "oracle_id": "b1544f21-7e98-461b-aed5-e748b0168c52",
+      "oracle_text_sha256": "10778402051cfd74c136bf7346fdde22860a38a7e209a85006828bef8991ff79",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "587b739634bc61e7e034b6b76d4c067c82abac1405b9878be5662f83e92860b3",
+      "metadata_sha256": "1d3090a0ab8c29237375fb5e54bbac9abab23b23c564adf48be0dac6f856e381",
+      "name": "Sylvan Library",
+      "oracle_id": "92eed395-62ca-4293-882b-8565c40daab5",
+      "oracle_text_sha256": "a35dd49b8796d9e527680f4196e79143212c82f127fa16422e7f0a2bd5bccfbe",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "8dadd760f0add20ca8c40d0d4ad9df280eb0f54eaaa92426b18f481b1ab685e6",
+      "metadata_sha256": "715a8d95aaf1b2934daf320e5335b907b36a91f6d2f8d46121cdcb81fc9d162b",
+      "name": "Sylvan Messenger",
+      "oracle_id": "ba310102-8272-4d64-a00b-9e7346cb5f46",
+      "oracle_text_sha256": "36462f90c443d0948542be8ddde208b27a766145dcd9b8b5da3a709a2bd03588",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "b68f4bd5c9c30481186b8201f79f78f13494f7b55a3c13fe7e144adb22ff1fc6",
+      "metadata_sha256": "05a3339d0c374ba83bd76b769e87b6df4850822a1dade4b9dc6c8c0e6997054b",
+      "name": "Syr Konrad, the Grim",
+      "oracle_id": "14c3ff84-1e82-4606-a433-869fc52cc382",
+      "oracle_text_sha256": "c58cee0d352c3ac20429a2ce0df502980857379fb2aa6429e3667258dbb198c7",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "3f87005fb6b67eef8a16ea6257c8c5d2eded994a5dfe80ed068309ed957c96ff",
+      "metadata_sha256": "a132ca2228febe0de2295ecf3528e7b5e60626c517ab6a656d4812970c509ea6",
+      "name": "Sythis, Harvest's Hand",
+      "oracle_id": "0fc64fd6-f057-4056-9dca-47accb7ff036",
+      "oracle_text_sha256": "258fe0a3d7afa0403a0383e41fbf48db463146f625d568fd1779b3470fba304c",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "2ad9acb40688c3fe6dd7a603340a9884ae4d12988d268fb0918c8d318a7ade3e",
+      "metadata_sha256": "5fde8c917f2466d3208189c313030b0fd1ffb81fe82f9c3942d24fb12864f194",
+      "name": "Tainted Wood",
+      "oracle_id": "fa6d05a1-3df4-4751-b1a0-8d9693faec73",
+      "oracle_text_sha256": "9aa28a3d895bd1a08f4460fee953c8a4bffa672f72581aa171ba5567613700c8",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "2232a163a40029e8ef5a24b5e81a4cb34aebfc826c50b97c7e7598f17013573c",
+      "metadata_sha256": "e72984d655d2bed25db4914bdeb9833bd33b7148d3f561d69dad45f884b3b0d7",
+      "name": "Talisman of Conviction",
+      "oracle_id": "6c326439-5620-4ec6-a56a-fe9c3d5d2a46",
+      "oracle_text_sha256": "9a966f1f9264fb5cd7538ef245274491f2a2ca526454e2b639e257a868da78c8",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "990d13b1ee29c6d06e7f8d4e7c5c311f99a7e25be4f4f4330fb7c8935c0e2183",
+      "metadata_sha256": "ecfe6bb879ee34579e3460e45968ad891183a5b7a634a50fe3272ec8b9d26863",
+      "name": "Talisman of Creativity",
+      "oracle_id": "14d2979d-5728-42d7-a027-0eb1f754655d",
+      "oracle_text_sha256": "7ce889d5848a9d0aab17ff6ad685d787b9e152ddff6abaeffec6a08997bb8d50",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "325b370069e5384ceb4c4d2b3d187e4be21b64924aec164a9c19e5f2b18282ee",
+      "metadata_sha256": "46f79080843367e66c75ea92433a5a18e37fb7ceace039a97737cb8c2770dbaf",
+      "name": "Talisman of Curiosity",
+      "oracle_id": "8c34b089-aad1-476e-958a-3077bf1bbb51",
+      "oracle_text_sha256": "dbc05684766581f7008d5b321666d7de082eb4073d612bdbf30cb93aad1e6808",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "7a74cfd659c928b49361321d971360122d7ccb541e55d410bc30ea25cc2c2a68",
+      "metadata_sha256": "2ddcc3f25f65d917db492cfb89166e908ca921c1e6dfbca1ec031bc2cadcfc9b",
+      "name": "Talisman of Dominance",
+      "oracle_id": "4c0a0448-b9d6-43a0-8549-64066dac63f0",
+      "oracle_text_sha256": "f2c5ef6a7bb0f27b84aa66e2614c705cf11411d0205ce3a826998d0596481001",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "afb35d4d694f33aa7dc92f268475b5a6f81c0bf1c8ea65480dc0a44ef6b69e89",
+      "metadata_sha256": "7ad10668e4191e88caaec27b44be9f12c003c92fb873350e26f9bbafc95b3e76",
+      "name": "Talisman of Hierarchy",
+      "oracle_id": "b693c3de-2eaf-4850-b405-e79d00adefda",
+      "oracle_text_sha256": "9997a98575e2a62d6f3a526c493c5df8e05f41ebaa646d1e8d867806966ff2f1",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "16800ec0968191e8a535c558a239abf85df4e5002bb333319c24232d616b7131",
+      "metadata_sha256": "fa1fc33c73a4ec720006986f2fb53a4224e90ec3221f0b9f225d6675aa4495e8",
+      "name": "Talisman of Impulse",
+      "oracle_id": "f2ccc9e8-8e92-4f8c-8728-8c748630e0dd",
+      "oracle_text_sha256": "7c8a0416f3c33e4336f08d8933d4bc70cea9ff962689bb8cc1f4a2162e44eb2b",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "e8b9c591618a9fce7e41d9f125a2fbb9da8c7f783d5df501543452e9b2bb4a8c",
+      "metadata_sha256": "24cd699fbd7fc73ff935ae3a31da740a10622c8570c4d3a5ded03492d83c1db7",
+      "name": "Talisman of Indulgence",
+      "oracle_id": "1d9aeaaa-66f6-41cb-9bac-162d6fd8662c",
+      "oracle_text_sha256": "f688131cd2e7684b3eae7708b75f8294cf19c41e56f07cd88a9f614d19027f00",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "40b9b406138affb0916707aaf560339813a53f2c9b8774eb90ad0edbe7b78823",
+      "metadata_sha256": "8c1956cd4a0811331a68a95fec67544891e0cdbd012f492e50d17afb66b22b0c",
+      "name": "Talisman of Progress",
+      "oracle_id": "00e35322-1a9a-41e3-9ce1-359c8eaa3bc7",
+      "oracle_text_sha256": "358425e155f2c0dfefffbaa45dd5dac941be347521a90733dc10154e10f22659",
+      "source_path": "sources/scryfall_4.json"
+    },
+    {
+      "flattened_input_sha256": "801fc283da6e187325f78cb19bf56b237741ef1ba4fa5bf83148c86b23af6cd6",
+      "metadata_sha256": "72c82476e4e0ee7b63f8c29551e87d4edb1441dabbb6837089ded16bf2ac2ec4",
+      "name": "Talisman of Resilience",
+      "oracle_id": "42b8aa14-10bc-4bd6-88d9-4bb287eadd19",
+      "oracle_text_sha256": "14887f9196b817c4e6aac13884f463b838e83937b09787f8bc9aa4894e88c501",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "d88f591e679b0802d8939952b828d8e56cbe4e72a606e5a49f31e4e8fad64271",
+      "metadata_sha256": "3677418490633bd9a43628912d54cb353dc149ca4b2bc23653bf080e8ec29008",
+      "name": "Talisman of Unity",
+      "oracle_id": "e5fcc5d7-6a60-4a5b-9d02-6c30041a95b9",
+      "oracle_text_sha256": "3eaeee04a8415b2c522e4e3592588defb14d9efbb40397a04606f7b212806fdd",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "8be9425c9d4a61fb869476daf9997065ad4b54e6388eeecb9d8a53ef75a8eaed",
+      "metadata_sha256": "76ae87ff71c2c3789176a318b5473246930de7fff60d245f1c4fe622c584bca9",
+      "name": "Tatyova, Benthic Druid",
+      "oracle_id": "0715e860-3b3b-4331-9718-207973e94fee",
+      "oracle_text_sha256": "a0d1bc4afea0ddd6a9638b8888dac0546f9198aaf05b39c3608721993a2e25b0",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "54e86d63231cbc88e0ec303f8d80a467c162e6bc26a709d197b51a2268c8479b",
+      "metadata_sha256": "a15fbedea3b90bbbd7b5f1ba1198ab1b99a18bcaeae14ca3058602fef38548f2",
+      "name": "Tear Asunder",
+      "oracle_id": "610af0f7-b5e3-43fb-9d02-7c59bd99034c",
+      "oracle_text_sha256": "bebd21867599639bebb864e1f35d944c98f9f173aa97449ce8211ac4d38b90dd",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "f5425fcd86d2ee47730b843c2bf61f3a7c9032ff519ff8375fbadcd6d567fd14",
+      "metadata_sha256": "05d2fdccabefd05f7634041801a2c54333c1fb0936a415c6589e8b8f09ba4f65",
+      "name": "Teferi's Protection",
+      "oracle_id": "0d4ecdb1-ec90-497f-a7a4-1c68092b8757",
+      "oracle_text_sha256": "296fe8a4b34d9dca719bdabcbd5a6a9b9177089cfb15dfdab51e41ba8bcb5d2a",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "0b68e8bf3272d4638bbd52d614e2c58a9227a339f09bba1444586bb46fa74dd5",
+      "metadata_sha256": "3405ea300bd618e5fefe5e76ce8f1c1148247f08cd9a4ccfe3ca457748b9ed18",
+      "name": "Temur Ascendancy",
+      "oracle_id": "e68dc47c-692f-4420-9799-eee104017273",
+      "oracle_text_sha256": "bd380d88c8230edc080d66e8e2a7553acfc62e1cd760394d8a7c14d88132f3ec",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "55ae3d3df1d93fef2255fa02027b898f3243e0c69c2194c3cbf69ac0a8c4de49",
+      "metadata_sha256": "42c6abcdce08b0f445e79c524863021a30425649f3e12339125aea7098f05a77",
+      "name": "Temur Battlecrier",
+      "oracle_id": "fadf984c-c224-432a-87b9-b34f929b8409",
+      "oracle_text_sha256": "22b52542a4ca7b04ec62f6dc1b12c5bfb2c57bd9711821a019917367222be309",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "4159e7a7600a382c8f66f26f3f3cf73d1b5d1295e53df85f7dfdb8ecda3bb1eb",
+      "metadata_sha256": "ad8b5468b672936c69567fc0c1ed3b9192f7e0895c7edc37c535433ad67b940c",
+      "name": "Terminate",
+      "oracle_id": "6257c2fd-005f-41e3-8a72-af76df1eb134",
+      "oracle_text_sha256": "a29647bb0968b79281a24c3b9ae1faf50182471661fc59b3617dc10fa36a7bd5",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "e2edef6460751cbb2d4254fb439d0e631d369a246b2944dfa719985b03f77400",
+      "metadata_sha256": "308b0e9fbd9986cb0e536573f3a5a9bb52379fd9f06922e96997b904f71b1be5",
+      "name": "The Gitrog Monster",
+      "oracle_id": "a5e54d2b-aad8-4ddd-af4b-13668913762b",
+      "oracle_text_sha256": "a8868e75d1c3a18c3d509fe685adcd82fb00596dd0e796c5267f1964850c50dd",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "fbabf3bc28a48def6daf9cc84cce4a70e21ff3740abd9546bf2f0309523389ea",
+      "metadata_sha256": "725673ccf076c8a0a254d55647ac1d7d20cf0b0235ff6d0319d2930bed3a746d",
+      "name": "The Great Henge",
+      "oracle_id": "78427103-9543-41fb-b6d4-72963fe87275",
+      "oracle_text_sha256": "97dd378005b59042ae43da2dcc0f48b966aff09c53e1c51a79e7657c920fadc0",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "7f8592cd5e6ddac909b8edab5e28431ceb619d2a5b16584bce84d56cb0438a9b",
+      "metadata_sha256": "4efe4c2904219028af9b3cc30400af1005e127456ca24eb1c9adfde31908b063",
+      "name": "The One Ring",
+      "oracle_id": "3aa83ed2-f48b-4ce6-a614-2c54ddf50538",
+      "oracle_text_sha256": "47cd73bb3f293500ae6f2f8add63fa27fc6006d5492cdc0f7d5cc0fdfcd678e2",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "bbc434b8490b2ca0230b27d436b4382077ed0d433700918388c8a4a34a7c2e05",
+      "metadata_sha256": "dcc7544a6dc384149cef64c09574dc51b79e73c012e9c22edf9f9b2857132aca",
+      "name": "Thought Vessel",
+      "oracle_id": "9965d9c5-2ebf-4a6c-930e-55c5890979be",
+      "oracle_text_sha256": "1d3fdda7a0886da43b6fa1282c53ecd51b19885e9f79153a06677a246ac2a343",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "84107fa2980999fa59fe1a0f8f25f77deed74c9a43b862acdb0aab50d5b4bb93",
+      "metadata_sha256": "c097b4e605f4dd01595dedb128f453a14b9e7ea2d1bf4ddfe1953ad383b211b1",
+      "name": "Thousand-Year Storm",
+      "oracle_id": "dd4cf149-2fae-40e5-b50b-639f6bcec65e",
+      "oracle_text_sha256": "563214c48308a8c24089c82a4221fbec58908d4472e3f903309e2f635545330f",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "56b3f505405facbaf2266244360752e7710ad6c4cc36db0bf94418745d704145",
+      "metadata_sha256": "3152f70c25206500eb43b5bd98447479fca00245a08f45551dd6e50b7e58f59d",
+      "name": "Three Tree City",
+      "oracle_id": "da3b17a2-e1e1-44e9-b9b1-ae54a92037db",
+      "oracle_text_sha256": "abb0bb1110eb8a7df56475a1d515f9695235d3d5b645c325526cfe97af46749c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "43a58dd6978a82cb25cc820d689a8933b2dd7872cdf384308dafa1c76a689cfd",
+      "metadata_sha256": "f17f204bb7a291848b8fc88f2591d330894aacecc9ff81fe4d324a16db037259",
+      "name": "Three Visits",
+      "oracle_id": "1b882a0e-0ede-4d1a-bd1a-9b7cffbcde8e",
+      "oracle_text_sha256": "6c28034f26261a3356fb8f96a2ff065a1cd2f1e04177985f78459f1b63762a4b",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "22e1815c1fe17d794a3cd0bb8a23f4daa8a8174887062245e0bd308291347c46",
+      "metadata_sha256": "d7b323fbef60280a98a3ef96204a874749d2221f9599243411cb699e52be4762",
+      "name": "Thrill of Possibility",
+      "oracle_id": "1cb0610b-a731-42c2-b93f-0a29f63cebf4",
+      "oracle_text_sha256": "e2d91680089523a483fb60e83edd0b07cd6970e7bf1b4c6b90f8000c021b44ef",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "f5bda602e7bd567b01de60aac8ffa39c879ad3f7f7b35b8ca3b31cc8470159e5",
+      "metadata_sha256": "a555bc7c598a09f059e058709cf698094e4dce83ffab1bdcf5db28bf9c6edd19",
+      "name": "Timeless Lotus",
+      "oracle_id": "fec77e0a-433e-4d32-9260-e26a37f6ad23",
+      "oracle_text_sha256": "165660ef383c207a4cf08f51d8fcc326145b1fbd3f26202063087c42d81bd89b",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "309c043ff3194ecf408b1dadd0e7e8f079926b6af739a20b2b55d87d100ffa04",
+      "metadata_sha256": "ac73167e0685251eded965b7b49cad01bea6579de0d2a53ee9d6d7b8c151601a",
+      "name": "Tireless Provisioner",
+      "oracle_id": "ab8d5f5c-1976-4f77-8ed2-8d28ee666741",
+      "oracle_text_sha256": "d2f7bed12d512e4f772c19eb46e6fd7e0d14e5cd07dd13fb15a38ba292cba90c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "3e99d502ec5a65b6ea492081f169ce376ad5e6771942127e5df18b42446f8c1a",
+      "metadata_sha256": "a55c16ddb7e480d1be44b8f7c73d1901cc1458ff96c7fc245bf3152b20c4f156",
+      "name": "Tocasia's Welcome",
+      "oracle_id": "25c983e0-a8c9-4784-91a4-8fe04c6df882",
+      "oracle_text_sha256": "f78e0c3711c00a7554b3061a21378622af1abc9ee99744548e12a343739dcf1c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "d205d2d4c00be2780c3371b32f0dc0a909494a9114c1b8a097e884b673661ead",
+      "metadata_sha256": "af4a0789beae8f10cdc2d3570922be4719ab03f1b20ff1dbff48ef86921808f6",
+      "name": "Toxic Deluge",
+      "oracle_id": "afaef788-34d1-460b-b884-9d7ae6ddeb18",
+      "oracle_text_sha256": "cf481da9c4dce8d4563c27ddeb0a33b1cf1acd0691e5784aec100709ab91aa54",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "e34d9a8a32b1fa8af0770f90a4f9a5f1abfbea916c61dc3368a6cedced0ea17c",
+      "metadata_sha256": "e7ed3ed98942e0c85535060e5e20df0b51db00688fe8885baf9b029d6de55672",
+      "name": "Undergrowth Stadium",
+      "oracle_id": "7c69f718-acc8-4851-8e5d-0cbaaa86192c",
+      "oracle_text_sha256": "e37edf10635daba68bfde7943eb14d47b0b27e904a089fbb7248174d0747f245",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "076fc2c6fb665638e330273bf3f29d049e219e0d15418cade6eb43df9712608c",
+      "metadata_sha256": "f84700b72e2991eeae12578ee352459ed0b9af9d9bdc7031645649a015f21f50",
+      "name": "Underworld Breach",
+      "oracle_id": "27e0948b-9916-473b-8d8c-a51bdfbc7457",
+      "oracle_text_sha256": "7fe954678714ba1c1058fc8ce4c8747657a6fd2f60ab3909f4d02ba0ad4e5847",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "c4360997a63d6022039f03566d7a73cc7c9b08fd4eb61ac4d20dd2121bad4ce6",
+      "metadata_sha256": "e1124ccbe57781e5b170e6aa58f93623ded4810a961677bb1f12207e2da4379d",
+      "name": "Unexpected Windfall",
+      "oracle_id": "498c10c9-253d-4b15-b48c-1509381b17e8",
+      "oracle_text_sha256": "d81590f3cf6763f4eac5bc640428936eb472c6759e35c40f870756e1e0ec076d",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "518e7817e7995b6f595e7263e7daa6426211d7b12d707164102501023858a85b",
+      "metadata_sha256": "1e6f6686fb22d2487713a8e7cccb31b37b854673185fc9fa43792bf62c6b38ba",
+      "name": "Untimely Malfunction",
+      "oracle_id": "2c49d24a-98a4-43c2-bb59-1ef13d4214c2",
+      "oracle_text_sha256": "04d5d7b9c8a786bb0f85762b06041dc2cf53222cd4fe5c65b306c682697ea69e",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "a6f2d624122d27171f742f40448435a84f3aa1028fec79d4c61ab17861770aab",
+      "metadata_sha256": "daedeb6aa404f5c918ca648aed991251ff87a158f3402f2e3c9bad973d58ecae",
+      "name": "Urza's Incubator",
+      "oracle_id": "b380c04b-0bce-4328-8f0a-1425e48bee72",
+      "oracle_text_sha256": "59c7f1902a0d0b07c36adf34272a59102dbd98de7c310b24f2a737fcc3b27739",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "e7fb8bda6f846af000f5cd7bc9a057e6ee866b14c11ab792e4e529d469ad815c",
+      "metadata_sha256": "75e987b714ffe52384a1303b49aa60a837256e542a0ff05ba9fc5b0b4f3bc3bb",
+      "name": "Urza, Lord High Artificer",
+      "oracle_id": "e87906d2-db1a-4e19-b910-adb4eb339945",
+      "oracle_text_sha256": "fb3563bba481bfaaf3b9694b59f8b51a1faff8a6d083b9eef074f862157b48c3",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "3148b9f456dcc1ca8ab8b7f1361aee5fd6fd574fcbfe385f0598078186d567c1",
+      "metadata_sha256": "bcb6cbc2a90692e057dc35069fd1d779732b093b1cf8ebbf3c42f7e943a3d297",
+      "name": "Utopia Sprawl",
+      "oracle_id": "00d8efa6-a2d9-4249-8da7-b45173675329",
+      "oracle_text_sha256": "c336dcf87badb439b956a871df224eeed39ebd42cd6735b45e1770ac11f00e92",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "dd6dc1746295feec34967daf571ee4745a1e511b0c4cf9be3f8c441d95ae17a4",
+      "metadata_sha256": "d9087dffc8c685c51e82e242596ba40d369abb957943dff57fdf64b3d355764d",
+      "name": "Vampiric Tutor",
+      "oracle_id": "ededbdae-d9dc-4206-9335-d7158f2d7700",
+      "oracle_text_sha256": "d1b12952d79060a3d47ba7e52d153487770db2d29766013d605e7460fbc80c58",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "5671d50ce354a7de74e4d2c26b7a38dea16ef0adbd4cc947568b3a994aa5fb5c",
+      "metadata_sha256": "9f1dc83553939205a3af8c1882371b5a3f6a42c932b765021ee60e8e3969370c",
+      "name": "Vandalblast",
+      "oracle_id": "3567c3c8-b3c7-45b7-935b-b1fdbc973720",
+      "oracle_text_sha256": "b34aa880f0bab5dde94e65266ac1af593b51bd54899eb16dcad32867c9df9836",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "7bf02d955b05f783563084659a4fda4c4935855f88400351276a1aab5c49b4ae",
+      "metadata_sha256": "253d08b3d0a745528334c26b98a891568ae4ad25218d43592cfe87b1b5adada7",
+      "name": "Veyran, Voice of Duality",
+      "oracle_id": "d57a6b19-bd06-4b07-8ee1-0b45612ba9e4",
+      "oracle_text_sha256": "78cd2c45ed8613fe19f29b09c5a1f08b386ea54451cee15c06b6970adc700f91",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "3f4080b2a54de119446a57475111aacec05d272df427a6a7b6e5e81ccb905334",
+      "metadata_sha256": "c9c096ae85ca0a0d2a5878cd56d730e1104ed1ee7db7c6747cef8c8a4ed1adc7",
+      "name": "Victimize",
+      "oracle_id": "240e85d3-e495-4877-8609-4b4056c402f7",
+      "oracle_text_sha256": "fe941a4fdc0ed2dddc37ad2e1e2658ea54a2d0115a508f07bbfdd710cd13d60c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "c33963dbb69b8292d0f6341fa464485bb36d00ee58eac65938af8602bf7c563d",
+      "metadata_sha256": "6c68140ef56e6184af295217b38d996037ccc5f63b0443e38e9e7fc3c5b20110",
+      "name": "Village Rites",
+      "oracle_id": "365548fb-5acc-4a8a-b20b-26d28b7d029f",
+      "oracle_text_sha256": "12552a69082ff94072e1007358e36a3c8bfcac7e534d34a79bb2e7afc37860cc",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "3924c10b9ca71ddfbce23ffc56bacbe15084aa26bd8cb45279e4089391fa4a33",
+      "metadata_sha256": "eb532d9e4b6b89284ad66412d7a703f6afdff0ea7b8af840af026422e80fab44",
+      "name": "Virulent Emissary",
+      "oracle_id": "3d4bec90-7bbc-4385-a2b8-303c7a8d0a0f",
+      "oracle_text_sha256": "ae5e0f796cbd62beb9d921e3e678ae39f6db799ef85f2ff94660f0b26afe554b",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "e92387248686af73e647e0ab7a1c39ca2c6a7f37d32a1a968a78445c079599f2",
+      "metadata_sha256": "e130abff3874ea433a6518fcedffe0eda23bfcaf89f6753ef4b8a47553c78715",
+      "name": "Viscera Seer",
+      "oracle_id": "f82a4e85-526d-4456-b700-7760043a31be",
+      "oracle_text_sha256": "0664c4bcfcb8f057b083d2ffe443d7ca68cf7f5acfff09e253a22c52709c870f",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "967eddf999d4c22b19527bb22ece3a72c87302d7edb76dfb13d954d2a7f51e95",
+      "metadata_sha256": "fc385d341443883531c7ba976518999f61e1acfb0a971e8518abd49d9ece91a6",
+      "name": "Voice of Many",
+      "oracle_id": "9b40faad-1b96-4461-89d8-9a207b58e832",
+      "oracle_text_sha256": "945e3a7e8dbc7729e0f64cea47d7ff09d98d212a37de9c45100efd66a85fa9dd",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "c82afae132af4ab7e890d5f004b58767008c92b60dc985a8b0708b306b247567",
+      "metadata_sha256": "df1fae2d06051fbf1c1b0c53eda1c792dd7cffd99f27ae5979995dbb3aa8e116",
+      "name": "Void Rend",
+      "oracle_id": "713f16db-95ec-479e-a48c-7a69f7668d7f",
+      "oracle_text_sha256": "863312724bfe355e8d7729c6d200a87230fd95ba5d1d37089cecb99faf190122",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "878e0decdc2b7c75402075315458fa6bfde70af5aed002107747b6a9fee11edc",
+      "metadata_sha256": "780bafac68570ea0554179f3b5ba641f6040ef8c44f1fbbd57a8c1725ff2f258",
+      "name": "Warleader's Call",
+      "oracle_id": "a751c07b-fc21-4854-96e7-f71abf4e86c9",
+      "oracle_text_sha256": "8b9c1b2b9c47b3c1800b72776e86d7953de11afd78a18517b12f2ae440dec42c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "74221847b7d30f8c050883c1cf2712cec24fe225aee3e654d41d79a33ebd81b3",
+      "metadata_sha256": "6fe91de7e0478f482522cc75a06734ed5a07d9b803ec1f10c5075e7d95220cb8",
+      "name": "Wastewood Verge",
+      "oracle_id": "c6e0574c-3e2b-4c40-b17a-05bce3d49309",
+      "oracle_text_sha256": "97310287b35acca9a2d2fa284dd1aaead901ebbb1a5fa5f34e0e347600207fd5",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "6ad93501d92f24dd59253752489f303a91af7ce6bfcf84468ca482aff2f8567c",
+      "metadata_sha256": "1fb98a10bd732652ab375fc2f1f154092d0ce01eb160be512f052ab19971e538",
+      "name": "Welcoming Vampire",
+      "oracle_id": "605c1ee0-5e8a-4e0a-a99b-42a38873f822",
+      "oracle_text_sha256": "96d24b10750cccadc184849ccdcd401b188ee7dbbe38f986d9f016786813a84e",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "351e1ecbb72520898d7a9434a4635cc0d9978b0498a042d134d8b5273de35f29",
+      "metadata_sha256": "752b471bf1bd0f745cf0ba8fdaf811d363c88d12395b8cf925ac6363a080686a",
+      "name": "Whirlwind of Thought",
+      "oracle_id": "6467cbb7-1e4e-482d-a20f-6cb9fc0f1ad1",
+      "oracle_text_sha256": "f49a643304756d5d23c354d3d0c2e9ab29ab9dbacdffb9421785cd59d1a0ca22",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "92675600f3e983a78173046d8a476df8b2f153ef185b49b65b102980e0e274c9",
+      "metadata_sha256": "e0c73a65846523495061c24f19043fb9e8cccadb69420be1ff720a4e43d8d8da",
+      "name": "Wild Growth",
+      "oracle_id": "706ae742-1807-44b7-a4fa-f2e26f61519a",
+      "oracle_text_sha256": "f891b1e72a70ae25f9abf29481f77c0f891768c2f30b621723f555cd442e77e0",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "eb62efc3433784f5136f0ae4173c142ce29db82407f31e393e1f486ed9f94f21",
+      "metadata_sha256": "ee52327b14c3bace3da268eba652a0441727e4af11dbb7a92b0efaea8e345be7",
+      "name": "Windfall",
+      "oracle_id": "08becc07-28bc-4a2f-a6b0-28a2998d2f50",
+      "oracle_text_sha256": "8377a4bbdc3c6704d5d5e86fb02c9d5b5949d1d5e89103462269c3dc64be952f",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "af2a6164ff330c45204a72f83c7c2c60bb3bb07db1376f921c69fbf17962cc51",
+      "metadata_sha256": "1d86805b8c5f40b9f4bdbb6d784a02f05a97984d14a8bd4c1d8ec984e2dc6eb2",
+      "name": "Witch Enchanter // Witch-Blessed Meadow",
+      "oracle_id": "0355249a-8e4e-41db-9cea-1b901faffbe6",
+      "oracle_text_sha256": "4c36a41c3d1da19f4375fab914e4e616afdc2c3edc87a381a81ff677a50e3c18",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "5a54dbfdb222082a44a1e3b2df0fe5feea27637b96a881105b6a067a90dd72b9",
+      "metadata_sha256": "59c69f235d699d8f02f1bb5c0fd70d35feed77ad9321d4297728612ce0e28410",
+      "name": "Witherbloom Charm",
+      "oracle_id": "ee1db746-f5c1-4dce-82eb-24b273cc9507",
+      "oracle_text_sha256": "0f34d0801ccaf23db56e2bece49fe1046892bfc52e1e591b30108f1f9ecfb476",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "1ef95c055de7c4931350cf2780aaaaecee4e4103a7a834594d79c53ae983951e",
+      "metadata_sha256": "1c00e315026e9894688c6c5b4ddc4ae44e517393f70d1ca05e4df785204489ec",
+      "name": "Withering Torment",
+      "oracle_id": "ffce81c5-1b58-4882-a4e7-6f8d7cb170de",
+      "oracle_text_sha256": "62544accec91a642501f52867ff479bc62ada61e5ec76190c73f883d745822fa",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "598f7e06b4536931a4012d3383e342c0fc5487f892fdfda443790492bdf17327",
+      "metadata_sha256": "a51cb78cdacf5ffd9fa5473e8829d1f94db6a2af503aa446fbb955cd729be131",
+      "name": "Wood Elves",
+      "oracle_id": "8973bd99-20f8-4867-90ef-50392147ee1b",
+      "oracle_text_sha256": "5d122e02e11e585e72a64624c9791c626852a59a60b1c1a42efd7132f3fac694",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "9db83412b6628ac5ebf6ddda4afdefc0f14b5a6953d9e53110b5fbe9ba16eaa7",
+      "metadata_sha256": "2fdda24f8e100ada95248e6220a64c5b190b22149510509e350010868e3d8c35",
+      "name": "Woodland Weavemaster",
+      "oracle_id": "28ffddca-a3c4-467d-a2dc-2c5e62393e11",
+      "oracle_text_sha256": "72404bb6ab39382e306859cda1cf473e6d4af94f99a371222307d5ac4f4ed85a",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "4103f2361dc6f8456b078a79aeb35127cbd8e086b0dd8628097a42f4556e6369",
+      "metadata_sha256": "a19a65cfa9c30d373f01bd639f7baabdb588dda60e6f6180b0958b2f209ad35b",
+      "name": "Worldly Tutor",
+      "oracle_id": "e8863518-0bfa-49c3-8c6e-6c9116a81051",
+      "oracle_text_sha256": "24174b9eecaf08a04809b71252ff499a3cd0985f9d9e3b6cd4ce05376cd21d8d",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "477f85f7eb3eec3a9f66f3cbe64fc961fef542e16c4bb3c71ee4c28d74c584b5",
+      "metadata_sha256": "06a72764c0a52668784d84c4c7ef983785c2a04b315569ee99be8befd026e5f7",
+      "name": "Yavimaya, Cradle of Growth",
+      "oracle_id": "8dd5f5af-d2d8-4356-8617-8381081b930c",
+      "oracle_text_sha256": "bc3445a2b6f80115ded499ed2518ce77092af9da4abe5dd4911e09742d280d00",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "729c0aba024be10b45f57f5b3bb517d5a62bef5be7b7d7d6980f2a1153818176",
+      "metadata_sha256": "2344bf3abe5c8bb17e242c6b78e376d687378fc5f95fa881ae00e1b4786e7f0d",
+      "name": "Zacama, Primal Calamity",
+      "oracle_id": "23270e4a-a222-4ffb-a946-d0e20d665187",
+      "oracle_text_sha256": "ed598969e425ba4b31cdd6209893147164c954bc80732104430d713ad1124867",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "6c18cf832aaddd311e1d4e6c454b72ee89f4ed1749f5e708ff5947e7ffe7a0a3",
+      "metadata_sha256": "5b27aa17686d9491aba3c2eb12b6ed91104002f8672d1731d60b772d189a8627",
+      "name": "Zulaport Cutthroat",
+      "oracle_id": "76b003e0-15af-4f22-bdf2-1ade5430964a",
+      "oracle_text_sha256": "be7f1aa5958523a72fc9139e8c309c6a3dec788a1d7d647de49bdccc4974d70c",
+      "source_path": "sources/scryfall_5.json"
+    },
+    {
+      "flattened_input_sha256": "993837d4379bf5073687cc576869ad17fd323a06f885fe8c4c69d982098936e0",
+      "metadata_sha256": "c7f1d124452e724ec1f28a1f1ef7e5b159aec723727d1baa43a29c25c62ab2d0",
+      "name": "Trophy Mage",
+      "oracle_id": "08afc0d7-192f-4ab6-b6a0-c4265cf5e225",
+      "oracle_text_sha256": "fa37fd6d5d54ad13c7796c1b20a6cd96be3044dca670b55444e7857dfaded960",
+      "source_path": "sources/2026-10-29/trophy_mage.json"
+    },
+    {
+      "flattened_input_sha256": "09233fe036eaf6f339c43a33c50330db36a483c9974cabe342fb6a9a894e3688",
+      "metadata_sha256": "5cac24dce7505b8538b1533cef93dff44ff7aa5bdb0bc8510fa3f5fb215fc3c5",
+      "name": "Sisay, Weatherlight Captain",
+      "oracle_id": "fb777610-7562-4d9d-8497-62c562e6d7cb",
+      "oracle_text_sha256": "549f497287273b8ea874823841d15376c568cc5e7c875672a6975c8d2217752a",
+      "source_path": "sources/2026-10-29/sisay.json"
+    },
+    {
+      "flattened_input_sha256": "7e642d777a165b9a6c1d5d199b7b5d4dbc582bf0ebac99adcecdf57914030e2b",
+      "metadata_sha256": "4f173d8d39a84009060972cca229cc9dc0982ea3bfb6d85c041a762259a615dd",
+      "name": "Ox of Agonas",
+      "oracle_id": "22113051-c971-4108-953b-95356d21323a",
+      "oracle_text_sha256": "825054b95e8fcfe2e1315b1baa80280fcee58eb8c4d35ec5ac3f1c04f5c474f6",
+      "source_path": "sources/2026-10-29/ox_of_agonas.json"
+    },
+    {
+      "flattened_input_sha256": "3cd4971516af5a3fcdb94fe21854ea72244927d8059666f6521e3c9410d21980",
+      "metadata_sha256": "c0436c189fc446e4bcca8adb9d834b8b8e31c77e27f1d2e143bcf539d0a41ef6",
+      "name": "Sift",
+      "oracle_id": "6e060984-2015-4dc4-b53d-ab6bf2abdacc",
+      "oracle_text_sha256": "35c4173780a854798e31d965ad295befe953aca174f49550e31c063041964cd2",
+      "source_path": "sources/2026-10-29/sift.json"
+    },
+    {
+      "flattened_input_sha256": "622ca8028e1a299e37a73c6a730d68b99b328c85dcc7f73a952f5e9ffc7836fe",
+      "metadata_sha256": "96ee649284701eebfb7403a3f990a4ac6da17c9126fea1a7c8691a2778ea6e50",
+      "name": "Gravebreaker Lamia",
+      "oracle_id": "2c1d288a-22ea-482c-947e-f3ab04172da0",
+      "oracle_text_sha256": "95ac3b9341fd16b0569191b1b5b47d8d19cc7684336bc5fde77b1166f2c28e38",
+      "source_path": "sources/2026-10-29/gravebreaker_lamia.json"
+    }
+  ],
+  "files": [
+    {
+      "canonical_json_sha256": "bb910f6fdde33e53e8f3d1a0ccd78e4bcb4c5f81072cd96c2b02fd6942371bbc",
+      "historical_declared_sha256": "c014163c299defdfede30e0e684699c359549910e25a9a105dc78a823d20aae0",
+      "path": "archetypes.json",
+      "raw_bytes_sha256": "c014163c299defdfede30e0e684699c359549910e25a9a105dc78a823d20aae0"
+    },
+    {
+      "canonical_json_sha256": "60a8948835c77845b859c9fc0c04247efb68a74dc24668ccbd8782d7d3f7daee",
+      "historical_declared_sha256": "5ddd9c2982621cbbdc4108a4791ca01f492a6ea930dc90f08a0e9b770918b4f8",
+      "path": "corpus.json",
+      "raw_bytes_sha256": "3dba0f7d02f7a8df7a605e520570d7d5ec753604aaafb31c667ad1f543be7e31"
+    },
+    {
+      "canonical_json_sha256": "b35ca278dd42c2bb32848074fe682c95a1be6f548baa58915791ba0bfc0ce25c",
+      "historical_declared_sha256": "c369f3d85252e28e7d841bdcd49aa053d3105a9db8d50414baffaa27b76e0bd4",
+      "path": "lathril.json",
+      "raw_bytes_sha256": "e87b5393d814844cefb6ad6a6a89c7195ffbb6806feb0d0bf14936adcb8730c5"
+    },
+    {
+      "canonical_json_sha256": null,
+      "historical_declared_sha256": "94cb0b49705aa8716d53c48dcf404c03cbd6c13ef38e743b9e974a8d4a7135ce",
+      "path": "lathril.txt",
+      "raw_bytes_sha256": "94cb0b49705aa8716d53c48dcf404c03cbd6c13ef38e743b9e974a8d4a7135ce"
+    },
+    {
+      "canonical_json_sha256": "62b84124e0b641bb1279db8c55346930e142cb6883a0728a65dcad95059f4e7c",
+      "historical_declared_sha256": "25ea04ab7be6c50c55d5877f56658b03f29505baadfcbefbc30fd0eb2f4ceba3",
+      "path": "lathril_rows.json",
+      "raw_bytes_sha256": "25ea04ab7be6c50c55d5877f56658b03f29505baadfcbefbc30fd0eb2f4ceba3"
+    },
+    {
+      "canonical_json_sha256": "726400a157229f84cb3876855d6c14ab5de360a7df396401a643f45f750ed00f",
+      "historical_declared_sha256": "cc1198a6aa0ba3ac623c2919ee908316ee184ffa6fe0cf3cdaf2bcc16499a475",
+      "path": "sources.json",
+      "raw_bytes_sha256": "cc1198a6aa0ba3ac623c2919ee908316ee184ffa6fe0cf3cdaf2bcc16499a475"
+    },
+    {
+      "canonical_json_sha256": "96ee649284701eebfb7403a3f990a4ac6da17c9126fea1a7c8691a2778ea6e50",
+      "historical_declared_sha256": null,
+      "path": "sources/2026-10-29/gravebreaker_lamia.json",
+      "raw_bytes_sha256": "00d7e5a5de6d7c9b62e013c1c7c0709fe223e203de6ba445268e8622f96e01b2"
+    },
+    {
+      "canonical_json_sha256": "4f173d8d39a84009060972cca229cc9dc0982ea3bfb6d85c041a762259a615dd",
+      "historical_declared_sha256": null,
+      "path": "sources/2026-10-29/ox_of_agonas.json",
+      "raw_bytes_sha256": "f65f9d0714b852b37c2bf12cb3d6cab7c17617b055a2c8f1467b9a5d0ce29ee9"
+    },
+    {
+      "canonical_json_sha256": "c0436c189fc446e4bcca8adb9d834b8b8e31c77e27f1d2e143bcf539d0a41ef6",
+      "historical_declared_sha256": null,
+      "path": "sources/2026-10-29/sift.json",
+      "raw_bytes_sha256": "ea6ae630c7d813d25a65a16cfe3a365177f6fb698e94b9f1e6d26a60d57c37f4"
+    },
+    {
+      "canonical_json_sha256": "5cac24dce7505b8538b1533cef93dff44ff7aa5bdb0bc8510fa3f5fb215fc3c5",
+      "historical_declared_sha256": null,
+      "path": "sources/2026-10-29/sisay.json",
+      "raw_bytes_sha256": "110f0a334c3b9687e73954d752fe144d4d059b6df183d743f56616989d95ca89"
+    },
+    {
+      "canonical_json_sha256": "c7f1d124452e724ec1f28a1f1ef7e5b159aec723727d1baa43a29c25c62ab2d0",
+      "historical_declared_sha256": null,
+      "path": "sources/2026-10-29/trophy_mage.json",
+      "raw_bytes_sha256": "08312817214ef0bc9efe95867ddabb70ab892e1626f26b14e4208a80200946b2"
+    },
+    {
+      "canonical_json_sha256": null,
+      "historical_declared_sha256": "57afb2264a0fb4b70287c1e1f3e9281592cca0a7e42be7f5fed9ed0ed4c27bf9",
+      "path": "sources/edhrec_1.html.gz",
+      "raw_bytes_sha256": "57afb2264a0fb4b70287c1e1f3e9281592cca0a7e42be7f5fed9ed0ed4c27bf9"
+    },
+    {
+      "canonical_json_sha256": "57cbda01ec99c924646daa206724256174d713cc6de2e5a1d3b290aa8108e0ce",
+      "historical_declared_sha256": "4aacbda1f0b6a02a497915001d52644a8abc6c03aa6774afed6ddfe1addc6cdb",
+      "path": "sources/edhrec_1.json",
+      "raw_bytes_sha256": "e8f8183517b6f9da7bcc924d846e030ce50ae4972258be6e427ab8d00159ebea"
+    },
+    {
+      "canonical_json_sha256": null,
+      "historical_declared_sha256": "62ed578d52a7333963acc345722829e5b9589d7e0b75e8de19813f651a345cbe",
+      "path": "sources/edhrec_2.html.gz",
+      "raw_bytes_sha256": "62ed578d52a7333963acc345722829e5b9589d7e0b75e8de19813f651a345cbe"
+    },
+    {
+      "canonical_json_sha256": "1ecd6292415276547bb896e212a379d28df734eb8fb095e24e6047548a46db62",
+      "historical_declared_sha256": "a850b82ff1eed0e6231e744a552c16b1ff82b46d2501392a06199e0b21b90906",
+      "path": "sources/edhrec_2.json",
+      "raw_bytes_sha256": "dd677734b4dd6cfdc94d660efbeff81c4b642929ca711e1cf3d9bcc58bb5030e"
+    },
+    {
+      "canonical_json_sha256": null,
+      "historical_declared_sha256": "890e3e62d96dadb6ccfb35b499f04bd542d4cb7b4a5f7ad3c7e050a65ab39c72",
+      "path": "sources/edhrec_3.html.gz",
+      "raw_bytes_sha256": "890e3e62d96dadb6ccfb35b499f04bd542d4cb7b4a5f7ad3c7e050a65ab39c72"
+    },
+    {
+      "canonical_json_sha256": "ef09668d922ddf241343a040beca7aee693389863d13e2e74fb9c242b2570d46",
+      "historical_declared_sha256": "7d9b2d173547bef002e0c8d791e0d9293daf293e87f5257b31d9210acbd7987b",
+      "path": "sources/edhrec_3.json",
+      "raw_bytes_sha256": "1f33aab2fd652f6f65450f425601413a09383edaa7a5a9a3d77d29a4a981fcd7"
+    },
+    {
+      "canonical_json_sha256": "e87b193f750acbd094271cb7cbbe3e459051bc1f0f3f917c781049aee71fe997",
+      "historical_declared_sha256": "c28431485b38225b3538f2fbb3255113cd331d33e99459fd68e1f432ab2a49f9",
+      "path": "sources/scryfall_1.json",
+      "raw_bytes_sha256": "f9df32a1dd99b79bd6384f3ae66464e8a256593b6534f50839838c253772323a"
+    },
+    {
+      "canonical_json_sha256": "ad54863e974e5ee6d42a13e7a8999235906fce5adb874451de49ffaaa4025f52",
+      "historical_declared_sha256": "69db3cfcc805cf127a2f6f21096f4664acbdd1daf31a99b2ba2a036636c1a5d4",
+      "path": "sources/scryfall_2.json",
+      "raw_bytes_sha256": "1666149d62104d9e9eb2eb211bd3e70ad6834190b6d8a62d0f78b4d70b3277f1"
+    },
+    {
+      "canonical_json_sha256": "78f0d21ec08d54c5cd8302ee8a2d4b6e9709095f9b4f7ec861530c0c87c6c23c",
+      "historical_declared_sha256": "d60ecb8506452028844b3eef2c965ce0d7c91c2d22a289f93d91311a5fac2bca",
+      "path": "sources/scryfall_3.json",
+      "raw_bytes_sha256": "8268f3a09ed817fc1ad3d5f7268f07997b2ceb0187293a76a77b66310eff9741"
+    },
+    {
+      "canonical_json_sha256": "b21783a1bd3a44e4dad59768f09497ed130e0743ea491f3fd9a433686c922bcf",
+      "historical_declared_sha256": "38a3dbec456088c0ebdc20e28367b11baed8caacff4c4b2c4864053c369eca77",
+      "path": "sources/scryfall_4.json",
+      "raw_bytes_sha256": "b59aea1216e2a3ea91bf1c10bd61c7f249acf563349c8380c684b2cd5ac3335b"
+    },
+    {
+      "canonical_json_sha256": "32b0d2ac65c48640b2be1e8f57a2b56f088ea4fa9c2c1c99580857799be9c04c",
+      "historical_declared_sha256": "822932d09d5813b7612f54ffcf0cd57a7c1c8a084d37ca1a35f1d5d52942bcef",
+      "path": "sources/scryfall_5.json",
+      "raw_bytes_sha256": "fe7d862a08ea3b41c1062425e2c6742fc12854e89c03324288a986a8b379589a"
+    }
+  ],
+  "historical_capture": "2026-10-23T05:40:09+00:00",
+  "maintenance_note": "Keep old captures unchanged. Capture new response bytes in a new dated directory. Review source and compiler diffs before explicitly rebuilding this manifest. Tests are offline and do not refresh sources.",
+  "schema_version": 2
+}

@@ -1,0 +1,952 @@
+{
+  "selection": "edhrec_top250",
+  "range": [151, 200],
+  "evidence_kind": "source_semantic_review_not_execution",
+  "cards": [
+    {
+      "name": "Niv-Mizzet, Parun",
+      "oracle_id": "33666a98-812f-4892-9f8d-33e0cbecc340",
+      "metadata_sha256": "b47e2be1f4d3ada1b0a976f0b008d2fd0fc8d4e231cdbf3947fae6bf75682cf3",
+      "printed_fields": [{
+        "face": "Niv-Mizzet, Parun",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {U}{U}{U}{R}{R}{R}; all six symbols require their stated colors."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep the legendary supertype and Dragon and Wizard creature types; apply creature casting rules."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Niv-Mizzet has both red and blue colors; retain both for color-based interactions."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base power 5 and toughness 5; Niv-Mizzet has no loyalty value."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Flying is the sole metadata keyword; the counter restriction and both triggers still need separate handling."}
+        }
+      }],
+      "abilities": [
+        {"face": "Niv-Mizzet, Parun", "source_text": "This spell can't be countered.", "cost": "No separate cost; the six colored casting symbols still apply.", "effect": "Prevent counter effects from countering this spell; do not grant that protection to other spells.", "target": "No target; the restriction applies to Niv-Mizzet on the stack.", "timing": "Static rule while Niv-Mizzet is a spell.", "replacement": "No printed replacement; this is a prohibition on countering.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert that a counter attempt leaves Niv-Mizzet on the stack while a return-to-hand effect can still move it."},
+        {"face": "Niv-Mizzet, Parun", "source_text": "Flying", "cost": "No activation or payment for flying.", "effect": "Apply flying to Niv-Mizzet's blocking restrictions; it does not grant haste.", "target": "No target; flying belongs to this creature.", "timing": "Static combat rule while this creature has flying.", "replacement": "No printed replacement for combat damage or blocking.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert legal blocks by flying or reach creatures and reject a ground blocker with neither ability."},
+        {"face": "Niv-Mizzet, Parun", "source_text": "Whenever you draw a card, Niv-Mizzet deals 1 damage to any target.", "cost": "No payment; each card drawn creates its own mandatory damage trigger.", "effect": "Niv-Mizzet deals exactly 1 damage for each resolved draw trigger, including draws caused by its other ability.", "target": "Choose a legal creature, player, planeswalker, or battle for each trigger; the target need not be an opponent.", "timing": "Trigger on each card its controller draws, including cards drawn outside the draw step.", "replacement": "No printed replacement; damage remains damage, not life loss.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert separate target choices for a multi-card draw and preserve Niv-Mizzet as the damage source."},
+        {"face": "Niv-Mizzet, Parun", "source_text": "Whenever a player casts an instant or sorcery spell, you draw a card.", "cost": "No trigger payment; casting the instant or sorcery follows that spell's own costs.", "effect": "Niv-Mizzet's controller draws one card; that draw can trigger its damage ability.", "target": "No target; any player's qualifying cast causes Niv-Mizzet's controller to draw.", "timing": "Trigger when any player casts an instant or sorcery, before that spell resolves; copying without casting is not this event.", "replacement": "No printed replacement for the draw or the cast.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert opponent and controller casts both draw for Niv-Mizzet's controller, while a spell copy that was not cast does not."}
+      ]
+    },
+    {
+      "name": "Noble Hierarch",
+      "oracle_id": "98aa9424-5912-4bd6-9300-b3972a31d8af",
+      "metadata_sha256": "76d74d5a67e96e001368cd610a7e69f69dd646fea1e503b4b9997033fbbf7abf",
+      "printed_fields": [{
+        "face": "Noble Hierarch",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay one green mana to cast Noble Hierarch."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Human and Druid types; its tap ability must obey creature tap restrictions."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Noble Hierarch is green; producing white or blue mana does not make it those colors."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 0/1; exalted can modify an attacking creature, including Hierarch itself. No loyalty is printed."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Exalted has printed reminder text; evaluate its attacks-alone condition rather than granting an unconditional bonus."}
+        }
+      }],
+      "abilities": [
+        {"face": "Noble Hierarch", "source_text": "Exalted (Whenever a creature you control attacks alone, that creature gets +1/+1 until end of turn.)", "cost": "No payment for the exalted trigger.", "effect": "Give the single attacking creature +1/+1 until end of turn; Hierarch need not be that attacker.", "target": "No target; the recipient is the creature you control that attacked alone.", "timing": "Trigger when exactly one creature you control attacks; the bonus ends at end of turn.", "replacement": "No printed replacement; this is a triggered temporary bonus.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a lone attacker receives the bonus, two declared attackers do not, and Hierarch can supply exalted without attacking."},
+        {"face": "Noble Hierarch", "source_text": "{T}: Add {G}, {W}, or {U}.", "cost": "Tap Hierarch; it must be untapped and allowed to pay a creature's tap cost.", "effect": "Add one mana chosen from green, white, or blue, not one of each.", "target": "No target; its controller receives the chosen mana.", "timing": "Activated mana ability; creature summoning restrictions apply to the tap cost.", "replacement": "No printed replacement or mana spending restriction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert each of the three choices separately and reject tapping a newly controlled Hierarch without haste."}
+      ]
+    },
+    {
+      "name": "Omnath, Locus of Rage",
+      "oracle_id": "1816eede-c5bd-49df-958f-a3af64cb2932",
+      "metadata_sha256": "ffcd02153215abc77124a90db4dc520ef796bb25bc674530cce414e0d6bc53aa",
+      "printed_fields": [{
+        "face": "Omnath, Locus of Rage",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{R}{R}{G}{G}; reserve two red and two green payments within the seven-mana cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep legendary Creature and Elemental; Omnath's own death is included in its death trigger."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Omnath is green and red, matching the colors of its printed Elemental tokens."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 5/5 for Omnath, separate from each created 5/5 token; no loyalty is printed."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Landfall labels the stated land-entry trigger; it supplies no extra event beyond that wording."}
+        }
+      }],
+      "abilities": [
+        {"face": "Omnath, Locus of Rage", "source_text": "Landfall — Whenever a land you control enters, create a 5/5 red and green Elemental creature token.", "cost": "No payment or sacrifice for this landfall trigger.", "effect": "Create one 5/5 creature token with both red and green colors and the Elemental type per qualifying land.", "target": "No target; Omnath's controller creates the token.", "timing": "Trigger on each land entering under your control, whether played or put onto the battlefield.", "replacement": "No printed replacement; tapped land entry still satisfies the event.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert separate triggers for multiple entering lands and verify each token's 5/5, red-green, Elemental characteristics."},
+        {"face": "Omnath, Locus of Rage", "source_text": "Whenever Omnath or another Elemental you control dies, Omnath deals 3 damage to any target.", "cost": "No payment; dying is the trigger event, not an activation cost.", "effect": "Omnath deals 3 damage per qualifying death, including its own death and token Elemental deaths.", "target": "Choose any legal creature, player, planeswalker, or battle for each trigger.", "timing": "Trigger when Omnath or another Elemental you control goes from the battlefield to the graveyard; check the departing objects' characteristics.", "replacement": "No printed replacement; exile without dying does not satisfy this event.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert simultaneous deaths of Omnath and its Elementals produce separate damage triggers, while a non-Elemental death does not."}
+      ]
+    },
+    {
+      "name": "Opt",
+      "oracle_id": "713332c1-5bd8-400f-bfff-c1ca0697a043",
+      "metadata_sha256": "220e29ee0cd280afd14ca653cee4ebf972b5514e331d223254259f7cd0eab6ec",
+      "printed_fields": [{
+        "face": "Opt",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Opt costs {U}; its later draw does not refund that payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Opt is an Instant; allow casting with instant timing."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Opt is blue, including when evaluating colored spell triggers."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Opt has no power, toughness, or loyalty; do not model the instant as a permanent."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Scry is specified as scry 1 with reminder text; keep the bottom-or-top choice before the draw."}
+        }
+      }],
+      "abilities": [
+        {"face": "Opt", "source_text": "Scry 1. (Look at the top card of your library. You may put that card on the bottom.)\nDraw a card.", "cost": "Pay {U} to cast; scrying and drawing have no further cost.", "effect": "Look at the top card, optionally move it to the bottom, then draw one card from the resulting library. Keep these paragraphs in one spell resolution.", "target": "No target; the caster scries their own library and draws.", "timing": "Resolve scry before the mandatory draw; do not allow another spell between those instructions.", "replacement": "No printed replacement for the scry or draw.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert keeping the top card draws it, bottoming it draws the next card, and small libraries do not create cards."}
+      ]
+    },
+    {
+      "name": "Orcish Bowmasters",
+      "oracle_id": "ea5103f5-27e0-4eb1-902c-7f34652d6bf3",
+      "metadata_sha256": "14a9bdb44a746e144b075c81041ea5dddede91a5cf5967788215d16a5254c01a",
+      "printed_fields": [{
+        "face": "Orcish Bowmasters",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{B}; flash changes permission to cast, not the mana payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Orc and Archer types; do not replace Bowmasters' printed types with the amass instruction."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Orcish Bowmasters is black; do not derive its color from a chosen damage target."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Bowmasters has base 1/1 and no loyalty; amass does not directly increase Bowmasters' printed stats."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Metadata lists Flash and Amass. Amass Orcs 1 has no reminder here; its full Army and counter rules remain unverified by this source."}
+        }
+      }],
+      "abilities": [
+        {"face": "Orcish Bowmasters", "source_text": "Flash", "cost": "The normal {1}{B} cost remains due when using flash.", "effect": "Allow Bowmasters to be cast when an instant could be cast; this does not give it haste.", "target": "No target for the creature spell from flash itself.", "timing": "Casting permission at instant timing, including an opponent's turn when you have priority.", "replacement": "No printed replacement or alternate cost.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert an opponent-turn cast is legal with mana and priority, while flash does not permit immediate attacking or tapping as a creature cost."},
+        {"face": "Orcish Bowmasters", "source_text": "When this creature enters and whenever an opponent draws a card except the first one they draw in each of their draw steps, this creature deals 1 damage to any target. Then amass Orcs 1.", "cost": "No trigger payment; neither the damage nor amass is optional in this wording.", "effect": "Deal 1 damage, then perform amass Orcs 1 in that order within the same trigger. The pinned text does not define the full amass procedure.", "target": "One legal creature, player, planeswalker, or battle is the damage target. The amass instruction does not name a target.", "timing": "Trigger on Bowmasters entering and on each opponent draw other than that opponent's first draw in each of their draw steps; draws outside a draw step are not exempt.", "replacement": "No printed replacement; the first-draw exception filters trigger events rather than replacing draws.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check amass Orcs rules separately. Assert first-draw tracking per opponent and draw step, damage-before-amass order, and no amass when the trigger's only target becomes illegal."}
+      ]
+    },
+    {
+      "name": "Orzhov Signet",
+      "oracle_id": "de3dcb5d-775a-479f-99f5-d1883ed9b1b5",
+      "metadata_sha256": "f839fb881f22e5160bb5410f6583d34b358e9945914e6d1cc3c13d18a8c3488e",
+      "printed_fields": [{
+        "face": "Orzhov Signet",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Casting costs {2}; activating later requires a separate {1}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Orzhov Signet is an Artifact, not a creature or land."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The Signet is colorless even though its ability produces white and black mana."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed for this noncreature artifact."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; its mana conversion comes from the explicit activated ability."}
+        }
+      }],
+      "abilities": [
+        {"face": "Orzhov Signet", "source_text": "{1}, {T}: Add {W}{B}.", "cost": "Pay one generic mana and tap the untapped Signet before receiving its output.", "effect": "Add one white and one black mana together; this is not a choice between the colors.", "target": "No target; its controller receives both mana.", "timing": "Activated mana ability; the unanimated noncreature artifact does not have creature summoning restrictions.", "replacement": "No printed replacement or spending restriction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert the {1} payment can use another available mana source, output contains exactly {W}{B}, and activation fails when no source can pay the input cost."}
+      ]
+    },
+    {
+      "name": "Path to Exile",
+      "oracle_id": "d683d985-9888-4d21-8b5f-69e69ce4a03b",
+      "metadata_sha256": "db4fcc66bd34899c3f80687dbe7b0806c10d043298eccec5ca22c84c670405d0",
+      "printed_fields": [{
+        "face": "Path to Exile",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {W}; the affected player does not pay this casting cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Path to Exile is an Instant and needs a legal creature target."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Path to Exile is white; exile does not make it colorless."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no power, toughness, or loyalty; the target's stats do not limit eligibility."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; the optional basic-land search is written out and must stay linked to the exile."}
+        }
+      }],
+      "abilities": [
+        {"face": "Path to Exile", "source_text": "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.", "cost": "Pay {W} to cast; the target's controller pays nothing for the optional search.", "effect": "Exile the creature. Its controller may search their own library for a basic land, put it onto the battlefield tapped, then shuffle if they search. Do not give the land to the caster by default.", "target": "One creature on the battlefield, including your own; the library search is not a second target and requires a basic land card.", "timing": "Instant resolution; exile precedes the optional search and land entry.", "replacement": "No printed replacement; this exiles directly rather than destroying or causing a death.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert opponent and self targets route the optional tapped basic to the right player, and an illegal sole target prevents the search."}
+      ]
+    },
+    {
+      "name": "Phyrexian Arena",
+      "oracle_id": "ee579a32-a048-4335-b966-231ba731cdea",
+      "metadata_sha256": "bd5b3f4862b0c122b660cc7bf9aab6ce93a6b430c305ee9f2f173311c0a36754",
+      "printed_fields": [{
+        "face": "Phyrexian Arena",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{B}{B}; the name Phyrexian does not make these symbols payable with life."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Enchantment; Arena remains on the battlefield to supply upkeep triggers."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Phyrexian Arena is black."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Arena has no printed power, toughness, or loyalty and is not a creature."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the upkeep draw and life loss are explicit instructions."}
+        }
+      }],
+      "abilities": [
+        {"face": "Phyrexian Arena", "source_text": "At the beginning of your upkeep, you draw a card and lose 1 life.", "cost": "No upkeep payment; the life loss is an effect, not a cost or an optional payment.", "effect": "Its controller draws one card and loses 1 life in the same trigger resolution.", "target": "No target; only Arena's controller draws and loses life.", "timing": "Trigger at the beginning of your upkeep, not during every player's upkeep or the draw step.", "replacement": "No printed replacement; losing life is not damage.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert one mandatory draw and one life lost on the controller's upkeep, with no Arena trigger on an opponent's upkeep."}
+      ]
+    },
+    {
+      "name": "Phyrexian Metamorph",
+      "oracle_id": "340bbe8b-e987-4c3e-ab4e-9dee63e57d4f",
+      "metadata_sha256": "d8faab91d0253d28c0dd29ad0daba6d91a78868ca3a515a007598ffcc6af6ca1",
+      "printed_fields": [{
+        "face": "Phyrexian Metamorph",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3} plus either {U} or 2 life for {U/P}; life pays only that Phyrexian symbol."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Base type is Artifact Creature with Phyrexian and Shapeshifter types; the copy exception keeps Artifact in addition to copied types."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The unmodified card is blue even when life pays {U/P}; a chosen copy needs the copied color characteristics."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Base 0/0 applies if no copy is chosen; copy effects can supply different characteristics. No base loyalty is printed."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the Phyrexian payment reminder and optional copy entry are explicit source text."}
+        }
+      }],
+      "abilities": [
+        {"face": "Phyrexian Metamorph", "source_text": "({U/P} can be paid with either {U} or 2 life.)\nYou may have this creature enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types.", "cost": "Normal casting requires {3} and either {U} or 2 life. Choosing a copy has no extra payment; it is not an activated copy ability.", "effect": "Optionally enter with the copiable characteristics of an artifact or creature already on the battlefield, adding Artifact to its copied types. Declining leaves the printed 0/0.", "target": "No target; choose any artifact or creature on the battlefield, including an opponent's or a noncreature artifact.", "timing": "Make the copy choice as Metamorph enters, before entry triggers and state-based checks use its characteristics.", "replacement": "Optional as-entry copy replacement with an explicit additional-Artifact exception.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert blue-versus-life payment, noncreature artifact copies, copied entry abilities, and the retained Artifact type without retaining unprinted base creature characteristics."}
+      ]
+    },
+    {
+      "name": "Pitiless Plunderer",
+      "oracle_id": "a784481f-eccb-4112-bb38-04a659319660",
+      "metadata_sha256": "d97e9a9cb2c80bfd04bf0d3f17396f222e7060e1176ab0b9221c3fa8856cc868",
+      "printed_fields": [{
+        "face": "Pitiless Plunderer",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{B} to cast Plunderer; creating Treasures does not reduce that cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Human and Pirate types; Plunderer itself is not a Treasure artifact."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Plunderer is black; Treasure mana choices do not add colors to it."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 1/4 for Plunderer and no loyalty."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Treasure identifies the created token; its tap-and-sacrifice mana ability is printed in the reminder."}
+        }
+      }],
+      "abilities": [
+        {"face": "Pitiless Plunderer", "source_text": "Whenever another creature you control dies, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")", "cost": "No payment for creating the Treasure. Using that token later requires tapping and sacrificing that token together.", "effect": "Create one Treasure artifact for each other controlled creature that dies, including creature tokens. Each Treasure can later produce one mana of a chosen color through the printed token ability.", "target": "No target; Plunderer's controller receives the Treasure and controls its later mana activation.", "timing": "Trigger on another controlled creature dying; Plunderer's own death alone does not qualify.", "replacement": "No printed death replacement; exiling a creature without a graveyard move does not trigger this text.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert another token creature's death creates a usable Treasure, Plunderer's own death does not trigger itself, and Treasure activation removes only that token."}
+      ]
+    },
+    {
+      "name": "Ponder",
+      "oracle_id": "02090581-61aa-4348-ad57-451be8ee91c2",
+      "metadata_sha256": "2aefca76ab9156c6917a5c3cfae9c1ce111362d1d0e68d5e52cb4775296d6d28",
+      "printed_fields": [{
+        "face": "Ponder",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {U} for Ponder before looking at library cards."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Ponder is a Sorcery; its library choices do not grant instant casting permission."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Ponder is blue."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Ponder has no power, toughness, or loyalty; its output is a card draw rather than a permanent."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; looking at three and optionally shuffling is not interchangeable with scry 3."}
+        }
+      }],
+      "abilities": [
+        {"face": "Ponder", "source_text": "Look at the top three cards of your library, then put them back in any order. You may shuffle.\nDraw a card.", "cost": "Pay {U}; reordering, optional shuffling, and the draw require no added payment.", "effect": "Look at up to the available top three cards, return them to the top in a chosen order, optionally shuffle the library, then draw one card. Keep the final draw linked to this resolution.", "target": "No target; use the caster's library and hand.", "timing": "Cast at sorcery timing; complete reorder, shuffle choice, and draw in that order on resolution.", "replacement": "No printed replacement; optional shuffle is an instruction rather than a substitute draw.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a chosen reorder determines the draw when shuffle is declined, a shuffle precedes the draw when accepted, and libraries with fewer than three cards retain their size."}
+      ]
+    },
+    {
+      "name": "Pongify",
+      "oracle_id": "05849bd6-8f38-4031-be2b-e2aa03beb8cc",
+      "metadata_sha256": "5b091865f701fe2a9c069ae395f00ec3398fb8155d50184f32f8132e1fbc191c",
+      "printed_fields": [{
+        "face": "Pongify",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pongify costs {U}; token creation has no extra payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Pongify is an Instant, not a creature spell despite creating an Ape."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Pongify is blue; its created Ape is green as separately stated."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no stats or loyalty; 3/3 describes its Ape token only."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the regeneration ban and controller's token are explicit linked effects."}
+        }
+      }],
+      "abilities": [
+        {"face": "Pongify", "source_text": "Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token.", "cost": "Pay {U}; the target's controller pays nothing for the token.", "effect": "Destroy the creature without regeneration, then have that creature's controller create a 3/3 green Ape. Token creation is not conditional on successful destruction of an otherwise legal indestructible target.", "target": "One creature on the battlefield of any controller; use that creature's controller as the token recipient.", "timing": "Instant resolution; destruction and token creation belong to one spell effect.", "replacement": "The printed regeneration prohibition prevents regeneration from replacing this destruction; it does not remove indestructible.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert the exact Ape characteristics, correct token controller, indestructible-target token creation, and no token when the only target is illegal."}
+      ]
+    },
+    {
+      "name": "Preordain",
+      "oracle_id": "ac641490-ca14-48d7-8cc4-b69ce984befa",
+      "metadata_sha256": "dabec01120e81ca5ece238761677b9735e07dd83a15e352391fe57aac1aa6381",
+      "printed_fields": [{
+        "face": "Preordain",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Preordain requires one blue mana, {U}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Preordain is a Sorcery, unlike the instant Opt."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Preordain is blue for color-dependent rules."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed on this library-manipulation sorcery."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Scry is explicitly scry 2; preserve each card's top-or-bottom choice and ordering."}
+        }
+      }],
+      "abilities": [
+        {"face": "Preordain", "source_text": "Scry 2, then draw a card. (To scry 2, look at the top two cards of your library, then put any number of them on the bottom and the rest on top in any order.)", "cost": "Pay {U}; selecting the scry arrangement has no extra cost.", "effect": "Look at the top two available cards, choose any number for the bottom and the rest for the top, choose each group's order, then draw one from the resulting library.", "target": "No target; the caster scries their own library and draws.", "timing": "Sorcery resolution; finish scry 2 before the mandatory draw.", "replacement": "No printed replacement for the draw; scry does not draw the inspected cards.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert keeping both, splitting them, and bottoming both produce the expected next draw, including a one-card library and a chosen order for bottomed cards."}
+      ]
+    },
+    {
+      "name": "Professional Face-Breaker",
+      "oracle_id": "04152e7a-969c-4858-841b-0a569a9fc1bf",
+      "metadata_sha256": "b6e588700fb1936152d05495ac031a767e8474a02a4c090a109a345b51eed2eb",
+      "printed_fields": [{
+        "face": "Professional Face-Breaker",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Face-Breaker for {2}{R}; Treasure sacrifice pays only the separate exile ability."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Human and Warrior types, relevant to Human-based filters elsewhere."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Face-Breaker is red; Treasure production does not change its colors."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base power 2 and toughness 3 with no loyalty value."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Metadata lists Menace and Treasure. The source does not print Treasure's full token rules here; check that token definition separately."}
+        }
+      }],
+      "abilities": [
+        {"face": "Professional Face-Breaker", "source_text": "Menace", "cost": "No payment for menace.", "effect": "Face-Breaker cannot be blocked except by two or more creatures; menace does not itself deal damage.", "target": "No target; the restriction concerns creatures blocking Face-Breaker.", "timing": "Static restriction when blockers are declared.", "replacement": "No printed replacement for blocks or damage.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a single otherwise legal blocker cannot block Face-Breaker and two legal blockers can."},
+        {"face": "Professional Face-Breaker", "source_text": "Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.", "cost": "No payment for the combat-damage trigger.", "effect": "Create one Treasure for a qualifying player-damage event, not one per creature in the same event. Treasure's full rules are not spelled out in this ability.", "target": "No target; you create the Treasure. Damage to a planeswalker or battle does not satisfy damage to a player.", "timing": "Trigger on one or more controlled creatures dealing combat damage to a player; separate damaged players or damage steps require separate event handling.", "replacement": "No printed replacement; prevented combat damage does not become a successful damage event.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check the Treasure token definition. Assert two creatures damaging one player together create one token, while qualifying damage to two players creates two."},
+        {"face": "Professional Face-Breaker", "source_text": "Sacrifice a Treasure: Exile the top card of your library. You may play that card this turn.", "cost": "Sacrifice one Treasure you control; neither tapping Face-Breaker nor sacrificing it is required.", "effect": "Exile your top library card and grant permission to play that specific card this turn, including playing a land if otherwise legal. The text does not waive spell costs.", "target": "No target; use your library's top card and retain its identity in exile.", "timing": "Activate when you have priority; later play still follows normal timing and land-play limits, and permission ends with the turn.", "replacement": "No printed replacement; the card is exiled rather than drawn.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert sacrificed Treasure removal, spell payment, legal land play, and loss of access to the exiled card after the turn."}
+      ]
+    },
+    {
+      "name": "Propaganda",
+      "oracle_id": "ea9709b6-4c37-4d5a-b04d-cd4c42e4f9dd",
+      "metadata_sha256": "0a8a557c76e7f77e18eda17fea6069e3152e8d1e49acc047177db9115e286e82",
+      "printed_fields": [{
+        "face": "Propaganda",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2}{U} to cast; this is separate from the attacker's repeated {2} payments."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Propaganda is an Enchantment with a static attack restriction."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Propaganda is blue, not white despite its attack-tax effect."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Propaganda has no printed power, toughness, or loyalty and is not an attacker or blocker."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; enforce the exact controller-payment restriction from Oracle text."}
+        }
+      }],
+      "abilities": [
+        {"face": "Propaganda", "source_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.", "cost": "The attacking creatures' controller must pay {2} for each creature attacking Propaganda's controller.", "effect": "Disallow attacks against you for which the required payment is not made; do not pay the tax from the defending player's mana.", "target": "No target; the restriction protects you, not all opponents of the attacker or your planeswalkers and battles.", "timing": "Static attack-declaration restriction; payment belongs to declaring attackers rather than a later damage trigger.", "replacement": "No printed replacement; it restricts declaring attacks rather than replacing combat damage.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert per-creature payment for attacking you, no tax when attacking a different player or your planeswalker, and no attack if required payment is declined."}
+      ]
+    },
+    {
+      "name": "Putrefy",
+      "oracle_id": "9b271430-f53d-42d6-a547-2f286dd9bcb6",
+      "metadata_sha256": "65710accb14a709463cb6fcb36b83f25de2ade268ce1744fa3bb9e36da277709",
+      "printed_fields": [{
+        "face": "Putrefy",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{B}{G}; require both a black and a green payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Putrefy is an Instant with a single artifact-or-creature target."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Putrefy is black and green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No stats or loyalty are printed for Putrefy; target power and toughness do not limit it."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; do not drop the explicit prohibition on regeneration."}
+        }
+      }],
+      "abilities": [
+        {"face": "Putrefy", "source_text": "Destroy target artifact or creature. It can't be regenerated.", "cost": "Pay {1}{B}{G}; no sacrifice or damage payment accompanies destruction.", "effect": "Destroy the chosen permanent without allowing regeneration; this does not bypass indestructible.", "target": "One artifact or creature on the battlefield of any controller. An artifact creature is one target, while an enchantment with neither type is ineligible.", "timing": "Instant resolution; recheck the target's artifact-or-creature eligibility when resolving.", "replacement": "The regeneration prohibition prevents that destruction replacement; no exile replacement is printed.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert noncreature artifacts and nonartifact creatures qualify, unrelated enchantments do not, and regeneration fails while indestructible still protects."}
+      ]
+    },
+    {
+      "name": "Ragavan, Nimble Pilferer",
+      "oracle_id": "37108cd4-bbab-4ce3-9ed6-f60e8422e703",
+      "metadata_sha256": "ea3403072ce2abcb458908a8b7bb300f9a0a69809c85fa4ec543f7c6b1d5cdeb",
+      "printed_fields": [{
+        "face": "Ragavan, Nimble Pilferer",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Normal casting costs {R}; dash offers the distinct alternate cost {1}{R}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep legendary Creature with Monkey and Pirate types for either casting cost."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Ragavan is red even when dash pays the alternate cost."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 2/1 with no loyalty; dash grants haste rather than changing these stats."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Dash has printed reminder text. Treasure is named without its full token definition here; that definition needs a separate rules check."}
+        }
+      }],
+      "abilities": [
+        {"face": "Ragavan, Nimble Pilferer", "source_text": "Whenever Ragavan deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.", "cost": "No payment for the trigger; casting the exiled card later still requires its costs.", "effect": "Create one Treasure and exile the damaged player's top library card. Permit you to cast that exact exiled card until end of turn; this does not permit playing a land.", "target": "No target; the damaged player supplies the library card, while Ragavan's controller receives the Treasure and cast permission.", "timing": "Trigger only on Ragavan's combat damage to a player. Later casting follows normal timing and the permission expires at end of turn.", "replacement": "No printed replacement; exiling the top card is not a draw or a steal of library ownership.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check Treasure's full token rules. Assert damaged-player routing, paid casting of an exiled spell, rejection of exiled lands, and turn-end permission expiry."},
+        {"face": "Ragavan, Nimble Pilferer", "source_text": "Dash {1}{R} (You may cast this spell for its dash cost. If you do, it gains haste, and it's returned from the battlefield to its owner's hand at the beginning of the next end step.)", "cost": "Optionally pay {1}{R} instead of the normal {R} mana cost; dash is a casting choice, not an activation from the battlefield.", "effect": "A dashed Ragavan gains haste and gets a delayed return from the battlefield to its owner's hand at the next end step.", "target": "No target; the permission, haste, and delayed return concern this Ragavan object and its owner.", "timing": "Dash does not grant flash; cast at creature timing, then return at the beginning of the next end step if the affected permanent remains on the battlefield.", "replacement": "No printed replacement; returning at the end step is a delayed triggered effect.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert dash permits an immediate attack and a later owner-hand return, normal casting does neither, and a Ragavan that leaves and reenters is not the old delayed-return object."}
+      ]
+    },
+    {
+      "name": "Rakdos Charm",
+      "oracle_id": "5e62b51d-faec-4aa0-9504-cf2c282d08ea",
+      "metadata_sha256": "ae9d478754069c93e421ebbc206dcf3c5efea0903290fe3cc274a0781363e77f",
+      "printed_fields": [{
+        "face": "Rakdos Charm",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "All Rakdos Charm modes share the casting cost {B}{R}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Rakdos Charm is an Instant with exactly one selected mode."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Rakdos Charm is black and red for every mode."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The Charm has no power, toughness, or loyalty; creatures supply damage sources in its third mode."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; preserve all three printed modal choices rather than treating paragraphs as separate spells."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rakdos Charm", "source_text": "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its controller.", "cost": "Pay {B}{R} once and choose exactly one mode; none has a printed extra cost.", "effect": "Mode 1 exiles all cards in the chosen player's graveyard. Mode 2 destroys the chosen artifact. Mode 3 has every creature deal 1 damage to its own controller, keeping each creature as its damage source.", "target": "Mode 1 targets a player, including you. Mode 2 targets one artifact. Mode 3 has no targets and affects every creature and its respective controller.", "timing": "Choose the mode and any required target when casting; resolve only that mode at instant timing.", "replacement": "No printed replacement; mode 3 deals damage rather than a single Charm-sourced life-loss total.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert all three modes independently, including self graveyard selection, artifact-only targeting, and per-creature damage source and controller routing in a multiplayer board."}
+      ]
+    },
+    {
+      "name": "Rakdos Signet",
+      "oracle_id": "3adb7681-977f-4a32-9ec8-51481b958268",
+      "metadata_sha256": "8e5aa11a8f65d69b940b5df86fbc65ec09d6d701f5af4470b21c5e4a56c39d9d",
+      "printed_fields": [{
+        "face": "Rakdos Signet",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2} to cast Rakdos Signet, separate from the {1} activation payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Artifact without a creature type; this is not a land play."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Rakdos Signet is colorless; black-red mana production is not its color characteristic."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed for Rakdos Signet."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; use the explicit paid tap ability to produce both colors."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rakdos Signet", "source_text": "{1}, {T}: Add {B}{R}.", "cost": "Pay one generic mana from an available source and tap the untapped Signet.", "effect": "Add exactly one black and one red mana together; output is two mana, not a color choice.", "target": "No target; the activating controller receives {B}{R}.", "timing": "Activated mana ability; an unanimated Signet can tap on the turn it enters if the {1} payment is available.", "replacement": "No printed replacement or restriction on spending its black-red output.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert the activation spends its input mana before adding {B}{R}, cannot start with no payment source, and cannot reuse an already tapped Signet."}
+      ]
+    },
+    {
+      "name": "Rampant Growth",
+      "oracle_id": "8539f295-5d58-4436-a73a-b9277c4c7795",
+      "metadata_sha256": "945917fe6a1f841d038d6430fd4a7ecc7059c0f09c8365a602de27e34076f546",
+      "printed_fields": [{
+        "face": "Rampant Growth",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{G} to cast Rampant Growth; the found land is not a cost refund."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Rampant Growth is a Sorcery; putting a land onto the battlefield is its effect, not a land play."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Rampant Growth is green; its basic-land choice does not change the spell's color."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed on Rampant Growth."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; the basic-only restriction and tapped entry are written instructions."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rampant Growth", "source_text": "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.", "cost": "Pay {1}{G}; searching and putting the land onto the battlefield require no extra payment.", "effect": "Search your library for a basic land, put the found card onto your battlefield tapped, then shuffle. Do not place it in hand or count it as the turn's land play.", "target": "No target; the searched card must have the Basic supertype and be a land, not merely have a basic land subtype.", "timing": "Sorcery resolution; land entry happens before the shuffle and can cause land-entry triggers.", "replacement": "Printed instruction puts the searched land onto the battlefield tapped; it is not an untapped mana source that turn by default.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert basic lands qualify, nonbasic Forests do not, the chosen land enters tapped, and the library loses only the found card before shuffling."}
+      ]
+    },
+    {
+      "name": "Rapid Hybridization",
+      "oracle_id": "06692cd9-ac2f-4a32-8fd1-043ba3c0fe71",
+      "metadata_sha256": "6e05c854ee7105c335629501947858fda5fce47d047fd1249af6ae4dbe62363d",
+      "printed_fields": [{
+        "face": "Rapid Hybridization",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {U}; neither destruction nor the Frog Lizard adds another casting payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Rapid Hybridization is an Instant with one creature target."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The spell is blue, while its resulting Frog Lizard token is green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no stats or loyalty; 3/3 belongs only to the created token."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; preserve the regeneration ban and both Frog and Lizard token types."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rapid Hybridization", "source_text": "Destroy target creature. It can't be regenerated. That creature's controller creates a 3/3 green Frog Lizard creature token.", "cost": "Pay {U}; the affected creature's controller receives the token without payment.", "effect": "Destroy the creature without regeneration, then have that creature's controller create one 3/3 green creature token with Frog and Lizard types. A legal indestructible target can survive and still yield the token.", "target": "One creature of any controller; token control follows that creature's controller, not automatically the caster.", "timing": "Instant resolution; keep destruction, its regeneration prohibition, and token creation linked.", "replacement": "The printed regeneration ban prevents regeneration from replacing this destruction; indestructible is not removed.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert both token subtypes and green 3/3 stats, correct controller routing, indestructible survival with token creation, and no token after sole-target illegality."}
+      ]
+    },
+    {
+      "name": "Reality Shift",
+      "oracle_id": "70dc830e-d05b-4fc7-88dd-879e140b3fbf",
+      "metadata_sha256": "716284cec2941bed5dc13473743cb0415905682104585f14c4f59aeec408ca2a",
+      "printed_fields": [{
+        "face": "Reality Shift",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{U} for Reality Shift; the manifested card's future face-up cost is separate."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Instant; the face-down creature comes from the target controller's library, not this spell card."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Reality Shift is blue; do not assign its color to the manifested face-down object."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no power, toughness, or loyalty; the reminder supplies 2/2 for the manifested creature."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Manifest has printed reminder text for face-down entry and a creature card's face-up mana payment; hidden-characteristic rules beyond it need a rules check."}
+        }
+      }],
+      "abilities": [
+        {"face": "Reality Shift", "source_text": "Exile target creature. Its controller manifests the top card of their library. (That player puts the top card of their library onto the battlefield face down as a 2/2 creature. If it's a creature card, it can be turned face up any time for its mana cost.)", "cost": "Pay {1}{U} for the spell. A later face-up action for a manifested creature card pays that card's own mana cost; an absent cost is not permission to turn it face up for free.", "effect": "Exile the target, then its controller puts their top library card onto the battlefield face down as a 2/2 creature. Preserve that card's hidden identity for a possible legal face-up action.", "target": "One creature of any controller; the same controller supplies and controls the manifested card. The library card is not targeted.", "timing": "Instant resolution links exile and manifest; the reminder's later face-up permission is separate from resolving Reality Shift.", "replacement": "No printed destruction replacement; the creature moves directly to exile and the library card enters face down.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check full manifest and face-up special-action rules. Assert target-controller library routing, face-down 2/2 characteristics, paid creature-only face-up permission, and no manifest after sole-target illegality."}
+      ]
+    },
+    {
+      "name": "Reanimate",
+      "oracle_id": "a044474a-cd72-4e9d-bd8d-a08f2de9cdc0",
+      "metadata_sha256": "ee317530934010ec27827b555bb9d0a907e02e94946cd0f706e876d43885303c",
+      "printed_fields": [{
+        "face": "Reanimate",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {B}; the later mana-value life loss is not an additional casting cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Reanimate is a Sorcery; it puts a creature card onto the battlefield without casting that creature."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Reanimate is black regardless of the returned creature's colors."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Reanimate has no stats or loyalty; the returned creature uses its own characteristics."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; graveyard scope, control change, and life loss all come from the full spell wording."}
+        }
+      }],
+      "abilities": [
+        {"face": "Reanimate", "source_text": "Put target creature card from a graveyard onto the battlefield under your control. You lose life equal to that card's mana value.", "cost": "Pay {B}; losing life equal to the card's mana value occurs as an effect after the return and is not a payment needed to cast.", "effect": "Move the targeted creature card onto the battlefield under your control, then you lose life equal to that card's mana value. Ownership does not change.", "target": "One creature card in any graveyard, including an opponent's; no printed mana-value limit applies.", "timing": "Sorcery resolution; the creature enters before the linked life loss, and its entry can generate triggers.", "replacement": "No printed replacement or damage event; the caster loses life rather than taking damage.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert an opponent-owned creature enters under the caster's control, the right mana-value life loss follows, and a removed graveyard target prevents both effects."}
+      ]
+    },
+    {
+      "name": "Reclamation Sage",
+      "oracle_id": "032ec6e2-6cc3-4a97-9cc7-3233f5e11904",
+      "metadata_sha256": "9096fc56fa29e50aa1fca8e5dfdb489a83630f43b4f3764bd91ef97c5beb8968",
+      "printed_fields": [{
+        "face": "Reclamation Sage",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2}{G} to cast Sage; destroying a permanent on entry has no extra mana cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Elf and Shaman types; entry by means other than casting still matters."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Reclamation Sage is green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 2/1 and no loyalty; the removal trigger does not replace Sage's body."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; the optional entry destruction is an explicit triggered ability."}
+        }
+      }],
+      "abilities": [
+        {"face": "Reclamation Sage", "source_text": "When this creature enters, you may destroy target artifact or enchantment.", "cost": "No payment; choosing to destroy the target is optional.", "effect": "On resolution you may destroy the selected artifact or enchantment; declining leaves it intact and does not remove Sage.", "target": "One artifact or enchantment on the battlefield, including your own; the target requirement remains even though destruction is optional.", "timing": "Trigger when Sage enters, not only when it is cast; choose a target when placing the trigger on the stack.", "replacement": "No printed replacement or regeneration ban; normal destruction protections still apply.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert entry through reanimation also triggers, both eligible permanent types work, creature-only targets fail, and the controller can decline destruction."}
+      ]
+    },
+    {
+      "name": "Redirect Lightning",
+      "oracle_id": "c62b5c22-e058-436f-9575-a01cb2112829",
+      "metadata_sha256": "1070fb68835bd90c7d438ce015a784046a39d9c41898a405350a0e4f20b81de3",
+      "printed_fields": [{
+        "face": "Redirect Lightning",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {R} plus the required choice of 5 life or {2}; the printed red mana cost alone is insufficient."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Instant and Lesson subtype; Lesson alone does not grant a separate effect or alternate cast."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Redirect Lightning is red even if the additional cost uses generic mana or life."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "This instant has no power, toughness, or loyalty; it changes another stack object's target."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; parse the mandatory additional-cost choice together with the target-change effect."}
+        }
+      }],
+      "abilities": [
+        {"face": "Redirect Lightning", "source_text": "As an additional cost to cast this spell, pay 5 life or pay {2}.\nChange the target of target spell or ability with a single target.", "cost": "To cast, pay {R} and choose one additional cost: pay 5 life or pay {2}. Do not treat this as optional, a resolution payment, or a replacement for {R}.", "effect": "Change the sole target of the selected spell or ability to a different legal target, subject to that object's target restrictions. Do not copy or counter that object.", "target": "Target one spell or ability on the stack with a single target; a nontargeting object or one with multiple targets is ineligible.", "timing": "Cast at instant timing while the targeted spell or ability remains on the stack; pay the additional cost on casting and change the target on resolution.", "replacement": "No printed replacement for damage; the effect changes targeting before the affected object resolves.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert both additional-cost branches, inability to cast without either payment, single-target filtering, and rejection of a new target that violates the original object's restrictions."}
+      ]
+    },
+    {
+      "name": "Relic of Sauron",
+      "oracle_id": "b3a81bb1-cbd5-41a0-8dd4-faea06593f84",
+      "metadata_sha256": "fb5452f3c117c6ad2f0ee12aa715123ea946723fed6c1b735d19d73478ca8bfd",
+      "printed_fields": [{
+        "face": "Relic of Sauron",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {4} to cast the Relic; its draw activation later requires a separate {3}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Relic of Sauron is an Artifact, with neither a creature type nor a land type."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The Relic is colorless despite producing blue, black, or red mana."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed on this noncreature artifact."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; preserve two distinct activated abilities that compete for the same tap cost."}
+        }
+      }],
+      "abilities": [
+        {"face": "Relic of Sauron", "source_text": "{T}: Add two mana in any combination of {U}, {B}, and/or {R}.", "cost": "Tap the untapped Relic; this mana ability has no generic mana payment.", "effect": "Add exactly two mana, choosing each from blue, black, or red. Both can share a color or use different listed colors.", "target": "No target; the activating controller receives the chosen two mana.", "timing": "Activated mana ability; tapping for this output prevents using the Relic's draw ability until it untaps.", "replacement": "No printed replacement or special spending restriction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert same-color and mixed-color pairs are available, white and green are excluded, and a tapped Relic cannot also pay its draw activation's tap cost."},
+        {"face": "Relic of Sauron", "source_text": "{3}, {T}: Draw two cards, then discard a card.", "cost": "Pay {3} and tap the untapped Relic; discarding is an effect after drawing, not an activation cost.", "effect": "Its controller draws two cards, then chooses and discards one card from the resulting hand.", "target": "No target; the activating player draws and discards their own cards.", "timing": "Activate when you have priority; this nonmana ability resolves using the stack and draws before discarding.", "replacement": "No printed replacement; the discard does not replace either draw.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert two draws happen before the discard choice, the controller can discard a newly drawn card, and this activation does not also produce mana."}
+      ]
+    },
+    {
+      "name": "Return of the Wildspeaker",
+      "oracle_id": "2b76f9e9-cd28-4eaf-8674-215c34263f96",
+      "metadata_sha256": "f5dc3b17ce9b104d632e5b52c09a279b9e043ebbeb3a40b722cd45413d134f35",
+      "printed_fields": [{
+        "face": "Return of the Wildspeaker",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Either mode costs {4}{G}; neither is an additional free spell."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Return of the Wildspeaker is an Instant with one chosen mode."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The spell is green; eligible creatures need not be green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no stats or loyalty; mode 1 reads current creature power and mode 2 modifies eligible creatures."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; both written modes require the non-Human creature filter."}
+        }
+      }],
+      "abilities": [
+        {"face": "Return of the Wildspeaker", "source_text": "Choose one —\n• Draw cards equal to the greatest power among non-Human creatures you control.\n• Non-Human creatures you control get +3/+3 until end of turn.", "cost": "Pay {4}{G} and select exactly one mode when casting.", "effect": "Mode 1 draws cards equal to the greatest current power among your non-Human creatures. Mode 2 gives your eligible non-Human creatures +3/+3 until end of turn; do not combine the modes.", "target": "Neither mode targets. Exclude creatures with Human among their types, including creatures that also have a non-Human type; include only creatures you control.", "timing": "Instant resolution; evaluate the draw amount or affected creature set when resolving. The power-and-toughness bonus ends at end of turn.", "replacement": "No printed replacement; the bonus is not +1/+1 counters and the draw is not a power change.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert both modes, exclusion of mixed Human types, zero draws without eligible creatures, and expiry of the bonus without applying it to creatures entering afterward."}
+      ]
+    },
+    {
+      "name": "Revitalizing Repast",
+      "oracle_id": "8dd6d060-d023-48a6-85cb-7a5521b6257b",
+      "metadata_sha256": "46bc0539a76e2f0f7c6f0c77c5d372b87102a4f91355a038f49e2f6e109b0279",
+      "printed_fields": [
+        {
+          "face": "Revitalizing Repast",
+          "fields": {
+            "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay one black or one green mana for {B/G}; it is one hybrid symbol, not two payments."},
+            "type_line": {"disposition": "source_reviewed", "obligation": "The front face is an Instant on a modal double-faced card; casting it does not also play Old-Growth Grove."},
+            "colors": {"disposition": "source_reviewed", "obligation": "Revitalizing Repast is black and green regardless of which color pays its hybrid cost."},
+            "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant face has no stats or loyalty; its +1/+1 counter goes on the target creature."},
+            "keywords": {"disposition": "source_reviewed", "obligation": "Metadata lists no keywords; the text still grants indestructible to the target for the stated duration."}
+          }
+        },
+        {
+          "face": "Old-Growth Grove",
+          "fields": {
+            "mana_cost": {"disposition": "source_reviewed", "obligation": "The land face has an empty mana cost. Play it as a land when legal, not as a free spell."},
+            "type_line": {"disposition": "source_reviewed", "obligation": "The back face is Land without a basic land subtype; choosing this modal face uses a land play."},
+            "colors": {"disposition": "source_reviewed", "obligation": "Old-Growth Grove is colorless even though it can produce black or green mana."},
+            "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Old-Growth Grove has no printed power, toughness, or loyalty."},
+            "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed for this card; the land's tapped entry and mana ability are explicit text."}
+          }
+        }
+      ],
+      "abilities": [
+        {"face": "Revitalizing Repast", "source_text": "Put a +1/+1 counter on target creature. It gains indestructible until end of turn.", "cost": "Cast this face by paying {B/G}; the counter and indestructible have no further cost.", "effect": "Put one +1/+1 counter on the chosen creature, then give that same creature indestructible until end of turn. The counter remains after the granted ability expires.", "target": "One creature of any controller; both instructions refer to that creature.", "timing": "Instant resolution; the counter is placed before granting indestructible, and only indestructible has an end-of-turn duration.", "replacement": "No printed replacement; indestructible prevents destruction but does not prevent sacrifice, exile, or zero-toughness state checks.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert black and green hybrid payments, a persistent counter, temporary indestructible, and no effect when the creature becomes an illegal target."},
+        {"face": "Old-Growth Grove", "source_text": "This land enters tapped.", "cost": "No entry payment or option to pay for untapped entry is printed.", "effect": "Have Old-Growth Grove enter tapped whenever this face enters the battlefield.", "target": "No target; the instruction concerns this land only.", "timing": "Apply as this land enters, whether played or otherwise put onto the battlefield.", "replacement": "Printed tapped-entry replacement; it is not a later trigger that allows an initial mana activation.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert choosing the land face consumes a land play and produces an already tapped land with no untapped-entry payment option."},
+        {"face": "Old-Growth Grove", "source_text": "{T}: Add {B} or {G}.", "cost": "Tap the untapped Grove; it cannot pay this cost while still tapped from entering.", "effect": "Add exactly one black or one green mana, chosen on activation.", "target": "No target; the land's controller receives the chosen mana.", "timing": "Activated mana ability once the land is untapped; choosing this face grants no access to the instant face's effect on the battlefield.", "replacement": "No printed mana replacement or spending restriction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert each color choice after untapping, reject immediate activation after tapped entry, and do not execute Revitalizing Repast when this mana ability is used."}
+      ]
+    },
+    {
+      "name": "Rhystic Study",
+      "oracle_id": "53236dd7-845a-444c-96d5-f41ed7325d8f",
+      "metadata_sha256": "2046437976d140806c4cf2a0a3071c24d933f5aa592a4be8807b265441fa533a",
+      "printed_fields": [{
+        "face": "Rhystic Study",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Casting Study costs {2}{U}; an opponent's later {1} payment is separate."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Rhystic Study is an Enchantment that supplies a spell-cast trigger while on the battlefield."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Rhystic Study is blue."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Study has no power, toughness, or loyalty and does not become a creature through its draw effect."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; preserve both the opponent's payment choice and the controller's optional draw."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rhystic Study", "source_text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}.", "cost": "The casting opponent may pay {1} as the trigger resolves; this is not an added cost of their spell or a payment by Study's controller.", "effect": "If that opponent does not pay, you may draw one card. Paying suppresses that draw; nonpayment does not counter the opponent's spell.", "target": "No target; the triggering opponent chooses payment and Study's controller chooses whether to draw if permitted.", "timing": "Trigger on an opponent casting any spell, before it resolves; copying a spell without casting does not satisfy the event.", "replacement": "No printed replacement; this is a conditional draw trigger, not a draw replacement or spell tax at casting.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert paid, unpaid-and-draw, and unpaid-and-decline branches, with each multiplayer opponent paying only for their own triggering cast."}
+      ]
+    },
+    {
+      "name": "Rhythm of the Wild",
+      "oracle_id": "acfa77fd-3610-4f12-9c3c-bd860ce91700",
+      "metadata_sha256": "3415ff2854bbc6d4ad4ce39e18723ad37f8ab321734f16f09e5b6b231b71ea2a",
+      "printed_fields": [{
+        "face": "Rhythm of the Wild",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{R}{G}; both colored payments are required to cast Rhythm."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Rhythm is an Enchantment; distinguish creature spells on the stack from nontoken creatures on the battlefield."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Rhythm is green and red; its creature benefits have no color restriction."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Rhythm has no printed power, toughness, or loyalty; riot counters modify affected creatures instead."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "The metadata keyword list is empty, but Oracle text grants riot with a reminder; do not lose granted keywords by relying on that list."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rhythm of the Wild", "source_text": "Creature spells you control can't be countered.", "cost": "No separate payment; each creature spell still requires its own casting costs.", "effect": "Prevent countering creature spells you control; do not protect your noncreature spells or opponents' creature spells.", "target": "No target; apply the rule to all creature spells controlled by Rhythm's controller.", "timing": "Static rule while Rhythm is on the battlefield and the affected object is a creature spell on the stack.", "replacement": "No printed replacement; countering is prohibited rather than redirected.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert your creature spell survives a counter attempt, while your instant and an opponent's creature remain counterable."},
+        {"face": "Rhythm of the Wild", "source_text": "Nontoken creatures you control have riot. (They enter with your choice of a +1/+1 counter or haste.)", "cost": "No payment for granting riot or choosing its entry option.", "effect": "Give your nontoken creatures riot. As each enters, choose a +1/+1 counter or haste, not both from this single riot instance.", "target": "No target; include only nontoken creatures you control, excluding your creature tokens and opponents' creatures.", "timing": "Static grant supplies an entry choice as each eligible creature enters; the reminder prints no end-of-turn limit on chosen haste.", "replacement": "Riot's printed reminder modifies entry with either the counter or haste choice; this is not a delayed enter trigger.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert both riot choices on nontoken entry, token exclusion, and persistent chosen haste; full multiple-riot and ability-loss interactions need a separate rules check."}
+      ]
+    },
+    {
+      "name": "Rishkar's Expertise",
+      "oracle_id": "97407cd0-2bd2-4074-94d3-4ec3d243fa78",
+      "metadata_sha256": "ba0b9cc45054b45f9b91f502f7ebea8a8e4ee2140ba9a4cd06afc87337b47ed5",
+      "printed_fields": [{
+        "face": "Rishkar's Expertise",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Expertise for {4}{G}{G}; its free-cast instruction does not waive Expertise's own cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Expertise is a Sorcery; the later permitted spell is cast during its resolution."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Expertise is green; its permitted hand spell has no printed color restriction."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Expertise has no stats or loyalty; read the greatest power among creatures its caster controls when resolving."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; keep the draw and optional mana-value-limited cast in one spell resolution."}
+        }
+      }],
+      "abilities": [
+        {"face": "Rishkar's Expertise", "source_text": "Draw cards equal to the greatest power among creatures you control.\nYou may cast a spell with mana value 5 or less from your hand without paying its mana cost.", "cost": "Pay {4}{G}{G} for Expertise. The optional hand spell waives its mana cost, not mandatory additional costs; check alternate-cost and variable-cost rules separately.", "effect": "Draw according to your greatest current creature power, then optionally cast one spell of mana value 5 or less from your resulting hand without paying its mana cost. Newly drawn cards can be chosen, and drawing zero does not remove the cast permission.", "target": "Expertise does not target; count only your creatures and choose a qualifying spell from your hand. Any targets required by that chosen spell remain required.", "timing": "Cast Expertise at sorcery timing. Its optional cast happens during resolution after the draw, not through a permission lasting for the rest of the turn.", "replacement": "No printed draw replacement; the linked spell uses an explicit without-paying-mana-cost permission.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert draw-before-choice, mana-value 5 acceptance versus 6 rejection, newly drawn spell eligibility, and a zero-creature board still allowing the immediate optional cast with required additional costs and targets."}
+      ]
+    },
+    {
+      "name": "Ruinous Ultimatum",
+      "oracle_id": "a6f38908-aa4f-4f99-a28e-85d11dab52e4",
+      "metadata_sha256": "d159fd5012ce507b086fd0bc0b124ba9b8d24250bf42cfcb19d077f66ac8fcd3",
+      "printed_fields": [{
+        "face": "Ruinous Ultimatum",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {R}{R}{W}{W}{W}{B}{B}: two red, three white, and two black mana, without generic substitution."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Ruinous Ultimatum is a Sorcery whose destruction instruction is not targeted."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The spell is black, red, and white."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Ultimatum has no power, toughness, or loyalty; affected permanents can include planeswalkers."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; enforce the nonland and opponents-control filters directly."}
+        }
+      }],
+      "abilities": [
+        {"face": "Ruinous Ultimatum", "source_text": "Destroy all nonland permanents your opponents control.", "cost": "Pay the full seven colored mana symbols; there is no printed cost reduction or sacrifice.", "effect": "Destroy all opponents' nonland permanents together, leaving your permanents and all lands outside the affected set.", "target": "No targets; include nonland permanents of every opponent. A permanent that is also a land is excluded even if it has another permanent type.", "timing": "Sorcery resolution; determine control and land status at resolution.", "replacement": "No printed replacement or regeneration ban; indestructible and applicable destruction replacements remain relevant.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert asymmetric multiplayer destruction, exclusion of land creatures and your permanents, and survival of opposing indestructible nonlands."}
+      ]
+    },
+    {
+      "name": "Sakura-Tribe Elder",
+      "oracle_id": "e3afc704-220f-498f-9eaa-0821b17dc24c",
+      "metadata_sha256": "66a60859775f769739674e36fe6bd95ca33b8f8f469d7819bf256e46da8153a4",
+      "printed_fields": [{
+        "face": "Sakura-Tribe Elder",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Elder for {1}{G}; its search activation has a sacrifice cost instead of a mana cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Snake and Shaman types; sacrificing it can produce creature-death events."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Sakura-Tribe Elder is green regardless of which basic land its ability finds."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 1/1 and no loyalty before the creature is sacrificed."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the lack of a tap symbol matters for activating a newly entered Elder."}
+        }
+      }],
+      "abilities": [
+        {"face": "Sakura-Tribe Elder", "source_text": "Sacrifice this creature: Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.", "cost": "Sacrifice this Elder when activating; there is no tap or mana payment, so creature summoning restrictions do not prevent this cost.", "effect": "Search your library for one basic land, put it onto the battlefield tapped, then shuffle. The sacrificed Elder is gone before the search resolves.", "target": "No target; the found card must be a basic land in your library, not merely a nonbasic card with a basic land subtype.", "timing": "Activate when you have priority, including the turn Elder enters; the search uses the stack and does not count as playing a land.", "replacement": "The found land is explicitly put onto the battlefield tapped; no sacrifice replacement is printed.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert immediate activation without haste, sacrifice before resolution, basic-only search, tapped land entry, and no second activation from the sacrificed object."}
+      ]
+    },
+    {
+      "name": "Scute Swarm",
+      "oracle_id": "aa854d50-444c-49d9-bfb1-5476b33c1c0b",
+      "metadata_sha256": "3e424e455715f578a045a382d55bf8e2c38df074faba4e16e5508c63f471a9b1",
+      "printed_fields": [{
+        "face": "Scute Swarm",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2}{G} for the creature; landfall tokens do not each require this casting cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Scute Swarm is a Creature with the Insect type, with no legendary supertype."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Scute Swarm is green; the ordinary 1/1 Insect token is also explicitly green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 1/1 with no loyalty; a copy token takes copiable characteristics rather than current temporary bonuses."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Landfall labels the printed land-entry trigger; the six-land conditional belongs to that same token effect."}
+        }
+      }],
+      "abilities": [
+        {"face": "Scute Swarm", "source_text": "Landfall — Whenever a land you control enters, create a 1/1 green Insect creature token. If you control six or more lands, create a token that's a copy of this creature instead.", "cost": "No payment; the six-land count is a condition, not a cost that sacrifices lands.", "effect": "Create one 1/1 green Insect token unless you control at least six lands when resolving; then create a copy of this creature instead. Do not create both tokens for one trigger.", "target": "No target; count lands you control and create the token under your control.", "timing": "Trigger on each land you control entering; check the six-or-more condition as the trigger resolves, including the entering land if still controlled.", "replacement": "Printed conditional self-replacement changes this trigger's token result to a copy; it does not replace the land entry.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert five-versus-six-land results, a land leaving before resolution changing the result, and copy tokens retaining the landfall ability for later entries."}
+      ]
+    },
+    {
+      "name": "Seedborn Muse",
+      "oracle_id": "463865bc-087e-477b-9e86-84e77f1ad931",
+      "metadata_sha256": "a47c48f4fdbdd59974d03140281d29d48c985657d652bb20508b41a1f1dc41db",
+      "printed_fields": [{
+        "face": "Seedborn Muse",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{G}{G}; the untap rule provides no casting discount."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Muse is a Creature with the Spirit type; its untap rule affects more than creatures."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Seedborn Muse is green; its permanent selection has no color restriction."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 2/4 with no loyalty; untapping does not remove damage or change these stats."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the printed untap-step rule is not vigilance or an upkeep trigger."}
+        }
+      }],
+      "abilities": [
+        {"face": "Seedborn Muse", "source_text": "Untap all permanents you control during each other player's untap step.", "cost": "No payment or activation; the rule applies while Muse supplies its static ability.", "effect": "Untap all permanents you control during each other player's untap step, including lands, artifacts, and Muse itself when applicable.", "target": "No target; affect all your permanents, not that other player's permanents.", "timing": "Static change to untap-step behavior, not a trigger that waits for upkeep or uses priority during untap.", "replacement": "No printed replacement event; it adds your permanents to other players' untap-step processing and does not override separate cannot-untap rules.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert land, artifact, and creature untaps on every other player's turn, no fabricated upkeep trigger, and correct handling of a permanent prohibited from untapping."}
+      ]
+    },
+    {
+      "name": "Seething Song",
+      "oracle_id": "64bf8929-f5f2-4d50-8667-13b1d007bcfc",
+      "metadata_sha256": "9989e70aa5ad5190f176d13db8e13d00f2c0e8236bb94d24be0e0f84c9c769eb",
+      "printed_fields": [{
+        "face": "Seething Song",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2}{R} before resolving the five-red-mana effect."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Seething Song is an Instant spell, not an activated mana ability that bypasses the stack."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Seething Song is red and produces red mana only."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The mana-producing instant has no power, toughness, or loyalty."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; use the five printed {R} symbols as the output amount."}
+        }
+      }],
+      "abilities": [
+        {"face": "Seething Song", "source_text": "Add {R}{R}{R}{R}{R}.", "cost": "Casting spends {2}{R}; those payments are distinct from the five red mana added when the spell resolves.", "effect": "Add exactly five red mana to the caster's mana pool; do not add only the net two-mana increase or treat it as a permanent source.", "target": "No target; only the caster receives the mana.", "timing": "Cast at instant timing and use the stack; mana becomes available on resolution and follows normal pool-emptying rules.", "replacement": "No printed replacement, spending restriction, or permission to retain mana across steps.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert three mana are spent before resolution, exactly five red are added afterward, a countered Song adds none, and unused output empties normally."}
+      ]
+    },
+    {
+      "name": "Sevinne's Reclamation",
+      "oracle_id": "1b9f9f5b-8712-4f00-90cb-1b7b9970eccc",
+      "metadata_sha256": "700ffd9899cbb38c6e28676527ab44bd0211630d46702e2360b508228db374f9",
+      "printed_fields": [{
+        "face": "Sevinne's Reclamation",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Normal cost is {2}{W}; the graveyard flashback alternative is {4}{W}, without changing the card's printed mana cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Reclamation is a Sorcery; flashback grants a zone permission rather than instant timing."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Reclamation is white whether cast normally, by flashback, or copied."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Reclamation has no power, toughness, or loyalty; returned permanent cards use their own characteristics."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Flashback has printed cost and exile reminder; the conditional copy depends on a graveyard cast, not merely the presence of this keyword."}
+        }
+      }],
+      "abilities": [
+        {"face": "Sevinne's Reclamation", "source_text": "Return target permanent card with mana value 3 or less from your graveyard to the battlefield. If this spell was cast from a graveyard, you may copy this spell and may choose a new target for the copy.", "cost": "Use a legal casting cost, normally {2}{W} or flashback {4}{W}. Creating the optional copy has no additional payment.", "effect": "Return the target permanent card to the battlefield. If this spell was cast from a graveyard, you may copy it and may change the copy's target. The created spell copy was not itself cast from a graveyard, so this condition does not start an endless copy chain.", "target": "One permanent card in your graveyard with mana value at most 3, including a land card; a new copy target must satisfy the same restrictions.", "timing": "Resolve the return before deciding on the conditional copy. Track the original spell's cast zone even if graveyard permission came from something other than flashback.", "replacement": "No printed replacement within this return-and-copy instruction; flashback's exile handling is a separate ability.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert hand casts do not copy, graveyard casts can create one copy with a new legal target, that copy does not recursively copy, and an illegal original sole target prevents the copy instruction."},
+        {"face": "Sevinne's Reclamation", "source_text": "Flashback {4}{W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)", "cost": "Pay {4}{W} as the flashback alternative when casting this card from your graveyard; mandatory additional costs still apply if present.", "effect": "Permit a graveyard cast using the flashback cost and exile the card under flashback's zone-change handling, rather than letting that cast recycle indefinitely.", "target": "Flashback adds no target; the spell still needs its own mana-value-limited permanent-card target in your graveyard.", "timing": "Use normal sorcery timing from the graveyard; the reminder's exile is linked to the flashback cast, not an extra spell or activation.", "replacement": "The source reminder requires exile after the flashback cast; full replacement handling for leaving the stack, including being countered, needs a rules check.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check the full flashback leave-stack replacement rule. Assert the {4}{W} graveyard payment, exile after resolving or being countered, and rejection of flashback casting from hand or exile."}
+      ]
+    },
+    {
+      "name": "Shamanic Revelation",
+      "oracle_id": "d1d171de-1c6d-4fb9-817a-9c689c709f3d",
+      "metadata_sha256": "5051ecf69d40db9074e9f7ae48d9864d2cb8a88cdddd7f861ab47c636d83a83e",
+      "printed_fields": [{
+        "face": "Shamanic Revelation",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{G}{G} for both written instructions in one resolution."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Shamanic Revelation is a Sorcery; Ferocious does not create a separate triggered spell."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The spell is green, but creatures counted by either instruction need not be green."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Revelation has no stats or loyalty; the life gain reads each controlled creature's current power against 4."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Ferocious is a label for the written life-gain instruction, not permission to draw only when a power-4 creature exists."}
+        }
+      }],
+      "abilities": [
+        {"face": "Shamanic Revelation", "source_text": "Draw a card for each creature you control.\nFerocious — You gain 4 life for each creature you control with power 4 or greater.", "cost": "Pay {3}{G}{G}; having creatures or power-4 creatures is not a casting cost or requirement.", "effect": "Draw one card per creature you control, then gain 4 life per creature you control with power at least 4. Keep the counts separate and include creature tokens.", "target": "No targets; both counts use only creatures you control and the caster receives both the cards and life.", "timing": "Sorcery resolution; perform the draw instruction before the life-gain instruction, with each count taken for its instruction.", "replacement": "No printed replacement; the life gain does not substitute for any draws.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a mixed-power board draws for every creature but gains life only for power 4 or greater, including exactly 4, and an empty board grants neither output."}
+      ]
+    },
+    {
+      "name": "Sign in Blood",
+      "oracle_id": "c6207f6a-a624-4754-88f5-dbe700c841ff",
+      "metadata_sha256": "078e3cde9ff378e55235080677a3df12dca0870f9fa1099637a15f2c92d2b86b",
+      "printed_fields": [{
+        "face": "Sign in Blood",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {B}{B}; the 2 life lost belongs to the targeted player as an effect, not a casting payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Sign in Blood is a Sorcery that requires a player target."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Sign in Blood is black."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed for this draw-and-life-loss sorcery."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; the targeted-player wording must not be reduced to an automatic self draw."}
+        }
+      }],
+      "abilities": [
+        {"face": "Sign in Blood", "source_text": "Target player draws two cards and loses 2 life.", "cost": "Pay {B}{B}; losing 2 life is not a payment required to cast.", "effect": "The chosen player draws two cards and loses 2 life; route both outputs to that same player, even when it is an opponent.", "target": "One legal player, including yourself; creatures and planeswalkers are not eligible.", "timing": "Sorcery resolution; the targeted player draws and then loses life within the same effect.", "replacement": "No printed replacement; life loss is not damage and does not depend on successfully drawing both cards.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert self and opponent targeting route both outputs correctly, life loss remains an effect, and an illegal player target prevents both instructions."}
+      ]
+    },
+    {
+      "name": "Simic Signet",
+      "oracle_id": "44503105-3e13-408d-a44f-37d503c61d72",
+      "metadata_sha256": "4c44b8a268d8393d3200de2f1f49ca7da37acec533a9fd59ead23abe9896e9ad",
+      "printed_fields": [{
+        "face": "Simic Signet",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Simic Signet for {2}; its later activation needs a separate {1}."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Artifact, without treating the Signet as a creature or a land."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Simic Signet is colorless despite its green-blue mana output."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Simic Signet has no printed power, toughness, or loyalty."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; both mana output symbols belong to its single paid tap ability."}
+        }
+      }],
+      "abilities": [
+        {"face": "Simic Signet", "source_text": "{1}, {T}: Add {G}{U}.", "cost": "Pay {1} from available mana and tap the untapped Signet before receiving its output.", "effect": "Add one green and one blue mana together, not one mana chosen from those colors.", "target": "No target; the activating player receives both mana.", "timing": "Activated mana ability; an unanimated Signet can activate on entry if untapped and its input mana is available.", "replacement": "No printed replacement or spending restriction on the green-blue output.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert the input payment, exact {G}{U} output, failure with no input source, and inability to activate twice without untapping."}
+      ]
+    },
+    {
+      "name": "Sink into Stupor",
+      "oracle_id": "bcc6eece-75ea-494c-b33a-d4477d504e0b",
+      "metadata_sha256": "d926a83ea995b46a78d64c63fb831244faca2b288d9f7e6f4e4a8cf3aedcbe4c",
+      "printed_fields": [
+        {
+          "face": "Sink into Stupor",
+          "fields": {
+            "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{U}{U} when casting the instant face; the land face's life choice does not pay this cost."},
+            "type_line": {"disposition": "source_reviewed", "obligation": "The front face is an Instant on a modal double-faced card; casting it does not also play Soporific Springs."},
+            "colors": {"disposition": "source_reviewed", "obligation": "Sink into Stupor is blue."},
+            "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant face has no power, toughness, or loyalty; its targets can occupy the stack or battlefield."},
+            "keywords": {"disposition": "source_reviewed", "obligation": "The card's keyword list is empty; returning a spell is explicit wording, not countering."}
+          }
+        },
+        {
+          "face": "Soporific Springs",
+          "fields": {
+            "mana_cost": {"disposition": "source_reviewed", "obligation": "The land face has no mana cost; play it using land permission, not as a zero-cost spell."},
+            "type_line": {"disposition": "source_reviewed", "obligation": "The back face is Land without Island or Basic; selecting this face uses a legal land play."},
+            "colors": {"disposition": "source_reviewed", "obligation": "Soporific Springs is colorless; producing {U} does not make it blue."},
+            "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The land has no power, toughness, or loyalty."},
+            "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the optional 3-life entry payment and blue mana activation are separate written abilities."}
+          }
+        }
+      ],
+      "abilities": [
+        {"face": "Sink into Stupor", "source_text": "Return target spell or nonland permanent an opponent controls to its owner's hand.", "cost": "Pay {1}{U}{U}; no life cost is printed on this face.", "effect": "Return the chosen opponent-controlled spell or nonland permanent to its owner's hand, not its controller's hand. Returning a spell does not counter it.", "target": "One spell on the stack or one nonland permanent on the battlefield controlled by an opponent; neither your objects nor land permanents qualify.", "timing": "Instant resolution; recheck opponent control and the relevant spell or nonland-permanent status when resolving.", "replacement": "No printed replacement; the object moves directly to its owner's hand without destruction or countering.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert both stack and battlefield target classes, rejection of lands and your objects, owner-versus-controller hand routing, and successful return of an uncounterable spell."},
+        {"face": "Soporific Springs", "source_text": "As this land enters, you may pay 3 life. If you don't, it enters tapped.", "cost": "Optionally pay exactly 3 life as this land enters; declining or being unable to pay gives the tapped-entry branch.", "effect": "Allow normal untapped entry if the life payment is made; otherwise have Springs enter tapped. This choice is independent of the front face's mana cost.", "target": "No target; the entering land's controller chooses and pays life.", "timing": "Make the choice as the land enters, before any activation or entry triggers; paying life does not itself allow an extra land play.", "replacement": "Printed as-entry choice conditionally replaces normal entry with tapped entry when life is not paid.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert paid entry loses 3 life and enters untapped, declined or unaffordable entry is tapped, and the choice cannot be delayed until after entry."},
+        {"face": "Soporific Springs", "source_text": "{T}: Add {U}.", "cost": "Tap the untapped land; no further life payment is required for this activation.", "effect": "Add exactly one blue mana to its controller's pool.", "target": "No target; the controller of Springs receives the mana.", "timing": "Activated mana ability; immediate use depends on the entry choice leaving the land untapped.", "replacement": "No printed mana replacement or spending restriction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a paid untapped Springs can produce blue immediately, an unpaid tapped Springs cannot, and activation does not execute Sink into Stupor."}
+      ]
+    },
+    {
+      "name": "Skullclamp",
+      "oracle_id": "65986c1b-8e51-4604-b685-d82fa7d1263a",
+      "metadata_sha256": "6d19ef128c8974af72bafa4e6fed5209aa34c98dba5c7e44336156c2727c427b",
+      "printed_fields": [{
+        "face": "Skullclamp",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Skullclamp for {1}; equipping requires a separate {1} activation payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Artifact with Equipment subtype; it enters unattached and is not itself a creature."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Skullclamp is colorless regardless of the equipped creature's colors."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Skullclamp has no stats or loyalty; +1/-1 modifies only its equipped creature."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Equip {1} is printed without reminder text; its full attachment, target, and sorcery-timing rules need a keyword rules check."}
+        }
+      }],
+      "abilities": [
+        {"face": "Skullclamp", "source_text": "Equipped creature gets +1/-1.", "cost": "No separate payment for the static bonus once Skullclamp is attached.", "effect": "Give the equipped creature +1 power and -1 toughness; these are continuous changes, not counters.", "target": "No target; affect only the creature currently equipped by this Skullclamp.", "timing": "Static rule while attached; attachment changes update the recipient immediately, and zero toughness can cause a state-based death.", "replacement": "No printed replacement; a toughness reduction is not damage or destruction.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert a 1-toughness creature reaches zero toughness after attachment, a larger creature gets the exact +1/-1 change, and detachment removes the modifier."},
+        {"face": "Skullclamp", "source_text": "Whenever equipped creature dies, draw two cards.", "cost": "No payment; drawing is mandatory after a qualifying equipped-creature death.", "effect": "Skullclamp's controller draws two cards when the creature it equipped dies, including a death caused by the toughness penalty.", "target": "No target; the draw recipient is the Equipment's controller, which need not be the creature's owner.", "timing": "Trigger on the equipped creature's battlefield-to-graveyard event using attachment information before it died; exile without dying does not qualify.", "replacement": "No printed replacement; this draw follows the death event rather than preventing it.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert the zero-toughness death draws two, a dead creature no longer attached still supplies the death trigger, and simultaneous Equipment and creature deaths preserve the pre-death attachment check."},
+        {"face": "Skullclamp", "source_text": "Equip {1}", "cost": "The printed equip activation costs {1}; casting for {1} does not also pay equip.", "effect": "The keyword denotes attaching Equipment through equip; the pinned text supplies only the cost and does not spell out the complete keyword procedure.", "target": "The target restriction comes from equip's keyword rules, not an expanded target clause in this source; verify the controlled-creature restriction before execution claims.", "timing": "The source omits equip reminder text; verify equip's sorcery-timing and attachment rules separately.", "replacement": "No printed replacement in the equip line; it does not sacrifice or destroy the equipped creature as a cost.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Check equip rules, then assert {1} attaches to a legal creature you control only at sorcery timing, rejects opponent creatures, and permits moving Skullclamp without sacrificing the prior bearer."}
+      ]
+    },
+    {
+      "name": "Skyshroud Claim",
+      "oracle_id": "376c9d3f-21d3-4251-bb6a-026fa9e1b0e1",
+      "metadata_sha256": "d6bb445fbe906a7f3551c544ce8b6a64040bdc97795e1b2fdd44d4140a10820a",
+      "printed_fields": [{
+        "face": "Skyshroud Claim",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{G}; choosing fewer Forests does not reduce this cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Skyshroud Claim is a Sorcery, and its land entries are effects rather than land plays."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Skyshroud Claim is green; the found Forest cards may have additional land subtypes."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Claim has no printed power, toughness, or loyalty."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; up to two, Forest rather than basic, and no imposed tapped entry are all significant."}
+        }
+      }],
+      "abilities": [
+        {"face": "Skyshroud Claim", "source_text": "Search your library for up to two Forest cards, put them onto the battlefield, then shuffle.", "cost": "Pay {3}{G}; choosing zero, one, or two Forest cards adds no further cost.", "effect": "Search your library for up to two Forest cards, put the chosen cards onto the battlefield, then shuffle. This spell does not itself require them to enter tapped.", "target": "No target; chosen cards must have the Forest subtype and may be nonbasic, including lands with additional subtypes.", "timing": "Sorcery resolution; put the chosen Forest cards onto the battlefield before shuffling, without using land plays.", "replacement": "No tapped-entry replacement is printed on Claim; each found card's own entry replacements still apply.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert zero-to-two selection, nonbasic Forest acceptance, rejection of green-producing lands without Forest, and preservation of each fetched land's own tapped-entry or life-payment rules."}
+      ]
+    },
+    {
+      "name": "Smothering Tithe",
+      "oracle_id": "153376c9-dffd-458c-8ce3-a4c8269bc4e9",
+      "metadata_sha256": "2961ce5632bfac3441d1cf1d78e9850fd23928d859ea0ea47728042959d326af",
+      "printed_fields": [{
+        "face": "Smothering Tithe",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Tithe for {3}{W}; an opponent's later {2} payment does not pay this cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Tithe is an Enchantment; its created Treasures are separate artifacts."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Tithe is white despite Treasures being able to produce any color of mana."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Tithe has no power, toughness, or loyalty and does not make its Treasures creatures."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Treasure's artifact and tap-and-sacrifice mana rules are printed in the reminder and stay linked to the created token."}
+        }
+      }],
+      "abilities": [
+        {"face": "Smothering Tithe", "source_text": "Whenever an opponent draws a card, that player may pay {2}. If the player doesn't, you create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")", "cost": "The opponent who drew may pay {2} as each trigger resolves. Later activating a created Treasure requires tapping and sacrificing that token.", "effect": "If the drawing opponent does not pay, Tithe's controller creates one Treasure artifact. Its printed token ability can later add one mana of a chosen color, not one of each color.", "target": "No target; only the drawing opponent chooses that trigger's payment, and you receive its unpaid Treasure.", "timing": "Trigger for every opponent card draw, including the first draw in their draw step; multi-card draws create separate triggers and payment decisions.", "replacement": "No printed replacement; Tithe does not prevent or replace the opponent's draw, and payment only changes whether you create a token.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert first-draw inclusion, separate triggers for two cards, per-opponent paid and unpaid choices, and a created Treasure's tap-plus-sacrifice one-color mana activation."}
+      ]
+    },
+    {
+      "name": "Snap",
+      "oracle_id": "ac914d98-221e-426c-8a50-342896b15f9e",
+      "metadata_sha256": "124a98e0d0f7175dd19ecaa64a0b2c3cfe6432c54e0c8484a49315cc259eabe1",
+      "printed_fields": [{
+        "face": "Snap",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {1}{U} before resolution; untapping lands afterward does not make this a zero-cost spell."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Snap is an Instant with one creature target and a linked nontargeting land-untap instruction."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Snap is blue; chosen lands have no color requirement."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Snap has no power, toughness, or loyalty; target creature stats do not restrict the return."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keyword is listed; up to two lands is a choice on resolution rather than two extra targets."}
+        }
+      }],
+      "abilities": [
+        {"face": "Snap", "source_text": "Return target creature to its owner's hand. Untap up to two lands.", "cost": "Pay {1}{U}; choosing lands to untap has no extra cost and does not retroactively fund casting.", "effect": "Return the creature to its owner's hand, then choose and untap zero, one, or two lands. Keep both instructions in one resolution.", "target": "Only the creature is targeted and may belong to any player. The chosen lands are not targeted and have no printed controller restriction.", "timing": "Instant resolution; return the creature before choosing and untapping lands.", "replacement": "No printed replacement; return to hand is not destruction and untapping does not itself add mana.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert owner-hand routing, untapping lands controlled by either player, zero-to-two choices, and no untap when the spell's only creature target becomes illegal."}
+      ]
+    },
+    {
+      "name": "Sol Ring",
+      "oracle_id": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "metadata_sha256": "54a23e3e93a61a180c36f1da2a13775867c4a0e2e584297379aa8b2d3bcff8bb",
+      "printed_fields": [{
+        "face": "Sol Ring",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Sol Ring for {1}; the cost is generic, distinct from its colorless output."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Sol Ring is an Artifact, not a land or creature, so casting does not consume a land play."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Sol Ring is colorless and produces colorless mana; do not interpret {C} as mana of any color."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "No power, toughness, or loyalty is printed for Sol Ring."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the tap ability has no {1} input cost unlike a Signet."}
+        }
+      }],
+      "abilities": [
+        {"face": "Sol Ring", "source_text": "{T}: Add {C}{C}.", "cost": "Tap the untapped Ring; no mana payment is required for activation.", "effect": "Add exactly two colorless mana, usable for colorless or generic requirements but not colored mana symbols without another effect.", "target": "No target; the activating controller receives both colorless mana.", "timing": "Activated mana ability; an unanimated Ring can activate on the turn it enters if untapped.", "replacement": "No printed replacement or permission to retain mana beyond normal pool-emptying points.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert immediate post-cast activation adds {C}{C}, needs no input mana, cannot directly pay {U}, and cannot be repeated while Ring remains tapped."}
+      ]
+    },
+    {
+      "name": "Solemn Simulacrum",
+      "oracle_id": "00c0543c-2a1f-4425-8283-4062d74a1637",
+      "metadata_sha256": "5c0d27a8303b8098850f956505091a8d03c959e115d0624542acfccc1de6bf36",
+      "printed_fields": [{
+        "face": "Solemn Simulacrum",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Cast Simulacrum for {4}; its entry search and death draw have no added mana payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep both Artifact and Creature types and the Golem subtype; it qualifies for artifact and creature interactions."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Simulacrum is colorless regardless of the basic land found by its trigger."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 2/2 and no loyalty; death triggers require a battlefield-to-graveyard event."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; the two optional triggers have distinct entry and death events."}
+        }
+      }],
+      "abilities": [
+        {"face": "Solemn Simulacrum", "source_text": "When this creature enters, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.", "cost": "No payment; the entire library-search sequence is optional.", "effect": "You may search your library for a basic land, put a found card onto the battlefield tapped, then shuffle. Declining the search does not grant a land or require a shuffle.", "target": "No target; search your own library for a basic land rather than a nonbasic land with a basic subtype.", "timing": "Trigger whenever Simulacrum enters, including without being cast; land entry occurs during trigger resolution and does not use a land play.", "replacement": "The instruction puts the found land onto the battlefield tapped; no replacement for Simulacrum's entry is printed.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert optional acceptance and decline, basic-only selection, tapped entry, and the trigger after a noncast return to the battlefield."},
+        {"face": "Solemn Simulacrum", "source_text": "When this creature dies, you may draw a card.", "cost": "No payment; the controller may decline the draw.", "effect": "Its controller may draw exactly one card after Simulacrum dies.", "target": "No target; use the controller associated with the creature's death trigger rather than automatically its owner.", "timing": "Trigger on this creature moving from the battlefield to a graveyard; exile, return to hand, and discard from hand are not deaths.", "replacement": "No printed replacement; the optional draw does not prevent the creature from dying.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert death permits one draw or decline, exile permits neither, and a controlled but opponent-owned Simulacrum gives the draw choice to its departing controller."}
+      ]
+    },
+    {
+      "name": "Storm-Kiln Artist",
+      "oracle_id": "a145ff8c-5812-4bcb-bd16-9839dc25121d",
+      "metadata_sha256": "bf5733adbede7d096ff38f10c61327f64143622f3c7c9683ef3830628e9f7992",
+      "printed_fields": [{
+        "face": "Storm-Kiln Artist",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {3}{R} to cast Artist; later Treasure production does not reduce this cost."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Keep Creature with Dwarf and Shaman types; Artist is not an artifact in its printed base form."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Storm-Kiln Artist is red; its Treasure tokens can produce other colors without changing Artist's color."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Base stats are 2/2 with no loyalty; each controlled artifact adds power only through its separate static ability."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Magecraft labels the cast-or-copy trigger, and Treasure has a printed artifact mana-ability reminder; neither label replaces the full text."}
+        }
+      }],
+      "abilities": [
+        {"face": "Storm-Kiln Artist", "source_text": "This creature gets +1/+0 for each artifact you control.", "cost": "No payment; the modifier changes with your artifact count.", "effect": "Add one power and no toughness for each artifact you control, including Treasure tokens and artifact creatures; losing artifacts reduces the bonus.", "target": "No target; only Artist receives the modifier and only your artifacts count.", "timing": "Static continuous modifier while Artist has the ability; update it immediately as artifact control or battlefield presence changes.", "replacement": "No printed replacement or counters; this is a changing power modifier.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert Treasure creation increases Artist's power, sacrificing that Treasure lowers it, opponents' artifacts do not count, and toughness remains 2 absent other effects."},
+        {"face": "Storm-Kiln Artist", "source_text": "Magecraft — Whenever you cast or copy an instant or sorcery spell, create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")", "cost": "No payment for the trigger. A created Treasure's later mana activation requires both tapping and sacrificing that token.", "effect": "Create one Treasure artifact per qualifying cast or copy event. Each token can later add one mana of a chosen color, and its presence also affects Artist's artifact-count power bonus.", "target": "No target; Artist's controller creates the Treasure for their own instant or sorcery cast or copy.", "timing": "Trigger on you casting or copying an instant or sorcery spell; a spell copy can qualify even though it was not cast, while an opponent's cast does not.", "replacement": "No printed replacement; the Treasure does not replace the instant, sorcery, or spell copy.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert cast and copy events independently create Treasures, opponent events do not, and each created token's mana use removes an artifact and updates Artist's power."}
+      ]
+    },
+    {
+      "name": "Stroke of Midnight",
+      "oracle_id": "9a107e48-3d50-4941-95b1-10f2b29a4245",
+      "metadata_sha256": "c3186c4bf0ce44ca70f51df0ec3ef3d6b9ca51790f189152e71103ea739249d6",
+      "printed_fields": [{
+        "face": "Stroke of Midnight",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {2}{W}; the target's controller does not pay for the resulting Human token."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Stroke of Midnight is an Instant with one nonland-permanent target."},
+          "colors": {"disposition": "source_reviewed", "obligation": "The spell is white and separately specifies a white token, without requiring a white target."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "The instant has no stats or loyalty; 1/1 describes only the created Human creature token."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "No keywords are listed; keep destruction and the controller's Human creation linked in one spell effect."}
+        }
+      }],
+      "abilities": [
+        {"face": "Stroke of Midnight", "source_text": "Destroy target nonland permanent. Its controller creates a 1/1 white Human creature token.", "cost": "Pay {2}{W}; the token creation has no cost for either player.", "effect": "Destroy the chosen nonland permanent, then its controller creates one 1/1 white Human creature token. The token instruction is not conditional on successfully destroying a legal indestructible target.", "target": "One nonland permanent of any controller; exclude any permanent that is a land even if it also has another type. Route the token to that permanent's controller.", "timing": "Instant resolution; destruction precedes creation within the same spell.", "replacement": "No printed replacement or regeneration ban; normal destruction protections apply and exile is not substituted.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert artifact, enchantment, creature, and planeswalker eligibility, rejection of land creatures, exact white Human 1/1 creation, and token behavior for indestructible versus an illegal sole target."}
+      ]
+    },
+    {
+      "name": "Sun Titan",
+      "oracle_id": "b2e950fb-cb7e-40a0-a311-5bbdd0477b29",
+      "metadata_sha256": "20c381e46684a01d978b2bba3df8b8bc0bece97863975489826a5d885c6632a3",
+      "printed_fields": [{
+        "face": "Sun Titan",
+        "fields": {
+          "mana_cost": {"disposition": "source_reviewed", "obligation": "Pay {4}{W}{W} to cast Titan; its return trigger has no added mana payment."},
+          "type_line": {"disposition": "source_reviewed", "obligation": "Sun Titan is a Creature with Giant type, not a legendary permanent in its printed type line."},
+          "colors": {"disposition": "source_reviewed", "obligation": "Sun Titan is white; its return target has no color restriction."},
+          "power_toughness_loyalty": {"disposition": "source_reviewed", "obligation": "Use base 6/6 and no loyalty; target eligibility is based on mana value rather than creature power."},
+          "keywords": {"disposition": "source_reviewed", "obligation": "Vigilance is printed without reminder text; retain it separately from the enter-or-attack return trigger."}
+        }
+      }],
+      "abilities": [
+        {"face": "Sun Titan", "source_text": "Vigilance", "cost": "No payment for vigilance; attacking still requires the creature to be otherwise allowed to attack.", "effect": "Attacking with Titan does not cause it to tap; vigilance does not untap a Titan that was already tapped or grant haste.", "target": "No target; vigilance applies to Sun Titan's own attack declaration.", "timing": "Static combat rule when Titan attacks, independent of resolving its attack trigger.", "replacement": "No separate printed replacement clause; vigilance modifies attack tapping rather than combat damage.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert an eligible Titan attacks while remaining untapped, a tapped Titan cannot attack through vigilance alone, and newly entered Titan still needs normal attack permission."},
+        {"face": "Sun Titan", "source_text": "Whenever this creature enters or attacks, you may return target permanent card with mana value 3 or less from your graveyard to the battlefield.", "cost": "No payment; returning the selected card is optional.", "effect": "You may return the target permanent card from your graveyard to the battlefield. This includes land cards and other permanent types within the mana-value limit and is not a cast.", "target": "One permanent card with mana value at most 3 in your own graveyard; opponent graveyards and instant or sorcery cards are ineligible.", "timing": "Trigger separately when Titan enters and when it is declared attacking; combat damage is not required for the attack trigger.", "replacement": "No printed replacement or forced tapped entry; the returned card's own entry rules still apply.", "disposition": "source_reviewed_execution_unverified", "remaining_gap": "Assert enter and attack events each offer a return, mana value 3 qualifies while 4 does not, a land qualifies, and optional decline plus the returned permanent's own entry rules are preserved."}
+      ]
+    }
+  ]
+}

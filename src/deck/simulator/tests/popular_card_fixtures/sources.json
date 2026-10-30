@@ -1,0 +1,77 @@
+{
+  "observed_at": "2026-10-23T05:40:09+00:00",
+  "sources": [
+    {
+      "path": "sources/edhrec_1.json",
+      "url": "https://json.edhrec.com/pages/top/year.json",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "4aacbda1f0b6a02a497915001d52644a8abc6c03aa6774afed6ddfe1addc6cdb"
+    },
+    {
+      "path": "sources/edhrec_1.html.gz",
+      "url": "https://edhrec.com/top",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "57afb2264a0fb4b70287c1e1f3e9281592cca0a7e42be7f5fed9ed0ed4c27bf9"
+    },
+    {
+      "path": "sources/edhrec_2.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-1.json",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "a850b82ff1eed0e6231e744a552c16b1ff82b46d2501392a06199e0b21b90906"
+    },
+    {
+      "path": "sources/edhrec_2.html.gz",
+      "url": "https://edhrec.com/top?page=2",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "62ed578d52a7333963acc345722829e5b9589d7e0b75e8de19813f651a345cbe"
+    },
+    {
+      "path": "sources/edhrec_3.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-2.json",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "7d9b2d173547bef002e0c8d791e0d9293daf293e87f5257b31d9210acbd7987b"
+    },
+    {
+      "path": "sources/edhrec_3.html.gz",
+      "url": "https://edhrec.com/top?page=3",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "890e3e62d96dadb6ccfb35b499f04bd542d4cb7b4a5f7ad3c7e050a65ab39c72"
+    },
+    {
+      "path": "sources/scryfall_1.json",
+      "url": "https://api.scryfall.com/cards/collection",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "c28431485b38225b3538f2fbb3255113cd331d33e99459fd68e1f432ab2a49f9"
+    },
+    {
+      "path": "sources/scryfall_2.json",
+      "url": "https://api.scryfall.com/cards/collection",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "69db3cfcc805cf127a2f6f21096f4664acbdd1daf31a99b2ba2a036636c1a5d4"
+    },
+    {
+      "path": "sources/scryfall_3.json",
+      "url": "https://api.scryfall.com/cards/collection",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "d60ecb8506452028844b3eef2c965ce0d7c91c2d22a289f93d91311a5fac2bca"
+    },
+    {
+      "path": "sources/scryfall_4.json",
+      "url": "https://api.scryfall.com/cards/collection",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "38a3dbec456088c0ebdc20e28367b11baed8caacff4c4b2c4864053c369eca77"
+    },
+    {
+      "path": "sources/scryfall_5.json",
+      "url": "https://api.scryfall.com/cards/collection",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "822932d09d5813b7612f54ffcf0cd57a7c1c8a084d37ca1a35f1d5d52942bcef"
+    },
+    {
+      "path": "lathril.txt",
+      "url": "file:///Users/zack/.seizethemana/decks/Lathril.txt",
+      "observed_at": "2026-10-23T05:40:09+00:00",
+      "sha256": "94cb0b49705aa8716d53c48dcf404c03cbd6c13ef38e743b9e974a8d4a7135ce"
+    }
+  ]
+}

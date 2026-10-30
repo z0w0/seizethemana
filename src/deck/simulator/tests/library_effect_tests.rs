@@ -1,0 +1,986 @@
+//! Tests for library-touching effects during a game.
+use super::cast_pass::cast_pass;
+use super::game::{GameState, ManaPool};
+use super::model::{Format, SimDeck};
+use super::oracle_lower::parse_sim_card;
+use super::oracle_parser::cost::parse_cost;
+use crate::db::CardRow;
+use std::collections::HashMap;
+
+fn row(name: &str, cost: &str, type_line: &str, colors: &str, text: &str) -> CardRow {
+    CardRow {
+        name: name.into(),
+        oracle_id: String::new(),
+        mana_cost: cost.into(),
+        cmc: parse_cost(cost).total() as f64,
+        type_line: type_line.into(),
+        colors: colors.into(),
+        color_identity: colors.into(),
+        keywords: "[]".into(),
+        power: None,
+        toughness: None,
+        loyalty: None,
+        oracle_text: text.into(),
+        rarity: "common".into(),
+        edhrec_rank: None,
+        legalities: "{}".into(),
+        set_code: String::new(),
+        collector_number: String::new(),
+        scryfall_id: String::new(),
+        released_at: String::new(),
+        game_changer: None,
+        penny_rank: None,
+        reserved: None,
+    }
+}
+
+fn deck(rows: &[CardRow]) -> SimDeck {
+    SimDeck {
+        companion: None,
+        cards: rows.iter().map(parse_sim_card).collect(),
+        commanders: Vec::new(),
+        format: Format::Constructed,
+        rules: super::format::rules_for("constructed"),
+    }
+}
+
+fn state(hand: Vec<usize>, library: Vec<usize>) -> GameState {
+    let to_idx = |v: Vec<usize>| {
+        v.into_iter()
+            .map(|i| super::model::CardIdx(i as u32))
+            .collect()
+    };
+    GameState {
+        completion: None,
+        failed_draw: false,
+        current_turn: 0,
+        current_phase: super::game::GamePhase::Upkeep,
+        graveyard_generations: HashMap::new(),
+        resolution: Default::default(),
+        library_rng: super::rng::game_rng(0, 0, super::rng::RngDomain::Library),
+        battlefield: Vec::new(),
+        library: to_idx(library),
+        hand: to_idx(hand),
+        seen: 0,
+        graveyard: Vec::new(),
+        exile: Vec::new(),
+        battlefield_seen: HashMap::new(),
+        graveyard_seen: HashMap::new(),
+        card_first_seen: HashMap::new(),
+        treasure_bank: 0,
+        milled_self: 0,
+        milled_opp: 0,
+        opponent_life_lost: 0,
+        damage_dealt_this_turn: 0,
+        life_gained: 0,
+        flashback_permissions: std::collections::HashSet::new(),
+        replay_casts: 0,
+        milestones_by_turn: HashMap::new(),
+        life_paid: 0,
+        life_funded_draws: 0,
+        life: 20,
+        is_monarch: false,
+        awareness_cards: 0,
+        extra_turns_queued: 0,
+        prowess_casts: 0,
+        infinite_mana_suspected: false,
+        next_uid: 0,
+        player_counters: Default::default(),
+        activated_this_turn: Default::default(),
+        activated_once: Default::default(),
+        triggered_this_turn: Default::default(),
+        companion_fetched: false,
+        ring_tempts: 0,
+        extra_land_drops_this_turn: 0,
+        spells_cast_this_turn: 0,
+        attacked_this_turn: false,
+        plotted: Vec::new(),
+        ring_bearer: None,
+        commander_casts: Vec::new(),
+        opponents: super::opponents::OpponentTable::for_format(super::model::Format::Constructed),
+    }
+}
+
+fn cast(deck: &SimDeck, state: &mut GameState, pool: &mut ManaPool) {
+    cast_pass(
+        deck,
+        state,
+        pool,
+        1,
+        &mut [0.0],
+        &mut Vec::new(),
+        &mut Vec::new(),
+        &mut [false; 5],
+    );
+}
+
+#[test]
+fn filtered_search_selects_a_matching_card_instead_of_the_library_top() {
+    let cards = deck(&[
+        row(
+            "Tutor",
+            "{1}",
+            "Artifact",
+            "[]",
+            "{T}: Search your library for a green creature card with mana value 3 or less, put it into your hand, then shuffle.",
+        ),
+        row("Red creature", "{2}{R}", "Creature — Beast", "[\"R\"]", ""),
+        row("Green creature", "{2}{G}", "Creature — Elf", "[\"G\"]", ""),
+        row("Forest", "", "Basic Land — Forest", "[]", ""),
+    ]);
+    let mut state = state(Vec::new(), vec![1, 2]);
+    let search = cards.cards[0]
+        .unlocked_abilities(0)
+        .next()
+        .expect("tutor ability parses")
+        .effect
+        .clone();
+    super::game_effects::apply_effect_at(
+        &cards,
+        &search,
+        &mut state,
+        1,
+        false,
+        Some(crate::deck::simulator::model::CardIdx(0)),
+    );
+
+    assert_eq!(
+        state.hand,
+        [2].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        state.library,
+        [1].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn optional_exact_search_puts_a_basic_land_onto_the_battlefield_tapped() {
+    let cards = deck(&[
+        row(
+            "Land tutor",
+            "{1}",
+            "Artifact",
+            "[]",
+            "{T}: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+        ),
+        row(
+            "Creature tutor",
+            "{1}",
+            "Artifact",
+            "[]",
+            "{T}: You may search your library for a creature card with mana value exactly 2, put it into your hand, then shuffle.",
+        ),
+        row("Forest", "", "Basic Land — Forest", "[]", ""),
+        row("Plains", "", "Basic Land — Plains", "[]", ""),
+        row(
+            "Two-mana creature",
+            "{1}{G}",
+            "Creature — Elf",
+            "[\"G\"]",
+            "",
+        ),
+        row(
+            "Three-mana creature",
+            "{2}{G}",
+            "Creature — Beast",
+            "[\"G\"]",
+            "",
+        ),
+        row(
+            "Artifact search",
+            "{1}",
+            "Artifact",
+            "[]",
+            "{T}: Search your library for a colorless artifact or enchantment card with mana value 4 or more, exile that card, then shuffle.",
+        ),
+    ]);
+    let ability = cards.cards[1]
+        .unlocked_abilities(0)
+        .next()
+        .expect("optional search ability parses");
+    let super::model::SimEffect::Search(spec) = ability.effect else {
+        panic!("search ability has an explicit filter");
+    };
+    assert_eq!(spec.card_type, Some(super::model::SearchCardType::Creature));
+    assert_eq!(spec.mana_value, Some(2));
+    assert!(spec.optional);
+
+    let mut state = state(Vec::new(), vec![2, 3]);
+    let land_search = cards.cards[0]
+        .unlocked_abilities(0)
+        .next()
+        .expect("land search ability parses")
+        .effect
+        .clone();
+    super::game_effects::apply_effect_at(
+        &cards,
+        &land_search,
+        &mut state,
+        1,
+        false,
+        Some(crate::deck::simulator::model::CardIdx(0)),
+    );
+    assert_eq!(
+        state.library,
+        [2].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(state.battlefield.len(), 1);
+    assert_eq!(
+        state.battlefield[0].card,
+        crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(3))
+    );
+    assert!(state.battlefield[0].tapped);
+
+    let ability = cards.cards[6]
+        .unlocked_abilities(0)
+        .next()
+        .expect("artifact search ability parses");
+    let super::model::SimEffect::Search(spec) = ability.effect else {
+        panic!("artifact search uses explicit constraints");
+    };
+    assert_eq!(
+        spec.card_type,
+        Some(super::model::SearchCardType::ArtifactOrEnchantment)
+    );
+    assert!(spec.colorless);
+    assert_eq!(spec.min_mana_value, Some(4));
+    assert_eq!(spec.destination, super::model::SearchDestination::Exile);
+}
+
+#[test]
+fn rider_alternate_cost_and_sacrifice_search_put_a_countered_target_into_play() {
+    let cards = deck(&[
+        row(
+            "Rider",
+            "{4}{G}{G}{G}",
+            "Creature — Elf",
+            "[\"G\"]",
+            "You may exile two green cards from your hand rather than pay this spell's mana cost.",
+        ),
+        row(
+            "Search spell",
+            "{G}{U}",
+            "Sorcery",
+            "[\"G\",\"U\"]",
+            "As an additional cost to cast this spell, sacrifice a creature. Search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.",
+        ),
+        row("Green pitch one", "{3}{G}", "Sorcery", "[\"G\"]", ""),
+        row("Green pitch two", "{3}{G}", "Sorcery", "[\"G\"]", ""),
+        row(
+            "Eight-mana target",
+            "{4}{B}{B}{B}{B}",
+            "Creature — Demon",
+            "[\"B\"]",
+            "When this creature enters, draw a card.",
+        ),
+        row("Drawn card", "{1}", "Sorcery", "[]", ""),
+    ]);
+    assert!(cards.cards[0].spell_data.alternative_cast_cost.is_some());
+    assert_eq!(
+        cards.cards[0]
+            .spell_data
+            .alternative_cast_cost
+            .as_ref()
+            .unwrap()
+            .count,
+        2
+    );
+    assert_eq!(cards.cards[0].mana_value, 7);
+    assert!(cards.cards[1].spell_data.search_after_sacrifice.is_some());
+    let mut state = state(vec![0, 1, 2, 3], vec![5, 4]);
+    let mut pool = ManaPool {
+        fixed: [0, 1, 0, 0, 1],
+        ..ManaPool::default()
+    };
+
+    cast(&cards, &mut state, &mut pool);
+
+    assert_eq!(
+        state.exile,
+        [2, 3]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i))
+            .collect::<Vec<_>>(),
+        "green card colors {:?}",
+        cards
+            .cards
+            .iter()
+            .map(|card| (card.name.as_str(), card.colors, card.mana_value))
+            .collect::<Vec<_>>()
+    );
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
+    assert!(
+        state
+            .hand
+            .contains(&crate::deck::simulator::model::CardIdx(5))
+    );
+    let target = state
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            permanent.card
+                == crate::deck::simulator::game::CardRef::Deck(
+                    crate::deck::simulator::model::CardIdx(4),
+                )
+        })
+        .expect("the eligible target enters");
+    assert_eq!(
+        target.counters.plus1, 0,
+        "the synthetic search grants no entry counter"
+    );
+}
+
+#[test]
+fn alternate_cast_needs_two_other_green_cards() {
+    let cards = deck(&[
+        row(
+            "Rider",
+            "{4}{G}{G}{G}",
+            "Creature — Elf",
+            "[\"G\"]",
+            "You may exile two green cards from your hand rather than pay this spell's mana cost.",
+        ),
+        row("Green pitch", "{G}", "Sorcery", "[\"G\"]", ""),
+    ]);
+    let mut state = state(vec![0, 1], Vec::new());
+    cast(&cards, &mut state, &mut ManaPool::default());
+    assert_eq!(
+        state.hand,
+        [0, 1]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert!(state.battlefield.is_empty());
+    assert!(state.exile.is_empty());
+}
+
+#[test]
+fn sacrifice_search_casts_even_when_no_creature_has_the_required_mana_value() {
+    let cards = deck(&[
+        row(
+            "Rider",
+            "{4}{G}{G}{G}",
+            "Creature — Elf",
+            "[\"G\"]",
+            "You may exile two green cards from your hand rather than pay this spell's mana cost.",
+        ),
+        row(
+            "Search spell",
+            "{G}{U}",
+            "Sorcery",
+            "[\"G\",\"U\"]",
+            "As an additional cost to cast this spell, sacrifice a creature. Search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.",
+        ),
+        row("Green pitch one", "{3}{G}", "Sorcery", "[\"G\"]", ""),
+        row("Green pitch two", "{3}{G}", "Sorcery", "[\"G\"]", ""),
+        row(
+            "Wrong-value target",
+            "{3}{B}{B}{B}",
+            "Creature — Demon",
+            "[\"B\"]",
+            "",
+        ),
+    ]);
+    let mut state = state(vec![0, 1, 2, 3], vec![4]);
+    cast(
+        &cards,
+        &mut state,
+        &mut ManaPool {
+            fixed: [0, 1, 0, 0, 1],
+            ..ManaPool::default()
+        },
+    );
+
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+    assert!(
+        state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(1))
+    );
+    assert!(
+        !state.battlefield.iter().any(|permanent| permanent.card
+            == crate::deck::simulator::game::CardRef::Deck(
+                crate::deck::simulator::model::CardIdx(4)
+            )),
+        "sacrifice search effects: {:?}",
+        cards.cards[1].spell_data.effects
+    );
+    assert_eq!(
+        state.library,
+        [4].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn cascade_reveals_in_order_and_resolves_living_end_for_the_player() {
+    let cards = deck(&[
+        row("Cascade spell", "{2}{U}", "Sorcery", "[\"U\"]", "Cascade."),
+        row(
+            "Living End",
+            "",
+            "Sorcery",
+            "[]",
+            "Suspend 3—{2}{B}{B}\nEach player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield.",
+        ),
+        row("Island", "", "Basic Land — Island", "[]", ""),
+        row("Higher-value card", "{3}{R}", "Sorcery", "[\"R\"]", ""),
+        row(
+            "Cycler one",
+            "{10}{G}",
+            "Creature — Beast",
+            "[\"G\"]",
+            "Cycling {1} ({1}, Discard this card: Draw a card.)",
+        ),
+        row(
+            "Cycler two",
+            "{10}{G}",
+            "Creature — Beast",
+            "[\"G\"]",
+            "Cycling {1} ({1}, Discard this card: Draw a card.)",
+        ),
+        row(
+            "Cycler three",
+            "{10}{G}",
+            "Creature — Beast",
+            "[\"G\"]",
+            "Cycling {1} ({1}, Discard this card: Draw a card.)",
+        ),
+        row("Drawn spell one", "{9}", "Sorcery", "[]", ""),
+        row("Drawn spell two", "{9}", "Sorcery", "[]", ""),
+        row("Drawn spell three", "{9}", "Sorcery", "[]", ""),
+        row(
+            "Board creature",
+            "{1}{W}",
+            "Creature — Soldier",
+            "[\"W\"]",
+            "",
+        ),
+    ]);
+    assert!(cards.cards[1].spell_data.graveyard_creature_exchange);
+    assert!(!cards.cards[1].has_mana_cost);
+    assert_eq!(cards.cards[0].mana_value, 3);
+    assert_eq!(cards.cards[1].mana_value, 0);
+    assert_eq!(cards.cards[2].role, super::model::Role::Land);
+    assert_eq!(cards.cards[3].mana_value, 4);
+    assert!(
+        !cards.cards[0]
+            .spell_data
+            .effects
+            .iter()
+            .any(|effect| matches!(effect, super::model::SimEffect::Mill(_)))
+    );
+    let mut state = state(vec![0, 4, 5, 6], vec![1, 2, 3, 7, 8, 9]);
+    let mut pool = ManaPool {
+        flexible: 6,
+        ..ManaPool::default()
+    };
+    state.battlefield.push(super::game::Permanent {
+        uid: 10,
+        card: crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
+            10,
+        )),
+        tapped: false,
+        summoning_sick: false,
+        counters: Default::default(),
+        animated: false,
+        crewed: false,
+        entered_turn: 0,
+        saga_step: 0,
+        fired: false,
+        returned_trigger_pending: false,
+        equipped: false,
+        equip_host: None,
+        face_down: false,
+        land_face: false,
+        prowess_bonus: 0,
+        saddled: false,
+        army: false,
+        jace_token: false,
+        sacrifice_at_end: false,
+        attacking_this_turn: false,
+    });
+    cast(&cards, &mut state, &mut pool);
+    for index in [4, 5, 6].map(super::model::CardIdx) {
+        assert!(!state.exile.contains(&index));
+        assert!(!state.graveyard.contains(&index));
+    }
+    assert!(state.battlefield.iter().any(|permanent| permanent.card
+        == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(4))));
+    assert!(state.battlefield.iter().any(|permanent| permanent.card
+        == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(5))));
+    assert!(state.battlefield.iter().any(|permanent| permanent.card
+        == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(6))));
+    assert!(!state.battlefield.iter().any(|permanent| permanent.card
+        == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(
+            10
+        ))));
+    assert_eq!(
+        state.library,
+        [3, 2]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i))
+            .collect::<Vec<_>>(),
+        "reveal order preserved at the bottom (first-revealed deepest): seen {} hand {:?} graveyard {:?}",
+        state.seen,
+        state.hand,
+        state.graveyard
+    );
+}
+
+#[test]
+fn cascade_free_cast_resolves_a_permanent_etb_and_no_cost_spell_stays_uncastable() {
+    let cards = deck(&[
+        row("Cascade spell", "{2}{U}", "Sorcery", "[\"U\"]", "Cascade."),
+        row(
+            "Free creature",
+            "{1}{G}",
+            "Creature — Elf",
+            "[\"G\"]",
+            "When this creature enters, draw a card.",
+        ),
+        row("Drawn card", "{1}", "Sorcery", "[]", ""),
+        row("No-cost spell", "", "Sorcery", "[]", ""),
+    ]);
+    let mut game_state = state(vec![0], vec![2, 1]);
+    cast(
+        &cards,
+        &mut game_state,
+        &mut ManaPool {
+            flexible: 3,
+            ..ManaPool::default()
+        },
+    );
+    assert!(game_state.battlefield.iter().any(|permanent| permanent.card
+        == crate::deck::simulator::game::CardRef::Deck(crate::deck::simulator::model::CardIdx(1))));
+    assert!(
+        game_state
+            .hand
+            .contains(&crate::deck::simulator::model::CardIdx(2))
+    );
+    assert_eq!(
+        game_state.milestones_by_turn[&1].free_cast_permanents_entered,
+        1
+    );
+    let mut hand_state = state(vec![3], Vec::new());
+    cast(&cards, &mut hand_state, &mut ManaPool::default());
+    assert_eq!(
+        hand_state.hand,
+        [3].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+}
+
+/// CR 107.3b: a spell cast off cascade pays no mana, so its X is 0. The
+/// pool must keep every flexible pip for later casts.
+#[test]
+fn cascade_free_cast_sets_x_to_zero_and_keeps_the_pool() {
+    let cards = deck(&[
+        row("Cascade spell", "{2}{U}", "Sorcery", "[\"U\"]", "Cascade."),
+        row(
+            "X drain",
+            "{X}{B}",
+            "Sorcery",
+            "[\"B\"]",
+            "Each opponent loses X life.",
+        ),
+    ]);
+    // Hand holds the cascade spell; the X spell is the only library card,
+    // so cascade free-casts it. Four flexible pips stand in for a pool a
+    // paid X cast would drain.
+    let mut game_state = state(vec![0], vec![1]);
+    let mut pool = ManaPool {
+        flexible: 4,
+        ..ManaPool::default()
+    };
+    cast(&cards, &mut game_state, &mut pool);
+    // The cascade spell itself costs {2}{U} (3 flexible). The free X cast
+    // below it must not drain the one remaining pip into X.
+    assert_eq!(
+        pool.flexible, 1,
+        "a free X cast must not drain the pool further"
+    );
+}
+
+#[test]
+fn cycling_discards_and_draws_while_landcycling_finds_the_named_land_type() {
+    let cards = deck(&[
+        row(
+            "Life cycler",
+            "{3}{B}{B}",
+            "Creature — Wraith",
+            "[\"B\"]",
+            "Cycling—Pay 2 life. (Pay 2 life, Discard this card: Draw a card.)",
+        ),
+        row(
+            "Forest cycler",
+            "{5}{G}",
+            "Creature — Treefolk",
+            "[\"G\"]",
+            "Forestcycling {1} ({1}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)",
+        ),
+        row("Draw", "{1}", "Sorcery", "[]", ""),
+        row("Forest", "", "Basic Land — Forest", "[]", ""),
+        row("Island", "", "Basic Land — Island", "[]", ""),
+    ]);
+    assert_eq!(cards.cards[0].spell_data.cycling_life, 2);
+    assert_eq!(
+        cards.cards[1].spell_data.landcycling_type,
+        Some(super::model::BasicLandType::Forest)
+    );
+    let mut life_state = state(vec![0], vec![2]);
+    cast(&cards, &mut life_state, &mut ManaPool::default());
+    assert_eq!(
+        life_state.graveyard,
+        [0].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        life_state.hand,
+        [2].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(life_state.life_paid, 2);
+    assert_eq!(life_state.life, 18);
+
+    let mut state = state(vec![1], vec![4, 3]);
+    cast(
+        &cards,
+        &mut state,
+        &mut ManaPool {
+            colorless: 1,
+            ..ManaPool::default()
+        },
+    );
+    assert_eq!(
+        state.graveyard,
+        [1].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        state.hand,
+        [3].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        state.library,
+        [4].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn dredge_replaces_a_draw_only_when_the_full_mill_amount_is_available() {
+    let cards = deck(&[
+        row(
+            "Dredger",
+            "{2}{G}",
+            "Creature — Troll",
+            "[\"G\"]",
+            "Dredge 5 (If you would draw a card, instead you may mill five cards. If you do, return this card from your graveyard to your hand.)",
+        ),
+        row("Milled one", "{1}", "Sorcery", "[]", ""),
+        row("Milled two", "{1}", "Sorcery", "[]", ""),
+        row("Milled three", "{1}", "Sorcery", "[]", ""),
+        row("Milled four", "{1}", "Sorcery", "[]", ""),
+        row("Milled five", "{1}", "Sorcery", "[]", ""),
+    ]);
+    assert_eq!(cards.cards[0].dredge, Some(5));
+
+    let mut full_library = state(Vec::new(), vec![1, 2, 3, 4, 5]);
+    full_library
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(0));
+    assert!(super::game_effects::draw_one(&cards, &mut full_library, 3));
+    assert_eq!(
+        full_library.hand,
+        [0].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert!(full_library.library.is_empty());
+    assert_eq!(
+        full_library.graveyard,
+        [5, 4, 3, 2, 1]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(full_library.seen, 5);
+    assert_eq!(full_library.awareness_cards, 5);
+    assert_eq!(full_library.milestones_by_turn[&3].dredge_uses, 1);
+
+    let mut short_library = state(Vec::new(), vec![1, 2, 3, 4]);
+    short_library
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(0));
+    assert!(super::game_effects::draw_one(&cards, &mut short_library, 3));
+    assert_eq!(
+        short_library.hand,
+        [4].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        short_library.library,
+        [1, 2, 3]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        short_library.graveyard,
+        [0].iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(short_library.seen, 1);
+    assert!(!short_library.milestones_by_turn.contains_key(&3));
+}
+
+#[test]
+fn later_draws_can_use_dredgers_milled_by_an_earlier_draw() {
+    let cards = deck(&[
+        row(
+            "Five dredger",
+            "{2}{G}",
+            "Creature — Troll",
+            "[\"G\"]",
+            "Dredge 5 (If you would draw a card, instead you may mill five cards. If you do, return this card from your graveyard to your hand.)",
+        ),
+        row(
+            "Three dredger",
+            "{1}{G}",
+            "Creature — Troll",
+            "[\"G\"]",
+            "Dredge 3 (If you would draw a card, instead you may mill three cards. If you do, return this card from your graveyard to your hand.)",
+        ),
+        row("Card one", "{1}", "Sorcery", "[]", ""),
+        row("Card two", "{1}", "Sorcery", "[]", ""),
+        row("Card three", "{1}", "Sorcery", "[]", ""),
+        row("Card four", "{1}", "Sorcery", "[]", ""),
+        row("Card five", "{1}", "Sorcery", "[]", ""),
+        row("Card six", "{1}", "Sorcery", "[]", ""),
+        row("Card seven", "{1}", "Sorcery", "[]", ""),
+        row("Card eight", "{1}", "Sorcery", "[]", ""),
+        row("Card nine", "{1}", "Sorcery", "[]", ""),
+    ]);
+    let mut game_state = state(Vec::new(), vec![2, 3, 4, 5, 6, 1, 7, 8, 9]);
+    game_state
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(0));
+
+    super::game_effects::apply_effect_at(
+        &cards,
+        &super::model::SimEffect::Draw(3),
+        &mut game_state,
+        2,
+        false,
+        None,
+    );
+
+    assert_eq!(
+        game_state.hand,
+        [0, 1, 2]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert!(game_state.library.is_empty());
+    assert_eq!(game_state.seen, 9);
+    assert_eq!(game_state.awareness_cards, 9);
+}
+
+#[test]
+fn discard_cost_draws_resolve_individually_and_recheck_dredge() {
+    let spell = row(
+        "Discard draw spell",
+        "{1}{R}",
+        "Sorcery",
+        "[\"R\"]",
+        "As an additional cost to cast this spell, discard two cards. Draw three cards.",
+    );
+    let oracle = super::oracle_parser::parse_oracle_card(&spell);
+    assert!(
+        oracle.abilities.iter().any(|ability| matches!(
+            ability,
+            super::oracle_ast::OracleAbility::Spell(spell)
+                if spell.effects.iter().any(|effect| matches!(effect, super::oracle_ast::OracleEffect::Draw(3)))
+        )),
+        "draw rider AST: {oracle:#?}"
+    );
+    let cards = deck(&[
+        spell,
+        row(
+            "Five dredger",
+            "{2}{G}",
+            "Creature — Troll",
+            "[\"G\"]",
+            "Dredge 5 (If you would draw a card, instead you may mill five cards. If you do, return this card from your graveyard to your hand.)",
+        ),
+        row(
+            "Three dredger",
+            "{1}{G}",
+            "Creature — Troll",
+            "[\"G\"]",
+            "Dredge 3 (If you would draw a card, instead you may mill three cards. If you do, return this card from your graveyard to your hand.)",
+        ),
+        row("Discard one", "", "Basic Land — Plains", "[]", ""),
+        row("Discard two", "", "Basic Land — Island", "[]", ""),
+        row("Drawn one", "{1}", "Sorcery", "[]", ""),
+        row("Milled one", "{1}", "Sorcery", "[]", ""),
+        row("Milled two", "{1}", "Sorcery", "[]", ""),
+        row("Milled three", "{1}", "Sorcery", "[]", ""),
+        row("Milled four", "{1}", "Sorcery", "[]", ""),
+        row("Milled five", "{1}", "Sorcery", "[]", ""),
+        row("Milled six", "{1}", "Sorcery", "[]", ""),
+        row("Milled seven", "{1}", "Sorcery", "[]", ""),
+    ]);
+    assert_eq!(cards.cards[0].spell_data.additional_cost_discards, 2);
+    assert_eq!(
+        cards.cards[0].spell_data.draws_on_cast, 3,
+        "parsed card: {:#?}",
+        cards.cards[0]
+    );
+    let mut game_state = state(vec![0, 3, 4], vec![5, 6, 7, 8, 9, 2, 10, 11, 12]);
+    game_state
+        .graveyard
+        .push(crate::deck::simulator::model::CardIdx(1));
+    let mut pool = ManaPool {
+        fixed: [0, 0, 0, 1, 0],
+        flexible: 1,
+        ..ManaPool::default()
+    };
+
+    cast(&cards, &mut game_state, &mut pool);
+
+    assert_eq!(
+        game_state.hand,
+        [1, 2, 5]
+            .iter()
+            .map(|i| crate::deck::simulator::model::CardIdx(*i as u32))
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(game_state.seen, 9);
+    assert_eq!(game_state.awareness_cards, 9);
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(3))
+    );
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(4))
+    );
+    assert!(
+        game_state
+            .graveyard
+            .contains(&crate::deck::simulator::model::CardIdx(0))
+    );
+}
+
+/// A phyrexian cycling pip pays with 2 life (CR 107.4f): the mana part
+/// drops by the pip, the cycle charges the life, and the draw still
+/// resolves.
+#[test]
+fn cycling_phyrexian_pip_pays_life() {
+    let cards = deck(&[row(
+        "Pip cycler",
+        "{3}{U}",
+        "Creature — Drake",
+        "[\"U\"]",
+        "Cycling—{U/P}. ({U/P}, Discard this card: Draw a card.)",
+    )]);
+    assert!(cards.cards[0].spell_data.cycling_cost.is_some());
+    assert_eq!(
+        cards.cards[0]
+            .spell_data
+            .cycling_cost
+            .as_ref()
+            .map(|c| c.phyrexian[1]),
+        Some(1),
+        "the U/P cycling pip parses into the phyrexian lane"
+    );
+    let mut cycle_state = state(vec![0], vec![]);
+    let mut pool = ManaPool::default();
+    pool.fixed[1] = 2;
+    cycle_state.life = 10;
+    cast(&cards, &mut cycle_state, &mut pool);
+    assert_eq!(cycle_state.life_paid, 2, "the pip charged 2 life");
+    assert_eq!(
+        cycle_state.life, 8,
+        "the cycle life drops by the phyrexian charge"
+    );
+    assert!(
+        pool.fixed[1] == 2,
+        "the goldfish preserves the mana the pip would have cost"
+    );
+}
+
+/// The first reveal is mandatory. Later choices cannot inspect hidden cards.
+#[test]
+fn reveal_life_rule_uses_visible_risk_for_optional_repeats() {
+    use super::cast_pass::resolve_reveal_rule;
+    use super::model::{RevealDestination, RevealLifeLoss, RevealRule};
+    // Library order is the draw order; the loop pops from the end.
+    let cards = deck(&[
+        row("Big", "{6}", "Sorcery", "[]", ""),
+        row("Small", "{1}", "Sorcery", "[]", ""),
+    ]);
+    let rule = RevealRule {
+        destination: RevealDestination::Hand,
+        life_loss: RevealLifeLoss::ManaValue,
+    };
+    let mut game_state = state(Vec::new(), vec![1, 0]);
+    game_state.life = 5;
+    resolve_reveal_rule(&cards, &mut game_state, rule, 1);
+    assert_eq!(game_state.life, -1);
+    assert_eq!(game_state.hand, [super::model::CardIdx(0)]);
+
+    let mut game_state = state(Vec::new(), vec![1, 0]);
+    game_state.life = 6;
+    resolve_reveal_rule(&cards, &mut game_state, rule, 1);
+    assert_eq!(game_state.life, 0);
+    assert_eq!(game_state.life_funded_draws, 1);
+    assert_eq!(game_state.hand.len(), 1);
+
+    let mut game_state = state(Vec::new(), vec![0, 1]);
+    game_state.life = 7;
+    resolve_reveal_rule(&cards, &mut game_state, rule, 1);
+    assert_eq!(game_state.life, 6);
+    assert_eq!(game_state.hand, [super::model::CardIdx(1)]);
+    assert_eq!(game_state.library, [super::model::CardIdx(0)]);
+}
+
+/// Library-only graveyard triggers and their non-library controls.
+#[path = "library_graveyard_tests.rs"]
+mod library_graveyard_tests;

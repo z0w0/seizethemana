@@ -1,0 +1,158 @@
+{
+  "query": "keyword:behold legal:commander",
+  "groups": [
+    {
+      "id": "supplemental_utility",
+      "expected_count": 1,
+      "names": [
+        "Elven Passage"
+      ]
+    },
+    {
+      "id": "behold",
+      "expected_count": 23,
+      "names": [
+        "Caustic Exhale",
+        "Celestial Reunion",
+        "Champion of the Clachan",
+        "Champion of the Path",
+        "Champion of the Weird",
+        "Champions of the Perfect",
+        "Champions of the Shoal",
+        "Countersculpt",
+        "Dispelling Exhale",
+        "Elven Passage",
+        "Hulk's Thunderclap",
+        "Hyperion's Atomic Vision",
+        "Kindle the Inner Flame",
+        "Kinsbaile Aspirant",
+        "Lys Alana Dignitary",
+        "Molten Exhale",
+        "Mudbutton Cursetosser",
+        "Osseous Exhale",
+        "Piercing Exhale",
+        "Sarkhan, Dragon Ascendant",
+        "Silvergill Mentor",
+        "Soulbright Seeker",
+        "Theorist's Sanctum"
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "name": "Caustic Exhale",
+      "id": "488152ce-2048-4ccb-b2d6-b9628958286f",
+      "oracle_id": "c4023e1f-26e3-4225-98d0-3d33f6654616"
+    },
+    {
+      "name": "Celestial Reunion",
+      "id": "583b2863-aca1-4dab-9196-ea453b5d9454",
+      "oracle_id": "ba0a815c-1dfe-47c1-890f-496c670124f3"
+    },
+    {
+      "name": "Champion of the Clachan",
+      "id": "46ce3474-381c-433b-acd8-4e628d0048d2",
+      "oracle_id": "4a220e0c-e463-4264-9a96-658cf842b82e"
+    },
+    {
+      "name": "Champion of the Path",
+      "id": "e369cd31-3e22-47eb-bf6a-00d823651710",
+      "oracle_id": "b326ccd5-8ad2-441c-9d73-82ee6390dd36"
+    },
+    {
+      "name": "Champion of the Weird",
+      "id": "e600dd01-65ac-489c-a52a-decbc3a9a4f3",
+      "oracle_id": "1726f9cd-6f18-4509-b95b-bca82ba795a4"
+    },
+    {
+      "name": "Champions of the Perfect",
+      "id": "4f359211-8be5-4818-b73c-14f24b7ddb21",
+      "oracle_id": "9cb7f23f-322d-4a87-b6c6-15b9d446aef3"
+    },
+    {
+      "name": "Champions of the Shoal",
+      "id": "e1acdd9c-4a6d-4373-950c-f5539b54679f",
+      "oracle_id": "fc76ec95-f001-44df-89b2-b0f1b10c8e11"
+    },
+    {
+      "name": "Countersculpt",
+      "id": "145b928d-a7ff-4fe5-ae4d-bbae7b1d955b",
+      "oracle_id": "fc3353e9-fe24-4ca7-bff8-9da767f2903a"
+    },
+    {
+      "name": "Dispelling Exhale",
+      "id": "1c9af3f1-711e-42ae-803a-1100eba3fb13",
+      "oracle_id": "dd3a4b64-0987-4e9b-a18d-c54365438857"
+    },
+    {
+      "name": "Elven Passage",
+      "id": "dd1fd2ab-2565-4798-a832-fc849df82f74",
+      "oracle_id": "97a2cd39-6b54-496b-b3ac-dab9dfed7edc"
+    },
+    {
+      "name": "Hulk's Thunderclap",
+      "id": "ddd8d212-dc93-4986-9907-c7d37092f68f",
+      "oracle_id": "e377059d-a918-462f-920a-6b062bd5fcfd"
+    },
+    {
+      "name": "Hyperion's Atomic Vision",
+      "id": "13940d64-16f6-473b-9b6c-80a187c3d4fa",
+      "oracle_id": "e1e82283-01ec-447f-b0d4-5bd4619ab3d8"
+    },
+    {
+      "name": "Kindle the Inner Flame",
+      "id": "9a2adcea-f6b1-4611-b8b8-f19fdee2c571",
+      "oracle_id": "c7ca6371-73bb-4717-a148-0804b8f4c1e6"
+    },
+    {
+      "name": "Kinsbaile Aspirant",
+      "id": "56dfdab1-ea3f-4663-a855-a9e72505f85e",
+      "oracle_id": "845d80ee-1cd5-437a-90a5-40dcc657d3aa"
+    },
+    {
+      "name": "Lys Alana Dignitary",
+      "id": "94e8d6a9-7aa3-4e93-8e4d-e50da7ff09d2",
+      "oracle_id": "ce7582a2-e014-41fb-8753-00d29cffc81a"
+    },
+    {
+      "name": "Molten Exhale",
+      "id": "0ab95aab-a4bf-4131-83a0-2c138b6f20c3",
+      "oracle_id": "82aa1402-4b1c-4343-aba5-dd3271cc1ac5"
+    },
+    {
+      "name": "Mudbutton Cursetosser",
+      "id": "35bc841a-9a21-4c17-a60a-a3ee01472fcb",
+      "oracle_id": "b63e5518-61f3-4cde-a799-5f3ee6aba70b"
+    },
+    {
+      "name": "Osseous Exhale",
+      "id": "2300da2f-2297-4c2f-90c1-11ce2b42d91f",
+      "oracle_id": "8d84a706-080c-4fb2-b1b9-3dbb3294fb7b"
+    },
+    {
+      "name": "Piercing Exhale",
+      "id": "b2a0deb9-5bc3-42d5-9e1e-5f463d176aef",
+      "oracle_id": "ea96fe35-88ed-432b-a495-08e787d23d0b"
+    },
+    {
+      "name": "Sarkhan, Dragon Ascendant",
+      "id": "c2200646-7b7c-489d-bbae-16b03e1d7fb2",
+      "oracle_id": "71cb48e2-2328-471c-a04a-7b6461f378f4"
+    },
+    {
+      "name": "Silvergill Mentor",
+      "id": "e6e37fe8-459c-4992-8ae9-f782cddab2fe",
+      "oracle_id": "dcf07f38-422f-46c3-aee9-50540b9c9115"
+    },
+    {
+      "name": "Soulbright Seeker",
+      "id": "895ac890-608a-47de-8bc8-9337fd2064e8",
+      "oracle_id": "762679dd-4345-43c3-929b-15959443aeb0"
+    },
+    {
+      "name": "Theorist's Sanctum",
+      "id": "22db5bba-46c9-4a26-821d-303ddb386ea4",
+      "oracle_id": "37513bd8-7303-4ac6-a7a7-224184faf758"
+    }
+  ]
+}

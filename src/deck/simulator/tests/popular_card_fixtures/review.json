@@ -1,0 +1,246 @@
+{
+  "status": "source_audit_with_runtime_gaps",
+  "baseline_revision": "dc6dff121b471be8500e9d2751bf48d88c53bce2",
+  "baseline_note": "The original compiler inventory used this revision. Compiler recognition and runtime evidence are separate. Engine evidence in audit.json is a historical snapshot pending review after active phase writes finish.",
+  "detailed_audit": "audit.json",
+  "corpus_cards": 351,
+  "whole_card_exact_execution_claims": 0,
+  "whole_card_approximation_claims": 0,
+  "whole_card_diagnostic_only_claims": 0,
+  "whole_card_execution_not_established": 351,
+  "review_limit": "All selected names and exact Oracle paragraphs are inventoried. Known keyword facts and limited test scopes were corrected. This is not a complete per-ability rules, runtime, or reporting review. Generic profiles and nonempty evidence paths do not establish semantic completeness.",
+  "review_unit": "Oracle paragraphs include keyword lists and modal bullets. All 609 paragraphs are inventoried; paragraph coverage is not semantic review or a count of distinct Magic abilities.",
+  "new_control_validation": "Test links establish only their named assertions. Run the focused tests on the integrated tree after active phase writes finish; earlier snapshot runs do not certify current engine behavior.",
+  "tested_behavior": [
+    {
+      "card": "Sol Ring",
+      "scope": "Lowered tap yield produces exactly two colorless mana. That mana cannot pay a green pip. This does not test activation timing or source use.",
+      "test": "popular_runtime_tests::popular_sol_ring_produces_two_colorless_not_colored_mana"
+    },
+    {
+      "card": "Llanowar Elves",
+      "scope": "Lowered native tap yield produces exactly one green mana, not white or flexible mana. This does not test summoning sickness or granted mana choices.",
+      "test": "popular_runtime_tests::popular_llanowar_elves_produces_one_green_and_no_other_color"
+    },
+    {
+      "card": "Dark Ritual",
+      "scope": "A cast pays one black mana, produces three black mana, and puts the spell in the graveyard. Green mana alone cannot cast it.",
+      "tests": [
+        "popular_runtime_tests::popular_dark_ritual_pays_black_and_resolves_to_the_graveyard",
+        "popular_runtime_tests::popular_dark_ritual_does_not_resolve_from_green_mana"
+      ]
+    },
+    {
+      "card": "Elvish Visionary",
+      "scope": "Its own entry draws exactly one physical card while its body stays on the battlefield. A renamed source has the same result.",
+      "test": "popular_runtime_tests::popular_elvish_visionary_draws_once_and_keeps_its_body"
+    },
+    {
+      "cards": [
+        "Leaf-Crowned Visionary",
+        "Beast Whisperer",
+        "Sythis, Harvest's Hand",
+        "Harmonize"
+      ],
+      "scope": "New controls check paid Elf draws, creature and enchantment cast filters, ordered life/draw rewards, and exact physical copies from a fixed draw spell. Direct cast-trigger dispatch does not prove every full cast or report path.",
+      "tests": [
+        "popular_audit_tests::popular_paid_elf_draw_keeps_type_filter_and_resolution_payment",
+        "popular_audit_tests::popular_beast_whisperer_matches_creatures_not_noncreatures",
+        "popular_audit_tests::popular_sythis_preserves_enchantment_filter_and_both_rewards",
+        "popular_audit_tests::popular_harmonize_draws_three_and_conserves_physical_copies"
+      ]
+    }
+  ],
+  "priority_gaps": [
+    {
+      "cards": ["Leaf-Crowned Visionary"],
+      "risk": "paid_draw_integration_and_tribal_lord_gap",
+      "required_regression": "Run the same payment/filter states through complete normal and alternative casts; test only other Elves receiving the lord bonus.",
+      "affected_metrics": ["draw velocity", "available mana", "cast timing"],
+      "historical_engine_observation": "Current settlement checks event filters and resolution_payment. The new narrow control covers Elf/Human and zero/one green cases. The other-Elf lord still needs typed recipients and normal cast/report integration needs separate checks.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Lathril, Blade of the Elves"],
+      "risk": "wrong_quantity_and_missing_activation",
+      "required_regression": "Deal different damage amounts and assert that many green 1/1 Elf Warrior tokens. Require Lathril plus ten other eligible untapped Elves for the activation.",
+      "affected_metrics": [
+        "battlefield size",
+        "mana from Elves",
+        "opponent life loss",
+        "lethal timing"
+      ],
+      "historical_engine_observation": "Current Scale has colors-present and charge counters, while generic Tokens has only a fixed count. Shared Elf tap costs have no distinct-object set in SimActivationCost. Unsupported wording must remain gated rather than execute a guessed reward.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Cathars' Crusade"],
+      "risk": "counter_kind_and_recipient_missing",
+      "required_regression": "Enter one creature with multiple creatures already present. Put one +1/+1 counter on each creature and none on the enchantment.",
+      "affected_metrics": ["counters", "combat power", "lethal timing"],
+      "historical_engine_observation": "The current effect parser accepts source charge counters and rejects other ordinary counter placements. The effect model still lacks this +1/+1 counter distribution to every own creature; inert output is not support.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Beast Whisperer", "Skullclamp"],
+      "risk": "event_filter_loss",
+      "required_regression": "Test creature and noncreature casts separately. Test equipped and unequipped deaths, equipment leaving play, and zero-toughness state checks.",
+      "affected_metrics": ["draw velocity", "hand size", "cast timing"],
+      "historical_engine_observation": "The current cast dispatcher checks creature filters and a new Beast Whisperer control tests a noncreature near miss. Skullclamp still needs equipment-host-specific death and zero-toughness behavior; a generic Dies event is insufficient.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Giada, Font of Hope"],
+      "risk": "central_tribal_engine_missing",
+      "required_regression": "Giada mana pays for an Angel but not a non-Angel creature. Entry counters count Angels already controlled, not all creatures or the entering Angel.",
+      "affected_metrics": [
+        "mana availability",
+        "entry counters",
+        "combat power"
+      ],
+      "historical_engine_observation": "Current SpendRestriction has no Angel subtype class. Entry-counter recipients and the count of existing Angels also have no matching ordinary +1/+1 counter replacement path.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": [
+        "Doubling Season",
+        "Hardened Scales",
+        "Anointed Procession",
+        "Parallel Lives"
+      ],
+      "risk": "replacement_effects_missing",
+      "required_regression": "Test matching and nonmatching token/counter events, stacked replacements, and replacement source removal.",
+      "affected_metrics": [
+        "token counts",
+        "counter counts",
+        "combat power",
+        "lethal timing"
+      ],
+      "historical_engine_observation": "Current generic token creation and ordinary counter effects have no ordered replacement-effect pipeline for these clauses.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Cultivate", "Nature's Lore", "Three Visits", "Farseek"],
+      "risk": "search_execution_not_verified",
+      "required_regression": "Use exact legal and illegal land types, nonbasic typed lands, empty libraries, separate hand and battlefield destinations, and physical-copy conservation.",
+      "affected_metrics": [
+        "land drops",
+        "available mana",
+        "cards in hand",
+        "library order"
+      ],
+      "historical_engine_observation": "game_effects.rs::search_matches omits SearchSpec.land_types. search_library selects only one result and has no shuffle. place_search_result uses the search destination's tapped flag rather than all of the found land's printed entry replacements.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": [
+        "Rhystic Study",
+        "Mystic Remora",
+        "Esper Sentinel",
+        "Smothering Tithe"
+      ],
+      "risk": "opponent_events_and_shared_payments_not_verified",
+      "required_regression": "Use multiple engines against one shared opponent mana budget. Check source entry time, spell type, tax size, first-spell limits, and Remora upkeep.",
+      "affected_metrics": [
+        "draw velocity",
+        "Treasure resources",
+        "cast timing"
+      ],
+      "historical_engine_observation": "Current opponents.rs supplies a shared seat ledger and tax events, and beginning_phase pays supported cumulative upkeep. These are declared synthetic inputs. Complete tax interactions, first/second-event histories, source entry times, and reporting still need per-source state tests.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Reanimate", "Victimize", "Eternal Witness"],
+      "risk": "recursion_targets_and_linked_costs_not_verified",
+      "required_regression": "Use matching and nonmatching graveyard targets. Preserve physical copies, life based on mana value, and Victimize's sacrifice plus two-target dependency.",
+      "affected_metrics": [
+        "life",
+        "battlefield size",
+        "graveyard resources",
+        "cast timing"
+      ],
+      "historical_engine_observation": "ReturnFromGraveyard stores only count and to_hand, and apply_effect_at pops cards without target filters. The life parser still uses a one-life fallback when a printed variable life amount cannot be read.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": [
+        "Azusa, Lost but Seeking",
+        "Exploration",
+        "Aesi, Tyrant of Gyre Strait",
+        "The Gitrog Monster"
+      ],
+      "risk": "extra_land_quantity_and_stacking",
+      "required_regression": "Assert three legal land plays with Azusa, additive permissions from independent sources, and restored limits after removal.",
+      "affected_metrics": ["land drops", "available mana", "cast timing"],
+      "historical_engine_observation": "parse_static_flags stores extra_land_drops as a boolean; game_run.rs::play_land_drops uses any matching source, so neither Azusa's printed two extra plays nor stacking sources is represented.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Timeless Lotus"],
+      "risk": "untapped_nonland_entry_free_mana",
+      "required_regression": "Cast Lotus and assert tapped entry, zero immediate mana, then five fixed colors after a legal later untap.",
+      "affected_metrics": ["available mana", "cast timing", "source use"],
+      "historical_engine_observation": "oracle_lower/card.rs::lower_land_fields assigns enters_tapped only when land is true. Timeless Lotus is an artifact with the exact instruction Timeless Lotus enters tapped.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": [
+        "Dwynen, Gilt-Leaf Daen",
+        "Elvish Archdruid",
+        "Leaf-Crowned Visionary",
+        "Galadhrim Brigade"
+      ],
+      "risk": "unfiltered_tribal_lord_power",
+      "qualification": "This is a recipient-loss risk when a lord emits flags.buff, not a claim that every listed lord currently lowers or executes that buff.",
+      "required_regression": "Compare source, another Elf, and a non-Elf attacker; only the printed recipient set receives the bonus, and it ends when the lord leaves.",
+      "affected_metrics": ["combat power", "toughness", "lethal timing"],
+      "historical_engine_observation": "game_combat.rs::combat_phase sums every flags.buff into one team power bonus without retaining other-creature or Elf recipient filters.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    },
+    {
+      "cards": ["Leaf-Crowned Visionary"],
+      "risk": "paid_trigger_mana_not_in_spending_metric",
+      "oracle_text": "Whenever you cast an Elf spell, you may pay {G}. If you do, draw a card.",
+      "required_regression": "Cast a one-green Elf with one spare green and this listener present. Assert a two-mana pool reduction and two mana in the reported spending count, with exactly one trigger draw.",
+      "affected_metrics": [
+        "mana spent",
+        "unused mana",
+        "draw cost",
+        "deck advice"
+      ],
+      "historical_engine_observation": "cast_pass/settlement.rs::fire_cast_triggers commits resolution_payment against the pool but returns no mana-spent count. cast_pass.rs records spent_total from cast resolution, while cast_resolve.rs calls fire_cast_triggers without passing spent_total.",
+      "engine_evidence_status": "pending_post_phase_recheck_not_current_verified_failure"
+    }
+  ],
+  "whole_card_exact_reporting_claims": 0,
+  "inventory_cards": 351,
+  "inventory_oracle_paragraphs": 609,
+  "inventory_lathril_cards": 83,
+  "semantic_review_unfinished_categories": [
+    "Complete target and recipient legality, including resolution-time revalidation.",
+    "All alternative, additional, shared-object, and linked resolution costs.",
+    "Replacement ordering, entry modifications, and dependent drawbacks.",
+    "Granted and copied keyword abilities, attachment rules, and continuous type changes.",
+    "Event batches, per-player turn history, and delayed instructions.",
+    "Normal, alternative, replay, and permission-based cast integration.",
+    "Per-ability measurements, report classification, and advice."
+  ],
+  "engine_evidence_status": "post_phase_review_required_hashes_not_refreshed",
+  "parser_coverage": [
+    {
+      "cards": ["Nature's Lore", "Three Visits", "Farseek"],
+      "scope": "Parser-only land-type filters include matching types and exclude nonmatching types. This is not an execution, destination, shuffle, or multi-card search claim.",
+      "test": "popular_runtime_tests::popular_land_search_parser_keeps_matching_and_nonmatching_types"
+    }
+  ],
+  "compiler_coverage": {
+    "status": "not_certified_by_this_audit",
+    "inventory": "compiler_inventory.json",
+    "note": "Review compiler recognition separately; it does not establish execution."
+  },
+  "post_phase_review_required": [
+    "The parent reports land_types matching was fixed. Recheck search filtering, cardinality, destinations, entry, and shuffle against the stable phase.",
+    "Recursion and entry settlement are being changed. Recheck target filters and physical identities after the worker finishes.",
+    "The parent reports nonland tapped-entry parsing was fixed. Recheck the full Timeless Lotus entry and activation path after the phase."
+  ]
+}

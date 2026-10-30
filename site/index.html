@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ff5c9a" />
+    <meta
+      name="description"
+      content="Build budget Magic: The Gathering decks from your collection and lower-cost purchases. Seize the Mana is a command-line tool and AI agent skill."
+    />
+    <title>Seize the Mana: Budget Magic decks</title>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Seize the Mana" />
+    <meta property="og:title" content="Seize the Mana: Budget Magic decks" />
+    <meta property="og:url" content="https://seizethemana.com/" />
+    <meta
+      property="og:description"
+      content="Build budget Magic: The Gathering decks from your collection and lower-cost purchases. Seize the Mana is a command-line tool and AI agent skill."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Seize the Mana: Budget Magic decks" />
+    <meta
+      name="twitter:description"
+      content="Build budget Magic: The Gathering decks from your collection and lower-cost purchases. Seize the Mana is a command-line tool and AI agent skill."
+    />
+    <link rel="canonical" href="https://seizethemana.com/" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://seizethemana.com/#website",
+            "name": "Seize the Mana",
+            "url": "https://seizethemana.com/",
+            "inLanguage": "en",
+            "description": "Build budget Magic: The Gathering decks from your collection and lower-cost purchases. Seize the Mana is a command-line tool and AI agent skill.",
+            "about": { "@id": "https://seizethemana.com/#software" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://seizethemana.com/#software",
+            "name": "Seize the Mana",
+            "url": "https://seizethemana.com/",
+            "description": "Build budget Magic: The Gathering decks from your collection and lower-cost purchases. Seize the Mana is a command-line tool and AI agent skill.",
+            "applicationCategory": "UtilitiesApplication",
+            "operatingSystem": "Linux, macOS, Windows",
+            "license": "https://opensource.org/license/mit",
+            "isAccessibleForFree": true,
+            "sameAs": "https://github.com/z0w0/seizethemana"
+          }
+        ]
+      }
+    </script>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="card-animation.js"></script>
+  </head>
+  <body>
+    <main aria-labelledby="title">
+      <header class="topbar">
+        <img
+          class="project-mark"
+          src="favicon.svg"
+          width="32"
+          height="32"
+          alt=""
+        />
+        <a href="https://github.com/z0w0/seizethemana">
+          <span aria-hidden="true">[</span> Source on GitHub
+          <span aria-hidden="true">↗ ]</span>
+        </a>
+      </header>
+      <h1 id="title" class="visually-hidden">Seize the Mana</h1>
+      <pre class="wordmark" aria-hidden="true">
+████  █████  █████  █████  █████     █████  █   █  █████     █   █   ███   █   █   ███
+█     █        █      █   █           █    █   █  █         ██ ██  █   █  ██  █  █   █
+████  ████     █     █    ████        █    █████  ████      █ █ █  █████  █ █ █  █████
+   █  █        █    █     █           █    █   █  █         █   █  █   █  █  ██  █   █
+████  █████  █████  █████  █████      █    █   █  █████     █   █  █   █  █   █  █   █</pre>
+      <div class="hero">
+        <section class="intro" aria-label="About Seize the Mana">
+          <h2>Build decks.<br />Spend less.</h2>
+          <p class="purpose">
+            A command-line tool and AI agent skill for Magic: The Gathering.
+          </p>
+          <p class="description">
+            Build with cards you own. Find lower-cost cards for the rest.
+          </p>
+          <a
+            class="mana-link"
+            href="https://github.com/z0w0/seizethemana#install"
+          >
+            <span aria-hidden="true">[</span> Install stm
+            <span aria-hidden="true">]</span>
+          </a>
+        </section>
+        <div class="card-stage">
+          <pre id="card-art" aria-hidden="true">
+                                       &#32;
+   +--------------------------------+  &#32;
+   | Sol Ring                       |  &#32;
+   | {1}                            |  &#32;
+   +--------------------------------+  &#32;
+   |                                |  &#32;
+   |              . * .             |  &#32;
+   |           .         .          |  &#32;
+   |         .    _____    .        |  &#32;
+   |        .   /#######\   .       |  &#32;
+   |        *  /##/   \##\  *       |  &#32;
+   |       .   |##|   |##|   .      |  &#32;
+   |        *  \##\___/##/  *       |  &#32;
+   |        .   \#######/   .       |  &#32;
+   |         .    -----    .        |  &#32;
+   |           .         .          |  &#32;
+   |              ' * '             |  &#32;
+   |             __| |__            |  &#32;
+   |                                |  &#32;
+   |                                |  &#32;
+   |                                |  &#32;
+   +--------------------------------+  &#32;
+   | Artifact                       |  &#32;
+   |                                |  &#32;
+   | Tap for two colorless mana.    |  &#32;
+   |                                |  &#32;
+   +--------------------------------+  &#32;
+                                        </pre>
+          <div class="animation-controls">
+            <button id="animation-toggle" type="button" hidden>
+              Pause animation
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

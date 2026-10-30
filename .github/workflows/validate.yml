@@ -1,0 +1,109 @@
+# Offline fixture checks never refresh sources or rewrite compiler snapshots.
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+
+      - name: Run tests
+        run: env -u STM_WRITE_POPULAR_INVENTORY cargo nextest run
+
+      - name: Run evaluation tool tests
+        run: cargo nextest run --examples
+
+      - name: Check fixtures were not rewritten
+        run: test -z "$(git status --porcelain -- src/deck/simulator/tests)"
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Check terminal output
+        run: bash scripts/check-cli-terminal.sh target/release/stm
+
+  fixtures:
+    name: Source integrity and card fixtures
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - name: Check source and card fixtures offline
+        run: >-
+          env -u STM_WRITE_POPULAR_INVENTORY cargo nextest run
+          -E 'test(fixture_integrity_tests::) | test(popular_) | test(card_)'
+      - name: Check fixtures were not rewritten
+        run: test -z "$(git status --porcelain -- src/deck/simulator/tests)"
+
+  markdown:
+    name: Markdown formatting
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Check maintained Markdown
+        run: git ls-files -z '*.md' | xargs -0 npx --yes prettier@3.6.2 --check
+
+  site:
+    name: Website tests and build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  release:
+    name: Release archive regression
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Check shell syntax
+        run: |
+          for script in scripts/*.sh; do
+            bash -n "$script"
+          done
+      - run: bash scripts/check-release.sh

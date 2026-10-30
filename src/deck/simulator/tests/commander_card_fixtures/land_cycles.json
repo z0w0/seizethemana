@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "purpose": "Select land sources. Membership does not grant simulator rules or prove runtime support.",
+  "groups": [
+    {
+      "id": "shock",
+      "expected_count": 10,
+      "names": ["Hallowed Fountain", "Watery Grave", "Blood Crypt", "Stomping Ground", "Temple Garden", "Godless Shrine", "Steam Vents", "Overgrown Tomb", "Sacred Foundry", "Breeding Pool"]
+    },
+    {
+      "id": "verge",
+      "expected_count": 10,
+      "names": ["Floodfarm Verge", "Gloomlake Verge", "Blazemire Verge", "Thornspire Verge", "Hushwood Verge", "Bleachbone Verge", "Riverpyre Verge", "Wastewood Verge", "Sunbillow Verge", "Willowrush Verge"]
+    },
+    {
+      "id": "pain",
+      "expected_count": 10,
+      "names": ["Adarkar Wastes", "Underground River", "Sulfurous Springs", "Karplusan Forest", "Brushland", "Caves of Koilos", "Shivan Reef", "Llanowar Wastes", "Battlefield Forge", "Yavimaya Coast"]
+    },
+    {
+      "id": "slow",
+      "expected_count": 10,
+      "names": ["Deserted Beach", "Shipwreck Marsh", "Haunted Ridge", "Rockfall Vale", "Overgrown Farmland", "Shattered Sanctum", "Stormcarved Coast", "Deathcap Glade", "Sundown Pass", "Dreamroot Cascade"]
+    },
+    {
+      "id": "surveil",
+      "expected_count": 10,
+      "names": ["Meticulous Archive", "Undercity Sewers", "Raucous Theater", "Commercial District", "Lush Portico", "Shadowy Backstreet", "Thundering Falls", "Underground Mortuary", "Elegant Parlor", "Hedge Maze"]
+    },
+    {
+      "id": "check",
+      "expected_count": 10,
+      "names": ["Glacial Fortress", "Drowned Catacomb", "Dragonskull Summit", "Rootbound Crag", "Sunpetal Grove", "Isolated Chapel", "Sulfur Falls", "Woodland Cemetery", "Clifftop Retreat", "Hinterland Harbor"]
+    },
+    {
+      "id": "fetch",
+      "expected_count": 10,
+      "names": ["Flooded Strand", "Polluted Delta", "Bloodstained Mire", "Wooded Foothills", "Windswept Heath", "Marsh Flats", "Scalding Tarn", "Verdant Catacombs", "Arid Mesa", "Misty Rainforest"]
+    },
+    {
+      "id": "bond",
+      "expected_count": 10,
+      "names": ["Sea of Clouds", "Morphic Pool", "Luxury Suite", "Spire Garden", "Bountiful Promenade", "Vault of Champions", "Training Center", "Undergrowth Stadium", "Spectator Seating", "Rejuvenating Springs"]
+    },
+    {
+      "id": "triome",
+      "expected_count": 10,
+      "names": ["Indatha Triome", "Raugrin Triome", "Zagoth Triome", "Savai Triome", "Ketria Triome", "Spara's Headquarters", "Raffine's Tower", "Xander's Lounge", "Ziatora's Proving Ground", "Jetmir's Garden"]
+    },
+    {
+      "id": "fast",
+      "expected_count": 10,
+      "names": ["Seachrome Coast", "Darkslick Shores", "Blackcleave Cliffs", "Copperline Gorge", "Razorverge Thicket", "Concealed Courtyard", "Spirebluff Canal", "Blooming Marsh", "Inspiring Vantage", "Botanical Sanctum"]
+    },
+    {
+      "id": "filter",
+      "expected_count": 10,
+      "names": ["Mystic Gate", "Sunken Ruins", "Graven Cairns", "Fire-Lit Thicket", "Wooded Bastion", "Fetid Heath", "Cascade Bluffs", "Twilight Mire", "Rugged Prairie", "Flooded Grove"]
+    },
+    {
+      "id": "bounce",
+      "expected_count": 10,
+      "names": ["Azorius Chancery", "Dimir Aqueduct", "Rakdos Carnarium", "Gruul Turf", "Selesnya Sanctuary", "Orzhov Basilica", "Izzet Boilerworks", "Golgari Rot Farm", "Boros Garrison", "Simic Growth Chamber"]
+    },
+    {
+      "id": "pathway",
+      "expected_count": 10,
+      "names": ["Hengegate Pathway // Mistgate Pathway", "Clearwater Pathway // Murkwater Pathway", "Blightstep Pathway // Searstep Pathway", "Cragcrown Pathway // Timbercrown Pathway", "Branchloft Pathway // Boulderloft Pathway", "Brightclimb Pathway // Grimclimb Pathway", "Riverglide Pathway // Lavaglide Pathway", "Darkbore Pathway // Slitherbore Pathway", "Needleverge Pathway // Pillarverge Pathway", "Barkchannel Pathway // Tidechannel Pathway"]
+    },
+    {
+      "id": "original_dual",
+      "expected_count": 10,
+      "names": ["Tundra", "Underground Sea", "Badlands", "Taiga", "Savannah", "Scrubland", "Volcanic Island", "Bayou", "Plateau", "Tropical Island"]
+    },
+    {
+      "id": "neo_channel",
+      "expected_count": 5,
+      "names": ["Eiganjo, Seat of the Empire", "Otawara, Soaring City", "Takenuma, Abandoned Mire", "Sokenzan, Crucible of Defiance", "Boseiju, Who Endures"]
+    },
+    {
+      "id": "original_kamigawa_legendary",
+      "expected_count": 5,
+      "names": ["Eiganjo Castle", "Minamo, School at Water's Edge", "Shizo, Death's Storehouse", "Shinka, the Bloodsoaked Keep", "Okina, Temple to the Grandfathers"]
+    },
+    {
+      "id": "requested_utility",
+      "expected_count": 5,
+      "names": ["Command Tower", "Exotic Orchard", "Reliquary Tower", "Rogue's Passage", "Bojuka Bog"]
+    },
+    {
+      "id": "basic",
+      "expected_count": 11,
+      "names": ["Plains", "Island", "Swamp", "Mountain", "Forest", "Wastes", "Snow-Covered Plains", "Snow-Covered Island", "Snow-Covered Swamp", "Snow-Covered Mountain", "Snow-Covered Forest"]
+    },
+    {
+      "id": "other_fetch",
+      "expected_count": 5,
+      "names": ["Prismatic Vista", "Fabled Passage", "Evolving Wilds", "Terramorphic Expanse", "Ash Barrens"]
+    },
+    {
+      "id": "other_utility",
+      "expected_count": 14,
+      "names": ["City of Brass", "Mana Confluence", "Reflecting Pool", "Forbidden Orchard", "Ancient Tomb", "Temple of the False God", "Myriad Landscape", "War Room", "Strip Mine", "Cavern of Souls", "Urborg, Tomb of Yawgmoth", "Yavimaya, Cradle of Growth", "Nykthos, Shrine to Nyx", "Scavenger Grounds"]
+    }
+  ]
+}

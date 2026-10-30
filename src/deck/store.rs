@@ -1,0 +1,517 @@
+//! Deck file storage and read commands (`create`, `list`, `show`).
+//!
+//! Deck txt files under `decks/` are the single source of truth for deck
+//! contents; ownership comes from the collection (`binder_type = 'deck'`
+//! rows); primers are sibling markdown files the deckbuilding agent edits.
+//!
+//! Unique temporary files keep concurrent saves separate. Concurrent
+//! load-edit-save commands can still lose updates. Run commands for the same
+//! deck in sequence.
+
+use rusqlite::Connection;
+
+use super::grammar::Deck;
+use anyhow::Context;
+use std::fmt::Write as _;
+use std::io::Write as _;
+
+/// Primer file path for a deck (`decks/<name>.primer.md`).
+#[must_use]
+pub fn primer_file(paths: &crate::paths::Paths, name: &str) -> std::path::PathBuf {
+    paths.decks_dir().join(format!("{name}.primer.md"))
+}
+
+/// Validate a deck name: a single path component (no separators or dots).
+#[must_use]
+pub fn valid_deck_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.chars().all(|c| {
+            c.is_alphanumeric() || matches!(c, ' ' | '-' | '_' | '\'' | '&' | '!' | '+' | ',')
+        })
+        && !name.starts_with('.')
+}
+
+/// Ensure a deck file exists (empty when absent); returns its path.
+pub(crate) fn ensure_deck_file(
+    paths: &crate::paths::Paths,
+    name: &str,
+) -> anyhow::Result<std::path::PathBuf> {
+    let path = paths.deck_file(name);
+    if !path.exists() {
+        std::fs::create_dir_all(paths.decks_dir()).context("creating decks directory")?;
+        std::fs::write(&path, "")
+            .with_context(|| format!("creating deck file {}", path.display()))?;
+    }
+    Ok(path)
+}
+
+/// Ensure the primer file exists (empty stub); returns its path.
+pub(crate) fn ensure_primer_file(
+    paths: &crate::paths::Paths,
+    name: &str,
+) -> anyhow::Result<std::path::PathBuf> {
+    let primer = primer_file(paths, name);
+    if !primer.exists() {
+        std::fs::create_dir_all(paths.decks_dir()).context("creating decks directory")?;
+        std::fs::write(&primer, "")
+            .with_context(|| format!("creating primer {}", primer.display()))?;
+    }
+    Ok(primer)
+}
+
+/// Load and parse a deck file.
+pub(crate) fn load_deck(
+    paths: &crate::paths::Paths,
+    name: &str,
+) -> anyhow::Result<(std::path::PathBuf, Deck)> {
+    // A read command takes a raw user string: reject separators and
+    // parent segments so a name cannot escape the decks directory.
+    if !valid_deck_name(name) {
+        anyhow::bail!("invalid deck name {name:?}");
+    }
+    let path = paths.deck_file(name);
+    if !path.exists() {
+        // Distinguish a missing deck so callers can hint consistently.
+        return Err(anyhow::anyhow!(DeckNotFound {
+            name: name.to_string()
+        }));
+    }
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let deck = Deck::parse(&text).with_context(|| format!("parsing {}", path.display()))?;
+    Ok((path, deck))
+}
+
+/// A referenced deck file does not exist; rendered as `error:` + `hint:`.
+#[derive(Debug, thiserror::Error)]
+#[error("deck {name:?} not found")]
+pub struct DeckNotFound {
+    /// Name of the missing deck.
+    pub name: String,
+}
+
+/// True when an error chain's root is a missing deck file.
+#[must_use]
+pub fn is_deck_not_found(err: &anyhow::Error) -> bool {
+    err.chain()
+        .any(|c| c.downcast_ref::<DeckNotFound>().is_some())
+}
+
+/// Save a valid deck through a unique temporary file and an atomic rename.
+pub(crate) fn save_deck(
+    paths: &crate::paths::Paths,
+    name: &str,
+    deck: &Deck,
+) -> anyhow::Result<()> {
+    deck.validate_quantities()?;
+    std::fs::create_dir_all(paths.decks_dir()).context("creating decks directory")?;
+    let path = paths.deck_file(name);
+    let (tmp, mut file) = create_deck_temp(&path)?;
+    let result = (|| -> anyhow::Result<()> {
+        file.write_all(deck.to_text().as_bytes())
+            .with_context(|| format!("writing deck {name:?}"))?;
+        file.sync_all()
+            .with_context(|| format!("syncing deck {name:?}"))?;
+        drop(file);
+        std::fs::rename(&tmp, &path).with_context(|| format!("saving deck {name:?}"))
+    })();
+    if let Err(error) = result {
+        return match std::fs::remove_file(&tmp) {
+            Ok(()) => Err(error),
+            Err(cleanup) => Err(error.context(format!(
+                "could not remove temporary deck file {}: {cleanup}",
+                tmp.display()
+            ))),
+        };
+    }
+    Ok(())
+}
+
+/// Reserve a temporary deck file beside its destination without overwriting files.
+fn create_deck_temp(path: &std::path::Path) -> anyhow::Result<(std::path::PathBuf, std::fs::File)> {
+    loop {
+        let tmp = path.with_file_name(format!(
+            ".stm-deck-{}-{:016x}.tmp",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&tmp)
+        {
+            Ok(file) => return Ok((tmp, file)),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("creating temporary deck file {}", tmp.display()));
+            }
+        }
+    }
+}
+
+/// Entry point for `stm deck create <name>`.
+///
+/// # Errors
+/// Propagates file system errors.
+pub fn create(
+    paths: &crate::paths::Paths,
+    out: &mut crate::output::Output,
+    name: &str,
+) -> anyhow::Result<i32> {
+    ensure_valid_name(out, name)?;
+    let path = paths.deck_file(name);
+    if path.exists() {
+        out.error(&format!("deck {name:?} already exists"));
+        out.hint(&format!("view it with: stm deck show {name:?}"));
+        return Ok(crate::cli::codes::ERROR);
+    }
+    ensure_deck_file(paths, name)?;
+    let primer = ensure_primer_file(paths, name)?;
+    out.finish(
+        "Created",
+        &format!(
+            "deck {name:?} ({}; primer {})",
+            path.display(),
+            primer.display()
+        ),
+        std::time::Duration::ZERO,
+    );
+    Ok(crate::cli::codes::OK)
+}
+
+/// Entry point for `stm deck copy <source> <destination>`.
+///
+/// Duplicates the decklist and the primer under the new name so an
+/// improvement pass can work on a copy without touching the original.
+/// Ownership rows in the collection are never copied.
+///
+/// # Errors
+/// Propagates file system errors.
+pub fn copy(
+    paths: &crate::paths::Paths,
+    out: &mut crate::output::Output,
+    source: &str,
+    destination: &str,
+    force: bool,
+) -> anyhow::Result<i32> {
+    ensure_valid_name(out, destination)?;
+    let (_path, deck) = load_deck(paths, source)?;
+    let dest_path = paths.deck_file(destination);
+    if dest_path.exists() && !force {
+        out.error(&format!("deck {destination:?} already exists"));
+        out.hint("back up the destination decklist and primer before using --force; the primer is replaced only if the source has one");
+        return Ok(crate::cli::codes::ERROR);
+    }
+    save_deck(paths, destination, &deck)?;
+    let primer = primer_file(paths, source);
+    if primer.exists() {
+        let text = std::fs::read_to_string(&primer)
+            .with_context(|| format!("reading {}", primer.display()))?;
+        std::fs::write(primer_file(paths, destination), &text)
+            .with_context(|| format!("writing primer for {destination:?}"))?;
+    }
+    out.finish(
+        "Copied",
+        &format!(
+            "deck {source:?} to {destination:?} ({} cards; collection assignments unchanged)",
+            deck.total(),
+        ),
+        std::time::Duration::ZERO,
+    );
+    Ok(crate::cli::codes::OK)
+}
+
+#[cfg(test)]
+#[path = "tests/copy_tests.rs"]
+mod copy_tests;
+
+/// Validate a deck name and report a usage error when it breaks the rules.
+///
+/// # Errors
+/// Fails with "invalid deck name" after printing the error and hint. The
+/// message is printed once here; callers must not re-report the bail.
+pub(crate) fn ensure_valid_name(out: &mut crate::output::Output, name: &str) -> anyhow::Result<()> {
+    if !valid_deck_name(name) {
+        out.error(&format!("invalid deck name {name:?}"));
+        out.hint("use letters, digits, spaces, or - _ ' & ! + , (no / or ..)");
+        // The error line already went out; a bare bail keeps the main
+        // dispatcher from printing a second copy.
+        anyhow::bail!(crate::output::SILENT_ERROR);
+    }
+    Ok(())
+}
+
+/// Deck summary for `stm deck list`.
+///
+/// `cards` is the maindeck count; `sideboard_cards` and `maybeboard_cards`
+/// report the bench sections separately (not legal-deck zones).
+#[derive(Debug, Clone)]
+pub struct DeckSummary {
+    /// Deck name.
+    pub name: String,
+    /// Maindeck card count.
+    pub cards: i64,
+    /// Sideboard card count.
+    pub sideboard_cards: i64,
+    /// Maybeboard card count.
+    pub maybeboard_cards: i64,
+    /// Copies the collection owns.
+    pub owned: i64,
+    /// Whether the deck has a primer.
+    pub has_primer: bool,
+}
+
+/// JSON row for one saved or collection-only deck.
+#[derive(Debug, serde::Serialize)]
+struct DeckListReport {
+    /// Deck name.
+    name: String,
+    /// Whether a decklist file exists.
+    has_decklist: bool,
+    /// Main deck card count.
+    cards: i64,
+    /// Sideboard count.
+    sideboard_cards: i64,
+    /// Maybeboard count.
+    maybeboard_cards: i64,
+    /// Owned card count.
+    owned: i64,
+    /// Whether a primer exists.
+    has_primer: bool,
+}
+
+/// Entry point for `stm deck list`.
+///
+/// # Errors
+/// Propagates file system and database errors.
+pub fn list(
+    paths: &crate::paths::Paths,
+    conn: &Connection,
+    out: &mut crate::output::Output,
+    json: bool,
+) -> anyhow::Result<i32> {
+    let decks = discover_decks(paths, conn)?;
+    // Collection decks with no decklist file: the import gap.
+    let mut gaps = registered_deck_names(conn)?;
+    for d in &decks {
+        gaps.retain(|g| !g.eq_ignore_ascii_case(&d.name));
+    }
+    if decks.is_empty() && gaps.is_empty() {
+        if json {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&Vec::<DeckListReport>::new())?
+            );
+            return Ok(crate::cli::codes::OK);
+        }
+        out.error("no saved decklists or deck assignments found");
+        out.hint("create one: stm deck create <name>, or import: stm deck import <name> <file>");
+        return Ok(crate::cli::codes::NO_RESULTS);
+    }
+    if json {
+        let mut items: Vec<DeckListReport> = decks
+            .iter()
+            .map(|d| DeckListReport {
+                name: d.name.clone(),
+                has_decklist: true,
+                cards: d.cards,
+                sideboard_cards: d.sideboard_cards,
+                maybeboard_cards: d.maybeboard_cards,
+                owned: d.owned,
+                has_primer: d.has_primer,
+            })
+            .collect();
+        for gap in &gaps {
+            items.push(DeckListReport {
+                name: gap.clone(),
+                has_decklist: false,
+                cards: 0,
+                sideboard_cards: 0,
+                maybeboard_cards: 0,
+                owned: owned_count_for(conn, gap)?,
+                has_primer: false,
+            });
+        }
+        println!("{}", serde_json::to_string_pretty(&items)?);
+        return Ok(crate::cli::codes::OK);
+    }
+    let styles = out.styles();
+    println!("{}", styles.header("Decks"));
+    for d in &decks {
+        let primer = if d.has_primer { " primer" } else { "" };
+        let mut count = format!("{} cards", d.cards);
+        if d.sideboard_cards > 0 {
+            let _ = write!(count, " + {} sideboard", d.sideboard_cards);
+        }
+        if d.maybeboard_cards > 0 {
+            let _ = write!(count, " + {} maybeboard", d.maybeboard_cards);
+        }
+        let owned_display = styles.dim(&format!("{} deck-assigned copies", d.owned));
+        out.print_wrapped(&format!(
+            "  {} {}  {}{}",
+            styles.card_name(&d.name),
+            styles.dim(&count),
+            owned_display,
+            styles.dim(primer),
+        ));
+    }
+    if !gaps.is_empty() {
+        println!();
+        println!(
+            "{}",
+            styles.note("Collection deck assignments without a saved decklist:")
+        );
+        for gap in &gaps {
+            let owned = owned_count_for(conn, gap)?;
+            out.print_wrapped(&format!(
+                "  {}  {}  {}",
+                styles.card_name(gap),
+                styles.dim(&format!("{owned} copies owned")),
+                styles.dim(&format!("→ stm deck import \"{gap}\" <manabox-deck.txt>")),
+            ));
+        }
+    }
+    Ok(crate::cli::codes::OK)
+}
+
+/// Deck names registered in the collection (`binder_type = 'deck'`), sorted.
+fn registered_deck_names(conn: &Connection) -> anyhow::Result<Vec<String>> {
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT binder FROM collection
+         WHERE binder_type = 'deck' ORDER BY binder COLLATE NOCASE",
+    )?;
+    let rows = stmt
+        .query_map([], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()
+        .context("reading deck names")?;
+    Ok(rows)
+}
+
+/// Entry point for `stm deck delete <name>`.
+///
+/// Removes the decklist (txt + primer). Ownership rows in the collection
+/// are never touched: the decklist and the ownership assignment are two
+/// different things.
+///
+/// # Errors
+/// Propagates file system and database errors.
+pub fn delete(
+    paths: &crate::paths::Paths,
+    conn: &Connection,
+    out: &mut crate::output::Output,
+    name: &str,
+) -> anyhow::Result<i32> {
+    ensure_valid_name(out, name)?;
+    let path = paths.deck_file(name);
+    if !path.exists() {
+        out.error(&format!("no decklist for {name:?}"));
+        out.hint("list decklists: stm deck list");
+        return Ok(crate::cli::codes::ERROR);
+    }
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let cards = Deck::parse(&text).map_or(0, |d| d.total());
+    let primer = primer_file(paths, name);
+    std::fs::remove_file(&path).with_context(|| format!("deleting {}", path.display()))?;
+    if primer.exists() {
+        std::fs::remove_file(&primer).with_context(|| format!("deleting {}", primer.display()))?;
+    }
+    out.finish(
+        "Deleted",
+        &format!("deck {name:?} ({cards} cards; decklist and any primer)"),
+        std::time::Duration::ZERO,
+    );
+    let (in_deck, in_binders) = owned_copies(conn, name)?;
+    if in_deck + in_binders > 0 {
+        out.print_note(&format!(
+            "{in_deck} deck-assigned + {in_binders} binder copies are still tracked for \
+             {name:?} in the collection; no collection records were deleted"
+        ));
+    }
+    Ok(crate::cli::codes::OK)
+}
+
+/// Deck files on disk (`*.txt`), with card/owned counts, alphabetical.
+fn discover_decks(
+    paths: &crate::paths::Paths,
+    conn: &Connection,
+) -> anyhow::Result<Vec<DeckSummary>> {
+    let mut decks = Vec::new();
+    let entries = match std::fs::read_dir(paths.decks_dir()) {
+        Ok(entries) => entries,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(decks),
+        Err(err) => return Err(err.into()),
+    };
+    for entry in entries {
+        let path = entry.with_context(|| "reading decks directory")?.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("txt") {
+            continue;
+        }
+        let name = deck_name_of(&path);
+        let text = std::fs::read_to_string(&path)
+            .with_context(|| format!("reading {}", path.display()))?;
+        // A half-written deck must not break `deck list`.
+        let Ok(deck) = Deck::parse(&text) else {
+            continue;
+        };
+        decks.push(DeckSummary {
+            cards: deck.maindeck_total(),
+            sideboard_cards: deck.sideboard_total(),
+            maybeboard_cards: deck.maybeboard_total(),
+            owned: owned_count_for(conn, &name)?,
+            has_primer: primer_file(paths, &name).exists(),
+            name,
+        });
+    }
+    decks.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(decks)
+}
+
+/// The deck name is the file stem (the same string used for collection rows).
+fn deck_name_of(path: &std::path::Path) -> String {
+    path.file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+/// Owned copies assigned to this deck in the collection.
+fn owned_count_for(conn: &Connection, name: &str) -> anyhow::Result<i64> {
+    conn.query_row(
+        "SELECT COALESCE(SUM(quantity), 0) FROM collection
+         WHERE binder_type = 'deck' AND binder = ?1",
+        [name],
+        |r| r.get(0),
+    )
+    .context("counting owned deck cards")
+}
+
+/// `(deck-assigned copies, binder copies)` for one deck name.
+///
+/// Binder copies can fill deck slots (they are the user's cards); other
+/// decks' copies never count. Read-only.
+///
+/// # Errors
+/// Propagates SQLite errors.
+pub fn owned_copies(conn: &Connection, name: &str) -> anyhow::Result<(i64, i64)> {
+    let in_deck = owned_count_for(conn, name)?;
+    let in_binders: i64 = conn
+        .query_row(
+            "SELECT COALESCE(SUM(quantity), 0) FROM collection
+         WHERE binder_type = 'binder'
+           AND name IN (SELECT name FROM collection WHERE binder_type = 'deck' AND binder = ?1)",
+            [name],
+            |r| r.get(0),
+        )
+        .context("counting binder copies for deck names")?;
+    Ok((in_deck, in_binders))
+}
+#[cfg(test)]
+#[path = "tests/store_tests.rs"]
+mod store_tests;
+
+/// Final quantity checks and atomic deck writes.
+#[cfg(test)]
+#[path = "tests/store_save_tests.rs"]
+mod store_save_tests;

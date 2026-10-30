@@ -1,0 +1,86 @@
+// COMMANDER
+1 Lathril, Blade of the Elves (SLD) 2681 *F*
+
+// DECK
+1 Arbor Elf (LTC) 232
+1 Arcane Signet (FRC) 20
+1 Assassin's Trophy (SOC) 294
+1 Beast Whisperer (FDC) 189
+1 Beast Within (WHO) 228
+1 Blooming Marsh (OTJ) 266
+1 City of Brass (TMC) 62
+1 Command Tower (FRC) 22
+1 Copperhorn Scout (CN2) 179
+1 Crippling Fear (CMM) 862
+1 Deathcap Glade (SOS) 301
+1 Dwynen's Elite (FDN) 218
+1 Dwynen, Gilt-Leaf Daen (FDN) 217
+1 Elven Ambush (KHM) 391
+1 Elven Passage (HOB) 181
+1 Elvish Archdruid (FDN) 219
+1 Elvish Mystic (FDC) 202
+1 Elvish Regrower (FDN) 104
+1 Elvish Visionary (CMR) 223
+1 Elvish Warmaster (LTC) 241
+1 Ezuri, Renegade Leader (C14) 195
+1 Fabled Passage (FRC) 71
+12 Forest (FRA) 289
+1 Fyndhorn Elves (FDC) 204
+1 Galadhrim Brigade (LTC) 502 *F*
+1 Gilt-Leaf Palace (LRW) 268
+1 Glimpse of Nature (SOA) 53
+1 Heritage Druid (EMA) 171
+1 Heroic Intervention (AER) 109
+1 Jaspera Sentinel (SCD) 194
+1 Leaf-Crowned Visionary (DMU) 167
+1 Llanowar Elves (FDN) 227
+1 Llanowar Wastes (SOC) 383
+1 Marwyn, the Nurturer (KHC) 68
+1 Miara, Thorn of the Glade (KHC) 51
+1 Nature's Lore (MSC) 177
+1 Necroblossom Snarl (DSC) 290
+1 Nurturing Peatland (MH1) 243
+1 Overgrown Tomb (ECL) 266
+1 Patriarch's Bidding (MH2) 275
+1 Poison-Tip Archer (SLD) 788 *F*
+1 Priest of Titania (MH3) 286
+1 Prowess of the Fair (KHC) 53
+1 Quirion Ranger (MH2) 285
+1 Reclamation Sage (FDN) 231
+1 Shaman of the Pack (ORI) 217
+1 Skemfar Shadowsage (KHM) 110
+1 Skullclamp (BLC) 283
+1 Sol Ring (FRC) 21
+7 Swamp (FRA) 285
+1 Swiftfoot Boots (TDC) 328
+1 Sylvan Messenger (KHC) 75
+1 Talisman of Resilience (DSC) 255
+1 Three Tree City (BLB) 260
+1 Three Visits (SOC) 289
+1 Undergrowth Stadium (CMM) 435
+1 Wastewood Verge (DFT) 374
+1 Witherbloom Charm (SOS) 244
+1 Withering Torment (DSK) 124
+1 Wood Elves (HOB) 142
+1 Yavimaya, Cradle of Growth (SLD) 2813 *F*
+1 Nullmage Shepherd (SCD) 200
+1 Realmwalker (ECC) 114
+1 Farhaven Elf (SCD) 182
+1 Eclipsed Elf (ECL) 218
+1 Path of Ancestry (SLD) 2684 *F*
+1 Bojuka Bog (SOC) 363
+1 Tainted Wood (M3C) 383
+1 Virulent Emissary (ECL) 202
+1 Voice of Many (SCD) 215
+1 Brotherhood Regalia (ACR) 71
+1 Infernal Grasp (INR) 119
+1 Craterhoof Behemoth (TDM) 346 *F*
+1 Moonglove Extractor (ECL) 109
+1 Woodland Weavemaster (HOB) 143
+1 Defend the Rider (DFT) 157
+1 Elven Chorus (LTR) 160
+1 Bitter Triumph (SOA) 26
+1 Origin of Metalbending (TLA) 187
+1 Paradise Druid (WOC) 129
+1 Phyrexian Reclamation (TDC) 194
+1 Legolas's Quick Reflexes (LTC) 493 *F*

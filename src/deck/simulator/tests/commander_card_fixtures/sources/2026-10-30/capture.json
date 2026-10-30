@@ -1,0 +1,283 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-30T01:39:09Z",
+  "finished_at": "2026-10-30T01:39:32Z",
+  "status": "source_capture_only_not_runtime_support",
+  "reporting_window": "Past 2 Years",
+  "window_start": null,
+  "window_end": null,
+  "popularity_count": 1000,
+  "land_count": 185,
+  "card_count": 1185,
+  "selection_note": "EDHREC source order, not Scryfall edhrec_rank. The first page plus nine continuation pages form one capture. The reporting window has no exact published bounds. Representative printings may be future reprints of released cards.",
+  "sources": [
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_00.json",
+      "url": "https://json.edhrec.com/pages/top/year.json",
+      "captured_at": "2026-10-30T01:39:09Z",
+      "raw_bytes_sha256": "d1be5df4039d7b20208a59addd1f7c6c05d11d40c0735e968f4fa9f0bd314851",
+      "page_index": 0
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_01.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-1.json",
+      "captured_at": "2026-10-30T01:39:09Z",
+      "raw_bytes_sha256": "7b24b420b74d0b59ae47644855af179197aea5646c622858ef91bc5b9c646333",
+      "page_index": 1
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_02.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-2.json",
+      "captured_at": "2026-10-30T01:39:10Z",
+      "raw_bytes_sha256": "3f2aed58d01161f5ad706202c86b774a0b0713cfdc5c13402b48110bf3591d36",
+      "page_index": 2
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_03.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-3.json",
+      "captured_at": "2026-10-30T01:39:10Z",
+      "raw_bytes_sha256": "26af82fbe28a1931f8c724e4b28ec8b8dcd373996a932245471a74a0225cfe5e",
+      "page_index": 3
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_04.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-4.json",
+      "captured_at": "2026-10-30T01:39:10Z",
+      "raw_bytes_sha256": "a64c696b3dba31fe486a280979f015cd00771baf0b7ee6e3f30ef7c81ff5f2c6",
+      "page_index": 4
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_05.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-5.json",
+      "captured_at": "2026-10-30T01:39:10Z",
+      "raw_bytes_sha256": "f2134e3da3af828af9b61006a389fec0e08c22760f7520702b0a4c28b1b205b7",
+      "page_index": 5
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_06.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-6.json",
+      "captured_at": "2026-10-30T01:39:11Z",
+      "raw_bytes_sha256": "110c71e66b1c2cbfadcc33703c4e432fdf4178eca6a5129bc5ec836b53e98306",
+      "page_index": 6
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_07.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-7.json",
+      "captured_at": "2026-10-30T01:39:11Z",
+      "raw_bytes_sha256": "6136a4290532e9f24c3cdff0d168b836ab537fd96084c20943bbaec8e9ab2556",
+      "page_index": 7
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_08.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-8.json",
+      "captured_at": "2026-10-30T01:39:11Z",
+      "raw_bytes_sha256": "84350784fc6321beb9b2347b3d385130c8ec7890008dc634e8b2977b99837b99",
+      "page_index": 8
+    },
+    {
+      "source": "EDHREC",
+      "method": "GET",
+      "path": "edhrec_page_09.json",
+      "url": "https://json.edhrec.com/pages/top/year-past2years-9.json",
+      "captured_at": "2026-10-30T01:39:11Z",
+      "raw_bytes_sha256": "76bed25a4b837262d4735983a764f343eb297a5a3be83448142c3a943cc87d2c",
+      "page_index": 9
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_00.json",
+      "request_path": "scryfall_request_00.json",
+      "captured_at": "2026-10-30T01:39:13Z",
+      "request_sha256": "fc5069d35ff2f5221433c075593251dee6687d313c98d8769f9685280af0cd2e",
+      "raw_bytes_sha256": "1201a71db339c9350cb9dea323bf1672a5da750bfe25241356b9c99f21075a8e"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_01.json",
+      "request_path": "scryfall_request_01.json",
+      "captured_at": "2026-10-30T01:39:14Z",
+      "request_sha256": "49d638e81144e53bd9d9219d921bd6ff89d3c385e2bee13aabe285c447547ac5",
+      "raw_bytes_sha256": "6afbfb945b38d6469be3a8b7bef7abe1aa4ea614cc0b9a32865177488b969f55"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_02.json",
+      "request_path": "scryfall_request_02.json",
+      "captured_at": "2026-10-30T01:39:15Z",
+      "request_sha256": "ac81cc4924757a4cba9ce292dae8c174ec1811069ca21a132619e86bb28850cf",
+      "raw_bytes_sha256": "d3cfed72ec2f4740fa2d31ee55d2cc95be00aec32db52480a3f7b66fa5954f17"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_03.json",
+      "request_path": "scryfall_request_03.json",
+      "captured_at": "2026-10-30T01:39:16Z",
+      "request_sha256": "98591dc49582aab090973ab27f397a2edc2a16e38fb6a42ca0c4bb426fc29dec",
+      "raw_bytes_sha256": "4e4738af4e9e96bf7c44174842e26d5cf4081efda7e61d3302ec560f72c32ab5"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_04.json",
+      "request_path": "scryfall_request_04.json",
+      "captured_at": "2026-10-30T01:39:17Z",
+      "request_sha256": "a32343f952db0338c9c4fbd3197bfea35d7294470fa6ea3518014fbdbd39d8af",
+      "raw_bytes_sha256": "13355fede72e41559bf20310ec7fe1d91281e2fd5d764401213ed3616bc40449"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_05.json",
+      "request_path": "scryfall_request_05.json",
+      "captured_at": "2026-10-30T01:39:18Z",
+      "request_sha256": "e023eda58784a9655ebfc7319cdf3dd1964c035e1ffdf62ca2ecb198a2271229",
+      "raw_bytes_sha256": "8fbc7d330e74afae4dd91caf1d66952a674f99fa18f8810d73b165bff87fbbef"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_06.json",
+      "request_path": "scryfall_request_06.json",
+      "captured_at": "2026-10-30T01:39:19Z",
+      "request_sha256": "b0ce6742407b3d12286c4cc5706b8e5cd7636630156d9af5fb4feb6e05941696",
+      "raw_bytes_sha256": "6f5470c7a013e61e505d9bf2259e0524594036435b2f4563d782915daace2af4"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_07.json",
+      "request_path": "scryfall_request_07.json",
+      "captured_at": "2026-10-30T01:39:20Z",
+      "request_sha256": "c9dbaed73302425a893507deae54cf4868f6afb3d174c925b64ed1620075232d",
+      "raw_bytes_sha256": "924c54748d7c1f8e2998bd8c89671a59a20521c11f868f3f1a541003c6ca68c9"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_08.json",
+      "request_path": "scryfall_request_08.json",
+      "captured_at": "2026-10-30T01:39:21Z",
+      "request_sha256": "011d0efef8051c7dc33f555a8a58ea2c9e3715ba765fd60a290f0a7db7e50785",
+      "raw_bytes_sha256": "9a373ead18e94a5ecf6d93b83b6fe7dde5b0de4928512f7a7b2ccb601ea7c7c9"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_09.json",
+      "request_path": "scryfall_request_09.json",
+      "captured_at": "2026-10-30T01:39:22Z",
+      "request_sha256": "cb47a447cfcc8db28b029f4c501a461b551550c3a44a797563e77bd0daa0a11b",
+      "raw_bytes_sha256": "5cbd5ca6d73536bd8dbfd172016db3b41e60f925b3d019c49d44abe59f5d0a24"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_10.json",
+      "request_path": "scryfall_request_10.json",
+      "captured_at": "2026-10-30T01:39:23Z",
+      "request_sha256": "a18bf3a26bd0222638d36336920b6e945d5abdd86007f9394efc687c268248e3",
+      "raw_bytes_sha256": "affbd487c8f3682df62aaa496f44f8cbbf12076c23100bb8109850cf34b0a172"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_11.json",
+      "request_path": "scryfall_request_11.json",
+      "captured_at": "2026-10-30T01:39:25Z",
+      "request_sha256": "c888f003d02a59755ced1c9def88e7d491b92da0c32f63168078ed9e4b0f5d83",
+      "raw_bytes_sha256": "876dca635ce0666127589161ac3d2f34fe0c417a18b8e6047dcbe236deef48a2"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_12.json",
+      "request_path": "scryfall_request_12.json",
+      "captured_at": "2026-10-30T01:39:26Z",
+      "request_sha256": "3c76821742b47535b019e591da94a7a4d5d345d4803be95de1e41d0e8f529a03",
+      "raw_bytes_sha256": "193c00e5b7689e4e10134e84e776ffe732762be2f3b5e1e4557de7f81fda9ac1"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_13.json",
+      "request_path": "scryfall_request_13.json",
+      "captured_at": "2026-10-30T01:39:27Z",
+      "request_sha256": "786b2ba252d9eeaf8f0f5e223893ae9b4420bc76dc72d3179e272e2ce3f249b5",
+      "raw_bytes_sha256": "ebb2a458162187f34b756c5a11e28ff374fb87b03f092124fd8174b0f919814e"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_14.json",
+      "request_path": "scryfall_request_14.json",
+      "captured_at": "2026-10-30T01:39:30Z",
+      "request_sha256": "f744564629812ed411d34ef63a9b5bd7c6950467b1ab820723f2ef54ffe55603",
+      "raw_bytes_sha256": "f75ad45bb4e43f2247b888704ea432550b70b605d64a55cb9b75749aa83d5085"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_15.json",
+      "request_path": "scryfall_request_15.json",
+      "captured_at": "2026-10-30T01:39:32Z",
+      "request_sha256": "01ad11a4d04fee556b3d379fb5023794db66e4b92ee4e9c090b5521460662f82",
+      "raw_bytes_sha256": "8e8c9bbd472f0207ea10556e68f06b45c81897a4256a423f8f63268f1bb8d19f"
+    }
+  ],
+  "files": [
+    {
+      "path": "selection.json",
+      "raw_bytes_sha256": "28884daa02ecd234d9945cf58b09ebc641bf8bb2a8589da28158901d06fc2008"
+    },
+    {
+      "path": "popularity.json",
+      "raw_bytes_sha256": "63f3603996c43f9be048e6935d8a724212ad65e4f6527fe03aa7ac3d28831118"
+    },
+    {
+      "path": "cards.json",
+      "raw_bytes_sha256": "d049ca81ed1ce911388a683ef3007d2deccea6e6d2b765a23835ae03ba325a49"
+    },
+    {
+      "path": "land_groups.json",
+      "raw_bytes_sha256": "1b6122be006449e8dbcc2029b855fbc42fc2a83b12b28a83c5ee4a0d73af659e"
+    }
+  ]
+}

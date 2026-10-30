@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "retrieved_on": "2026-10-19",
+  "status": "eight_official_precon_snapshots_frozen; tournament_snapshots_not_frozen",
+  "sources": [
+    {
+      "source_kind": "official_precon",
+      "source_url": "https://magic.wizards.com/en/news/announcements/lorwyn-eclipsed-commander-decklists",
+      "source_id": "lorwyn-eclipsed-commander-decklists",
+      "source_sha256": "3191e4932d803ff57da4f0961cbc6f553c76a85bcf60d73cbbf9f797e6e0ace0",
+      "source_bytes": 192618,
+      "product_date": "2026-01-23",
+      "verified_decks": [
+        {
+          "name": "Dance of the Elements",
+          "format": "commander",
+          "main_deck_cards": 99,
+          "commander": "Ashling, the Limitless",
+          "featured_card_in_main": "Mass of Mysteries",
+          "notes": "Official page includes both commanders and the complete 100-card list. Token and helper sections are separate and excluded."
+        },
+        {
+          "name": "Blight Curse",
+          "format": "commander",
+          "main_deck_cards": 99,
+          "commander": "Auntie Ool, Cursewretch",
+          "featured_card_in_main": "The Reaper, King No More",
+          "notes": "Official page includes both commanders and the complete 100-card list. Token and helper sections are separate and excluded."
+        }
+      ],
+      "snapshot_status": "frozen_fixture",
+      "fixture_ids": ["mtgjson dance of the elements", "mtgjson blight curse"],
+      "normalized_content_sha256": [
+        "13cbfe57a6d0fb25312085019d2a75f4f322fda1d34b4732eccdc5232620078a",
+        "fb5dd493aae4a28c6fdae0516de2af4337aa06544a79e72cb406a9ce78234ec5"
+      ]
+    },
+    {
+      "source_kind": "mtgo_tournament_page",
+      "source_url": "https://www.mtgo.com/decklist/standard-challenge-32-2026-10-1612856581",
+      "source_id": "event:12856581",
+      "source_sha256": "8172566bff9148bb4113245b3b39403bd81cf736f511a3c45dd9d8d9f4012632",
+      "event": "Standard Challenge 32",
+      "verified_decks": [
+        {
+          "player": "J4K3ST3R02",
+          "deck_id": "58694457",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        },
+        {
+          "player": "MacIsaac",
+          "deck_id": "58694485",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        }
+      ],
+      "snapshot_status": "not_frozen",
+      "blocker": "Verified list is not yet frozen as a fixture. Store with its player, event, and source attribution."
+    },
+    {
+      "source_kind": "mtgo_tournament_page",
+      "source_url": "https://www.mtgo.com/decklist/pioneer-challenge-16-2026-10-1712856598",
+      "source_id": "event:12856598",
+      "source_sha256": "9dc46015c4fa0910bcddbe0cf844ebeacc78feb6f2f0b1b1eac323a8f4de0f15",
+      "event": "Pioneer Challenge 16",
+      "verified_decks": [
+        {
+          "player": "GhostbloodGhost",
+          "deck_id": "58696404",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        },
+        {
+          "player": "rosici0700",
+          "deck_id": "58696407",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        }
+      ],
+      "snapshot_status": "not_frozen",
+      "blocker": "Verified list is not yet frozen as a fixture. Store with its player, event, and source attribution."
+    },
+    {
+      "source_kind": "mtgo_tournament_page",
+      "source_url": "https://www.mtgo.com/decklist/modern-challenge-32-2026-10-1712856762",
+      "source_id": "event:12856762",
+      "source_sha256": "71d06be6f166828defbbf9a006c4cf9d93e274b7ea88256827208ea55131166d",
+      "event": "Modern Challenge 32",
+      "verified_decks": [
+        {
+          "player": "xfile",
+          "deck_id": "58695504",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        },
+        {
+          "player": "Mighty_Ravendark",
+          "deck_id": "58695529",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        }
+      ],
+      "snapshot_status": "not_frozen",
+      "blocker": "Verified list is not yet frozen as a fixture. Store with its player, event, and source attribution."
+    },
+    {
+      "source_kind": "mtgo_tournament_page",
+      "source_url": "https://www.mtgo.com/decklist/legacy-challenge-16-2026-10-1812856601",
+      "source_id": "event:12856601",
+      "source_sha256": "157690aaef385a3590c4ef59910867261f61683cff6163e9227b5865d964bf7f",
+      "event": "Legacy Challenge 16",
+      "verified_decks": [
+        {
+          "player": "Zhemint",
+          "deck_id": "58696563",
+          "main_deck_cards": 61,
+          "sideboard_cards": 15
+        },
+        {
+          "player": "olbeda",
+          "deck_id": "58696552",
+          "main_deck_cards": 80,
+          "sideboard_cards": 15
+        }
+      ],
+      "snapshot_status": "not_frozen",
+      "blocker": "Verified list is not yet frozen as a fixture. Store with its player, event, and source attribution."
+    },
+    {
+      "source_kind": "mtgo_tournament_page",
+      "source_url": "https://www.mtgo.com/decklist/pauper-challenge-32-2026-10-1612856583",
+      "source_id": "event:12856583",
+      "source_sha256": "4dd3b866c353d03ec76632d7569602fd9f4e22cfef83ce997599dcaa1a940ef9",
+      "event": "Pauper Challenge 32",
+      "verified_decks": [
+        {
+          "player": "LuffyDoChapeuDePalha",
+          "deck_id": "58694678",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        },
+        {
+          "player": "outZEROo",
+          "deck_id": "58694685",
+          "main_deck_cards": 60,
+          "sideboard_cards": 15
+        }
+      ],
+      "snapshot_status": "not_frozen",
+      "blocker": "Verified list is not yet frozen as a fixture. Store with its player, event, and source attribution."
+    }
+  ],
+  "acquisition_notes": [
+    "The MTGO source hashes identify the retrieved HTML responses, not normalized deck-content hashes.",
+    "The MTGO embedded JSON was present in each retrieved response. The recorded player and deck IDs were matched, and main-deck and sideboard quantities were counted from that JSON.",
+    "No TopDeck API request was made. No .env file was read or accessed.",
+    "Eight official Commander precon snapshots are frozen as offline fixtures. Tournament snapshots remain unfrozen.",
+    "MTGJSON DeckList and individual deck records were checked for official precon candidates. Exact list snapshots are authorized for storage when attribution metadata is retained.",
+    "Normalization maps MTGJSON fields to fixture fields, keeps commander and main-board sections separate, and excludes token/helper rows. It does not edit the played card quantities or card text. Hashes cover normalized card records, commanders, and the main-board list.",
+    "Raw individual-deck MTGJSON response hashes were not retained. Each fixture pins its retrieval date, MTGJSON card-data date and version, exact source URL, and normalized content hash."
+  ],
+  "mtgjson_precon_candidates": [
+    {
+      "name": "Dance of the Elements",
+      "source_kind": "official_precon",
+      "coverage": "Elementals, evoke, myriad, and multicolor mana",
+      "source_url": "https://magic.wizards.com/en/news/announcements/lorwyn-eclipsed-commander-decklists",
+      "mtgjson_file": "DanceOfTheElements_ECC",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/DanceOfTheElements_ECC.json",
+      "source_id": "ECC:DanceOfTheElements_ECC",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2026-01-23",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuid": "5b7c6f90-c879-5756-811d-bb69655e1a70",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson dance of the elements",
+      "normalized_content_sha256": "13cbfe57a6d0fb25312085019d2a75f4f322fda1d34b4732eccdc5232620078a"
+    },
+    {
+      "name": "Blight Curse",
+      "source_kind": "official_precon",
+      "coverage": "-1/-1 counters and death-triggered recursion",
+      "source_url": "https://magic.wizards.com/en/news/announcements/lorwyn-eclipsed-commander-decklists",
+      "mtgjson_file": "BlightCurse_ECC",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/BlightCurse_ECC.json",
+      "source_id": "ECC:BlightCurse_ECC",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2026-01-23",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuid": "4aa7e263-6a08-5c05-a84f-6247079fe860",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson blight curse",
+      "normalized_content_sha256": "fb5dd493aae4a28c6fdae0516de2af4337aa06544a79e72cb406a9ce78234ec5"
+    },
+    {
+      "name": "Family Matters",
+      "source_kind": "official_precon",
+      "coverage": "Offspring and creature tokens",
+      "source_url": "https://magic.wizards.com/en/news/announcements/bloomburrow-commander-decklists",
+      "mtgjson_file": "FamilyMatters_BLC",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/FamilyMatters_BLC.json",
+      "source_id": "BLC:FamilyMatters_BLC",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2024-08-02",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuid": "8e163096-61b2-56fb-911b-ec87b164cb92",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson family matters",
+      "normalized_content_sha256": "0fac82493b6e9e805c4c2bfdeb1535bf08f9fc1c1a0ed73b89cc888f0e718cde"
+    },
+    {
+      "name": "Buckle Up",
+      "source_kind": "official_precon",
+      "coverage": "Vehicles, crew, and artifact creatures",
+      "source_url": "https://magic.wizards.com/en/articles/archive/feature/kamigawa-neon-dynasty-commander-decklists-2022-02-07",
+      "mtgjson_file": "BuckleUp_NEC",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/BuckleUp_NEC.json",
+      "source_id": "NEC:BuckleUp_NEC",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2022-02-18",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuids": [
+        "72c044b8-0a54-5453-bb79-38dcbb5e7f2d",
+        "8b475fa7-b654-5171-a77f-15fdb9afaceb"
+      ],
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson buckle up",
+      "normalized_content_sha256": "aefb5910f17fdea623a7e3bc5227caee54369b0f1b57d5beb27ec7e7f2388c88"
+    },
+    {
+      "name": "Enduring Enchantments",
+      "source_kind": "official_precon",
+      "coverage": "Enchantments and graveyard recursion",
+      "source_url": "https://magic.wizards.com/en/news/announcements/commander-masters-commander-decklists",
+      "mtgjson_file": "EnduringEnchantments_CMM",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/EnduringEnchantments_CMM.json",
+      "source_id": "CMM:EnduringEnchantments_CMM",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2023-08-04",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuid": "d379fa71-0664-5039-bbe0-e16869de18f5",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson enduring enchantments",
+      "normalized_content_sha256": "8f6120178437fc16407b99d0da725944bf304708e2ff2cef398b166fdad82490"
+    },
+    {
+      "name": "Ahoy Mateys",
+      "source_kind": "official_precon",
+      "coverage": "Pirates, combat, and graveyard play",
+      "source_url": "https://magic.wizards.com/en/news/announcements/the-lost-caverns-of-ixalan-commander-decklists",
+      "mtgjson_file": "AhoyMateys_LCC",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/AhoyMateys_LCC.json",
+      "source_id": "LCC:AhoyMateys_LCC",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2023-11-17",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuid": "2041871e-e82c-5359-90b0-e5de47c335ce",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson ahoy mateys",
+      "normalized_content_sha256": "870e936ad4989f379d709f16f35f63ff611b4b83ff131ed4779d4a32ad3fd627"
+    },
+    {
+      "name": "Blast from the Past",
+      "source_kind": "official_precon",
+      "coverage": "Historic cards, cycling, and partner commanders",
+      "source_url": "https://magic.wizards.com/en/news/announcements/magic-the-gathering-doctor-who-commander-decklists",
+      "mtgjson_file": "BlastFromThePast_WHO",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/BlastFromThePast_WHO.json",
+      "source_id": "WHO:BlastFromThePast_WHO",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2023-10-13",
+      "main_deck_cards": 98,
+      "commander_cards": 2,
+      "sealed_product_uuid": "a94ae528-6d89-5cf9-b9fa-c9a370ece1e6",
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson blast from the past",
+      "normalized_content_sha256": "7231e25547c4745980a3eca671a9b85300b8d004d234ff1c42e1f31c199a47e1"
+    },
+    {
+      "name": "Quantum Quandrix",
+      "source_kind": "official_precon",
+      "coverage": "Token doubling and Fractal tokens",
+      "source_url": "https://magic.wizards.com/en/articles/archive/news/commander-2021-edition-decklists-2021-04-05",
+      "mtgjson_file": "QuantumQuandrix_C21",
+      "mtgjson_url": "https://mtgjson.com/api/v5/decks/QuantumQuandrix_C21.json",
+      "source_id": "C21:QuantumQuandrix_C21",
+      "retrieved_at": "2026-10-19",
+      "card_data_date": "2026-10-18",
+      "card_data_version": "5.3.0+20261018",
+      "release_date": "2021-04-23",
+      "main_deck_cards": 99,
+      "commander_cards": 1,
+      "sealed_product_uuids": [
+        "7492727a-818c-5f60-8867-36f6fded0378",
+        "91fc3d96-65d6-5c92-8718-12ecde722d95"
+      ],
+      "snapshot_status": "frozen_fixture",
+      "fixture_id": "mtgjson quantum quandrix",
+      "normalized_content_sha256": "6b088e89b58d5851112df9ef7a284464aa7413c925a213946d5c26108471d5d5"
+    }
+  ]
+}

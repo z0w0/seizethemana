@@ -1,0 +1,142 @@
+# Build release binaries for Linux, macOS, and Windows.
+#
+# Runs on manual dispatch or on vX.Y.Z tags (e.g. `v0.1.0`). Tag builds
+# create a GitHub release with the archives, which cargo-binstall consumes
+# (see Cargo.toml); dispatch runs attach the archives as workflow artifacts.
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  release-check:
+    name: Check release archive contract
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: bash scripts/check-release.sh
+
+  build:
+    name: Build ${{ matrix.target }}
+    needs: release-check
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+          - target: aarch64-apple-darwin
+            os: macos-15
+          - target: x86_64-pc-windows-msvc
+            os: windows-2025
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          archive="seizethemana-${version}-${{ matrix.target }}.tar.xz"
+          staging="seizethemana-${version}-${{ matrix.target }}"
+          mkdir "$staging"
+          cp "target/${{ matrix.target }}/release/stm" "$staging/"
+          cp README.md LICENSE "$staging/"
+          tar -cJf "$archive" "$staging"
+          echo "archive=$archive" >> "$GITHUB_ENV"
+
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = "${env:GITHUB_REF_NAME}" -replace '^v', ''
+          $archive = "seizethemana-${version}-${{ matrix.target }}.zip"
+          $staging = "seizethemana-${version}-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/stm.exe" $staging
+          Copy-Item README.md, LICENSE $staging
+          Compress-Archive -Path $staging -DestinationPath $archive
+          "archive=$archive" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Check Windows archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $metadata = cargo metadata --no-deps --format-version 1 --offline --locked | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read Cargo metadata.' }
+          $manifest = (Resolve-Path Cargo.toml).Path
+          $package = @($metadata.packages | Where-Object { [IO.Path]::GetFullPath($_.manifest_path) -eq $manifest })
+          if ($package.Count -ne 1) { throw 'Expected one root Cargo package.' }
+          $package = $package[0]
+          $binstall = $package.metadata.binstall
+          $target = '${{ matrix.target }}'
+          if ($binstall.overrides.$target.'pkg-fmt' -ne 'zip') { throw 'Windows binstall format must be zip.' }
+          $values = @{
+            name = $package.name
+            version = $env:GITHUB_REF_NAME -replace '^v', ''
+            target = $target
+            bin = 'stm'
+            'binary-ext' = '.exe'
+          }
+          $expectedArchive = "$($package.name)-$($values.version)-$target.zip"
+          if ($env:archive -cne $expectedArchive) { throw "Windows archive name must be $expectedArchive." }
+          $binaryPath = $binstall.'bin-dir' -replace '\{\s*([^{}\s]+)\s*\}', '{$1}'
+          foreach ($key in $values.Keys) { $binaryPath = $binaryPath.Replace("{$key}", $values[$key]) }
+          if ($binaryPath -match '[{}]') { throw "Unknown binstall placeholder: $binaryPath" }
+          $zip = [IO.Compression.ZipFile]::OpenRead((Join-Path $PWD $env:archive))
+          try {
+            $binaries = @($zip.Entries | Where-Object { $_.Name -ceq 'stm.exe' })
+            if ($binaries.Count -ne 1 -or $binaries[0].FullName.Replace('\', '/') -cne $binaryPath) {
+              throw "Windows ZIP must contain one binary at $binaryPath."
+            }
+            $stream = $binaries[0].Open()
+            try {
+              if ((Get-FileHash -InputStream $stream).Hash -cne (Get-FileHash "target/$target/release/stm.exe").Hash) {
+                throw 'Windows ZIP binary differs from the build output.'
+              }
+            } finally { $stream.Dispose() }
+          } finally { $zip.Dispose() }
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.archive }}
+          path: ${{ env.archive }}
+          if-no-files-found: error
+
+      - name: Attach archive to GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "seizethemana v${version}" \
+            --generate-notes \
+            || true
+          gh release upload "$GITHUB_REF_NAME" "$archive" --clobber \
+            --repo "$GITHUB_REPOSITORY"

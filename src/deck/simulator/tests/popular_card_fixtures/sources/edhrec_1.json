@@ -1,0 +1,1376 @@
+{
+  "related_info": [
+    {
+      "header": "Mono-White",
+      "items": [
+        {
+          "colors": ["w"],
+          "count": 297121,
+          "textLeft": "Mono-White",
+          "url": "/top/mono-white"
+        }
+      ]
+    },
+    {
+      "header": "Mono-Blue",
+      "items": [
+        {
+          "colors": ["u"],
+          "count": 306418,
+          "textLeft": "Mono-Blue",
+          "url": "/top/mono-blue"
+        }
+      ]
+    },
+    {
+      "header": "Mono-Black",
+      "items": [
+        {
+          "colors": ["b"],
+          "count": 423666,
+          "textLeft": "Mono-Black",
+          "url": "/top/mono-black"
+        }
+      ]
+    },
+    {
+      "header": "Mono-Red",
+      "items": [
+        {
+          "colors": ["r"],
+          "count": 383706,
+          "textLeft": "Mono-Red",
+          "url": "/top/mono-red"
+        }
+      ]
+    },
+    {
+      "header": "Mono-Green",
+      "items": [
+        {
+          "colors": ["g"],
+          "count": 344617,
+          "textLeft": "Mono-Green",
+          "url": "/top/mono-green"
+        }
+      ]
+    },
+    {
+      "header": "Azorius",
+      "items": [
+        {
+          "colors": ["w", "u"],
+          "count": 327958,
+          "textLeft": "Azorius",
+          "url": "/top/azorius"
+        }
+      ]
+    },
+    {
+      "header": "Dimir",
+      "items": [
+        {
+          "colors": ["u", "b"],
+          "count": 404634,
+          "textLeft": "Dimir",
+          "url": "/top/dimir"
+        }
+      ]
+    },
+    {
+      "header": "Rakdos",
+      "items": [
+        {
+          "colors": ["b", "r"],
+          "count": 438873,
+          "textLeft": "Rakdos",
+          "url": "/top/rakdos"
+        }
+      ]
+    },
+    {
+      "header": "Gruul",
+      "items": [
+        {
+          "colors": ["r", "g"],
+          "count": 364896,
+          "textLeft": "Gruul",
+          "url": "/top/gruul"
+        }
+      ]
+    },
+    {
+      "header": "Selesnya",
+      "items": [
+        {
+          "colors": ["g", "w"],
+          "count": 297404,
+          "textLeft": "Selesnya",
+          "url": "/top/selesnya"
+        }
+      ]
+    },
+    {
+      "header": "Orzhov",
+      "items": [
+        {
+          "colors": ["w", "b"],
+          "count": 381734,
+          "textLeft": "Orzhov",
+          "url": "/top/orzhov"
+        }
+      ]
+    },
+    {
+      "header": "Izzet",
+      "items": [
+        {
+          "colors": ["u", "r"],
+          "count": 420243,
+          "textLeft": "Izzet",
+          "url": "/top/izzet"
+        }
+      ]
+    },
+    {
+      "header": "Golgari",
+      "items": [
+        {
+          "colors": ["b", "g"],
+          "count": 476996,
+          "textLeft": "Golgari",
+          "url": "/top/golgari"
+        }
+      ]
+    },
+    {
+      "header": "Boros",
+      "items": [
+        {
+          "colors": ["r", "w"],
+          "count": 377513,
+          "textLeft": "Boros",
+          "url": "/top/boros"
+        }
+      ]
+    },
+    {
+      "header": "Simic",
+      "items": [
+        {
+          "colors": ["g", "u"],
+          "count": 383687,
+          "textLeft": "Simic",
+          "url": "/top/simic"
+        }
+      ]
+    },
+    {
+      "header": "Esper",
+      "items": [
+        {
+          "colors": ["w", "u", "b"],
+          "count": 450114,
+          "textLeft": "Esper",
+          "url": "/top/esper"
+        }
+      ]
+    },
+    {
+      "header": "Grixis",
+      "items": [
+        {
+          "colors": ["u", "b", "r"],
+          "count": 479459,
+          "textLeft": "Grixis",
+          "url": "/top/grixis"
+        }
+      ]
+    },
+    {
+      "header": "Jund",
+      "items": [
+        {
+          "colors": ["b", "r", "g"],
+          "count": 291733,
+          "textLeft": "Jund",
+          "url": "/top/jund"
+        }
+      ]
+    },
+    {
+      "header": "Naya",
+      "items": [
+        {
+          "colors": ["r", "g", "w"],
+          "count": 419416,
+          "textLeft": "Naya",
+          "url": "/top/naya"
+        }
+      ]
+    },
+    {
+      "header": "Bant",
+      "items": [
+        {
+          "colors": ["g", "w", "u"],
+          "count": 327648,
+          "textLeft": "Bant",
+          "url": "/top/bant"
+        }
+      ]
+    },
+    {
+      "header": "Abzan",
+      "items": [
+        {
+          "colors": ["w", "b", "g"],
+          "count": 250504,
+          "textLeft": "Abzan",
+          "url": "/top/abzan"
+        }
+      ]
+    },
+    {
+      "header": "Jeskai",
+      "items": [
+        {
+          "colors": ["u", "r", "w"],
+          "count": 363273,
+          "textLeft": "Jeskai",
+          "url": "/top/jeskai"
+        }
+      ]
+    },
+    {
+      "header": "Sultai",
+      "items": [
+        {
+          "colors": ["b", "g", "u"],
+          "count": 367651,
+          "textLeft": "Sultai",
+          "url": "/top/sultai"
+        }
+      ]
+    },
+    {
+      "header": "Mardu",
+      "items": [
+        {
+          "colors": ["r", "w", "b"],
+          "count": 405121,
+          "textLeft": "Mardu",
+          "url": "/top/mardu"
+        }
+      ]
+    },
+    {
+      "header": "Temur",
+      "items": [
+        {
+          "colors": ["g", "u", "r"],
+          "count": 333860,
+          "textLeft": "Temur",
+          "url": "/top/temur"
+        }
+      ]
+    },
+    {
+      "header": "Yore-Tiller",
+      "items": [
+        {
+          "colors": ["w", "u", "b", "r"],
+          "count": 60848,
+          "textLeft": "Yore-Tiller",
+          "url": "/top/yore-tiller"
+        }
+      ]
+    },
+    {
+      "header": "Glint-Eye",
+      "items": [
+        {
+          "colors": ["u", "b", "r", "g"],
+          "count": 18721,
+          "textLeft": "Glint-Eye",
+          "url": "/top/glint-eye"
+        }
+      ]
+    },
+    {
+      "header": "Dune-Brood",
+      "items": [
+        {
+          "colors": ["b", "r", "g", "w"],
+          "count": 16077,
+          "textLeft": "Dune-Brood",
+          "url": "/top/dune-brood"
+        }
+      ]
+    },
+    {
+      "header": "Ink-Treader",
+      "items": [
+        {
+          "colors": ["r", "g", "w", "u"],
+          "count": 78669,
+          "textLeft": "Ink-Treader",
+          "url": "/top/ink-treader"
+        }
+      ]
+    },
+    {
+      "header": "Witch-Maw",
+      "items": [
+        {
+          "colors": ["g", "w", "u", "b"],
+          "count": 80741,
+          "textLeft": "Witch-Maw",
+          "url": "/top/witch-maw"
+        }
+      ]
+    },
+    {
+      "header": "Five-Color",
+      "items": [
+        {
+          "colors": ["w", "u", "b", "r", "g"],
+          "count": 699189,
+          "textLeft": "Five-Color",
+          "url": "/top/five-color"
+        }
+      ]
+    },
+    {
+      "header": "Colorless",
+      "items": [
+        {
+          "colors": ["c"],
+          "count": 96846,
+          "textLeft": "Colorless",
+          "url": "/top/colorless"
+        }
+      ]
+    }
+  ],
+  "header": "Top Cards (Past 2 Years)",
+  "description": "",
+  "container": {
+    "breadcrumb": null,
+    "description": null,
+    "json_dict": {
+      "cardlists": [
+        {
+          "header": "Past 2 Years",
+          "tag": "past2years",
+          "cardviews": [
+            {
+              "id": "8ee443cc-e17a-493b-9c93-1f9e141a30e4",
+              "name": "Sol Ring",
+              "sanitized": "sol-ring",
+              "slug": "sol-ring",
+              "url": "/cards/sol-ring",
+              "num_decks": 8636126,
+              "potential_decks": 10369336,
+              "trend_zscore": -0.16959427591271273
+            },
+            {
+              "id": "c6b6117c-faab-4bbb-b851-07bd8061ef03",
+              "name": "Arcane Signet",
+              "sanitized": "arcane-signet",
+              "slug": "arcane-signet",
+              "url": "/cards/arcane-signet",
+              "num_decks": 7435882,
+              "potential_decks": 10369336,
+              "trend_zscore": -1.6336846559285068
+            },
+            {
+              "id": "f7e12477-d59f-442b-a678-1be746d0b7be",
+              "name": "Swords to Plowshares",
+              "sanitized": "swords-to-plowshares",
+              "slug": "swords-to-plowshares",
+              "url": "/cards/swords-to-plowshares",
+              "num_decks": 2949188,
+              "potential_decks": 4833330,
+              "trend_zscore": 3.935267556741084
+            },
+            {
+              "id": "22e08a78-55b7-46b0-bd1a-a51548fc1861",
+              "name": "Path to Exile",
+              "sanitized": "path-to-exile",
+              "slug": "path-to-exile",
+              "url": "/cards/path-to-exile",
+              "num_decks": 2315044,
+              "potential_decks": 4833330,
+              "trend_zscore": 2.865164363639377
+            },
+            {
+              "id": "4f616706-ec97-4923-bb1e-11a69fbaa1f8",
+              "name": "Counterspell",
+              "sanitized": "counterspell",
+              "slug": "counterspell",
+              "url": "/cards/counterspell",
+              "num_decks": 2146086,
+              "potential_decks": 5103113,
+              "trend_zscore": -0.9478714557634405
+            },
+            {
+              "id": "e60deb92-f7dd-4f4e-9036-e47dd586f985",
+              "name": "Cultivate",
+              "sanitized": "cultivate",
+              "slug": "cultivate",
+              "url": "/cards/cultivate",
+              "num_decks": 1968528,
+              "potential_decks": 4751809,
+              "trend_zscore": -4.2200156253244145
+            },
+            {
+              "id": "c1aac0f5-1d01-4673-b8d3-878d9a1d423c",
+              "name": "Farseek",
+              "sanitized": "farseek",
+              "slug": "farseek",
+              "url": "/cards/farseek",
+              "num_decks": 1705229,
+              "potential_decks": 4751809,
+              "trend_zscore": -0.9719426630375503
+            },
+            {
+              "id": "7d4b1d44-126e-4987-9a9f-f0f9627a09cb",
+              "name": "Blasphemous Act",
+              "sanitized": "blasphemous-act",
+              "slug": "blasphemous-act",
+              "url": "/cards/blasphemous-act",
+              "num_decks": 1745675,
+              "potential_decks": 5151597,
+              "trend_zscore": 1.4124006214718174
+            },
+            {
+              "id": "400b43aa-c1d2-4435-b863-061f43889422",
+              "name": "Beast Within",
+              "sanitized": "beast-within",
+              "slug": "beast-within",
+              "url": "/cards/beast-within",
+              "num_decks": 1549501,
+              "potential_decks": 4751809,
+              "trend_zscore": 0.30631612449689066
+            },
+            {
+              "id": "78d5366f-eb6d-4ec1-880b-111872863766",
+              "name": "Talisman of Dominance",
+              "sanitized": "talisman-of-dominance",
+              "slug": "talisman-of-dominance",
+              "url": "/cards/talisman-of-dominance",
+              "num_decks": 828856,
+              "potential_decks": 2561357,
+              "trend_zscore": 4.376844825820458
+            },
+            {
+              "id": "aaf258fc-3ba4-4b83-bdbf-10a07e0b6c03",
+              "name": "Assassin's Trophy",
+              "sanitized": "assassins-trophy",
+              "slug": "assassins-trophy",
+              "url": "/cards/assassins-trophy",
+              "num_decks": 708844,
+              "potential_decks": 2201612,
+              "trend_zscore": -2.606567202866253
+            },
+            {
+              "id": "7afc4a15-5ff8-457a-aa62-803b2d78d912",
+              "name": "Nature's Lore",
+              "sanitized": "natures-lore",
+              "slug": "natures-lore",
+              "url": "/cards/natures-lore",
+              "num_decks": 1519807,
+              "potential_decks": 4751809,
+              "trend_zscore": 0.6967724075595341
+            },
+            {
+              "id": "b7c47024-5e08-4b17-b41a-7647f8b814b9",
+              "name": "Rampant Growth",
+              "sanitized": "rampant-growth",
+              "slug": "rampant-growth",
+              "url": "/cards/rampant-growth",
+              "num_decks": 1500294,
+              "potential_decks": 4751809,
+              "trend_zscore": -4.933985647375518
+            },
+            {
+              "id": "e32c67d1-187f-40df-b3b3-6036f5c92834",
+              "name": "Heroic Intervention",
+              "sanitized": "heroic-intervention",
+              "slug": "heroic-intervention",
+              "url": "/cards/heroic-intervention",
+              "num_decks": 1491913,
+              "potential_decks": 4751809,
+              "trend_zscore": 3.7073231289912463
+            },
+            {
+              "id": "fb8d8106-b9bd-405c-886e-72fc301c65e1",
+              "name": "Chaos Warp",
+              "sanitized": "chaos-warp",
+              "slug": "chaos-warp",
+              "url": "/cards/chaos-warp",
+              "num_decks": 1485830,
+              "potential_decks": 5151597,
+              "trend_zscore": -0.4460811561832917
+            },
+            {
+              "id": "492c2f9a-51e7-4e0f-9899-23bf43ea988b",
+              "name": "Birds of Paradise",
+              "sanitized": "birds-of-paradise",
+              "slug": "birds-of-paradise",
+              "url": "/cards/birds-of-paradise",
+              "num_decks": 1351174,
+              "potential_decks": 4751809,
+              "trend_zscore": 3.7368899353926923
+            },
+            {
+              "id": "d4ba86c8-8052-4c9e-a0d0-ac6ad0b2679c",
+              "name": "Talisman of Creativity",
+              "sanitized": "talisman-of-creativity",
+              "slug": "talisman-of-creativity",
+              "url": "/cards/talisman-of-creativity",
+              "num_decks": 690880,
+              "potential_decks": 2454262,
+              "trend_zscore": 1.2648982356571175
+            },
+            {
+              "id": "36bd614f-ab3b-4ad1-ab5c-a7ca0a641f32",
+              "name": "Talisman of Indulgence",
+              "sanitized": "talisman-of-indulgence",
+              "slug": "talisman-of-indulgence",
+              "url": "/cards/talisman-of-indulgence",
+              "num_decks": 675635,
+              "potential_decks": 2410021,
+              "trend_zscore": 5.884551476944437
+            },
+            {
+              "id": "0c959368-2f58-48de-b7a5-2bab408652b5",
+              "name": "Talisman of Hierarchy",
+              "sanitized": "talisman-of-hierarchy",
+              "slug": "talisman-of-hierarchy",
+              "url": "/cards/talisman-of-hierarchy",
+              "num_decks": 630159,
+              "potential_decks": 2344328,
+              "trend_zscore": -1.7633599546858891
+            },
+            {
+              "id": "03f7e9fc-8e59-45c1-90fc-1d04d929b292",
+              "name": "Swiftfoot Boots",
+              "sanitized": "swiftfoot-boots",
+              "slug": "swiftfoot-boots",
+              "url": "/cards/swiftfoot-boots",
+              "num_decks": 2772039,
+              "potential_decks": 10369336,
+              "trend_zscore": -1.7833462081157134
+            },
+            {
+              "id": "a829747f-cf9b-4d81-ba66-9f0630ed4565",
+              "name": "An Offer You Can't Refuse",
+              "sanitized": "an-offer-you-cant-refuse",
+              "slug": "an-offer-you-cant-refuse",
+              "url": "/cards/an-offer-you-cant-refuse",
+              "num_decks": 1361976,
+              "potential_decks": 5103113,
+              "trend_zscore": 3.1004184009803937
+            },
+            {
+              "id": "454ed9c8-3ec1-4b65-bf3f-29a186742aed",
+              "name": "Talisman of Progress",
+              "sanitized": "talisman-of-progress",
+              "slug": "talisman-of-progress",
+              "url": "/cards/talisman-of-progress",
+              "num_decks": 622418,
+              "potential_decks": 2388440,
+              "trend_zscore": 7.604662818836096
+            },
+            {
+              "id": "11e12a84-e7be-4afc-a230-c2e644743fa8",
+              "name": "Dark Ritual",
+              "sanitized": "dark-ritual",
+              "slug": "dark-ritual",
+              "url": "/cards/dark-ritual",
+              "num_decks": 1361814,
+              "potential_decks": 5246061,
+              "trend_zscore": 1.7427010378612378
+            },
+            {
+              "id": "407183c6-c962-4f8c-867e-abc309b6c573",
+              "name": "Anguished Unmaking",
+              "sanitized": "anguished-unmaking",
+              "slug": "anguished-unmaking",
+              "url": "/cards/anguished-unmaking",
+              "num_decks": 586560,
+              "potential_decks": 2344328,
+              "trend_zscore": -1.3535056688563933
+            },
+            {
+              "id": "90c423cc-1264-4067-9c50-e7c88c68ef2d",
+              "name": "Kodama's Reach",
+              "sanitized": "kodamas-reach",
+              "slug": "kodamas-reach",
+              "url": "/cards/kodamas-reach",
+              "num_decks": 1183532,
+              "potential_decks": 4751809,
+              "trend_zscore": -4.295472160001943
+            },
+            {
+              "id": "e802cfe1-45e0-47cd-8745-363ccc0f2af8",
+              "name": "Ignoble Hierarch",
+              "sanitized": "ignoble-hierarch",
+              "slug": "ignoble-hierarch",
+              "url": "/cards/ignoble-hierarch",
+              "num_decks": 255003,
+              "potential_decks": 1025720,
+              "trend_zscore": 0.8677256884984003
+            },
+            {
+              "id": "99bf792f-963e-4509-8d3c-7db129c6a77f",
+              "name": "Three Visits",
+              "sanitized": "three-visits",
+              "slug": "three-visits",
+              "url": "/cards/three-visits",
+              "num_decks": 1176704,
+              "potential_decks": 4751809,
+              "trend_zscore": 0.41944411210837534
+            },
+            {
+              "id": "b61634ae-05be-4b56-8ebb-9d4ade902e42",
+              "name": "Lightning Greaves",
+              "sanitized": "lightning-greaves",
+              "slug": "lightning-greaves",
+              "url": "/cards/lightning-greaves",
+              "num_decks": 2548925,
+              "potential_decks": 10369336,
+              "trend_zscore": -1.55418995548283
+            },
+            {
+              "id": "a365885c-f7d9-4ea1-9125-5265055e5570",
+              "name": "Talisman of Conviction",
+              "sanitized": "talisman-of-conviction",
+              "slug": "talisman-of-conviction",
+              "url": "/cards/talisman-of-conviction",
+              "num_decks": 588035,
+              "potential_decks": 2420106,
+              "trend_zscore": -0.7084594674216241
+            },
+            {
+              "id": "a263e71d-953f-4648-b326-33133cfa7e00",
+              "name": "Rakdos Signet",
+              "sanitized": "rakdos-signet",
+              "slug": "rakdos-signet",
+              "url": "/cards/rakdos-signet",
+              "num_decks": 543499,
+              "potential_decks": 2410021,
+              "trend_zscore": 1.1332496943922583
+            },
+            {
+              "id": "0862060d-3198-4eeb-af8c-efeb27f42a99",
+              "name": "Dimir Signet",
+              "sanitized": "dimir-signet",
+              "slug": "dimir-signet",
+              "url": "/cards/dimir-signet",
+              "num_decks": 576818,
+              "potential_decks": 2561357,
+              "trend_zscore": 0.15876964604190186
+            },
+            {
+              "id": "9f37c5b6-a59c-45cd-9a99-e9357fe9ea1b",
+              "name": "Rhystic Study",
+              "sanitized": "rhystic-study",
+              "slug": "rhystic-study",
+              "url": "/cards/rhystic-study",
+              "num_decks": 1123059,
+              "potential_decks": 5103113,
+              "trend_zscore": -0.8961821832302006
+            },
+            {
+              "id": "d5e141ad-5cb8-416b-9acf-bce1baeb6b6b",
+              "name": "Izzet Signet",
+              "sanitized": "izzet-signet",
+              "slug": "izzet-signet",
+              "url": "/cards/izzet-signet",
+              "num_decks": 537786,
+              "potential_decks": 2454262,
+              "trend_zscore": -3.001028415181843
+            },
+            {
+              "id": "6a0b230b-d391-4998-a3f7-7b158a0ec2cd",
+              "name": "Llanowar Elves",
+              "sanitized": "llanowar-elves",
+              "slug": "llanowar-elves",
+              "url": "/cards/llanowar-elves",
+              "num_decks": 1029932,
+              "potential_decks": 4751809,
+              "trend_zscore": 2.402461495822448
+            },
+            {
+              "id": "e0d8c9f6-cbbd-4694-b100-01cfb81036cc",
+              "name": "Boros Charm",
+              "sanitized": "boros-charm",
+              "slug": "boros-charm",
+              "url": "/cards/boros-charm",
+              "num_decks": 521412,
+              "potential_decks": 2420106,
+              "trend_zscore": -2.4806270116046854
+            },
+            {
+              "id": "90894726-1940-4291-a05c-b85cefbfa344",
+              "name": "Orzhov Signet",
+              "sanitized": "orzhov-signet",
+              "slug": "orzhov-signet",
+              "url": "/cards/orzhov-signet",
+              "num_decks": 496898,
+              "potential_decks": 2344328,
+              "trend_zscore": -3.6395035592292913
+            },
+            {
+              "id": "5eb843ef-b223-40d0-a461-54b16d188d0e",
+              "name": "Arcane Denial",
+              "sanitized": "arcane-denial",
+              "slug": "arcane-denial",
+              "url": "/cards/arcane-denial",
+              "num_decks": 1058013,
+              "potential_decks": 5103113,
+              "trend_zscore": 1.5669678360378896
+            },
+            {
+              "id": "c2a6453e-a373-44ec-807a-15c0c8b1af57",
+              "name": "Rhythm of the Wild",
+              "sanitized": "rhythm-of-the-wild",
+              "slug": "rhythm-of-the-wild",
+              "url": "/cards/rhythm-of-the-wild",
+              "num_decks": 460207,
+              "potential_decks": 2222561,
+              "trend_zscore": -0.6956664408134857
+            },
+            {
+              "id": "3ef87948-0ad9-4757-a692-2262c8e24367",
+              "name": "Fellwar Stone",
+              "sanitized": "fellwar-stone",
+              "slug": "fellwar-stone",
+              "url": "/cards/fellwar-stone",
+              "num_decks": 2117596,
+              "potential_decks": 10369336,
+              "trend_zscore": 0.5591311237234724
+            },
+            {
+              "id": "52d58fe4-6070-4022-9cd7-c35a11b44525",
+              "name": "Negate",
+              "sanitized": "negate",
+              "slug": "negate",
+              "url": "/cards/negate",
+              "num_decks": 1025006,
+              "potential_decks": 5103113,
+              "trend_zscore": -2.7773845530622387
+            },
+            {
+              "id": "c3f9b454-97e9-4c77-b37a-e974221ae385",
+              "name": "Generous Gift",
+              "sanitized": "generous-gift",
+              "slug": "generous-gift",
+              "url": "/cards/generous-gift",
+              "num_decks": 970314,
+              "potential_decks": 4833330,
+              "trend_zscore": -0.7602480617634236
+            },
+            {
+              "id": "dfb7c4b9-f2f4-4d4e-baf2-86551c8150fe",
+              "name": "Cyclonic Rift",
+              "sanitized": "cyclonic-rift",
+              "slug": "cyclonic-rift",
+              "url": "/cards/cyclonic-rift",
+              "num_decks": 1020979,
+              "potential_decks": 5103113,
+              "trend_zscore": -0.7246579723309062
+            },
+            {
+              "id": "368b6903-5fc4-43e7-bd44-46b8107c8bb4",
+              "name": "Reanimate",
+              "sanitized": "reanimate",
+              "slug": "reanimate",
+              "url": "/cards/reanimate",
+              "num_decks": 1046317,
+              "potential_decks": 5246061,
+              "trend_zscore": 2.0874084484764497
+            },
+            {
+              "id": "af690536-b0bc-4d85-8bb8-f6856b9f927b",
+              "name": "Azorius Signet",
+              "sanitized": "azorius-signet",
+              "slug": "azorius-signet",
+              "url": "/cards/azorius-signet",
+              "num_decks": 470856,
+              "potential_decks": 2388440,
+              "trend_zscore": 2.244378077176848
+            },
+            {
+              "id": "861b5889-0183-4bee-afeb-a4b2aa700a8e",
+              "name": "Smothering Tithe",
+              "sanitized": "smothering-tithe",
+              "slug": "smothering-tithe",
+              "url": "/cards/smothering-tithe",
+              "num_decks": 952749,
+              "potential_decks": 4833330,
+              "trend_zscore": -0.21299565307895885
+            },
+            {
+              "id": "1e10e2b4-9639-41ae-8b8e-253224d3d513",
+              "name": "Growth Spiral",
+              "sanitized": "growth-spiral",
+              "slug": "growth-spiral",
+              "url": "/cards/growth-spiral",
+              "num_decks": 441224,
+              "potential_decks": 2290166,
+              "trend_zscore": -4.450082384499189
+            },
+            {
+              "id": "5d6b5054-2224-4f68-9d82-3ed17c5dacc4",
+              "name": "Dovin's Veto",
+              "sanitized": "dovins-veto",
+              "slug": "dovins-veto",
+              "url": "/cards/dovins-veto",
+              "num_decks": 455204,
+              "potential_decks": 2388440,
+              "trend_zscore": 1.337649599675696
+            },
+            {
+              "id": "379ffc67-4142-4ead-a871-0f851523745e",
+              "name": "Terminate",
+              "sanitized": "terminate",
+              "slug": "terminate",
+              "url": "/cards/terminate",
+              "num_decks": 456964,
+              "potential_decks": 2410021,
+              "trend_zscore": -1.373461561075061
+            },
+            {
+              "id": "83d0b761-d694-4232-9f40-5bd8c82a05f1",
+              "name": "Swan Song",
+              "sanitized": "swan-song",
+              "slug": "swan-song",
+              "url": "/cards/swan-song",
+              "num_decks": 957448,
+              "potential_decks": 5103113,
+              "trend_zscore": 2.582981491869109
+            },
+            {
+              "id": "f3537373-ef54-4578-9d05-6216420ee349",
+              "name": "Esper Sentinel",
+              "sanitized": "esper-sentinel",
+              "slug": "esper-sentinel",
+              "url": "/cards/esper-sentinel",
+              "num_decks": 895194,
+              "potential_decks": 4833330,
+              "trend_zscore": 0.25795420333919894
+            },
+            {
+              "id": "a24b4cb6-cebb-428b-8654-74347a6a8d63",
+              "name": "Demonic Tutor",
+              "sanitized": "demonic-tutor",
+              "slug": "demonic-tutor",
+              "url": "/cards/demonic-tutor",
+              "num_decks": 965667,
+              "potential_decks": 5246061,
+              "trend_zscore": -0.7958657690861891
+            },
+            {
+              "id": "de5afccc-8d42-4bd6-b068-b9ea2361655e",
+              "name": "Toxic Deluge",
+              "sanitized": "toxic-deluge",
+              "slug": "toxic-deluge",
+              "url": "/cards/toxic-deluge",
+              "num_decks": 955598,
+              "potential_decks": 5246061,
+              "trend_zscore": 2.976349343523808
+            },
+            {
+              "id": "ec7d6864-7b6b-4f74-8474-9b9ec96b1d33",
+              "name": "Brainstorm",
+              "sanitized": "brainstorm",
+              "slug": "brainstorm",
+              "url": "/cards/brainstorm",
+              "num_decks": 925595,
+              "potential_decks": 5103113,
+              "trend_zscore": -0.1188339266748159
+            },
+            {
+              "id": "50c1d6ca-7789-46b5-bc89-85cc3915cb85",
+              "name": "Ruinous Ultimatum",
+              "sanitized": "ruinous-ultimatum",
+              "slug": "ruinous-ultimatum",
+              "url": "/cards/ruinous-ultimatum",
+              "num_decks": 211133,
+              "potential_decks": 1181235,
+              "trend_zscore": -2.4334188762209084
+            },
+            {
+              "id": "b4b36435-55b3-4615-8812-af41d4fc64d9",
+              "name": "Deflecting Swat",
+              "sanitized": "deflecting-swat",
+              "slug": "deflecting-swat",
+              "url": "/cards/deflecting-swat",
+              "num_decks": 915312,
+              "potential_decks": 5151597,
+              "trend_zscore": 0.20984615231425707
+            },
+            {
+              "id": "49c37c0e-d363-4033-a069-710241cd9923",
+              "name": "Boros Signet",
+              "sanitized": "boros-signet",
+              "slug": "boros-signet",
+              "url": "/cards/boros-signet",
+              "num_decks": 424431,
+              "potential_decks": 2420106,
+              "trend_zscore": -4.729316418371696
+            },
+            {
+              "id": "b58c4033-f764-42f6-966f-b7202a2babbf",
+              "name": "Garruk's Uprising",
+              "sanitized": "garruks-uprising",
+              "slug": "garruks-uprising",
+              "url": "/cards/garruks-uprising",
+              "num_decks": 830429,
+              "potential_decks": 4751809,
+              "trend_zscore": 2.618585632722186
+            },
+            {
+              "id": "f7f3dd95-bd14-4e0f-a388-444f9cf1b0dc",
+              "name": "Fierce Guardianship",
+              "sanitized": "fierce-guardianship",
+              "slug": "fierce-guardianship",
+              "url": "/cards/fierce-guardianship",
+              "num_decks": 871170,
+              "potential_decks": 5103113,
+              "trend_zscore": 0.15222427075296077
+            },
+            {
+              "id": "ad077996-6b5e-4eb8-bb6e-93d43c5efa8f",
+              "name": "Thought Vessel",
+              "sanitized": "thought-vessel",
+              "slug": "thought-vessel",
+              "url": "/cards/thought-vessel",
+              "num_decks": 1763402,
+              "potential_decks": 10369336,
+              "trend_zscore": -0.830727220689179
+            },
+            {
+              "id": "08b9a296-3b76-4f8f-9d71-7c9af92bb3b4",
+              "name": "Elvish Mystic",
+              "sanitized": "elvish-mystic",
+              "slug": "elvish-mystic",
+              "url": "/cards/elvish-mystic",
+              "num_decks": 782917,
+              "potential_decks": 4751809,
+              "trend_zscore": 0.31241302815484406
+            },
+            {
+              "id": "400382a4-aea2-4827-b06a-1b0b3745908b",
+              "name": "Noble Hierarch",
+              "sanitized": "noble-hierarch",
+              "slug": "noble-hierarch",
+              "url": "/cards/noble-hierarch",
+              "num_decks": 187475,
+              "potential_decks": 1186247,
+              "trend_zscore": 2.127145262773016
+            },
+            {
+              "id": "2246c098-1071-4cc3-a60a-802406e2827b",
+              "name": "Feed the Swarm",
+              "sanitized": "feed-the-swarm",
+              "slug": "feed-the-swarm",
+              "url": "/cards/feed-the-swarm",
+              "num_decks": 825927,
+              "potential_decks": 5246061,
+              "trend_zscore": 0.9953509401094311
+            },
+            {
+              "id": "d8c5e52d-57ae-464b-8860-7dd39ebfef64",
+              "name": "Frantic Search",
+              "sanitized": "frantic-search",
+              "slug": "frantic-search",
+              "url": "/cards/frantic-search",
+              "num_decks": 800024,
+              "potential_decks": 5103113,
+              "trend_zscore": -1.789061548509946
+            },
+            {
+              "id": "483fa1cb-1e35-44f2-a143-98c0f107f5ca",
+              "name": "Teferi's Protection",
+              "sanitized": "teferis-protection",
+              "slug": "teferis-protection",
+              "url": "/cards/teferis-protection",
+              "num_decks": 752244,
+              "potential_decks": 4833330,
+              "trend_zscore": 0.44424848259503524
+            },
+            {
+              "id": "ad6ed9f1-2014-49e2-91c6-2b55c8d60cdc",
+              "name": "Putrefy",
+              "sanitized": "putrefy",
+              "slug": "putrefy",
+              "url": "/cards/putrefy",
+              "num_decks": 341315,
+              "potential_decks": 2201612,
+              "trend_zscore": -3.7135157461043042
+            },
+            {
+              "id": "fc019ffa-4461-4f3d-ab8d-e4d20e77ca0c",
+              "name": "Faithless Looting",
+              "sanitized": "faithless-looting",
+              "slug": "faithless-looting",
+              "url": "/cards/faithless-looting",
+              "num_decks": 797222,
+              "potential_decks": 5151597,
+              "trend_zscore": -3.770769905646014
+            },
+            {
+              "id": "40140991-cffa-4b52-9a25-37e9a8aa9ddd",
+              "name": "Mystic Remora",
+              "sanitized": "mystic-remora",
+              "slug": "mystic-remora",
+              "url": "/cards/mystic-remora",
+              "num_decks": 787736,
+              "potential_decks": 5103113,
+              "trend_zscore": 0.6291116687141066
+            },
+            {
+              "id": "7a8b1c49-8594-426d-b585-41140235bb0e",
+              "name": "Sakura-Tribe Elder",
+              "sanitized": "sakura-tribe-elder",
+              "slug": "sakura-tribe-elder",
+              "url": "/cards/sakura-tribe-elder",
+              "num_decks": 733081,
+              "potential_decks": 4751809,
+              "trend_zscore": -2.590379373606785
+            },
+            {
+              "id": "71067239-d46f-4201-a91c-6aa4c41fa8b1",
+              "name": "Vandalblast",
+              "sanitized": "vandalblast",
+              "slug": "vandalblast",
+              "url": "/cards/vandalblast",
+              "num_decks": 789235,
+              "potential_decks": 5151597,
+              "trend_zscore": 0.72687981861653
+            },
+            {
+              "id": "39704000-65d3-4d39-849e-a3b617376bbc",
+              "name": "Eternal Witness",
+              "sanitized": "eternal-witness",
+              "slug": "eternal-witness",
+              "url": "/cards/eternal-witness",
+              "num_decks": 716320,
+              "potential_decks": 4751809,
+              "trend_zscore": -1.8418636465856382
+            },
+            {
+              "id": "99e0c371-1024-4432-9fd9-3bc29c8d38e4",
+              "name": "Jeska's Will",
+              "sanitized": "jeskas-will",
+              "slug": "jeskas-will",
+              "url": "/cards/jeskas-will",
+              "num_decks": 771146,
+              "potential_decks": 5151597,
+              "trend_zscore": -1.6483969157813412
+            },
+            {
+              "id": "5cedb54a-a6f6-48aa-acdf-01c988c1c37d",
+              "name": "Temur Ascendancy",
+              "sanitized": "temur-ascendancy",
+              "slug": "temur-ascendancy",
+              "url": "/cards/temur-ascendancy",
+              "num_decks": 167799,
+              "potential_decks": 1130439,
+              "trend_zscore": -1.9162662016294174
+            },
+            {
+              "id": "0784b6f0-9ebf-43d2-ba0f-a6bc93ba0c48",
+              "name": "Phyrexian Arena",
+              "sanitized": "phyrexian-arena",
+              "slug": "phyrexian-arena",
+              "url": "/cards/phyrexian-arena",
+              "num_decks": 777683,
+              "potential_decks": 5246061,
+              "trend_zscore": -1.4308845556896534
+            },
+            {
+              "id": "2daab74d-d66b-4164-aa19-24e8d5536f7d",
+              "name": "Void Rend",
+              "sanitized": "void-rend",
+              "slug": "void-rend",
+              "url": "/cards/void-rend",
+              "num_decks": 191259,
+              "potential_decks": 1290892,
+              "trend_zscore": -0.2947476083107637
+            },
+            {
+              "id": "64b67170-1602-4050-80c0-ade2a6cac211",
+              "name": "Rakdos Charm",
+              "sanitized": "rakdos-charm",
+              "slug": "rakdos-charm",
+              "url": "/cards/rakdos-charm",
+              "num_decks": 356430,
+              "potential_decks": 2410021,
+              "trend_zscore": -1.402604374306527
+            },
+            {
+              "id": "0e13f735-54fa-42b6-aea4-ced33811d7d4",
+              "name": "Deadly Rollick",
+              "sanitized": "deadly-rollick",
+              "slug": "deadly-rollick",
+              "url": "/cards/deadly-rollick",
+              "num_decks": 774543,
+              "potential_decks": 5246061,
+              "trend_zscore": 0.3483863211137719
+            },
+            {
+              "id": "ac943e31-26bc-4b54-b73f-460e6e402d86",
+              "name": "Propaganda",
+              "sanitized": "propaganda",
+              "slug": "propaganda",
+              "url": "/cards/propaganda",
+              "num_decks": 745919,
+              "potential_decks": 5103113,
+              "trend_zscore": 0.42556185654196577
+            },
+            {
+              "id": "84056124-1a6f-4274-bee2-74cf0debddb5",
+              "name": "Damn",
+              "sanitized": "damn",
+              "slug": "damn",
+              "url": "/cards/damn",
+              "num_decks": 338710,
+              "potential_decks": 2344328,
+              "trend_zscore": -2.1152917624376784
+            },
+            {
+              "id": "1c9675fb-1a89-420f-aea8-50e0642f549c",
+              "name": "Enlightened Tutor",
+              "sanitized": "enlightened-tutor",
+              "slug": "enlightened-tutor",
+              "url": "/cards/enlightened-tutor",
+              "num_decks": 692975,
+              "potential_decks": 4833330,
+              "trend_zscore": -0.02121097533997246
+            },
+            {
+              "id": "3c429c40-2389-41e5-8681-4bb274e25eba",
+              "name": "Mana Drain",
+              "sanitized": "mana-drain",
+              "slug": "mana-drain",
+              "url": "/cards/mana-drain",
+              "num_decks": 725928,
+              "potential_decks": 5103113,
+              "trend_zscore": -1.0514624286009877
+            },
+            {
+              "id": "c9f88a40-a6ed-4c1f-a309-011aca1acddd",
+              "name": "Kutzil, Malamet Exemplar",
+              "sanitized": "kutzil-malamet-exemplar",
+              "slug": "kutzil-malamet-exemplar",
+              "url": "/cards/kutzil-malamet-exemplar",
+              "num_decks": 306703,
+              "potential_decks": 2169648,
+              "trend_zscore": 0.5917738863141522
+            },
+            {
+              "id": "34a0203f-9cce-43a4-9cb7-8ce6647895cd",
+              "name": "Vampiric Tutor",
+              "sanitized": "vampiric-tutor",
+              "slug": "vampiric-tutor",
+              "url": "/cards/vampiric-tutor",
+              "num_decks": 732250,
+              "potential_decks": 5246061,
+              "trend_zscore": -4.205728683214232e-6
+            },
+            {
+              "id": "bf6e59be-f959-4f4a-8c2d-b7c441e88135",
+              "name": "Leyline of the Guildpact",
+              "sanitized": "leyline-of-the-guildpact",
+              "slug": "leyline-of-the-guildpact",
+              "url": "/cards/leyline-of-the-guildpact",
+              "num_decks": 95964,
+              "potential_decks": 699189,
+              "trend_zscore": -0.041643441323772026
+            },
+            {
+              "id": "b30a8f92-ce42-4b27-a893-bcf97fde228d",
+              "name": "Mind Stone",
+              "sanitized": "mind-stone",
+              "slug": "mind-stone",
+              "url": "/cards/mind-stone",
+              "num_decks": 1404960,
+              "potential_decks": 10369336,
+              "trend_zscore": -0.03618896588211896
+            },
+            {
+              "id": "2c09f45f-54a5-47b5-afd7-9ac7c05438e7",
+              "name": "Despark",
+              "sanitized": "despark",
+              "slug": "despark",
+              "url": "/cards/despark",
+              "num_decks": 306181,
+              "potential_decks": 2344328,
+              "trend_zscore": 0.03803728960958647
+            },
+            {
+              "id": "ce01ff8f-a037-484f-9148-c847ffaabc5a",
+              "name": "Lotho, Corrupt Shirriff",
+              "sanitized": "lotho-corrupt-shirriff",
+              "slug": "lotho-corrupt-shirriff",
+              "url": "/cards/lotho-corrupt-shirriff",
+              "num_decks": 302284,
+              "potential_decks": 2344328,
+              "trend_zscore": 2.471477913108351
+            },
+            {
+              "id": "9d9ca869-e68a-4f53-9f52-85c714dac6f3",
+              "name": "Black Market Connections",
+              "sanitized": "black-market-connections",
+              "slug": "black-market-connections",
+              "url": "/cards/black-market-connections",
+              "num_decks": 673299,
+              "potential_decks": 5246061,
+              "trend_zscore": 3.167717748566549
+            },
+            {
+              "id": "ee008d81-df28-49a8-917d-44f66527e469",
+              "name": "Victimize",
+              "sanitized": "victimize",
+              "slug": "victimize",
+              "url": "/cards/victimize",
+              "num_decks": 672079,
+              "potential_decks": 5246061,
+              "trend_zscore": 0.21209983897950604
+            },
+            {
+              "id": "1624a5f4-f5bc-47c9-85de-c5520ee234ce",
+              "name": "Annie Joins Up",
+              "sanitized": "annie-joins-up",
+              "slug": "annie-joins-up",
+              "url": "/cards/annie-joins-up",
+              "num_decks": 155062,
+              "potential_decks": 1213351,
+              "trend_zscore": 3.0458486790227473
+            },
+            {
+              "id": "be8439e6-f779-49f0-806a-b04995697a6a",
+              "name": "Baleful Strix",
+              "sanitized": "baleful-strix",
+              "slug": "baleful-strix",
+              "url": "/cards/baleful-strix",
+              "num_decks": 326936,
+              "potential_decks": 2561357,
+              "trend_zscore": -2.0016981707303567
+            },
+            {
+              "id": "d86fa72c-25c1-43ef-9cb0-fe76f7568ed3",
+              "name": "Deadly Dispute",
+              "sanitized": "deadly-dispute",
+              "slug": "deadly-dispute",
+              "url": "/cards/deadly-dispute",
+              "num_decks": 668573,
+              "potential_decks": 5246061,
+              "trend_zscore": -1.4694282285522315
+            },
+            {
+              "id": "71384418-173a-4f77-adab-56e52fa23692",
+              "name": "Delighted Halfling",
+              "sanitized": "delighted-halfling",
+              "slug": "delighted-halfling",
+              "url": "/cards/delighted-halfling",
+              "num_decks": 594218,
+              "potential_decks": 4751809,
+              "trend_zscore": 3.1487407988381118
+            },
+            {
+              "id": "84238335-e08c-421c-b9b9-70a679ff2967",
+              "name": "Morophon, the Boundless",
+              "sanitized": "morophon-the-boundless",
+              "slug": "morophon-the-boundless",
+              "url": "/cards/morophon-the-boundless",
+              "num_decks": 86778,
+              "potential_decks": 699189,
+              "trend_zscore": -2.173831063327507
+            },
+            {
+              "id": "145dcac4-2c53-4ae9-9ede-24dc07474b01",
+              "name": "Faeburrow Elder",
+              "sanitized": "faeburrow-elder",
+              "slug": "faeburrow-elder",
+              "url": "/cards/faeburrow-elder",
+              "num_decks": 268007,
+              "potential_decks": 2169648,
+              "trend_zscore": 0.10960084232862453
+            },
+            {
+              "id": "a390a7df-b8da-41aa-93e5-2c0db938a27e",
+              "name": "Avacyn's Pilgrim",
+              "sanitized": "avacyns-pilgrim",
+              "slug": "avacyns-pilgrim",
+              "url": "/cards/avacyns-pilgrim",
+              "num_decks": 264800,
+              "potential_decks": 2169648,
+              "trend_zscore": 2.5511436628085016
+            },
+            {
+              "id": "3383a939-4ab3-4546-9995-6c65cd3f4441",
+              "name": "Big Score",
+              "sanitized": "big-score",
+              "slug": "big-score",
+              "url": "/cards/big-score",
+              "num_decks": 615654,
+              "potential_decks": 5151597,
+              "trend_zscore": -2.0719142459180433
+            },
+            {
+              "id": "eff598b0-0b32-41d0-b980-584576e58626",
+              "name": "Talisman of Resilience",
+              "sanitized": "talisman-of-resilience",
+              "slug": "talisman-of-resilience",
+              "url": "/cards/talisman-of-resilience",
+              "num_decks": 262839,
+              "potential_decks": 2201612,
+              "trend_zscore": -1.8711066049154144
+            },
+            {
+              "id": "e1f723a8-0be9-4270-b451-a52d6b2fda4e",
+              "name": "Ghostly Prison",
+              "sanitized": "ghostly-prison",
+              "slug": "ghostly-prison",
+              "url": "/cards/ghostly-prison",
+              "num_decks": 573249,
+              "potential_decks": 4833330,
+              "trend_zscore": -1.790259194711029
+            },
+            {
+              "id": "8388c4e8-bda1-47e5-8df2-ddec5babcaf9",
+              "name": "Talisman of Curiosity",
+              "sanitized": "talisman-of-curiosity",
+              "slug": "talisman-of-curiosity",
+              "url": "/cards/talisman-of-curiosity",
+              "num_decks": 269784,
+              "potential_decks": 2290166,
+              "trend_zscore": -0.9563423904626597
+            },
+            {
+              "id": "dc69f960-68ba-4315-8146-6a7a82047503",
+              "name": "Ponder",
+              "sanitized": "ponder",
+              "slug": "ponder",
+              "url": "/cards/ponder",
+              "num_decks": 595134,
+              "potential_decks": 5103113,
+              "trend_zscore": -1.4618114392796615
+            }
+          ],
+          "total_pages": 313,
+          "more": "top/year-past2years-1.json"
+        }
+      ]
+    },
+    "keywords": "Top,Cards,Past,2,Years",
+    "title": "Top Cards (Past 2 Years)"
+  }
+}

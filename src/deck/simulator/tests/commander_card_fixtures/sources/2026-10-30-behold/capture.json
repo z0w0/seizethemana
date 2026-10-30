@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "started_at": "2026-10-30T01:44:58Z",
+  "finished_at": "2026-10-30T01:44:59Z",
+  "status": "source_capture_only_not_runtime_support",
+  "query": "keyword:behold legal:commander",
+  "card_count": 23,
+  "sources": [
+    {
+      "source": "Scryfall",
+      "method": "GET",
+      "path": "behold_search_00.json",
+      "url": "https://api.scryfall.com/cards/search?q=keyword%3Abehold%20legal%3Acommander&unique=cards&order=name",
+      "captured_at": "2026-10-30T01:44:58Z",
+      "raw_bytes_sha256": "d5e0b002710d0299916db3e22a879fa0f412d5fd13f9cf5ce4cba97aaa69259a"
+    },
+    {
+      "source": "Scryfall",
+      "method": "POST",
+      "url": "https://api.scryfall.com/cards/collection",
+      "path": "scryfall_response_00.json",
+      "request_path": "scryfall_request_00.json",
+      "captured_at": "2026-10-30T01:44:59Z",
+      "request_sha256": "971a574de1c309b45590bd218372ee51684d4813a743dbcef4b55c9b870aef1e",
+      "raw_bytes_sha256": "bb20050cbf9a3b6591fe782a472114837087f31570395ae520298683d7eb6dbe"
+    }
+  ],
+  "files": [
+    {
+      "path": "selection.json",
+      "raw_bytes_sha256": "da5e06a19866005bb2ca90d23f5a98792efbe4669e5667b34ca9198a84021876"
+    },
+    {
+      "path": "cards.json",
+      "raw_bytes_sha256": "b3a29feed66dba0a3694ed95cea00a6523b8c58a0aff8cc6f908f817b5a23def"
+    }
+  ]
+}

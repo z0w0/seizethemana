@@ -1,0 +1,861 @@
+{
+  "source_path": "/Users/zack/.seizethemana/decks/Lathril.txt",
+  "database_path": "/Users/zack/.seizethemana/stm.db",
+  "database_access": "read_only",
+  "observed_at": "2026-10-23T05:40:09+00:00",
+  "raw_deck_sha256": "94cb0b49705aa8716d53c48dcf404c03cbd6c13ef38e743b9e974a8d4a7135ce",
+  "entries": [
+    {
+      "section": "COMMANDER",
+      "quantity": 1,
+      "name": "Lathril, Blade of the Elves",
+      "source_line": 2,
+      "set": "SLD",
+      "collector_number": "2681",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Arbor Elf",
+      "source_line": 5,
+      "set": "LTC",
+      "collector_number": "232",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Arcane Signet",
+      "source_line": 6,
+      "set": "FRC",
+      "collector_number": "20",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Assassin's Trophy",
+      "source_line": 7,
+      "set": "SOC",
+      "collector_number": "294",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Beast Whisperer",
+      "source_line": 8,
+      "set": "FDC",
+      "collector_number": "189",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Beast Within",
+      "source_line": 9,
+      "set": "WHO",
+      "collector_number": "228",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Blooming Marsh",
+      "source_line": 10,
+      "set": "OTJ",
+      "collector_number": "266",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "City of Brass",
+      "source_line": 11,
+      "set": "TMC",
+      "collector_number": "62",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Command Tower",
+      "source_line": 12,
+      "set": "FRC",
+      "collector_number": "22",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Copperhorn Scout",
+      "source_line": 13,
+      "set": "CN2",
+      "collector_number": "179",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Crippling Fear",
+      "source_line": 14,
+      "set": "CMM",
+      "collector_number": "862",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Deathcap Glade",
+      "source_line": 15,
+      "set": "SOS",
+      "collector_number": "301",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Dwynen's Elite",
+      "source_line": 16,
+      "set": "FDN",
+      "collector_number": "218",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Dwynen, Gilt-Leaf Daen",
+      "source_line": 17,
+      "set": "FDN",
+      "collector_number": "217",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elven Ambush",
+      "source_line": 18,
+      "set": "KHM",
+      "collector_number": "391",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elven Passage",
+      "source_line": 19,
+      "set": "HOB",
+      "collector_number": "181",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elvish Archdruid",
+      "source_line": 20,
+      "set": "FDN",
+      "collector_number": "219",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elvish Mystic",
+      "source_line": 21,
+      "set": "FDC",
+      "collector_number": "202",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elvish Regrower",
+      "source_line": 22,
+      "set": "FDN",
+      "collector_number": "104",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elvish Visionary",
+      "source_line": 23,
+      "set": "CMR",
+      "collector_number": "223",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elvish Warmaster",
+      "source_line": 24,
+      "set": "LTC",
+      "collector_number": "241",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Ezuri, Renegade Leader",
+      "source_line": 25,
+      "set": "C14",
+      "collector_number": "195",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Fabled Passage",
+      "source_line": 26,
+      "set": "FRC",
+      "collector_number": "71",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 12,
+      "name": "Forest",
+      "source_line": 27,
+      "set": "FRA",
+      "collector_number": "289",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Fyndhorn Elves",
+      "source_line": 28,
+      "set": "FDC",
+      "collector_number": "204",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Galadhrim Brigade",
+      "source_line": 29,
+      "set": "LTC",
+      "collector_number": "502",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Gilt-Leaf Palace",
+      "source_line": 30,
+      "set": "LRW",
+      "collector_number": "268",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Glimpse of Nature",
+      "source_line": 31,
+      "set": "SOA",
+      "collector_number": "53",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Heritage Druid",
+      "source_line": 32,
+      "set": "EMA",
+      "collector_number": "171",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Heroic Intervention",
+      "source_line": 33,
+      "set": "AER",
+      "collector_number": "109",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Jaspera Sentinel",
+      "source_line": 34,
+      "set": "SCD",
+      "collector_number": "194",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Leaf-Crowned Visionary",
+      "source_line": 35,
+      "set": "DMU",
+      "collector_number": "167",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Llanowar Elves",
+      "source_line": 36,
+      "set": "FDN",
+      "collector_number": "227",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Llanowar Wastes",
+      "source_line": 37,
+      "set": "SOC",
+      "collector_number": "383",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Marwyn, the Nurturer",
+      "source_line": 38,
+      "set": "KHC",
+      "collector_number": "68",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Miara, Thorn of the Glade",
+      "source_line": 39,
+      "set": "KHC",
+      "collector_number": "51",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Nature's Lore",
+      "source_line": 40,
+      "set": "MSC",
+      "collector_number": "177",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Necroblossom Snarl",
+      "source_line": 41,
+      "set": "DSC",
+      "collector_number": "290",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Nurturing Peatland",
+      "source_line": 42,
+      "set": "MH1",
+      "collector_number": "243",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Overgrown Tomb",
+      "source_line": 43,
+      "set": "ECL",
+      "collector_number": "266",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Patriarch's Bidding",
+      "source_line": 44,
+      "set": "MH2",
+      "collector_number": "275",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Poison-Tip Archer",
+      "source_line": 45,
+      "set": "SLD",
+      "collector_number": "788",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Priest of Titania",
+      "source_line": 46,
+      "set": "MH3",
+      "collector_number": "286",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Prowess of the Fair",
+      "source_line": 47,
+      "set": "KHC",
+      "collector_number": "53",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Quirion Ranger",
+      "source_line": 48,
+      "set": "MH2",
+      "collector_number": "285",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Reclamation Sage",
+      "source_line": 49,
+      "set": "FDN",
+      "collector_number": "231",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Shaman of the Pack",
+      "source_line": 50,
+      "set": "ORI",
+      "collector_number": "217",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Skemfar Shadowsage",
+      "source_line": 51,
+      "set": "KHM",
+      "collector_number": "110",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Skullclamp",
+      "source_line": 52,
+      "set": "BLC",
+      "collector_number": "283",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Sol Ring",
+      "source_line": 53,
+      "set": "FRC",
+      "collector_number": "21",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 7,
+      "name": "Swamp",
+      "source_line": 54,
+      "set": "FRA",
+      "collector_number": "285",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Swiftfoot Boots",
+      "source_line": 55,
+      "set": "TDC",
+      "collector_number": "328",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Sylvan Messenger",
+      "source_line": 56,
+      "set": "KHC",
+      "collector_number": "75",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Talisman of Resilience",
+      "source_line": 57,
+      "set": "DSC",
+      "collector_number": "255",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Three Tree City",
+      "source_line": 58,
+      "set": "BLB",
+      "collector_number": "260",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Three Visits",
+      "source_line": 59,
+      "set": "SOC",
+      "collector_number": "289",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Undergrowth Stadium",
+      "source_line": 60,
+      "set": "CMM",
+      "collector_number": "435",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Wastewood Verge",
+      "source_line": 61,
+      "set": "DFT",
+      "collector_number": "374",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Witherbloom Charm",
+      "source_line": 62,
+      "set": "SOS",
+      "collector_number": "244",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Withering Torment",
+      "source_line": 63,
+      "set": "DSK",
+      "collector_number": "124",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Wood Elves",
+      "source_line": 64,
+      "set": "HOB",
+      "collector_number": "142",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Yavimaya, Cradle of Growth",
+      "source_line": 65,
+      "set": "SLD",
+      "collector_number": "2813",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Nullmage Shepherd",
+      "source_line": 66,
+      "set": "SCD",
+      "collector_number": "200",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Realmwalker",
+      "source_line": 67,
+      "set": "ECC",
+      "collector_number": "114",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Farhaven Elf",
+      "source_line": 68,
+      "set": "SCD",
+      "collector_number": "182",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Eclipsed Elf",
+      "source_line": 69,
+      "set": "ECL",
+      "collector_number": "218",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Path of Ancestry",
+      "source_line": 70,
+      "set": "SLD",
+      "collector_number": "2684",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Bojuka Bog",
+      "source_line": 71,
+      "set": "SOC",
+      "collector_number": "363",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Tainted Wood",
+      "source_line": 72,
+      "set": "M3C",
+      "collector_number": "383",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Virulent Emissary",
+      "source_line": 73,
+      "set": "ECL",
+      "collector_number": "202",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Voice of Many",
+      "source_line": 74,
+      "set": "SCD",
+      "collector_number": "215",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Brotherhood Regalia",
+      "source_line": 75,
+      "set": "ACR",
+      "collector_number": "71",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Infernal Grasp",
+      "source_line": 76,
+      "set": "INR",
+      "collector_number": "119",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Craterhoof Behemoth",
+      "source_line": 77,
+      "set": "TDM",
+      "collector_number": "346",
+      "foil": true
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Moonglove Extractor",
+      "source_line": 78,
+      "set": "ECL",
+      "collector_number": "109",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Woodland Weavemaster",
+      "source_line": 79,
+      "set": "HOB",
+      "collector_number": "143",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Defend the Rider",
+      "source_line": 80,
+      "set": "DFT",
+      "collector_number": "157",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Elven Chorus",
+      "source_line": 81,
+      "set": "LTR",
+      "collector_number": "160",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Bitter Triumph",
+      "source_line": 82,
+      "set": "SOA",
+      "collector_number": "26",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Origin of Metalbending",
+      "source_line": 83,
+      "set": "TLA",
+      "collector_number": "187",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Paradise Druid",
+      "source_line": 84,
+      "set": "WOC",
+      "collector_number": "129",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Phyrexian Reclamation",
+      "source_line": 85,
+      "set": "TDC",
+      "collector_number": "194",
+      "foil": false
+    },
+    {
+      "section": "DECK",
+      "quantity": 1,
+      "name": "Legolas's Quick Reflexes",
+      "source_line": 86,
+      "set": "LTC",
+      "collector_number": "493",
+      "foil": true
+    }
+  ],
+  "canonical_deck_sha256": "ed046b99db857571a6ee18267c4d74b04dd0372d5e4f0b4dc70a63d3e5638fe7",
+  "card_rows_sha256": "62b84124e0b641bb1279db8c55346930e142cb6883a0728a65dcad95059f4e7c",
+  "commander_order": ["Lathril, Blade of the Elves"],
+  "library_order": [
+    "Arbor Elf",
+    "Arcane Signet",
+    "Assassin's Trophy",
+    "Beast Whisperer",
+    "Beast Within",
+    "Blooming Marsh",
+    "City of Brass",
+    "Command Tower",
+    "Copperhorn Scout",
+    "Crippling Fear",
+    "Deathcap Glade",
+    "Dwynen's Elite",
+    "Dwynen, Gilt-Leaf Daen",
+    "Elven Ambush",
+    "Elven Passage",
+    "Elvish Archdruid",
+    "Elvish Mystic",
+    "Elvish Regrower",
+    "Elvish Visionary",
+    "Elvish Warmaster",
+    "Ezuri, Renegade Leader",
+    "Fabled Passage",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Forest",
+    "Fyndhorn Elves",
+    "Galadhrim Brigade",
+    "Gilt-Leaf Palace",
+    "Glimpse of Nature",
+    "Heritage Druid",
+    "Heroic Intervention",
+    "Jaspera Sentinel",
+    "Leaf-Crowned Visionary",
+    "Llanowar Elves",
+    "Llanowar Wastes",
+    "Marwyn, the Nurturer",
+    "Miara, Thorn of the Glade",
+    "Nature's Lore",
+    "Necroblossom Snarl",
+    "Nurturing Peatland",
+    "Overgrown Tomb",
+    "Patriarch's Bidding",
+    "Poison-Tip Archer",
+    "Priest of Titania",
+    "Prowess of the Fair",
+    "Quirion Ranger",
+    "Reclamation Sage",
+    "Shaman of the Pack",
+    "Skemfar Shadowsage",
+    "Skullclamp",
+    "Sol Ring",
+    "Swamp",
+    "Swamp",
+    "Swamp",
+    "Swamp",
+    "Swamp",
+    "Swamp",
+    "Swamp",
+    "Swiftfoot Boots",
+    "Sylvan Messenger",
+    "Talisman of Resilience",
+    "Three Tree City",
+    "Three Visits",
+    "Undergrowth Stadium",
+    "Wastewood Verge",
+    "Witherbloom Charm",
+    "Withering Torment",
+    "Wood Elves",
+    "Yavimaya, Cradle of Growth",
+    "Nullmage Shepherd",
+    "Realmwalker",
+    "Farhaven Elf",
+    "Eclipsed Elf",
+    "Path of Ancestry",
+    "Bojuka Bog",
+    "Tainted Wood",
+    "Virulent Emissary",
+    "Voice of Many",
+    "Brotherhood Regalia",
+    "Infernal Grasp",
+    "Craterhoof Behemoth",
+    "Moonglove Extractor",
+    "Woodland Weavemaster",
+    "Defend the Rider",
+    "Elven Chorus",
+    "Bitter Triumph",
+    "Origin of Metalbending",
+    "Paradise Druid",
+    "Phyrexian Reclamation",
+    "Legolas's Quick Reflexes"
+  ],
+  "row_printing_note": "Rows are exact stored representative prints, not selected list printings."
+}

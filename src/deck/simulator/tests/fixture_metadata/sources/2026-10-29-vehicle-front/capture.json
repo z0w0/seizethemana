@@ -1,0 +1,9 @@
+{
+  "source": "Scryfall",
+  "endpoint": "https://api.scryfall.com/cards/collection",
+  "method": "POST",
+  "operation": "read-only card collection lookup",
+  "captured_at": "2026-10-29T06:46:05Z",
+  "request_sha256": "55742db93aba4225aab83b3e7d1df52e3f8f78c13e7835a50b01d45a965fc11d",
+  "response_sha256": "6c1a60361c0d3570d4da79a5adc55b02b3a8f164a804bad796da567a2ef1c1e5"
+}
